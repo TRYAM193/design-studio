@@ -11,7 +11,11 @@ export default function Landing() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
            {/* Logo */}
            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-primary/5 border flex items-center justify-center text-primary font-bold">T</div>
+              <img 
+                src="https://harmless-tapir-303.convex.cloud/api/storage/1a8853ff-ebac-480a-b68b-ffe2343bbf07" 
+                alt="TRYAM Logo" 
+                className="h-10 w-10 object-contain"
+              />
               <span className="font-bold text-xl tracking-tight">TRYAM</span>
            </div>
            {/* Nav/Actions */}
@@ -165,7 +169,11 @@ export default function Landing() {
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div className="col-span-2 space-y-4">
               <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded-full bg-primary/5 border flex items-center justify-center text-primary font-bold text-xs">T</div>
+                <img 
+                  src="https://harmless-tapir-303.convex.cloud/api/storage/1a8853ff-ebac-480a-b68b-ffe2343bbf07" 
+                  alt="TRYAM Logo" 
+                  className="h-8 w-8 object-contain"
+                />
                 <span className="font-bold text-lg">TRYAM</span>
               </div>
               <p className="text-muted-foreground max-w-xs">
