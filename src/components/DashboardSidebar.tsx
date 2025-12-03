@@ -4,6 +4,7 @@ import {
   FolderOpen,
   Home,
   LayoutTemplate,
+  LogIn,
   LogOut,
   Plus,
   Settings,
@@ -25,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 
 export function DashboardSidebar() {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAuthenticated } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -90,13 +91,15 @@ export function DashboardSidebar() {
     ">
       {/* Logo Area - Desktop Only */}
       <div className="hidden sm:flex mb-8">
-        <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center bg-black">
-          <img 
-            src="https://harmless-tapir-303.convex.cloud/api/storage/5dd71113-c4f4-4f61-9bdb-a4ddbec1574c" 
-            alt="TRYAM Logo" 
-            className="h-full w-full object-cover"
-          />
-        </div>
+        <Link to="/">
+          <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center bg-black">
+            <img 
+              src="https://harmless-tapir-303.convex.cloud/api/storage/5dd71113-c4f4-4f61-9bdb-a4ddbec1574c" 
+              alt="TRYAM Logo" 
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </Link>
       </div>
 
       {/* New Design Button - Desktop Only */}
@@ -125,47 +128,66 @@ export function DashboardSidebar() {
 
         {/* Mobile Profile Trigger */}
         <div className="sm:hidden">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <div className="cursor-pointer outline-none">
-                <Avatar className="h-8 w-8 border hover:ring-2 hover:ring-primary/20 transition-all">
-                  <AvatarImage src={user?.image} />
-                  <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-                </Avatar>
-              </div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 mb-2" side="top" align="end">
-              <UserProfileContent />
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="cursor-pointer outline-none">
+                  <Avatar className="h-8 w-8 border hover:ring-2 hover:ring-primary/20 transition-all">
+                    <AvatarImage src={user?.image} />
+                    <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+                  </Avatar>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64 mb-2" side="top" align="end">
+                <UserProfileContent />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground">
+                <LogIn className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
         </div>
       </nav>
 
       {/* Bottom Actions - Desktop Only */}
       <div className="hidden sm:flex space-y-4 flex-col items-center mt-auto">
-        <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Notifications">
-          <Bell className="h-5 w-5" />
-        </Button>
-        <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Settings">
-          <Settings className="h-5 w-5" />
-        </Button>
-        
-        <Separator className="w-8" />
+        {isAuthenticated && (
+          <>
+            <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Notifications">
+              <Bell className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Settings">
+              <Settings className="h-5 w-5" />
+            </Button>
+            <Separator className="w-8" />
+          </>
+        )}
 
         {/* User Profile */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <div className="cursor-pointer outline-none">
-              <Avatar className="h-10 w-10 border hover:ring-2 hover:ring-primary/20 transition-all">
-                <AvatarImage src={user?.image} />
-                <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-              </Avatar>
-            </div>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-64 ml-4 p-2" side="right" align="end">
-            <UserProfileContent />
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isAuthenticated ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="cursor-pointer outline-none">
+                <Avatar className="h-10 w-10 border hover:ring-2 hover:ring-primary/20 transition-all">
+                  <AvatarImage src={user?.image} />
+                  <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+                </Avatar>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-64 ml-4 p-2" side="right" align="end">
+              <UserProfileContent />
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link to="/auth">
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground" title="Sign In">
+              <LogIn className="h-5 w-5" />
+            </Button>
+          </Link>
+        )}
       </div>
     </div>
   );

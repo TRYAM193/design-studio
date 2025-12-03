@@ -1,8 +1,33 @@
 import { motion } from "framer-motion";
-import { Folder, MoreHorizontal } from "lucide-react";
+import { Folder, Lock, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import { Link } from "react-router";
 
 export default function DashboardProjects() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 text-center">
+        <div className="h-20 w-20 bg-secondary/50 rounded-full flex items-center justify-center">
+          <Lock className="h-10 w-10 text-muted-foreground" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Sign in to view projects</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Create an account or log in to save your designs, manage projects, and access them from anywhere.
+          </p>
+        </div>
+        <Link to="/auth">
+          <Button size="lg" className="rounded-full px-8">
+            Sign In / Sign Up
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
