@@ -5,8 +5,12 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardSidebar />
-      <main className="pl-20 min-h-screen transition-all duration-300 ease-in-out">
-        <div className="container mx-auto p-8 max-w-7xl">
+      <main className="
+        min-h-screen transition-all duration-300 ease-in-out
+        pl-0 sm:pl-20
+        pb-20 sm:pb-0
+      ">
+        <div className="container mx-auto p-4 sm:p-8 max-w-7xl">
           <Outlet />
         </div>
       </main>
