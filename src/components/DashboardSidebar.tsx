@@ -13,12 +13,16 @@ import { Link, useLocation } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
+import { Badge } from "@/components/ui/badge";
 
 export function DashboardSidebar() {
   const location = useLocation();
@@ -84,50 +88,56 @@ export function DashboardSidebar() {
         <Separator className="w-8" />
 
         {/* User Profile */}
-        <HoverCard>
-          <HoverCardTrigger asChild>
-            <div className="cursor-pointer">
-              <Avatar className="h-10 w-10 border">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="cursor-pointer outline-none">
+              <Avatar className="h-10 w-10 border hover:ring-2 hover:ring-primary/20 transition-all">
                 <AvatarImage src={user?.image} />
                 <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
             </div>
-          </HoverCardTrigger>
-          <HoverCardContent className="w-80 ml-4" side="right" align="end">
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={user?.image} />
-                  <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h4 className="text-sm font-semibold">{user?.name || "User Name"}</h4>
-                  <p className="text-sm text-muted-foreground">{user?.email || "user@example.com"}</p>
-                </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-64 ml-4 p-2" side="right" align="end">
+            <div className="flex items-center gap-3 p-2">
+              <Avatar className="h-10 w-10 border">
+                <AvatarImage src={user?.image} />
+                <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col overflow-hidden">
+                <span className="text-sm font-semibold truncate">{user?.name || "User Name"}</span>
+                <span className="text-xs text-muted-foreground truncate">{user?.email || "user@example.com"}</span>
               </div>
-              <Separator />
-              <div className="space-y-2 text-sm">
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="font-medium text-muted-foreground">Role:</span>
-                  <span className="col-span-2">Designer</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="font-medium text-muted-foreground">Plan:</span>
-                  <span className="col-span-2">Pro Plan</span>
-                </div>
-              </div>
-              <Separator />
-              <Button 
-                variant="destructive" 
-                className="w-full justify-start gap-2"
-                onClick={() => signOut()}
-              >
-                <LogOut className="h-4 w-4" />
-                Log out
-              </Button>
             </div>
-          </HoverCardContent>
-        </HoverCard>
+            <DropdownMenuSeparator />
+            <div className="p-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                <span>Current Plan</span>
+                <Badge variant="secondary" className="text-[10px] h-5">PRO</Badge>
+              </div>
+              <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
+                <div className="bg-primary h-full w-[75%]" />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1 text-right">75% storage used</p>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer">
+              <CreditCard className="mr-2 h-4 w-4" />
+              <span>Billing</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+              onClick={() => signOut()}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
