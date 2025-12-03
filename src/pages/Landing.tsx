@@ -14,7 +14,7 @@ export default function Landing() {
               <img 
                 src="https://harmless-tapir-303.convex.cloud/api/storage/1a8853ff-ebac-480a-b68b-ffe2343bbf07" 
                 alt="TRYAM Logo" 
-                className="h-10 w-10 object-contain"
+                className="h-10 w-10 object-cover rounded-full"
               />
               <span className="font-bold text-xl tracking-tight">TRYAM</span>
            </div>
@@ -172,7 +172,7 @@ export default function Landing() {
                 <img 
                   src="https://harmless-tapir-303.convex.cloud/api/storage/1a8853ff-ebac-480a-b68b-ffe2343bbf07" 
                   alt="TRYAM Logo" 
-                  className="h-8 w-8 object-contain"
+                  className="h-8 w-8 object-cover rounded-full"
                 />
                 <span className="font-bold text-lg">TRYAM</span>
               </div>
