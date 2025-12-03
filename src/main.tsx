@@ -16,6 +16,7 @@ import DashboardHome from "./pages/DashboardHome";
 import DashboardTemplates from "./pages/DashboardTemplates";
 import DashboardProjects from "./pages/DashboardProjects";
 import DashboardPricing from "./pages/DashboardPricing";
+import DashboardProducts from "./pages/DashboardProducts";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
 
@@ -58,6 +59,7 @@ createRoot(document.getElementById("root")!).render(
               <Route index element={<DashboardHome />} />
               <Route path="templates" element={<DashboardTemplates />} />
               <Route path="projects" element={<DashboardProjects />} />
+              <Route path="products" element={<DashboardProducts />} />
               <Route path="pricing" element={<DashboardPricing />} />
             </Route>
 

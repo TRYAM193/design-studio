@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Layers, Palette, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle2, Layers, Palette, Shirt, Zap } from "lucide-react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 
@@ -9,11 +9,15 @@ export default function Landing() {
       {/* Navbar */}
       <header className="border-b sticky top-0 bg-background/80 backdrop-blur-md z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-              <div className="h-3 w-3 bg-background rounded-full" />
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full overflow-hidden bg-black flex items-center justify-center">
+               <img 
+                src="https://harmless-tapir-303.convex.cloud/api/storage/5dd71113-c4f4-4f61-9bdb-a4ddbec1574c" 
+                alt="TRYAM Logo" 
+                className="h-full w-full object-cover"
+              />
             </div>
-            <span className="font-bold text-xl tracking-tight">DesignApp</span>
+            <span className="font-bold text-xl tracking-tight">TRYAM</span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
             <a href="#features" className="hover:text-primary/80 transition-colors">Features</a>
@@ -40,8 +44,8 @@ export default function Landing() {
               animate={{ opacity: 1, y: 0 }}
               className="text-5xl md:text-7xl font-bold tracking-tight leading-tight"
             >
-              Design made <br className="hidden md:block" />
-              <span className="text-muted-foreground">beautifully simple.</span>
+              Custom T-Shirts <br className="hidden md:block" />
+              <span className="text-muted-foreground">designed by you.</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -49,8 +53,8 @@ export default function Landing() {
               transition={{ delay: 0.1 }}
               className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Create stunning graphics, presentations, and social media posts in seconds. 
-              No design skills required.
+              Create stunning apparel designs, mockups, and merchandise in seconds. 
+              The ultimate studio for your clothing brand.
             </motion.p>
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -60,7 +64,7 @@ export default function Landing() {
             >
               <Link to="/dashboard">
                 <Button size="lg" className="h-14 px-8 text-lg rounded-full">
-                  Start Designing Free <ArrowRight className="ml-2 h-5 w-5" />
+                  Start Designing <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
             </motion.div>
@@ -74,9 +78,15 @@ export default function Landing() {
             >
               <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/20">
                 <div className="grid grid-cols-3 gap-8 w-full p-12 opacity-50">
-                   <div className="bg-background rounded-lg shadow-sm h-64 w-full"></div>
-                   <div className="bg-background rounded-lg shadow-sm h-64 w-full mt-12"></div>
-                   <div className="bg-background rounded-lg shadow-sm h-64 w-full"></div>
+                   <div className="bg-background rounded-lg shadow-sm h-64 w-full flex items-center justify-center">
+                      <Shirt className="h-24 w-24 opacity-20" />
+                   </div>
+                   <div className="bg-background rounded-lg shadow-sm h-64 w-full mt-12 flex items-center justify-center">
+                      <Shirt className="h-24 w-24 opacity-20" />
+                   </div>
+                   <div className="bg-background rounded-lg shadow-sm h-64 w-full flex items-center justify-center">
+                      <Shirt className="h-24 w-24 opacity-20" />
+                   </div>
                 </div>
               </div>
             </motion.div>
@@ -88,9 +98,9 @@ export default function Landing() {
           <div className="container mx-auto px-4 max-w-6xl">
             <div className="grid md:grid-cols-3 gap-12">
               {[
-                { icon: Palette, title: "Professional Templates", desc: "Start with thousands of professionally designed templates." },
-                { icon: Layers, title: "Smart Layers", desc: "Organize your designs with intuitive layer management." },
-                { icon: Zap, title: "Instant Export", desc: "Export your designs in any format in seconds." }
+                { icon: Shirt, title: "Apparel Templates", desc: "Start with thousands of t-shirt, hoodie, and cap templates." },
+                { icon: Layers, title: "Smart Mockups", desc: "Visualize your designs on real models instantly." },
+                { icon: Zap, title: "Print Ready", desc: "Export high-quality files ready for DTG or screen printing." }
               ].map((feature, i) => (
                 <motion.div 
                   key={i}

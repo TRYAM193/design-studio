@@ -7,6 +7,7 @@ import {
   LogOut,
   Plus,
   Settings,
+  ShoppingBag,
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -29,72 +30,70 @@ export function DashboardSidebar() {
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: LayoutTemplate, label: "Templates", path: "/dashboard/templates" },
     { icon: FolderOpen, label: "Projects", path: "/dashboard/projects" },
+    { icon: ShoppingBag, label: "Products", path: "/dashboard/products" },
     { icon: CreditCard, label: "Pro Pricing", path: "/dashboard/pricing" },
   ];
 
   return (
-    <div className="h-screen w-64 border-r bg-sidebar flex flex-col fixed left-0 top-0 z-20">
+    <div className="h-screen w-20 border-r bg-sidebar flex flex-col fixed left-0 top-0 z-20 items-center py-6">
       {/* Logo Area */}
-      <div className="p-6 flex items-center gap-3">
-        <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-          <div className="h-3 w-3 bg-background rounded-full" />
+      <div className="mb-8">
+        <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center bg-black">
+          <img 
+            src="https://harmless-tapir-303.convex.cloud/api/storage/5dd71113-c4f4-4f61-9bdb-a4ddbec1574c" 
+            alt="TRYAM Logo" 
+            className="h-full w-full object-cover"
+          />
         </div>
-        <span className="font-bold text-xl tracking-tight">DesignApp</span>
       </div>
 
       {/* New Design Button */}
-      <div className="px-4 mb-6">
-        <Button className="w-full justify-start gap-2 h-12 text-base shadow-none" size="lg">
+      <div className="mb-6">
+        <Button className="h-10 w-10 rounded-full p-0 shadow-none" size="icon" title="New Design">
           <Plus className="h-5 w-5" />
-          New Design
         </Button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 space-y-1">
+      <nav className="flex-1 space-y-4 w-full flex flex-col items-center">
         {navItems.map((item) => (
           <Link key={item.path} to={item.path}>
             <Button
               variant={isActive(item.path) ? "secondary" : "ghost"}
-              className={`w-full justify-start gap-3 h-11 font-medium ${
+              size="icon"
+              className={`h-10 w-10 rounded-xl ${
                 isActive(item.path) ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-muted-foreground"
               }`}
+              title={item.label}
             >
               <item.icon className="h-5 w-5" />
-              {item.label}
             </Button>
           </Link>
         ))}
       </nav>
 
       {/* Bottom Actions */}
-      <div className="p-4 space-y-4">
-        <div className="flex items-center justify-between px-2">
-          <Button variant="ghost" size="icon" className="text-muted-foreground">
-            <Bell className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="text-muted-foreground">
-            <Settings className="h-5 w-5" />
-          </Button>
-        </div>
+      <div className="space-y-4 flex flex-col items-center mt-auto">
+        <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Notifications">
+          <Bell className="h-5 w-5" />
+        </Button>
+        <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Settings">
+          <Settings className="h-5 w-5" />
+        </Button>
         
-        <Separator />
+        <Separator className="w-8" />
 
         {/* User Profile */}
         <HoverCard>
           <HoverCardTrigger asChild>
-            <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-sidebar-accent cursor-pointer transition-colors">
+            <div className="cursor-pointer">
               <Avatar className="h-10 w-10 border">
                 <AvatarImage src={user?.image} />
                 <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
-              <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-medium truncate">{user?.name || "User"}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email || "user@example.com"}</p>
-              </div>
             </div>
           </HoverCardTrigger>
-          <HoverCardContent className="w-80" side="right" align="end">
+          <HoverCardContent className="w-80 ml-4" side="right" align="end">
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
@@ -109,16 +108,12 @@ export function DashboardSidebar() {
               <Separator />
               <div className="space-y-2 text-sm">
                 <div className="grid grid-cols-3 gap-2">
-                  <span className="font-medium text-muted-foreground">DOB:</span>
-                  <span className="col-span-2">Jan 1, 1990</span>
+                  <span className="font-medium text-muted-foreground">Role:</span>
+                  <span className="col-span-2">Designer</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <span className="font-medium text-muted-foreground">Phone:</span>
-                  <span className="col-span-2">+1 (555) 000-0000</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="font-medium text-muted-foreground">Address:</span>
-                  <span className="col-span-2">123 Design St, Creative City, CA</span>
+                  <span className="font-medium text-muted-foreground">Plan:</span>
+                  <span className="col-span-2">Pro Plan</span>
                 </div>
               </div>
               <Separator />
