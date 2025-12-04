@@ -1,11 +1,36 @@
 import { motion } from "framer-motion";
-import { Package, Truck, CheckCircle, Clock, Search, Filter } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, Search, Filter, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/use-auth";
+import { Link } from "react-router";
 
 export default function DashboardOrders() {
+  const { isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 text-center">
+        <div className="h-20 w-20 bg-secondary/50 rounded-full flex items-center justify-center">
+          <Lock className="h-10 w-10 text-muted-foreground" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Sign in to view orders</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Track your shipments, view order history, and manage your purchases by signing in.
+          </p>
+        </div>
+        <Link to="/auth">
+          <Button size="lg" className="rounded-full px-8">
+            Sign In / Sign Up
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
   // Mock data
   const orders = [
     { 
