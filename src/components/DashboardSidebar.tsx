@@ -36,7 +36,7 @@ export function DashboardSidebar() {
     { icon: LayoutTemplate, label: "Templates", path: "/dashboard/templates" },
     { icon: FolderOpen, label: "Projects", path: "/dashboard/projects" },
     { icon: ShoppingBag, label: "Products", path: "/dashboard/products" },
-    ...(isAuthenticated ? [{ icon: Package, label: "Orders", path: "/dashboard/orders" }] : []),
+    { icon: Package, label: "Orders", path: "/dashboard/orders" },
     { icon: CreditCard, label: "Pro Pricing", path: "/dashboard/pricing" },
   ];
 
