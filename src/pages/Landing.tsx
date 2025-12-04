@@ -67,16 +67,13 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+              className="flex items-center justify-center pt-4"
             >
               <Link to="/dashboard">
                 <Button size="lg" className="h-12 px-8 text-lg rounded-full">
                   Start Designing <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Button variant="outline" size="lg" className="h-12 px-8 text-lg rounded-full">
-                View Gallery
-              </Button>
             </motion.div>
 
             {/* Hero Visual */}
