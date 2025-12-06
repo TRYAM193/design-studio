@@ -6,9 +6,19 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "react-router";
+import { useState, useMemo } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function DashboardOrders() {
   const { isAuthenticated } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
 
   if (!isAuthenticated) {
     return (
@@ -59,6 +69,16 @@ export default function DashboardOrders() {
     },
   ];
 
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      const matchesSearch = 
+        order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.items.some(item => item.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchesStatus = statusFilter === "All" || order.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [searchQuery, statusFilter]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Delivered": return "default"; // Black/Primary
@@ -91,61 +111,82 @@ export default function DashboardOrders() {
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search orders..." className="pl-10" />
+            <Input 
+              placeholder="Search orders..." 
+              className="pl-10" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <Button variant="outline" className="gap-2">
-            <Filter className="h-4 w-4" />
-            Filter
-          </Button>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px]">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4" />
+                <SelectValue placeholder="Status" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Statuses</SelectItem>
+              <SelectItem value="Processing">Processing</SelectItem>
+              <SelectItem value="Shipped">Shipped</SelectItem>
+              <SelectItem value="Delivered">Delivered</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       <div className="space-y-4">
-        {orders.map((order, i) => (
-          <motion.div
-            key={order.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-          >
-            <Card className="overflow-hidden hover:bg-secondary/10 transition-colors cursor-pointer group">
-              <CardContent className="p-0">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 sm:p-6">
-                  {/* Image */}
-                  <div className="h-20 w-20 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
-                    <img src={order.image} alt="Order Item" className="h-full w-full object-cover" />
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold truncate">Order #{order.id}</h3>
-                      <span className="sm:hidden font-semibold">{order.total}</span>
+        {filteredOrders.length > 0 ? (
+          filteredOrders.map((order, i) => (
+            <motion.div
+              key={order.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <Card className="overflow-hidden hover:bg-secondary/10 transition-colors cursor-pointer group">
+                <CardContent className="p-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 sm:p-6">
+                    {/* Image */}
+                    <div className="h-20 w-20 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
+                      <img src={order.image} alt="Order Item" className="h-full w-full object-cover" />
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {order.items.join(", ")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Placed on {order.date}
-                    </p>
-                  </div>
 
-                  {/* Status & Total (Desktop) */}
-                  <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-8 mt-2 sm:mt-0 w-full sm:w-auto">
-                    <Badge variant={getStatusColor(order.status) as any} className="flex items-center">
-                      {getStatusIcon(order.status)}
-                      {order.status}
-                    </Badge>
-                    <span className="hidden sm:block font-semibold min-w-[80px] text-right">{order.total}</span>
-                    <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                      View Details
-                    </Button>
+                    {/* Details */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold truncate">Order #{order.id}</h3>
+                        <span className="sm:hidden font-semibold">{order.total}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {order.items.join(", ")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Placed on {order.date}
+                      </p>
+                    </div>
+
+                    {/* Status & Total (Desktop) */}
+                    <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-8 mt-2 sm:mt-0 w-full sm:w-auto">
+                      <Badge variant={getStatusColor(order.status) as any} className="flex items-center">
+                        {getStatusIcon(order.status)}
+                        {order.status}
+                      </Badge>
+                      <span className="hidden sm:block font-semibold min-w-[80px] text-right">{order.total}</span>
+                      <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        View Details
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            No orders found matching your filters.
+          </div>
+        )}
       </div>
     </div>
   );
