@@ -17,9 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function DashboardSettings() {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const user = useQuery(api.users.currentUser);
   const updateUser = useMutation(api.users.update);
   
@@ -49,10 +51,10 @@ export default function DashboardSettings() {
     setIsSaving(true);
     try {
       await updateUser(formData);
-      toast.success("Profile updated successfully");
+      toast.success(t("settings.success"));
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update profile");
+      toast.error(t("settings.error"));
     } finally {
       setIsSaving(false);
     }
@@ -65,14 +67,14 @@ export default function DashboardSettings() {
           <Lock className="h-10 w-10 text-muted-foreground" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Sign in to manage settings</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{t("settings.signInTitle")}</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Update your profile details and manage your account settings by signing in.
+            {t("settings.signInDesc")}
           </p>
         </div>
         <Link to="/auth">
           <Button size="lg" className="rounded-full px-8">
-            Sign In / Sign Up
+            {t("nav.signin")} / {t("auth.getStarted")}
           </Button>
         </Link>
       </div>
@@ -87,16 +89,16 @@ export default function DashboardSettings() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <h1 className="text-3xl font-bold tracking-tight mb-6">Settings</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-6">{t("settings.title")}</h1>
         <Card>
           <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-            <CardDescription>Update your personal details and contact information.</CardDescription>
+            <CardTitle>{t("settings.profileTitle")}</CardTitle>
+            <CardDescription>{t("settings.profileDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">{t("settings.label.name")}</Label>
                 <Input 
                   id="name" 
                   value={formData.name} 
@@ -105,7 +107,7 @@ export default function DashboardSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="dob">Date of Birth</Label>
+                <Label htmlFor="dob">{t("settings.label.dob")}</Label>
                 <Input 
                   id="dob" 
                   type="date"
@@ -114,7 +116,7 @@ export default function DashboardSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">{t("settings.label.phone")}</Label>
                 <Input 
                   id="phone" 
                   type="tel"
@@ -124,7 +126,7 @@ export default function DashboardSettings() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
+                <Label htmlFor="address">{t("settings.label.address")}</Label>
                 <Input 
                   id="address" 
                   value={formData.address} 
@@ -134,7 +136,7 @@ export default function DashboardSettings() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="language">Preferred Language</Label>
+                <Label htmlFor="language">{t("settings.label.language")}</Label>
                 <Select 
                   value={formData.language} 
                   onValueChange={(value) => setFormData({...formData, language: value})}
@@ -152,14 +154,14 @@ export default function DashboardSettings() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  This will update the language for your dashboard interface.
+                  {t("settings.languageDesc")}
                 </p>
               </div>
 
               <div className="pt-4">
                 <Button type="submit" disabled={isSaving}>
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Save Changes
+                  {isSaving ? t("settings.saving") : t("settings.save")}
                 </Button>
               </div>
             </form>

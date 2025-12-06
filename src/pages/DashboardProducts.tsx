@@ -18,8 +18,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function DashboardProducts() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [priceRange, setPriceRange] = useState([0, 100]);
@@ -65,10 +67,10 @@ export default function DashboardProducts() {
             animate={{ opacity: 1, y: 0 }}
             className="text-3xl font-bold tracking-tight"
           >
-            Products
+            {t("products.title")}
           </motion.h1>
           <Button>
-            <Plus className="mr-2 h-4 w-4" /> Add Product
+            <Plus className="mr-2 h-4 w-4" /> {t("products.addProduct")}
           </Button>
         </div>
         
@@ -76,7 +78,7 @@ export default function DashboardProducts() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search products..." 
+              placeholder={t("products.search")}
               className="pl-10" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -87,7 +89,7 @@ export default function DashboardProducts() {
             <PopoverTrigger asChild>
               <Button variant={activeFiltersCount > 0 ? "secondary" : "outline"} className="gap-2">
                 <Filter className="h-4 w-4" />
-                Filters
+                {t("products.filters")}
                 {activeFiltersCount > 0 && (
                   <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px]">
                     {activeFiltersCount}
@@ -98,16 +100,16 @@ export default function DashboardProducts() {
             <PopoverContent className="w-80 p-4" align="end">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium leading-none">Filters</h4>
+                  <h4 className="font-medium leading-none">{t("products.filters")}</h4>
                   {activeFiltersCount > 0 && (
                     <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-muted-foreground" onClick={clearFilters}>
-                      Clear all
+                      {t("products.clearAll")}
                     </Button>
                   )}
                 </div>
                 
                 <div className="space-y-2">
-                  <Label>Category</Label>
+                  <Label>{t("products.category")}</Label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
@@ -124,7 +126,7 @@ export default function DashboardProducts() {
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label>Price Range</Label>
+                    <Label>{t("products.priceRange")}</Label>
                     <span className="text-xs text-muted-foreground">${priceRange[0]} - ${priceRange[1]}</span>
                   </div>
                   <Slider
@@ -194,7 +196,7 @@ export default function DashboardProducts() {
           ))
         ) : (
           <div className="col-span-full text-center py-12 text-muted-foreground">
-            No products found matching your filters.
+            {t("products.noResults")}
           </div>
         )}
       </div>

@@ -11,8 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function DashboardTemplates() {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedTier, setSelectedTier] = useState("All");
@@ -48,14 +50,14 @@ export default function DashboardTemplates() {
           animate={{ opacity: 1, y: 0 }}
           className="text-3xl font-bold tracking-tight"
         >
-          Templates
+          {t("templates.title")}
         </motion.h1>
         
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="relative flex-1 w-full md:max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search templates..." 
+              placeholder={t("templates.search")}
               className="pl-10 h-10" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -67,13 +69,13 @@ export default function DashboardTemplates() {
               <SelectTrigger className="w-[140px]">
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4" />
-                  <SelectValue placeholder="Tier" />
+                  <SelectValue placeholder={t("templates.filterTier")} />
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="All">All Tiers</SelectItem>
-                <SelectItem value="Free">Free</SelectItem>
-                <SelectItem value="Pro">Pro</SelectItem>
+                <SelectItem value="All">{t("templates.allTiers")}</SelectItem>
+                <SelectItem value="Free">{t("pricing.plan.free")}</SelectItem>
+                <SelectItem value="Pro">{t("pricing.plan.pro")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -120,7 +122,7 @@ export default function DashboardTemplates() {
 
                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                    <Button size="sm" className="w-full bg-white text-black hover:bg-white/90">
-                     Use Template
+                     {t("templates.useTemplate")}
                    </Button>
                  </div>
               </div>
@@ -135,7 +137,7 @@ export default function DashboardTemplates() {
           ))
         ) : (
           <div className="col-span-full text-center py-12 text-muted-foreground">
-            No templates found matching your filters.
+            {t("templates.noResults")}
           </div>
         )}
       </div>

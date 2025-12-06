@@ -14,9 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function DashboardOrders() {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
@@ -27,14 +29,14 @@ export default function DashboardOrders() {
           <Lock className="h-10 w-10 text-muted-foreground" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Sign in to view orders</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{t("orders.signInTitle")}</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Track your shipments, view order history, and manage your purchases by signing in.
+            {t("orders.signInDesc")}
           </p>
         </div>
         <Link to="/auth">
           <Button size="lg" className="rounded-full px-8">
-            Sign In / Sign Up
+            {t("nav.signin")} / {t("auth.getStarted")}
           </Button>
         </Link>
       </div>
@@ -105,14 +107,14 @@ export default function DashboardOrders() {
           animate={{ opacity: 1, y: 0 }}
           className="text-3xl font-bold tracking-tight"
         >
-          Orders
+          {t("orders.title")}
         </motion.h1>
 
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search orders..." 
+              placeholder={t("orders.search")}
               className="pl-10" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -122,14 +124,14 @@ export default function DashboardOrders() {
             <SelectTrigger className="w-[140px]">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4" />
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("orders.status")} />
               </div>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="All">All Statuses</SelectItem>
-              <SelectItem value="Processing">Processing</SelectItem>
-              <SelectItem value="Shipped">Shipped</SelectItem>
-              <SelectItem value="Delivered">Delivered</SelectItem>
+              <SelectItem value="All">{t("orders.allStatuses")}</SelectItem>
+              <SelectItem value="Processing">{t("orders.processing")}</SelectItem>
+              <SelectItem value="Shipped">{t("orders.shipped")}</SelectItem>
+              <SelectItem value="Delivered">{t("orders.delivered")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -174,7 +176,7 @@ export default function DashboardOrders() {
                       </Badge>
                       <span className="hidden sm:block font-semibold min-w-[80px] text-right">{order.total}</span>
                       <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                        View Details
+                        {t("orders.viewDetails")}
                       </Button>
                     </div>
                   </div>
@@ -184,7 +186,7 @@ export default function DashboardOrders() {
           ))
         ) : (
           <div className="text-center py-12 text-muted-foreground">
-            No orders found matching your filters.
+            {t("orders.noResults")}
           </div>
         )}
       </div>

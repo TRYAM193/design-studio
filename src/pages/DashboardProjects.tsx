@@ -3,9 +3,11 @@ import { Folder, Lock, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "react-router";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function DashboardProjects() {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
 
   if (!isAuthenticated) {
     return (
@@ -14,14 +16,14 @@ export default function DashboardProjects() {
           <Lock className="h-10 w-10 text-muted-foreground" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Sign in to view projects</h2>
+          <h2 className="text-3xl font-bold tracking-tight">{t("projects.signInTitle")}</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Create an account or log in to save your designs, manage projects, and access them from anywhere.
+            {t("projects.signInDesc")}
           </p>
         </div>
         <Link to="/auth">
           <Button size="lg" className="rounded-full px-8">
-            Sign In / Sign Up
+            {t("nav.signin")} / {t("auth.getStarted")}
           </Button>
         </Link>
       </div>
@@ -36,9 +38,9 @@ export default function DashboardProjects() {
           animate={{ opacity: 1, y: 0 }}
           className="text-3xl font-bold tracking-tight"
         >
-          Projects
+          {t("projects.title")}
         </motion.h1>
-        <Button>New Folder</Button>
+        <Button>{t("projects.newFolder")}</Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -56,7 +58,7 @@ export default function DashboardProjects() {
               </div>
               <div>
                 <h3 className="font-medium">{folder}</h3>
-                <p className="text-sm text-muted-foreground">Updated 2 days ago</p>
+                <p className="text-sm text-muted-foreground">{t("projects.updated")} 2 days ago</p>
               </div>
             </div>
             <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100">

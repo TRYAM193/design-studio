@@ -2,8 +2,11 @@ import { motion } from "framer-motion";
 import { ArrowRight, Layers, Sparkles, Wand2 } from "lucide-react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function Landing() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Header */}
@@ -22,23 +25,23 @@ export default function Landing() {
            {/* Desktop Navigation */}
            <nav className="hidden md:flex items-center gap-8">
              <Link to="/dashboard/templates" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-               Templates
+               {t("nav.templates")}
              </Link>
              <Link to="/dashboard/products" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-               Products
+               {t("nav.products")}
              </Link>
              <Link to="/dashboard/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-               Pricing
+               {t("nav.pricing")}
              </Link>
            </nav>
 
            {/* Nav/Actions */}
            <div className="flex items-center gap-4">
              <Link to="/auth">
-               <Button variant="ghost">Sign In</Button>
+               <Button variant="ghost">{t("nav.signin")}</Button>
              </Link>
              <Link to="/dashboard">
-               <Button>Get Started</Button>
+               <Button>{t("auth.getStarted")}</Button>
              </Link>
            </div>
         </div>
@@ -54,7 +57,7 @@ export default function Landing() {
               className="inline-flex items-center gap-2 px-3 py-1 rounded-full border bg-secondary/50 text-sm font-medium text-muted-foreground"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              AI-Powered Design Studio
+              {t("landing.hero.badge")}
             </motion.div>
             
             <motion.h1
@@ -73,8 +76,7 @@ export default function Landing() {
               transition={{ delay: 0.2 }}
               className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Create custom t-shirts with professional tools and generative AI. 
-              From concept to cotton in minutes.
+              {t("landing.hero.desc")}
             </motion.p>
 
             <motion.div
@@ -85,7 +87,7 @@ export default function Landing() {
             >
               <Link to="/dashboard">
                 <Button size="lg" className="h-12 px-8 text-lg rounded-full">
-                  Start Designing <ArrowRight className="ml-2 h-4 w-4" />
+                  {t("landing.hero.cta")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
             </motion.div>
@@ -111,9 +113,9 @@ export default function Landing() {
         <section className="py-24 bg-secondary/30">
           <div className="container mx-auto px-4 max-w-6xl">
             <div className="text-center mb-16 space-y-4">
-              <h2 className="text-3xl md:text-4xl font-bold">Professional Tools for Everyone</h2>
+              <h2 className="text-3xl md:text-4xl font-bold">{t("landing.features.title")}</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Whether you're a professional designer or just getting started, TRYAM gives you the power to create stunning apparel.
+                {t("landing.features.desc")}
               </p>
             </div>
 
@@ -128,9 +130,9 @@ export default function Landing() {
                 <div className="h-12 w-12 bg-primary/5 rounded-xl flex items-center justify-center mb-6 text-primary">
                   <Wand2 className="h-6 w-6" />
                 </div>
-                <h3 className="text-2xl font-bold mb-3">AI Generation</h3>
+                <h3 className="text-2xl font-bold mb-3">{t("landing.feature.ai.title")}</h3>
                 <p className="text-muted-foreground text-lg">
-                  Describe your idea and watch as our AI generates unique, high-quality designs instantly.
+                  {t("landing.feature.ai.desc")}
                 </p>
               </motion.div>
 
@@ -145,9 +147,9 @@ export default function Landing() {
                 <div className="h-12 w-12 bg-primary/5 rounded-xl flex items-center justify-center mb-6 text-primary">
                   <Layers className="h-6 w-6" />
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Pro Editor</h3>
+                <h3 className="text-2xl font-bold mb-3">{t("landing.feature.editor.title")}</h3>
                 <p className="text-muted-foreground text-lg">
-                  Fine-tune every detail with our advanced layer-based editor and professional typography tools.
+                  {t("landing.feature.editor.desc")}
                 </p>
               </motion.div>
             </div>
@@ -159,13 +161,13 @@ export default function Landing() {
           <div className="container mx-auto max-w-5xl">
             <div className="bg-primary text-primary-foreground rounded-3xl p-12 md:p-24 text-center relative overflow-hidden">
               <div className="relative z-10 space-y-8">
-                <h2 className="text-3xl md:text-5xl font-bold tracking-tight">Ready to start creating?</h2>
+                <h2 className="text-3xl md:text-5xl font-bold tracking-tight">{t("landing.cta.title")}</h2>
                 <p className="text-primary-foreground/80 text-lg max-w-xl mx-auto">
-                  Join thousands of creators designing their own fashion with TRYAM. No minimum orders, worldwide shipping.
+                  {t("landing.cta.desc")}
                 </p>
                 <Link to="/dashboard">
                   <Button size="lg" variant="secondary" className="h-14 px-8 text-lg rounded-full font-semibold">
-                    Create Your First Design
+                    {t("landing.cta.button")}
                   </Button>
                 </Link>
               </div>
@@ -192,15 +194,15 @@ export default function Landing() {
               </p>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Platform</h4>
+              <h4 className="font-bold mb-4">{t("footer.platform")}</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#" className="hover:text-foreground">Design Studio</a></li>
                 <li><a href="#" className="hover:text-foreground">AI Generator</a></li>
-                <li><a href="#" className="hover:text-foreground">Pricing</a></li>
+                <li><a href="#" className="hover:text-foreground">{t("nav.pricing")}</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Company</h4>
+              <h4 className="font-bold mb-4">{t("footer.company")}</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#" className="hover:text-foreground">About Us</a></li>
                 <li><a href="#" className="hover:text-foreground">Blog</a></li>
@@ -209,7 +211,7 @@ export default function Landing() {
             </div>
           </div>
           <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-            <p>© 2025 TRYAM. All rights reserved.</p>
+            <p>© 2025 TRYAM. {t("footer.rights")}</p>
             <div className="flex gap-6">
               <a href="#" className="hover:text-foreground">Privacy Policy</a>
               <a href="#" className="hover:text-foreground">Terms of Service</a>
