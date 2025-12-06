@@ -24,9 +24,14 @@ export default function DashboardHome() {
         
         {/* Quick Actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {["T-Shirt", "Hoodie", "Long Sleeve", "Tote Bag"].map((item, i) => (
+          {[
+            { label: t("dashboard.quick.tshirt"), icon: Plus },
+            { label: t("dashboard.quick.hoodie"), icon: Plus },
+            { label: t("dashboard.quick.longsleeve"), icon: Plus },
+            { label: t("dashboard.quick.totebag"), icon: Plus }
+          ].map((item, i) => (
             <motion.div
-              key={item}
+              key={item.label}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
@@ -36,9 +41,9 @@ export default function DashboardHome() {
                 className="w-full h-24 flex flex-col gap-2 text-lg font-normal hover:border-primary hover:bg-secondary/50 transition-all"
               >
                 <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-                  <Plus className="h-4 w-4" />
+                  <item.icon className="h-4 w-4" />
                 </div>
-                {item}
+                {item.label}
               </Button>
             </motion.div>
           ))}

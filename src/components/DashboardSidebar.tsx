@@ -34,7 +34,7 @@ export function DashboardSidebar() {
   const isActive = (path: string) => location.pathname === path;
 
   // Derive display name and initials
-  const displayName = user?.name || user?.email?.split('@')[0] || "Guest";
+  const displayName = user?.name || user?.email?.split('@')[0] || t("common.guest");
   const initials = displayName.charAt(0).toUpperCase();
 
   const navItems = [
@@ -62,7 +62,7 @@ export function DashboardSidebar() {
       <div className="p-2">
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
           <span>{t("sidebar.currentPlan")}</span>
-          <Badge variant="secondary" className="text-[10px] h-5">PRO</Badge>
+          <Badge variant="secondary" className="text-[10px] h-5">{t("pricing.plan.pro").toUpperCase()}</Badge>
         </div>
         <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
           <div className="bg-primary h-full w-[75%]" />

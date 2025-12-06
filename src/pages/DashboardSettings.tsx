@@ -103,7 +103,7 @@ export default function DashboardSettings() {
                     value={formData.name} 
                     onChange={handleChange} 
                     className="pl-10" 
-                    placeholder="John Doe"
+                    placeholder={t("settings.placeholder.name")}
                   />
                 </div>
               </div>
@@ -127,7 +127,7 @@ export default function DashboardSettings() {
                     type="tel"
                     value={formData.phoneNumber} 
                     onChange={handleChange} 
-                    placeholder="+1 (555) 000-0000"
+                    placeholder={t("settings.placeholder.phone")}
                   />
                 </div>
               </div>
@@ -139,7 +139,7 @@ export default function DashboardSettings() {
                   name="address" 
                   value={formData.address} 
                   onChange={handleChange} 
-                  placeholder="123 Design St, Creative City"
+                  placeholder={t("settings.placeholder.address")}
                 />
               </div>
 

@@ -151,5 +151,28 @@ export const translations: Record<Language, Record<string, string>> = {
     "auth.resend": "Didn't receive a code?",
     "auth.tryAgain": "Try again",
     "auth.differentEmail": "Use different email",
+    
+    // Common & Categories
+    "common.guest": "Guest",
+    "category.all": "All",
+    "category.tshirts": "T-Shirts",
+    "category.hoodies": "Hoodies",
+    "category.sportswear": "Sportswear",
+    "category.kids": "Kids",
+    "category.accessories": "Accessories",
+    "category.polos": "Polos",
+    "category.longsleeve": "Long Sleeve",
+    "category.oversized": "Oversized",
+
+    // Dashboard Quick Actions
+    "dashboard.quick.tshirt": "T-Shirt",
+    "dashboard.quick.hoodie": "Hoodie",
+    "dashboard.quick.longsleeve": "Long Sleeve",
+    "dashboard.quick.totebag": "Tote Bag",
+
+    // Settings Placeholders
+    "settings.placeholder.name": "John Doe",
+    "settings.placeholder.phone": "+1 (555) 000-0000",
+    "settings.placeholder.address": "123 Design St, Creative City",
   },
 };
