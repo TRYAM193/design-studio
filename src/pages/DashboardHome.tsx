@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "react-router";
+import { useTranslation } from "@/hooks/use-translation";
 
 export default function DashboardHome() {
   const { isAuthenticated } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-12">
@@ -17,7 +19,7 @@ export default function DashboardHome() {
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl font-bold tracking-tight"
         >
-          What will you print today?
+          {t("dashboard.welcome")}
         </motion.h1>
         
         {/* Quick Actions */}
@@ -47,8 +49,8 @@ export default function DashboardHome() {
       {isAuthenticated ? (
         <section className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold tracking-tight">Recent designs</h2>
-            <Button variant="link" className="text-muted-foreground">View all <ArrowRight className="ml-2 h-4 w-4" /></Button>
+            <h2 className="text-2xl font-semibold tracking-tight">{t("dashboard.recent")}</h2>
+            <Button variant="link" className="text-muted-foreground">{t("dashboard.viewAll")} <ArrowRight className="ml-2 h-4 w-4" /></Button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -76,12 +78,12 @@ export default function DashboardHome() {
         </section>
       ) : (
         <section className="bg-secondary/30 rounded-2xl p-8 text-center space-y-4">
-          <h2 className="text-2xl font-semibold">Start Designing for Free</h2>
+          <h2 className="text-2xl font-semibold">{t("dashboard.startFree")}</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Explore our templates and products. Sign in to save your work and access premium features.
+            {t("dashboard.startDesc")}
           </p>
           <Link to="/auth">
-            <Button>Sign In to Save Designs</Button>
+            <Button>{t("dashboard.signInSave")}</Button>
           </Link>
         </section>
       )}

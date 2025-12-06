@@ -24,10 +24,12 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/hooks/use-translation";
 
 export function DashboardSidebar() {
   const location = useLocation();
   const { user, signOut, isAuthenticated } = useAuth();
+  const { t } = useTranslation();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -36,12 +38,12 @@ export function DashboardSidebar() {
   const initials = displayName.charAt(0).toUpperCase();
 
   const navItems = [
-    { icon: Home, label: "Home", path: "/dashboard" },
-    { icon: LayoutTemplate, label: "Templates", path: "/dashboard/templates" },
-    { icon: FolderOpen, label: "Projects", path: "/dashboard/projects" },
-    { icon: ShoppingBag, label: "Products", path: "/dashboard/products" },
-    { icon: Package, label: "Orders", path: "/dashboard/orders" },
-    { icon: CreditCard, label: "Pro Pricing", path: "/dashboard/pricing" },
+    { icon: Home, label: t("nav.home"), path: "/dashboard" },
+    { icon: LayoutTemplate, label: t("nav.templates"), path: "/dashboard/templates" },
+    { icon: FolderOpen, label: t("nav.projects"), path: "/dashboard/projects" },
+    { icon: ShoppingBag, label: t("nav.products"), path: "/dashboard/products" },
+    { icon: Package, label: t("nav.orders"), path: "/dashboard/orders" },
+    { icon: CreditCard, label: t("nav.pricing"), path: "/dashboard/pricing" },
   ];
 
   const UserProfileContent = () => (
@@ -71,12 +73,12 @@ export function DashboardSidebar() {
       <DropdownMenuItem asChild className="cursor-pointer">
         <Link to="/dashboard/settings">
           <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+          <span>{t("nav.settings")}</span>
         </Link>
       </DropdownMenuItem>
       <DropdownMenuItem className="cursor-pointer">
         <CreditCard className="mr-2 h-4 w-4" />
-        <span>Billing</span>
+        <span>{t("nav.billing")}</span>
       </DropdownMenuItem>
       <DropdownMenuSeparator />
       <DropdownMenuItem 
@@ -84,7 +86,7 @@ export function DashboardSidebar() {
         onClick={() => signOut()}
       >
         <LogOut className="mr-2 h-4 w-4" />
-        <span>Log out</span>
+        <span>{t("nav.logout")}</span>
       </DropdownMenuItem>
     </>
   );
@@ -112,7 +114,7 @@ export function DashboardSidebar() {
 
       {/* New Design Button - Desktop Only */}
       <div className="hidden sm:flex mb-6">
-        <Button className="h-10 w-10 rounded-full p-0 shadow-none" size="icon" title="New Design">
+        <Button className="h-10 w-10 rounded-full p-0 shadow-none" size="icon" title={t("common.newDesign")}>
           <Plus className="h-5 w-5" />
         </Button>
       </div>
@@ -164,11 +166,11 @@ export function DashboardSidebar() {
       <div className="hidden sm:flex space-y-4 flex-col items-center mt-auto">
         {isAuthenticated && (
           <>
-            <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Notifications">
+            <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title={t("common.notifications")}>
               <Bell className="h-5 w-5" />
             </Button>
             <Link to="/dashboard/settings">
-              <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Settings">
+              <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title={t("nav.settings")}>
                 <Settings className="h-5 w-5" />
               </Button>
             </Link>
@@ -193,7 +195,7 @@ export function DashboardSidebar() {
           </DropdownMenu>
         ) : (
           <Link to="/auth">
-            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground" title="Sign In">
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground" title={t("nav.signin")}>
               <LogIn className="h-5 w-5" />
             </Button>
           </Link>
