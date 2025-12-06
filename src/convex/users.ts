@@ -26,6 +26,7 @@ export const update = mutation({
     dob: v.optional(v.string()),
     address: v.optional(v.string()),
     phoneNumber: v.optional(v.string()),
+    language: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);

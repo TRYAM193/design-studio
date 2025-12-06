@@ -35,6 +35,7 @@ const schema = defineSchema(
       dob: v.optional(v.string()),
       address: v.optional(v.string()),
       phoneNumber: v.optional(v.string()),
+      language: v.optional(v.string()),
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
     // add other tables here

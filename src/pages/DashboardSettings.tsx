@@ -10,6 +10,13 @@ import { Loader2, Lock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "react-router";
 import { motion } from "framer-motion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function DashboardSettings() {
   const { isAuthenticated } = useAuth();
@@ -21,6 +28,7 @@ export default function DashboardSettings() {
     dob: "",
     address: "",
     phoneNumber: "",
+    language: "en",
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -31,6 +39,7 @@ export default function DashboardSettings() {
         dob: user.dob || "",
         address: user.address || "",
         phoneNumber: user.phoneNumber || "",
+        language: user.language || "en",
       });
     }
   }, [user]);
@@ -123,6 +132,30 @@ export default function DashboardSettings() {
                   placeholder="123 Design St, Creative City"
                 />
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="language">Preferred Language</Label>
+                <Select 
+                  value={formData.language} 
+                  onValueChange={(value) => setFormData({...formData, language: value})}
+                >
+                  <SelectTrigger id="language">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Spanish</SelectItem>
+                    <SelectItem value="fr">French</SelectItem>
+                    <SelectItem value="de">German</SelectItem>
+                    <SelectItem value="zh">Chinese</SelectItem>
+                    <SelectItem value="ja">Japanese</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  This will update the language for your dashboard interface.
+                </p>
+              </div>
+
               <div className="pt-4">
                 <Button type="submit" disabled={isSaving}>
                   {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
