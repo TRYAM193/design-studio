@@ -20,23 +20,6 @@ export const currentUser = query({
   },
 });
 
-export const update = mutation({
-  args: {
-    name: v.optional(v.string()),
-    dob: v.optional(v.string()),
-    address: v.optional(v.string()),
-    phoneNumber: v.optional(v.string()),
-    language: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    if (!user) {
-      throw new Error("User not found");
-    }
-    await ctx.db.patch(user._id, args);
-  },
-});
-
 /**
  * Use this function internally to get the current user data. Remember to handle the null user case.
  * @param ctx

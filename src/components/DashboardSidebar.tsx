@@ -70,13 +70,23 @@ export function DashboardSidebar() {
         <p className="text-[10px] text-muted-foreground mt-1 text-right">75% {t("sidebar.storageUsed")}</p>
       </div>
       <DropdownMenuSeparator />
-      <DropdownMenuItem asChild className="cursor-pointer">
-        <Link to="/dashboard/settings">
-          <Settings className="mr-2 h-4 w-4" />
-          <span>{t("nav.settings")}</span>
-        </Link>
-      </DropdownMenuItem>
       <DropdownMenuItem className="cursor-pointer">
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title={t("common.notifications")}>
+              <Bell className="h-5 w-5" />
+            </Button>
+            <Link to="/dashboard/settings">
+              <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title={t("nav.settings")}>
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Separator className="w-8" />
+=======
+            <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title={t("common.notifications")}>
+              <Bell className="h-5 w-5" />
+            </Button>
+            <Separator className="w-8" />
         <CreditCard className="mr-2 h-4 w-4" />
         <span>{t("nav.billing")}</span>
       </DropdownMenuItem>
