@@ -31,6 +31,10 @@ export function DashboardSidebar() {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Derive display name and initials
+  const displayName = user?.name || user?.email?.split('@')[0] || "Guest";
+  const initials = displayName.charAt(0).toUpperCase();
+
   const navItems = [
     { icon: Home, label: "Home", path: "/dashboard" },
     { icon: LayoutTemplate, label: "Templates", path: "/dashboard/templates" },
@@ -45,11 +49,11 @@ export function DashboardSidebar() {
       <div className="flex items-center gap-3 p-2">
         <Avatar className="h-10 w-10 border">
           <AvatarImage src={user?.image} />
-          <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+          <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col overflow-hidden">
-          <span className="text-sm font-semibold truncate">{user?.name || "User Name"}</span>
-          <span className="text-xs text-muted-foreground truncate">{user?.email || "user@example.com"}</span>
+          <span className="text-sm font-semibold truncate">{displayName}</span>
+          <span className="text-xs text-muted-foreground truncate">{user?.email || "Sign in to sync"}</span>
         </div>
       </div>
       <DropdownMenuSeparator />
@@ -138,7 +142,7 @@ export function DashboardSidebar() {
                 <div className="cursor-pointer outline-none">
                   <Avatar className="h-8 w-8 border hover:ring-2 hover:ring-primary/20 transition-all">
                     <AvatarImage src={user?.image} />
-                    <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+                    <AvatarFallback>{initials}</AvatarFallback>
                   </Avatar>
                 </div>
               </DropdownMenuTrigger>
@@ -179,7 +183,7 @@ export function DashboardSidebar() {
               <div className="cursor-pointer outline-none">
                 <Avatar className="h-10 w-10 border hover:ring-2 hover:ring-primary/20 transition-all">
                   <AvatarImage src={user?.image} />
-                  <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
+                  <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
               </div>
             </DropdownMenuTrigger>
