@@ -64,9 +64,11 @@ export function DashboardSidebar() {
         <p className="text-[10px] text-muted-foreground mt-1 text-right">75% storage used</p>
       </div>
       <DropdownMenuSeparator />
-      <DropdownMenuItem className="cursor-pointer">
-        <Settings className="mr-2 h-4 w-4" />
-        <span>Settings</span>
+      <DropdownMenuItem asChild className="cursor-pointer">
+        <Link to="/dashboard/settings">
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
+        </Link>
       </DropdownMenuItem>
       <DropdownMenuItem className="cursor-pointer">
         <CreditCard className="mr-2 h-4 w-4" />
@@ -161,9 +163,11 @@ export function DashboardSidebar() {
             <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Notifications">
               <Bell className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Settings">
-              <Settings className="h-5 w-5" />
-            </Button>
+            <Link to="/dashboard/settings">
+              <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title="Settings">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
             <Separator className="w-8" />
           </>
         )}
