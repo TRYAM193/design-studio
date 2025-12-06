@@ -32,3 +32,20 @@ export const getCurrentUser = async (ctx: QueryCtx) => {
   }
   return await ctx.db.get(userId);
 };
+
+export const updateProfile = mutation({
+  args: {
+    name: v.optional(v.string()),
+    dob: v.optional(v.string()),
+    address: v.optional(v.string()),
+    phoneNumber: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+    
+    await ctx.db.patch(userId, args);
+  },
+});

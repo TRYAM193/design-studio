@@ -18,22 +18,9 @@ import DashboardProjects from "./pages/DashboardProjects";
 import DashboardPricing from "./pages/DashboardPricing";
 import DashboardProducts from "./pages/DashboardProducts";
 import DashboardOrders from "./pages/DashboardOrders";
+import DashboardSettings from "./pages/DashboardSettings";
 
 const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
->>>>>>> REPLACE
-<<<<<<< SEARCH
-              <Route path="orders" element={<DashboardOrders />} />
-              <Route path="pricing" element={<DashboardPricing />} />
-              <Route path="settings" element={<DashboardSettings />} />
-            </Route>
-
-            <Route path="*" element={<NotFound />} />
-=======
-              <Route path="orders" element={<DashboardOrders />} />
-              <Route path="pricing" element={<DashboardPricing />} />
-            </Route>
-
-            <Route path="*" element={<NotFound />} />
 
 function RouteSyncer() {
   const location = useLocation();
