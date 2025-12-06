@@ -18,6 +18,20 @@ export default function Landing() {
               />
               <span className="font-bold text-xl tracking-tight">TRYAM</span>
            </div>
+
+           {/* Desktop Navigation */}
+           <nav className="hidden md:flex items-center gap-8">
+             <Link to="/dashboard/templates" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+               Templates
+             </Link>
+             <Link to="/dashboard/products" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+               Products
+             </Link>
+             <Link to="/dashboard/pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+               Pricing
+             </Link>
+           </nav>
+
            {/* Nav/Actions */}
            <div className="flex items-center gap-4">
              <Link to="/auth">
