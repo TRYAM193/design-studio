@@ -99,6 +99,15 @@ export default function DashboardOrders() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "Delivered": return t("orders.delivered");
+      case "Shipped": return t("orders.shipped");
+      case "Processing": return t("orders.processing");
+      default: return status;
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-6">
@@ -172,7 +181,7 @@ export default function DashboardOrders() {
                     <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-8 mt-2 sm:mt-0 w-full sm:w-auto">
                       <Badge variant={getStatusColor(order.status) as any} className="flex items-center">
                         {getStatusIcon(order.status)}
-                        {order.status}
+                        {getStatusLabel(order.status)}
                       </Badge>
                       <span className="hidden sm:block font-semibold min-w-[80px] text-right">{order.total}</span>
                       <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">

@@ -21,6 +21,13 @@ export default function DashboardTemplates() {
 
   const categories = ["All", "T-Shirts", "Hoodies", "Sportswear", "Kids", "Accessories"];
 
+  const getCategoryLabel = (cat: string) => {
+    const key = `category.${cat.toLowerCase().replace(/[-\s]/g, "")}`;
+    if (cat === "T-Shirts") return t("category.tshirts");
+    if (cat === "All") return t("category.all");
+    return t(key) !== key ? t(key) : cat;
+  };
+
   // Mock Data
   const templates = [
     { id: 1, name: "Urban Streetwear", category: "T-Shirts", tier: "Free", image: "https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=500&auto=format&fit=crop&q=60" },
@@ -89,7 +96,7 @@ export default function DashboardTemplates() {
               className="px-4 py-2 text-sm cursor-pointer hover:opacity-80 whitespace-nowrap"
               onClick={() => setSelectedCategory(cat)}
             >
-              {cat}
+              {getCategoryLabel(cat)}
             </Badge>
           ))}
         </div>
@@ -128,7 +135,7 @@ export default function DashboardTemplates() {
               </div>
               <h3 className="font-medium truncate">{template.name}</h3>
               <div className="flex items-center justify-between mt-1">
-                <p className="text-sm text-muted-foreground">{template.category}</p>
+                <p className="text-sm text-muted-foreground">{getCategoryLabel(template.category)}</p>
                 <Badge variant="outline" className="text-[10px] h-5 px-1.5">
                   {template.tier}
                 </Badge>

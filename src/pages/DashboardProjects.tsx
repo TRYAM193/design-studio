@@ -58,7 +58,7 @@ export default function DashboardProjects() {
               </div>
               <div>
                 <h3 className="font-medium">{folder}</h3>
-                <p className="text-sm text-muted-foreground">{t("projects.updated")} 2 days ago</p>
+                <p className="text-sm text-muted-foreground">{t("projects.updated")} 2 {t("common.days")} {t("dashboard.ago")}</p>
               </div>
             </div>
             <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100">

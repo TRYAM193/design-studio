@@ -40,6 +40,24 @@ export default function DashboardProducts() {
 
   const categories = ["All", "T-Shirts", "Hoodies", "Oversized", "Polos", "Long Sleeve"];
 
+  const getCategoryLabel = (cat: string) => {
+    const key = `category.${cat.toLowerCase().replace(/[-\s]/g, "")}`;
+    // Special case mapping if needed, or ensure keys match
+    if (cat === "T-Shirts") return t("category.tshirts");
+    if (cat === "Long Sleeve") return t("category.longsleeve");
+    if (cat === "All") return t("category.all");
+    return t(key) !== key ? t(key) : cat;
+  };
+
+  const getStockLabel = (stock: string) => {
+    switch (stock) {
+      case "In Stock": return t("products.inStock");
+      case "Low Stock": return t("products.lowStock");
+      case "Out of Stock": return t("products.outOfStock");
+      default: return stock;
+    }
+  };
+
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -117,7 +135,7 @@ export default function DashboardProducts() {
                     <SelectContent>
                       {categories.map((category) => (
                         <SelectItem key={category} value={category}>
-                          {category}
+                          {getCategoryLabel(category)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -148,7 +166,7 @@ export default function DashboardProducts() {
           <div className="flex gap-2">
             {selectedCategory !== "All" && (
               <Badge variant="secondary" className="gap-1 pl-2 pr-1 py-1">
-                {selectedCategory}
+                {getCategoryLabel(selectedCategory)}
                 <Button variant="ghost" size="icon" className="h-4 w-4 hover:bg-transparent" onClick={() => setSelectedCategory("All")}>
                   <X className="h-3 w-3" />
                 </Button>
@@ -183,13 +201,13 @@ export default function DashboardProducts() {
               <div className="flex justify-between items-start">
                 <div>
                   <h3 className="font-medium">{product.name}</h3>
-                  <p className="text-sm text-muted-foreground">{product.category} • {product.color}</p>
+                  <p className="text-sm text-muted-foreground">{getCategoryLabel(product.category)} • {product.color}</p>
                 </div>
                 <span className="font-semibold">{product.price}</span>
               </div>
               <div className="mt-2">
                 <Badge variant={product.stock === "Out of Stock" ? "destructive" : "secondary"}>
-                  {product.stock}
+                  {getStockLabel(product.stock)}
                 </Badge>
               </div>
             </motion.div>

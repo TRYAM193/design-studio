@@ -21,6 +21,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.selectLanguage": "Select language",
     "common.selectStatus": "Select status",
     "common.selectTier": "Select tier",
+    "common.days": "days",
     
     // NotFound
     "notFound.title": "404",
@@ -171,6 +172,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.selectLanguage": "Seleccionar idioma",
     "common.selectStatus": "Seleccionar estado",
     "common.selectTier": "Seleccionar nivel",
+    "common.days": "días",
 
     // NotFound
     "notFound.title": "404",
