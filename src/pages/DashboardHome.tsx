@@ -66,10 +66,10 @@ export default function DashboardHome() {
                   </div>
                 </div>
                 <CardContent className="p-0">
-                  <h3 className="font-medium truncate">Untitled Tee {i}</h3>
+                  <h3 className="font-medium truncate">{t("dashboard.untitled")} {i}</h3>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                     <Clock className="h-3 w-3" />
-                    <span>Edited {i}h ago</span>
+                    <span>{t("dashboard.edited")} {i}h {t("dashboard.ago")}</span>
                   </div>
                 </CardContent>
               </Card>

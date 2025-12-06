@@ -12,12 +12,30 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.billing": "Billing",
     "nav.logout": "Log out",
     "nav.signin": "Sign In",
+    
+    // Sidebar & Common
+    "sidebar.currentPlan": "Current Plan",
+    "sidebar.storageUsed": "storage used",
+    "sidebar.signInSync": "Sign in to sync",
+    "common.selectCategory": "Select category",
+    "common.selectLanguage": "Select language",
+    "common.selectStatus": "Select status",
+    "common.selectTier": "Select tier",
+    
+    // NotFound
+    "notFound.title": "404",
+    "notFound.desc": "Page Not Found",
+    "notFound.home": "Go Home",
+
     "dashboard.welcome": "What will you print today?",
     "dashboard.recent": "Recent designs",
     "dashboard.viewAll": "View all",
     "dashboard.startFree": "Start Designing for Free",
     "dashboard.startDesc": "Explore our templates and products. Sign in to save your work and access premium features.",
     "dashboard.signInSave": "Sign In to Save Designs",
+    "dashboard.edited": "Edited",
+    "dashboard.ago": "ago",
+    "dashboard.untitled": "Untitled Tee",
     "common.newDesign": "New Design",
     "common.notifications": "Notifications",
     
@@ -51,6 +69,8 @@ export const translations: Record<Language, Record<string, string>> = {
     
     // Orders
     "orders.title": "Orders",
+    "orders.orderNumber": "Order #",
+    "orders.placedOn": "Placed on",
     "orders.search": "Search orders...",
     "orders.status": "Status",
     "orders.allStatuses": "All Statuses",
@@ -142,12 +162,30 @@ export const translations: Record<Language, Record<string, string>> = {
     "nav.billing": "Facturación",
     "nav.logout": "Cerrar sesión",
     "nav.signin": "Iniciar sesión",
+    
+    // Sidebar & Common
+    "sidebar.currentPlan": "Plan actual",
+    "sidebar.storageUsed": "almacenamiento usado",
+    "sidebar.signInSync": "Inicia sesión para sincronizar",
+    "common.selectCategory": "Seleccionar categoría",
+    "common.selectLanguage": "Seleccionar idioma",
+    "common.selectStatus": "Seleccionar estado",
+    "common.selectTier": "Seleccionar nivel",
+
+    // NotFound
+    "notFound.title": "404",
+    "notFound.desc": "Página no encontrada",
+    "notFound.home": "Ir al inicio",
+
     "dashboard.welcome": "¿Qué vas a imprimir hoy?",
     "dashboard.recent": "Diseños recientes",
     "dashboard.viewAll": "Ver todo",
     "dashboard.startFree": "Empieza a diseñar gratis",
     "dashboard.startDesc": "Explora nuestras plantillas y productos. Inicia sesión para guardar tu trabajo y acceder a funciones premium.",
     "dashboard.signInSave": "Inicia sesión para guardar",
+    "dashboard.edited": "Editado hace",
+    "dashboard.ago": "",
+    "dashboard.untitled": "Camiseta sin título",
     "common.newDesign": "Nuevo diseño",
     "common.notifications": "Notificaciones",
     
@@ -181,6 +219,8 @@ export const translations: Record<Language, Record<string, string>> = {
     
     // Orders
     "orders.title": "Pedidos",
+    "orders.orderNumber": "Pedido #",
+    "orders.placedOn": "Realizado el",
     "orders.search": "Buscar pedidos...",
     "orders.status": "Estado",
     "orders.allStatuses": "Todos los estados",

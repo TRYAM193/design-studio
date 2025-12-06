@@ -142,7 +142,7 @@ export default function DashboardSettings() {
                   onValueChange={(value) => setFormData({...formData, language: value})}
                 >
                   <SelectTrigger id="language">
-                    <SelectValue placeholder="Select language" />
+                    <SelectValue placeholder={t("common.selectLanguage")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="en">English</SelectItem>

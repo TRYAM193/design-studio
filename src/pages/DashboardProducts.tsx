@@ -112,7 +112,7 @@ export default function DashboardProducts() {
                   <Label>{t("products.category")}</Label>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder={t("common.selectCategory")} />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (

@@ -55,19 +55,19 @@ export function DashboardSidebar() {
         </Avatar>
         <div className="flex flex-col overflow-hidden">
           <span className="text-sm font-semibold truncate">{displayName}</span>
-          <span className="text-xs text-muted-foreground truncate">{user?.email || "Sign in to sync"}</span>
+          <span className="text-xs text-muted-foreground truncate">{user?.email || t("sidebar.signInSync")}</span>
         </div>
       </div>
       <DropdownMenuSeparator />
       <div className="p-2">
         <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-          <span>Current Plan</span>
+          <span>{t("sidebar.currentPlan")}</span>
           <Badge variant="secondary" className="text-[10px] h-5">PRO</Badge>
         </div>
         <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
           <div className="bg-primary h-full w-[75%]" />
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1 text-right">75% storage used</p>
+        <p className="text-[10px] text-muted-foreground mt-1 text-right">75% {t("sidebar.storageUsed")}</p>
       </div>
       <DropdownMenuSeparator />
       <DropdownMenuItem asChild className="cursor-pointer">

@@ -157,14 +157,14 @@ export default function DashboardOrders() {
                     {/* Details */}
                     <div className="flex-1 min-w-0 space-y-1">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-semibold truncate">Order #{order.id}</h3>
+                        <h3 className="font-semibold truncate">{t("orders.orderNumber")}{order.id.replace("ORD-", "")}</h3>
                         <span className="sm:hidden font-semibold">{order.total}</span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
                         {order.items.join(", ")}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Placed on {order.date}
+                        {t("orders.placedOn")} {order.date}
                       </p>
                     </div>
 
