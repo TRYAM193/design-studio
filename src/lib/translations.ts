@@ -93,6 +93,8 @@ export const translations: Record<Language, Record<string, string>> = {
     // Landing
     "landing.hero.badge": "AI-Powered Design Studio",
     "landing.hero.title": "Wear Your Imagination.",
+    "landing.hero.titleStart": "Wear Your",
+    "landing.hero.titleEnd": "Imagination.",
     "landing.hero.desc": "Create custom t-shirts with professional tools and generative AI. From concept to cotton in minutes.",
     "landing.hero.cta": "Start Designing",
     "landing.features.title": "Professional Tools for Everyone",
@@ -107,6 +109,14 @@ export const translations: Record<Language, Record<string, string>> = {
     "footer.platform": "Platform",
     "footer.company": "Company",
     "footer.rights": "All rights reserved.",
+    "footer.description": "The modern platform for custom apparel. Powered by AI, designed by you.",
+    "footer.designStudio": "Design Studio",
+    "footer.aiGenerator": "AI Generator",
+    "footer.about": "About Us",
+    "footer.blog": "Blog",
+    "footer.contact": "Contact",
+    "footer.privacy": "Privacy Policy",
+    "footer.terms": "Terms of Service",
     
     // Auth
     "auth.getStarted": "Get Started",
@@ -213,6 +223,8 @@ export const translations: Record<Language, Record<string, string>> = {
     // Landing
     "landing.hero.badge": "Estudio de diseño con IA",
     "landing.hero.title": "Viste tu imaginación.",
+    "landing.hero.titleStart": "Viste tu",
+    "landing.hero.titleEnd": "Imaginación.",
     "landing.hero.desc": "Crea camisetas personalizadas con herramientas profesionales e IA generativa. Del concepto al algodón en minutos.",
     "landing.hero.cta": "Empezar a diseñar",
     "landing.features.title": "Herramientas profesionales para todos",
@@ -227,6 +239,14 @@ export const translations: Record<Language, Record<string, string>> = {
     "footer.platform": "Plataforma",
     "footer.company": "Empresa",
     "footer.rights": "Todos los derechos reservados.",
+    "footer.description": "La plataforma moderna para ropa personalizada. Impulsada por IA, diseñada por ti.",
+    "footer.designStudio": "Estudio de diseño",
+    "footer.aiGenerator": "Generador IA",
+    "footer.about": "Sobre nosotros",
+    "footer.blog": "Blog",
+    "footer.contact": "Contacto",
+    "footer.privacy": "Política de privacidad",
+    "footer.terms": "Términos de servicio",
     
     // Auth
     "auth.getStarted": "Empezar",

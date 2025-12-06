@@ -66,8 +66,8 @@ export default function Landing() {
               transition={{ delay: 0.1 }}
               className="text-5xl md:text-7xl font-bold tracking-tight leading-tight"
             >
-              Wear Your <br />
-              <span className="text-primary/80">Imagination.</span>
+              {t("landing.hero.titleStart")} <br />
+              <span className="text-primary/80">{t("landing.hero.titleEnd")}</span>
             </motion.h1>
 
             <motion.p
@@ -190,31 +190,31 @@ export default function Landing() {
                 <span className="font-bold text-lg">TRYAM</span>
               </div>
               <p className="text-muted-foreground max-w-xs">
-                The modern platform for custom apparel. Powered by AI, designed by you.
+                {t("footer.description")}
               </p>
             </div>
             <div>
               <h4 className="font-bold mb-4">{t("footer.platform")}</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">Design Studio</a></li>
-                <li><a href="#" className="hover:text-foreground">AI Generator</a></li>
+                <li><a href="#" className="hover:text-foreground">{t("footer.designStudio")}</a></li>
+                <li><a href="#" className="hover:text-foreground">{t("footer.aiGenerator")}</a></li>
                 <li><a href="#" className="hover:text-foreground">{t("nav.pricing")}</a></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">{t("footer.company")}</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-foreground">About Us</a></li>
-                <li><a href="#" className="hover:text-foreground">Blog</a></li>
-                <li><a href="#" className="hover:text-foreground">Contact</a></li>
+                <li><a href="#" className="hover:text-foreground">{t("footer.about")}</a></li>
+                <li><a href="#" className="hover:text-foreground">{t("footer.blog")}</a></li>
+                <li><a href="#" className="hover:text-foreground">{t("footer.contact")}</a></li>
               </ul>
             </div>
           </div>
           <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
             <p>© 2025 TRYAM. {t("footer.rights")}</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-foreground">Privacy Policy</a>
-              <a href="#" className="hover:text-foreground">Terms of Service</a>
+              <a href="#" className="hover:text-foreground">{t("footer.privacy")}</a>
+              <a href="#" className="hover:text-foreground">{t("footer.terms")}</a>
             </div>
           </div>
         </div>
