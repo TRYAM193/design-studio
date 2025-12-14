@@ -10,7 +10,7 @@ import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
 import { undo, redo } from '../redux/canvasSlice';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
 import {

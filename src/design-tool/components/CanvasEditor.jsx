@@ -7,7 +7,7 @@ import CircleText from '../objectAdders/CircleText';
 import updateObject from '../functions/update';
 import { store } from '../redux/store';
 import { setCanvasObjects } from '../redux/canvasSlice';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { doc, getDoc } from 'firebase/firestore';
 import { db as firestore } from '@/firebase';
 import { FabricImage } from 'fabric';
