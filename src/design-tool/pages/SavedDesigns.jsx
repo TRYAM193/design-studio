@@ -3,7 +3,7 @@ import React from 'react';
 import useUserDesigns from '../hooks/useUserDesigns';
 import { useNavigate } from 'react-router';
 import { FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
-import { firestore } from '../firebase';
+import { db as firestore } from "@/firebase";
 import { doc, deleteDoc } from "firebase/firestore";
 import { useAuth } from '@/hooks/use-auth';
 import '../styles/SavedDesign.css';
