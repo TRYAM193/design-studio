@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router';
 import { FaEdit, FaTrash, FaArrowLeft } from 'react-icons/fa';
 import { firestore } from '../firebase';
 import { doc, deleteDoc } from "firebase/firestore";
+import { useAuth } from '@/hooks/use-auth'; 
 import '../styles/SavedDesign.css';
 
 export default function SavedDesignsPage() {
