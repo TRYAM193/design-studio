@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import { store } from '@/design-tool/redux/store';
 // @ts-ignore
 import EditorPanel from '@/design-tool/pages/Editor';
-import SavedDesigns from '@/design-tool/pages/SavedDesigns'
+import SavedDesignsPage from '@/design-tool/pages/SavedDesigns'
 import { VlyToolbar } from '../../vly-toolbar-readonly'; // Optional: if you want the header
 
 export default function DesignEditorPage() {
