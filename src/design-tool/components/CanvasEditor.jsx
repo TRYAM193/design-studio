@@ -9,7 +9,7 @@ import { store } from '../redux/store';
 import { setCanvasObjects } from '../redux/canvasSlice';
 import { useLocation } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
-import { firestore } from '../firebase.js';
+import { db as firestore } from '@/firebase';
 import { FabricImage } from 'fabric';
 import updateExisting from '../utils/updateExisting'
 import FloatingMenu from './FloatingMenu';
