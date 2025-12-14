@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
-import { db as firestore } from '@/firebase';
+import { db as firestore } from "@/firebase";
 
 export default function useUserDesigns(userId) {
   const [designs, setDesigns] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
 
     const designsRef = collection(firestore, `users/${userId}/designs`);
 
