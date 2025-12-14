@@ -15,7 +15,7 @@ export default function SavedDesignsPage() {
   const navigate = useNavigate();
 
   const handleEdit = (design) => {
-    navigate('/', { state: { designToLoad: design } });
+    navigate('/design', { state: { designToLoad: design } });
   };
 
   const handleDelete = async (userId, designId) => {
