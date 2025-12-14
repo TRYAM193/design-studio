@@ -8,14 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
-
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight, Loader2, Mail, UserX } from "lucide-react";
+import { ArrowRight, Loader2, Mail, UserX, Lock } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "@/hooks/use-translation";
@@ -29,9 +23,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState<"signIn" | { email: string }>("signIn");
-  const [otp, setOtp] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSignUp, setIsSignUp] = useState(false);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -39,45 +34,36 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       navigate(redirect);
     }
   }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
+
   const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    try {
-      const formData = new FormData(event.currentTarget);
-      await signIn("email-otp", formData);
-      setStep({ email: formData.get("email") as string });
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Email sign-in error:", error);
-      setError(
-        error instanceof Error
-          ? error.message
-          : "Failed to send verification code. Please try again.",
-      );
-      setIsLoading(false);
-    }
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get("email") as string;
+    setStep({ email });
+    // In a real app, you might check if the email exists here to toggle isSignUp
+    // For now, we'll default to login, user can toggle if they are new
   };
 
-  const handleOtpSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handlePasswordSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
     try {
-      const formData = new FormData(event.currentTarget);
-      await signIn("email-otp", formData);
-
-      console.log("signed in");
-
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
-    } catch (error) {
-      console.error("OTP verification error:", error);
-
-      setError("The verification code you entered is incorrect.");
+      const formData = new FormData();
+      formData.append("email", (step as { email: string }).email);
+      formData.append("password", password);
+      formData.append("isSignUp", isSignUp ? "true" : "false");
+      
+      await signIn("email-password", formData);
+      // Navigation happens in useEffect when isAuthenticated becomes true
+    } catch (error: any) {
+      console.error("Auth error:", error);
+      let msg = "Authentication failed.";
+      if (error.code === "auth/invalid-credential") msg = "Invalid password or user not found.";
+      if (error.code === "auth/email-already-in-use") msg = "Email already in use. Try signing in.";
+      if (error.code === "auth/weak-password") msg = "Password should be at least 6 characters.";
+      setError(msg);
       setIsLoading(false);
-
-      setOtp("");
     }
   };
 
@@ -85,96 +71,44 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      console.log("Attempting anonymous sign in...");
       await signIn("anonymous");
-      console.log("Anonymous sign in successful");
-      const redirect = redirectAfterAuth || "/";
-      navigate(redirect);
     } catch (error) {
-      console.error("Guest login error:", error);
-      console.error("Error details:", JSON.stringify(error, null, 2));
-      setError(`Failed to sign in as guest: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError("Failed to sign in as guest.");
       setIsLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-
-      
-      {/* Auth Content */}
       <div className="flex-1 flex items-center justify-center">
         <div className="flex items-center justify-center h-full flex-col">
         <Card className="min-w-[350px] pb-0 border shadow-md">
           {step === "signIn" ? (
             <>
               <CardHeader className="text-center">
-              <div className="flex justify-center">
-                    <img
-                      src="./logo.svg"
-                      alt="Lock Icon"
-                      width={64}
-                      height={64}
-                      className="rounded-lg mb-4 mt-4 cursor-pointer"
-                      onClick={() => navigate("/")}
-                    />
-                  </div>
+                <div className="flex justify-center">
+                    <img src="./logo.svg" alt="Logo" width={64} height={64} className="rounded-lg mb-4 mt-4 cursor-pointer" onClick={() => navigate("/")} />
+                </div>
                 <CardTitle className="text-xl">{t("auth.getStarted")}</CardTitle>
-                <CardDescription>
-                  {t("auth.desc")}
-                </CardDescription>
+                <CardDescription>{t("auth.desc")}</CardDescription>
               </CardHeader>
               <form onSubmit={handleEmailSubmit}>
                 <CardContent>
-                  
                   <div className="relative flex items-center gap-2">
                     <div className="relative flex-1">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        name="email"
-                        placeholder={t("auth.emailPlaceholder")}
-                        type="email"
-                        className="pl-9"
-                        disabled={isLoading}
-                        required
-                      />
+                      <Input name="email" placeholder={t("auth.emailPlaceholder")} type="email" className="pl-9" required />
                     </div>
-                    <Button
-                      type="submit"
-                      variant="outline"
-                      size="icon"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <ArrowRight className="h-4 w-4" />
-                      )}
+                    <Button type="submit" variant="outline" size="icon">
+                      <ArrowRight className="h-4 w-4" />
                     </Button>
                   </div>
-                  {error && (
-                    <p className="mt-2 text-sm text-red-500">{error}</p>
-                  )}
-                  
                   <div className="mt-4">
                     <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
-                          {t("auth.or")}
-                        </span>
-                      </div>
+                      <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                      <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">{t("auth.or")}</span></div>
                     </div>
-                    
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full mt-4"
-                      onClick={handleGuestLogin}
-                      disabled={isLoading}
-                    >
+                    <Button type="button" variant="outline" className="w-full mt-4" onClick={handleGuestLogin} disabled={isLoading}>
                       <UserX className="mr-2 h-4 w-4" />
                       {t("auth.guest")}
                     </Button>
@@ -185,97 +119,43 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           ) : (
             <>
               <CardHeader className="text-center mt-4">
-                <CardTitle>{t("auth.checkEmail")}</CardTitle>
-                <CardDescription>
-                  {t("auth.sentCode")} {step.email}
-                </CardDescription>
+                <CardTitle>{isSignUp ? "Create Account" : "Welcome Back"}</CardTitle>
+                <CardDescription>Enter your password for {step.email}</CardDescription>
               </CardHeader>
-              <form onSubmit={handleOtpSubmit}>
+              <form onSubmit={handlePasswordSubmit}>
                 <CardContent className="pb-4">
-                  <input type="hidden" name="email" value={step.email} />
-                  <input type="hidden" name="code" value={otp} />
-
-                  <div className="flex justify-center">
-                    <InputOTP
-                      value={otp}
-                      onChange={setOtp}
-                      maxLength={6}
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      type="password" 
+                      placeholder="Password" 
+                      className="pl-9" 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       disabled={isLoading}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && otp.length === 6 && !isLoading) {
-                          // Find the closest form and submit it
-                          const form = (e.target as HTMLElement).closest("form");
-                          if (form) {
-                            form.requestSubmit();
-                          }
-                        }
-                      }}
-                    >
-                      <InputOTPGroup>
-                        {Array.from({ length: 6 }).map((_, index) => (
-                          <InputOTPSlot key={index} index={index} />
-                        ))}
-                      </InputOTPGroup>
-                    </InputOTP>
+                    />
                   </div>
-                  {error && (
-                    <p className="mt-2 text-sm text-red-500 text-center">
-                      {error}
-                    </p>
-                  )}
-                  <p className="text-sm text-muted-foreground text-center mt-4">
-                    {t("auth.resend")}{" "}
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto"
-                      onClick={() => setStep("signIn")}
-                    >
-                      {t("auth.tryAgain")}
+                  {error && <p className="mt-2 text-sm text-red-500 text-center">{error}</p>}
+                  
+                  <div className="flex justify-between items-center mt-4">
+                    <Button variant="link" className="p-0 h-auto text-xs" type="button" onClick={() => setStep("signIn")}>
+                      Change Email
                     </Button>
-                  </p>
+                    <Button variant="link" className="p-0 h-auto text-xs" type="button" onClick={() => setIsSignUp(!isSignUp)}>
+                      {isSignUp ? "Already have an account? Sign In" : "New here? Create Account"}
+                    </Button>
+                  </div>
                 </CardContent>
                 <CardFooter className="flex-col gap-2">
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isLoading || otp.length !== 6}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t("auth.verifying")}
-                      </>
-                    ) : (
-                      <>
-                        {t("auth.verify")}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setStep("signIn")}
-                    disabled={isLoading}
-                    className="w-full"
-                  >
-                    {t("auth.differentEmail")}
+                  <Button type="submit" className="w-full" disabled={isLoading || password.length < 6}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Continue"}
                   </Button>
                 </CardFooter>
               </form>
             </>
           )}
-
           <div className="py-4 px-6 text-xs text-center text-muted-foreground bg-muted border-t rounded-b-lg">
-            Secured by{" "}
-            <a
-              href="https://vly.ai"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-primary transition-colors"
-            >
-              vly.ai
-            </a>
+            Secured by vly.ai
           </div>
         </Card>
         </div>
