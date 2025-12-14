@@ -70,7 +70,7 @@ export default function DashboardSettings() {
     setIsSaving(true);
     try {
       // Save profile data to "users" collection with the User ID
-      await setDoc(doc(db, "users", user.uid, ), formData, { merge: true });
+      await setDoc(doc(db, "users", user.uid, 'Profile-Info'), formData, { merge: true });
       toast.success(t("settings.success"));
     } catch (error) {
       toast.error(t("settings.error"));
