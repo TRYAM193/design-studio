@@ -5,9 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
-// Removed Convex imports
-// import { useMutation } from "convex/react";
-// import { api } from "@/convex/_generated/api";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router";
