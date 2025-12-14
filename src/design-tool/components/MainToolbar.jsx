@@ -28,7 +28,7 @@ export default function MainToolbar({ activePanel, onSelectTool, setSelectedId, 
             {/* Saved Designs Link (Now below the brand) */}
             <button
                 title="Saved Designs"
-                onClick={() => navigation('/saved')}
+                onClick={() => navigation('/design/saved')}
                 className="tool-button-wrapper saved-designs-link"
             >
                 <FiFolder size={24} />
