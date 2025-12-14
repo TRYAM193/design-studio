@@ -34,7 +34,7 @@ export function DashboardSidebar() {
   const location = useLocation();
   const { user, signOut, isAuthenticated } = useAuth();
   const { t } = useTranslation();
-  
+
   // State to hold profile data from Firestore
   const [userProfile, setUserProfile] = useState<{ name?: string; image?: string } | null>(null);
 
@@ -55,14 +55,14 @@ export function DashboardSidebar() {
   }, [user?.uid]);
 
   // Determine display name: Firestore Name -> Auth Name -> Email -> Guest
-  const displayName = 
-    userProfile?.name || 
-    user?.displayName || 
-    user?.email?.split('@')[0] || 
+  const displayName =
+    userProfile?.name ||
+    user?.displayName ||
+    user?.email?.split('@')[0] ||
     t("common.guest");
 
   const initials = displayName.charAt(0).toUpperCase();
-  
+
   // Determine display image: Firestore Image -> Auth Photo -> undefined
   const userImage = userProfile?.image || user?.photoURL || undefined;
 
@@ -104,7 +104,7 @@ export function DashboardSidebar() {
         <span>{t("nav.billing")}</span>
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem 
+      <DropdownMenuItem
         className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
         onClick={() => signOut()}
       >
@@ -127,9 +127,9 @@ export function DashboardSidebar() {
         <Link to="/">
           <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center bg-black">
             {/* Using local logo since storage isn't set up yet */}
-            <img 
-              src="/logo.svg" 
-              alt="TRYAM Logo" 
+            <img
+              src="/logo.svg"
+              alt="TRYAM Logo"
               className="h-full w-full object-cover"
             />
           </div>
@@ -138,11 +138,11 @@ export function DashboardSidebar() {
 
       {/* New Design Button - Desktop Only */}
       <div className="hidden sm:flex mb-6">
-       <Link to="/design">
-  <Button className="h-10 w-10 rounded-full p-0 shadow-none" size="icon" title={t("common.newDesign")}>
-    <Plus className="h-5 w-5" />
-  </Button>
-</Link>
+        <Link to="/design">
+          <Button className="h-10 w-10 rounded-full p-0 shadow-none" size="icon" title={t("common.newDesign")}>
+            <Plus className="h-5 w-5" />
+          </Button>
+        </Link>
       </div>
 
       {/* Navigation */}
@@ -152,9 +152,8 @@ export function DashboardSidebar() {
             <Button
               variant={isActive(item.path) ? "secondary" : "ghost"}
               size="icon"
-              className={`rounded-xl transition-all ${
-                isActive(item.path) ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-muted-foreground"
-              } h-10 w-10`}
+              className={`rounded-xl transition-all ${isActive(item.path) ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-muted-foreground"
+                } h-10 w-10`}
               title={item.label}
             >
               <item.icon className="h-5 w-5" />
