@@ -21,6 +21,7 @@ import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
 // We will create this provider in the next step
 import { AuthProvider } from "./hooks/use-auth"; 
+import DesignEditorPage from "./pages/DesignEditorPage";
 
 function RouteSyncer() {
   const location = useLocation();
