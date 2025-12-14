@@ -1,29 +1,67 @@
-import { api } from "@/convex/_generated/api";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth, useQuery } from "convex/react";
+import { useContext, createContext, useEffect, useState, ReactNode } from "react";
+import { 
+  User, 
+  onAuthStateChanged, 
+  signInAnonymously, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut 
+} from "firebase/auth";
+import { auth } from "@/firebase";
 
-import { useEffect, useState } from "react";
+interface AuthContextType {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: User | null;
+  signIn: (type: string, formData?: any) => Promise<void>;
+  signOut: () => Promise<void>;
+}
 
-export function useAuth() {
-  const { isLoading: isAuthLoading, isAuthenticated } = useConvexAuth();
-  const user = useQuery(api.users.currentUser);
-  const { signIn, signOut } = useAuthActions();
+const AuthContext = createContext<AuthContextType | null>(null);
 
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // This effect updates the loading state once auth is loaded and user data is available
-  // It ensures we only show content when both authentication state and user data are ready
   useEffect(() => {
-    if (!isAuthLoading && user !== undefined) {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
       setIsLoading(false);
-    }
-  }, [isAuthLoading, user]);
+    });
+    return () => unsubscribe();
+  }, []);
 
-  return {
-    isLoading,
-    isAuthenticated,
-    user,
-    signIn,
-    signOut,
+  const signIn = async (type: string, formData?: FormData) => {
+    if (type === "anonymous") {
+      await signInAnonymously(auth);
+    } else if (type === "email-password") {
+      const email = formData?.get("email") as string;
+      const password = formData?.get("password") as string;
+      const isSignUp = formData?.get("isSignUp") === "true";
+
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    }
   };
+
+  const signOut = async () => {
+    await firebaseSignOut(auth);
+  };
+
+  return (
+    <AuthContext.Provider value={{ isAuthenticated: !!user, isLoading, user, signIn, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 }
