@@ -14,7 +14,7 @@ export default function DesignEditorPage() {
         <Routes>
           <Route path="/" element={<EditorPanel />} />
           
-          <Route path="/saved-designs" element={<SavedDesignsPage />} />
+          <Route path="/saved" element={<SavedDesignsPage />} />
         </Routes>
       </div>
     </Provider>
