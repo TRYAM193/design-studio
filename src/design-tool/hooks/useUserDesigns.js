@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
-import { firestore } from "../firebase";
+import { db as firestore } from '@/firebase';
 
 export default function useUserDesigns(userId) {
   const [designs, setDesigns] = useState([]);
