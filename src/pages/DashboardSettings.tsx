@@ -5,16 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+// Removed Convex imports
+// import { useMutation } from "convex/react";
+// import { api } from "@/convex/_generated/api";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router";
 import { useTranslation } from "@/hooks/use-translation";
+// Added Firebase imports
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "@/firebase";
 
 export default function DashboardSettings() {
   const { user, isAuthenticated } = useAuth();
-  const updateProfile = useMutation(api.users.updateProfile);
   const { t } = useTranslation();
   
   const [formData, setFormData] = useState({
@@ -25,15 +28,37 @@ export default function DashboardSettings() {
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  // Load user profile from Firestore when user logs in
   useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || "",
-        dob: user.dob || "",
-        phoneNumber: user.phoneNumber || "",
-        address: user.address || "",
-      });
+    async function fetchProfile() {
+      if (user) {
+        try {
+          // 1. Set default name from Auth if available
+          const defaultName = user.displayName || "";
+          
+          // 2. Fetch extra details from Firestore
+          const userDocRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userDocRef);
+
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            setFormData({
+              name: data.name || defaultName,
+              dob: data.dob || "",
+              phoneNumber: data.phoneNumber || "",
+              address: data.address || "",
+            });
+          } else {
+            // If no profile exists yet, just set the name from Auth
+            setFormData(prev => ({ ...prev, name: defaultName }));
+          }
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+        }
+      }
     }
+
+    fetchProfile();
   }, [user]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,13 +68,16 @@ export default function DashboardSettings() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+
     setIsSaving(true);
     try {
-      await updateProfile(formData);
+      // Save profile data to "users" collection with the User ID
+      await setDoc(doc(db, "users", user.uid), formData, { merge: true });
       toast.success(t("settings.success"));
     } catch (error) {
       toast.error(t("settings.error"));
-      console.error(error);
+      console.error("Error saving profile:", error);
     } finally {
       setIsSaving(false);
     }
