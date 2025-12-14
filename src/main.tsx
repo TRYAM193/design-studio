@@ -49,7 +49,6 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <VlyToolbar />
     <InstrumentationProvider>
-      {/* Replaced ConvexAuthProvider with our custom AuthProvider */}
       <AuthProvider>
         <BrowserRouter>
           <RouteSyncer />
