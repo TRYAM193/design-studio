@@ -34,7 +34,7 @@ export default function DashboardSettings() {
           const defaultName = user.displayName || "";
           
           // 2. Fetch extra details from Firestore
-          const userDocRef = doc(db, "users", user.uid);
+          const userDocRef = doc(db, "users", user.uid, 'Profile-Info');
           const userSnap = await getDoc(userDocRef);
 
           if (userSnap.exists()) {
