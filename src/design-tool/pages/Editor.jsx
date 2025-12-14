@@ -1,8 +1,7 @@
-// src/pages/Editor.jsx
-import React from 'react';
+// src/design-tool/pages/Editor.jsx
+import React, { useState, useEffect } from 'react';
 import '../styles/Editor.css';
 import CanvasEditor from '../components/CanvasEditor';
-import { useState, useEffect } from 'react';
 import Text from '../functions/text';
 import updateObject from '../functions/update';
 import removeObject from '../functions/remove';
@@ -10,7 +9,8 @@ import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
 import { undo, redo } from '../redux/canvasSlice';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router'; // UPDATED: use react-router
+import { useAuth } from '@/hooks/use-auth'; // NEW: Get real auth
 import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
 import {
@@ -18,42 +18,67 @@ import {
     FiSettings, FiX
 } from 'react-icons/fi';
 
-
 export default function EditorPanel() {
     const [fabricCanvas, setFabricCanvas] = useState(null);
     const [activeTool, setActiveTool] = useState('');
     const [selectedId, setSelectedId] = useState(null);
     const [currentDesign, setCurrentDesign] = useState(null);
     const [editingDesignId, setEditingDesignId] = useState(null);
-
-    // Manual control for properties panel
     const [showProperties, setShowProperties] = useState(false);
 
-    // Close properties panel automatically when selection changes
-    useEffect(() => {
-        setShowProperties(false);
-    }, [selectedId]);
+    // NEW: Get the real user from your main App
+    const { user } = useAuth();
+    // If user is guest (anonymous), they still have a valid UID in Firebase
+    const userId = user?.uid; 
 
-    const userId = 'test-user-123';
-    const navigation = useNavigate()
+    const navigation = useNavigate();
+    const location = useLocation(); // NEW: To get data from Dashboard
     const dispatch = useDispatch();
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
 
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
-
     const [activePanel, setActivePanel] = useState('text');
+
+    // NEW: Effect to load an existing design if passed from Dashboard
+    useEffect(() => {
+        if (location.state?.designToLoad && fabricCanvas) {
+            const { designToLoad } = location.state;
+            console.log("Loading design:", designToLoad);
+            
+            setEditingDesignId(designToLoad.id);
+            setCurrentDesign(designToLoad);
+
+            // Load the JSON data into Fabric canvas
+            if (designToLoad.canvasData) {
+                // Determine if it is a string or object
+                const jsonContent = typeof designToLoad.canvasData === 'string' 
+                    ? designToLoad.canvasData 
+                    : JSON.stringify(designToLoad.canvasData);
+
+                fabricCanvas.loadFromJSON(jsonContent, () => {
+                    fabricCanvas.renderAll();
+                    console.log("Canvas loaded successfully");
+                });
+            }
+        }
+    }, [location.state, fabricCanvas]);
+
+    // Close properties panel automatically when selection changes
+    useEffect(() => {
+        setShowProperties(false);
+    }, [selectedId]);
 
     const handleToolClick = (tool) => {
         setActivePanel(prev => prev === tool ? null : tool);
     };
 
     const BrandDisplay = (
-        <div className="header-brand toolbar-brand">
+        <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{cursor: 'pointer'}}>
             <div className="logo-circle">
                 <img
-                    src="/assets/LOGO.png"
+                    src="/logo.svg" 
                     alt="TRYAM Logo"
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
@@ -87,10 +112,7 @@ export default function EditorPanel() {
                 )}
 
                 <main className="preview-area">
-                    {/* Consolidated Top Bar */}
                     <div className="top-bar consolidated-bar">
-
-                        {/* Undo/Redo Group */}
                         <div className="control-group">
                             <button
                                 title="Undo"
@@ -118,7 +140,6 @@ export default function EditorPanel() {
                             </button>
                         </div>
 
-                        {/* Edit Properties Button - Removed inline margin so CSS can handle spacing */}
                         {selectedId && !showProperties && (
                             <div className="control-group phone-only">
                                 <button
@@ -133,10 +154,11 @@ export default function EditorPanel() {
                         )}
 
                         <div className="control-group">
+                            {/* Pass real userId and existing design info */}
                             {fabricCanvas && (
                                 <SaveDesignButton
                                     canvas={fabricCanvas}
-                                    userId={userId}
+                                    userId={userId} 
                                     currentDesign={currentDesign}
                                     editingDesignId={editingDesignId}
                                     className="top-bar-button"
