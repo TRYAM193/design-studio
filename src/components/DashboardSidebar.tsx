@@ -138,9 +138,11 @@ export function DashboardSidebar() {
 
       {/* New Design Button - Desktop Only */}
       <div className="hidden sm:flex mb-6">
-        <Button onClick={() => window.location.href = 'http://localhost:5173/'} className="h-10 w-10 rounded-full p-0 shadow-none" size="icon" title={t("common.newDesign")}>
-          <Plus className="h-5 w-5" />
-        </Button>
+       <Link to="/design">
+  <Button className="h-10 w-10 rounded-full p-0 shadow-none" size="icon" title={t("common.newDesign")}>
+    <Plus className="h-5 w-5" />
+  </Button>
+</Link>
       </div>
 
       {/* Navigation */}
