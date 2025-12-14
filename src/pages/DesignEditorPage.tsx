@@ -1,18 +1,21 @@
-import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
-// @ts-ignore - Ignoring TS warning because store.js is JavaScript
+import { Routes, Route } from 'react-router';
+// @ts-ignore
 import { store } from '@/design-tool/redux/store';
 // @ts-ignore
 import EditorPanel from '@/design-tool/pages/Editor';
-// import SavedDesignsPage from '@/design-tool/pages/SavedDesigns'
-import { VlyToolbar } from '../../vly-toolbar-readonly'; // Optional: if you want the header
+// @ts-ignore
+import SavedDesignsPage from '@/design-tool/pages/SavedDesigns';
 
 export default function DesignEditorPage() {
   return (
-    // We isolate the Redux store here so it doesn't conflict with the rest of the app
     <Provider store={store}>
-      <div className="w-full h-screen overflow-hidden bg-white">
-        <EditorPanel />
+      <div className="w-full h-screen bg-background overflow-hidden">
+        <Routes>
+          <Route path="/" element={<EditorPanel />} />
+          
+          <Route path="/saved" element={<SavedDesignsPage />} />
+        </Routes>
       </div>
     </Provider>
   );
