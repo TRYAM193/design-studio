@@ -33,9 +33,11 @@ export function DashboardSidebar() {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Derive display name and initials
-  const displayName = user?.name || user?.email?.split('@')[0] || t("common.guest");
+  // FIX 1: Adapted for Firebase User object (displayName instead of name)
+  const displayName = user?.displayName || user?.email?.split('@')[0] || t("common.guest");
   const initials = displayName.charAt(0).toUpperCase();
+  // FIX 2: Adapted for Firebase User object (photoURL instead of image)
+  const userImage = user?.photoURL || undefined;
 
   const navItems = [
     { icon: Home, label: t("nav.home"), path: "/dashboard" },
@@ -50,7 +52,7 @@ export function DashboardSidebar() {
     <>
       <div className="flex items-center gap-3 p-2">
         <Avatar className="h-10 w-10 border">
-          <AvatarImage src={user?.image} />
+          <AvatarImage src={userImage} />
           <AvatarFallback>{initials}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col overflow-hidden">
@@ -97,8 +99,9 @@ export function DashboardSidebar() {
       <div className="hidden sm:flex mb-8">
         <Link to="/">
           <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center bg-black">
+            {/* FIX 3: Replaced Convex storage URL with local logo */}
             <img 
-              src="https://harmless-tapir-303.convex.cloud/api/storage/5dd71113-c4f4-4f61-9bdb-a4ddbec1574c" 
+              src="/logo.svg" 
               alt="TRYAM Logo" 
               className="h-full w-full object-cover"
             />
@@ -137,7 +140,7 @@ export function DashboardSidebar() {
               <DropdownMenuTrigger asChild>
                 <div className="cursor-pointer outline-none">
                   <Avatar className="h-8 w-8 border hover:ring-2 hover:ring-primary/20 transition-all">
-                    <AvatarImage src={user?.image} />
+                    <AvatarImage src={userImage} />
                     <AvatarFallback>{initials}</AvatarFallback>
                   </Avatar>
                 </div>
@@ -178,7 +181,7 @@ export function DashboardSidebar() {
             <DropdownMenuTrigger asChild>
               <div className="cursor-pointer outline-none">
                 <Avatar className="h-10 w-10 border hover:ring-2 hover:ring-primary/20 transition-all">
-                  <AvatarImage src={user?.image} />
+                  <AvatarImage src={userImage} />
                   <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
               </div>
