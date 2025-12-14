@@ -128,7 +128,7 @@ export function DashboardSidebar() {
           <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center bg-black">
             {/* Using local logo since storage isn't set up yet */}
             <img
-              src="/logo.svg"
+              src="/assets/LOGO.png"
               alt="TRYAM Logo"
               className="h-full w-full object-cover"
             />
