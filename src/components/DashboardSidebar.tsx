@@ -25,19 +25,46 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/hooks/use-translation";
+// Added Firestore imports
+import { useEffect, useState } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/firebase";
 
 export function DashboardSidebar() {
   const location = useLocation();
   const { user, signOut, isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  
+  // State to hold profile data from Firestore
+  const [userProfile, setUserProfile] = useState<{ name?: string; image?: string } | null>(null);
 
   const isActive = (path: string) => location.pathname === path;
 
-  // FIX 1: Adapted for Firebase User object (displayName instead of name)
-  const displayName = user?.displayName || user?.email?.split('@')[0] || t("common.guest");
+  // Listen to Firestore for real-time profile updates
+  useEffect(() => {
+    if (user?.uid) {
+      const unsub = onSnapshot(doc(db, "users", user.uid), (doc) => {
+        if (doc.exists()) {
+          setUserProfile(doc.data() as { name?: string; image?: string });
+        }
+      });
+      return () => unsub();
+    } else {
+      setUserProfile(null);
+    }
+  }, [user?.uid]);
+
+  // Determine display name: Firestore Name -> Auth Name -> Email -> Guest
+  const displayName = 
+    userProfile?.name || 
+    user?.displayName || 
+    user?.email?.split('@')[0] || 
+    t("common.guest");
+
   const initials = displayName.charAt(0).toUpperCase();
-  // FIX 2: Adapted for Firebase User object (photoURL instead of image)
-  const userImage = user?.photoURL || undefined;
+  
+  // Determine display image: Firestore Image -> Auth Photo -> undefined
+  const userImage = userProfile?.image || user?.photoURL || undefined;
 
   const navItems = [
     { icon: Home, label: t("nav.home"), path: "/dashboard" },
@@ -99,7 +126,7 @@ export function DashboardSidebar() {
       <div className="hidden sm:flex mb-8">
         <Link to="/">
           <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center bg-black">
-            {/* FIX 3: Replaced Convex storage URL with local logo */}
+            {/* Using local logo since storage isn't set up yet */}
             <img 
               src="/logo.svg" 
               alt="TRYAM Logo" 
