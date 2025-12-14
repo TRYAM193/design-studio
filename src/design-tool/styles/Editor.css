@@ -1,0 +1,1028 @@
+/* ===================================
+   BASE STYLES (Ensuring full screen)
+   =================================== */
+body,
+html,
+.app {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  width: 100%;
+  height: 100%;
+}
+
+/* FIX: New wrapper container for full height context */
+.main-app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f8f9fb;
+}
+
+/* 💥 HEADER STYLES REMOVED 💥 */
+
+/* ===================================
+   2. MAIN EDITOR BODY: Three Columns
+   =================================== */
+/* FIX: MAIN takes full 100vh height */
+.main.full-height-main {
+  display: flex;
+  flex-grow: 1;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* 2.1 Main Toolbar (Far Left - Fixed Width) */
+.main-toolbar {
+  width: 70px;
+  min-width: 70px;
+  background-color: white;
+  border-right: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  padding-top: 0;
+  /* No top padding needed */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+  overflow-y: auto;
+}
+
+/* src/styles/Editor.css (Modify the existing toolbar-brand styles) */
+
+/* FIX 1: Adjust Brand container spacing */
+.header-brand.toolbar-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 0 12px 0;
+  /* Increased padding for better vertical spacing */
+  border-bottom: 1px solid #eee;
+  margin-bottom: 5px;
+  gap: 5px;
+}
+
+/* FIX 2: Increase Logo Circle size (from 32px to 40px) */
+.header-brand.toolbar-brand .logo-circle {
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.header-brand.toolbar-brand h1 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.logo-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #080808;
+  color: white;
+  cursor: pointer;
+
+  /* ESSENTIAL: Must be set to clip the square image */
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.logo-circle:hover {
+  background-color: #202020;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+}
+
+/* FIX 2: Ensure the image fills the container perfectly, stripping any padding/margins */
+.logo-circle img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* FINAL FIX: Use 'cover' to ensure it fills the circle entirely */
+  object-fit: cover;
+  margin: 0;
+  padding: 0;
+}
+
+.toolbar-divider {
+  border-top: 1px solid #e0e0e0;
+  width: 80%;
+  margin: 10px auto;
+}
+
+.tool-button-wrapper {
+  width: 100%;
+  height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: #555;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.tool-button-wrapper:hover {
+  background-color: #f0f0f0;
+  color: #4949e5;
+}
+
+.tool-button-wrapper.active {
+  background-color: #e6e6ff;
+  color: #4949e5;
+  border-left: 3px solid #4949e5;
+}
+
+
+/* 2.2 Contextual Sidebar (Tool Content) */
+.contextual-sidebar {
+  width: 300px;
+  min-width: 300px;
+  background-color: white;
+  border-right: 1px solid #e0e0e0;
+  box-shadow: 3px 0 5px rgba(0, 0, 0, 0.05);
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  height: 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.sidebar-content {
+  padding: 15px;
+}
+
+
+/* 2.3 Preview Area (Canvas) - Center Area */
+.preview-area {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  overflow: auto;
+  background-color: #f8f9fb;
+  height: auto;
+  position: relative;
+}
+
+#canvas-wrapper {
+  position: absolute;
+  top: 60px;
+  /* Space for the floating top-bar */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  background-color: white;
+}
+
+/* Ensure canvas editor is below top bar */
+#canvas {
+  top: 50px;
+  position: relative;
+}
+
+.canvas-container {
+  width: fit-content;
+  height: fit-content;
+}
+
+/* -------------------------------------------
+   CONSOLIDATED FLOATING TOOLBAR (top-bar)
+   ------------------------------------------- */
+.top-bar.consolidated-bar {
+  /* Positioning */
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+
+  /* Appearance */
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background-color: white;
+  padding: 8px 15px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.control-group {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.control-group.divider {
+  padding-right: 15px;
+  border-right: 1px solid #eee;
+}
+
+/* --- Consolidated Button Styles --- */
+.top-bar-button {
+  background: transparent;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-bar-button:hover {
+  background-color: #f0f0f0;
+  color: #4949e5;
+}
+
+/* Text Buttons (Export, Order Print) */
+.top-bar-button.text-button {
+  padding: 8px 12px;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Primary Accent Button (Order Print) */
+.top-bar-button.accent {
+  background: #4949e5;
+  /* Indigo */
+  color: white;
+}
+
+.top-bar-button.accent:hover {
+  background: #5a5ae9;
+  color: white;
+}
+
+/* Danger Button (Delete) */
+.top-bar-button.danger {
+  color: #cc3333;
+}
+
+.top-bar-button.danger:hover {
+  background-color: #ffe6e6;
+}
+
+/* Save Spinner Animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.icon-spin {
+  animation: spin 1s linear infinite;
+}
+
+
+/* 2.4 Right Properties Panel */
+.right-panel {
+  width: 300px;
+  min-width: 300px;
+  background-color: white;
+  border-left: 1px solid #e0e0e0;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+  overflow-y: auto;
+  padding: 15px;
+  color: #333;
+  max-height: none;
+}
+
+/* --- Add this to src/styles/Editor.css --- */
+
+/* Right Sidebar Tabbed Structure */
+.right-sidebar-tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  /* Ensure no extra padding inside this container */
+}
+
+/* Tab Selector Bar (Top section of the right panel) */
+.tab-selector-bar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  background-color: #f8f9fb;
+  flex-shrink: 0;
+  /* Prevents this section from shrinking */
+}
+
+.tab-button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 14px;
+  font-weight: 500;
+  gap: 5px;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+}
+
+.tab-button:hover {
+  color: #444;
+}
+
+.tab-button.active {
+  color: #4949e5;
+  /* Primary color */
+  border-bottom: 3px solid #4949e5;
+  background-color: white;
+}
+
+/* Tab Content Area (Scrollable area for properties/layers) */
+.tab-content-area {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 15px;
+  /* Apply padding to the content area */
+  overflow-x: hidden;
+}
+
+/* IMPORTANT: Update the main right-panel container to remove original padding */
+.right-panel {
+  overflow-y: hidden;
+  padding: 0;
+  /* REMOVED padding from this element, as it's now in .tab-content-area */
+}
+
+/* --- Add this to src/styles/Editor.css --- */
+
+/* ===================================
+   RIGHT PANEL: PROPERTY EDITOR STYLES
+   =================================== */
+
+.property-panel-content {
+  padding-bottom: 30px;
+  /* Space at the bottom */
+}
+
+.property-panel-message {
+  padding: 20px 15px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.property-panel-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+/* Property Groups */
+.property-group {
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.property-group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4949e5;
+  /* Primary color highlight */
+  margin-bottom: 10px;
+}
+
+/* Control Row (Label + Input/Color) */
+.control-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 10px;
+}
+
+.control-row.full-width {
+  display: grid;
+  gap: 10px;
+}
+
+.control-label {
+  font-size: 13px;
+  color: #444;
+  font-weight: 500;
+}
+
+/* --- Input Field Styles --- */
+input[type="number"],
+.number-input,
+.text-input,
+.font-select,
+textarea {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+input[type="number"]:focus,
+.text-input:focus,
+.font-select:focus,
+textarea:focus {
+  border-color: #4949e5;
+  outline: none;
+}
+
+.number-input.small {
+  width: 60px;
+  /* Fixed width for small number inputs (like font size) */
+  text-align: center;
+}
+
+.text-input {
+  width: 100%;
+  resize: vertical;
+}
+
+.font-select {
+  flex-grow: 1;
+  /* Take up remaining width in the button group */
+}
+
+
+/* --- Color Picker Styles --- */
+input[type="color"],
+.color-input {
+  width: 40px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  background: white;
+}
+
+/* --- Slider Styles --- */
+input[type="range"],
+.slider-input {
+  width: 100%;
+  margin: 5px 0 15px 0;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  background: #e0e0e0;
+  border-radius: 2px;
+}
+
+.slider-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #4949e5;
+  border-radius: 50%;
+  cursor: grab;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Button Group Styles (Text styles) --- */
+.control-row-buttons {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f9f9f9;
+}
+
+.style-button {
+  background: #f0f0f0;
+  color: #555;
+  border: 1px solid #ddd;
+  padding: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.style-button.active {
+  background: #4949e5;
+  color: white;
+  border-color: #4949e5;
+}
+
+.style-button:hover:not(.active) {
+  background: #e6e6ff;
+  color: #4949e5;
+}
+
+/* --- Primary/Secondary Action Buttons --- */
+.primary-button,
+.secondary-button {
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-bottom: 10px;
+  border: none;
+}
+
+.primary-button {
+  background: #4949e5;
+  color: white;
+}
+
+.primary-button:hover {
+  background: #5a5ae9;
+}
+
+.secondary-button {
+  background: white;
+  color: #4949e5;
+  border: 1px solid #4949e5;
+}
+
+.secondary-button:hover {
+  background: #f0f0f0;
+}
+
+.full-width {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- Layers Placeholder Style (for the Layers tab) --- */
+.layers-placeholder {
+  padding: 20px 0;
+}
+
+/* --- Add this to src/styles/Editor.css --- */
+
+/* Font Controls Group */
+.font-control-group {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+.font-input {
+  flex-grow: 1;
+  /* Allows the text input to take up most of the space */
+}
+
+.font-link-helper {
+  display: flex;
+  gap: 25px;
+  flex-shrink: 0;
+  /* Prevents helper buttons from being squeezed */
+}
+
+.external-link-button {
+  /* Inherits style-button */
+  background-color: #f0f0f0;
+  color: #4949e5;
+}
+
+.font-helper-text {
+  width: 100%;
+  font-size: 11px;
+  color: #666;
+  margin: 5px 0;
+}
+
+.font-url-input-group {
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #eee;
+  margin-bottom: 15px;
+}
+
+.small-button {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* src/styles/Editor.css (Ensure this is in your file) */
+
+.property-group-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin-top: 15px;
+  margin-bottom: 5px;
+}
+
+.apply {
+  margin: 2px;
+  width: 65px;
+}
+
+/* --- Add this to src/styles/Editor.css --- */
+
+/* ===================================
+   LAYERS PANEL DRAGGABLE STYLES
+   =================================== */
+
+.layer-handle {
+  cursor: grab;
+  flex-shrink: 0;
+  padding-right: 8px;
+  color: #999;
+}
+
+.layer-handle:active {
+  cursor: grabbing;
+  /* Visual feedback when being dragged */
+}
+
+.layer-item.sortable-dragging {
+  opacity: 0.5;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.layer-content-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-grow: 1;
+  user-select: none;
+  pointer-events: none;
+}
+
+.layer-thumbnail-box {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.layer-item.active .layer-thumbnail-box {
+  border-color: #4949e5;
+  /* Highlight box when active */
+}
+
+.layer-thumbnail-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow: visible !important;
+  max-height: none !important;
+}
+
+.layer-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 13px;
+  color: #333;
+  user-select: none;
+  /* Standard property */
+  -webkit-user-select: none;
+  /* Safari/Chrome */
+  -moz-user-select: none;
+  /* Firefox */
+  -ms-user-select: none;
+}
+
+.layer-item:hover {
+  background-color: #f0f0f0;
+}
+
+.layer-item.active {
+  background-color: #e6e6ff;
+  /* Light indigo background */
+  border-color: #4949e5;
+  font-weight: 600;
+}
+
+.layer-name {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex-grow: 1;
+}
+
+.layer-controls {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.layer-controls button {
+  background: none;
+  border: none;
+  padding: 5px;
+  border-radius: 3px;
+  color: #666;
+  cursor: pointer;
+  transition: background-color 0.1s;
+  line-height: 1;
+}
+
+.layer-controls button:hover {
+  background-color: #ddd;
+  color: #4949e5;
+}
+
+.layer-controls button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.layer-controls .delete-button {
+  color: #cc3333;
+}
+
+.layer-controls .delete-button:hover {
+  background-color: #ffe6e6;
+}
+
+.layer-list-wrapper {
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.phone-only {
+  display: none;
+}
+/* src/styles/Editor.css */
+
+/* Hide the mobile close header by default (Desktop) */
+.mobile-panel-header {
+  display: none;
+}
+
+/* ===================================
+   MOBILE INTERFACE (Max Width 768px)
+   =================================== */
+@media (max-width: 768px) {
+
+  /* 1. Main Toolbar (Bottom) */
+  .main-toolbar {
+    width: 100% !important;
+    height: 60px; /* Slightly smaller height */
+    min-width: unset;
+    flex-direction: row;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 300;
+    border-right: none;
+    border-top: 1px solid #e0e0e0;
+    padding: 0 5px;
+    justify-content: space-around;
+    overflow-y: hidden;
+    overflow-x: auto;
+    background: white;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  }
+
+  .toolbar-divider { display: none; }
+
+  .tool-button-wrapper {
+    height: 100%;
+    width: auto;
+    flex: 1;
+    padding: 0;
+    justify-content: center;
+  }
+  
+  .tool-button-wrapper.active {
+    border-left: none;
+    border-bottom: 3px solid #4949e5;
+    background-color: transparent;
+  }
+
+  /* 2. Brand Display: Top Left, Logo Only */
+  .header-brand.toolbar-brand {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 400; 
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    width: 40px;
+    height: 40px;
+    pointer-events: none; 
+    align-items: flex-start;
+  }
+
+  .header-brand.toolbar-brand h1 { display: none; }
+
+  .header-brand.toolbar-brand .logo-circle {
+    width: 38px; 
+    height: 38px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    pointer-events: auto; 
+    background-color: #000;
+  }
+
+  /* 3. Contextual Sidebar (Tools): Slides up from bottom */
+  .contextual-sidebar {
+    position: fixed; /* Fixed to viewport to avoid scroll issues */
+    width: 100%;
+    height: auto;
+    max-height: 45vh;
+    left: 0;
+    bottom: 60px; /* Sits on top of bottom toolbar */
+    top: auto;
+    border-right: none;
+    border-top: 1px solid #e0e0e0;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+    z-index: 250;
+    animation: slideUpTools 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* 4. Right Panel (Properties): Fixed Bottom Drawer */
+  .right-panel {
+    position: fixed; /* FIXED is crucial to prevent scrolling into view */
+    width: 100%;
+    height: 55vh; 
+    left: 0;
+    bottom: 0; 
+    top: auto;
+    min-width: unset;
+    
+    transform: translateY(110%); /* Explicitly hidden off-screen */
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    
+    z-index: 1000; /* Highest z-index to overlay everything */
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    border-left: none;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+    padding: 0;
+    background-color: white;
+  }
+
+  .right-panel.active {
+    transform: translateY(0);
+  }
+
+  .mobile-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px;
+    border-bottom: 1px solid #eee;
+    background-color: #f9f9f9;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+  }
+
+  .mobile-panel-title { font-weight: 600; color: #444; font-size: 14px; }
+  .mobile-close-btn { background: none; border: none; color: #666; padding: 4px; }
+
+  /* 5. Canvas Adjustments */
+  .preview-area {
+    padding: 10px;
+    padding-bottom: 70px; 
+    padding-top: 60px; /* Add top padding so canvas doesn't start under the logo/toolbar */
+  }
+
+  /* 6. Top Bar (Floating Actions) - COMPACT & POSITIONED */
+  .top-bar.consolidated-bar {
+    position: fixed; /* Fixed so it doesn't scroll away */
+    top: 12px;
+    right: 12px; /* Anchor to right */
+    left: auto;
+    transform: none;
+    
+    /* Ensure it doesn't hit the logo (Logo is ~50px from left) */
+    max-width: calc(100% - 70px); 
+    width: auto;
+    
+    padding: 4px 6px; /* Reduced padding */
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  
+  .control-group { gap: 2px; }
+  .control-group.divider { padding-right: 6px; margin-right: 2px; }
+
+  .top-bar-button {
+    padding: 6px; /* Smaller button touch target */
+  }
+
+  /* HIDE TEXT LABELS IN TOP BAR ON MOBILE */
+  .top-bar-button span {
+    display: none;
+  }
+  
+  /* Remove margin from icon since text is gone */
+  .top-bar-button svg {
+    margin-right: 0 !important;
+  }
+
+  .phone-only {
+    display: inline-flex;
+  }
+}
+
+@keyframes slideUpTools {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* 📱 Mobile & Tablet: Force Top Bar to Absolute Center */
+/* Applies to everything smaller than 768px */
+@media screen and (max-width: 768px) {
+  
+  .top-bar,
+  .consolidated-bar {
+    /* 1. Detach from normal flow */
+    position: absolute !important; 
+    
+    /* 2. Center Horizontally */
+    left: 50% !important; 
+    transform: translateX(-50%) !important; 
+    
+    /* 3. Sizing & Spacing */
+    width: max-content !important; /* Ensures it wraps tightly around buttons */
+    max-width: 95%; /* Prevents it from going off-screen on very small phones */
+    
+    /* 4. Visuals */
+    top: 10px; 
+    display: flex !important;
+    justify-content: center !important;
+    gap: 8px; /* Slightly tighter gap for small screens */
+    padding: 8px 12px;
+    background-color: white; 
+    border-radius: 50px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+    z-index: 100;
+    
+    /* 5. Prevent Wrapping on tiny screens */
+    white-space: nowrap;
+    overflow-x: auto; /* Allows scrolling if phone is TOO small */
+  }
+
+  /* Optional: Hide text labels on very small screens to save space */
+  @media screen and (max-width: 400px) {
+    .top-bar-button span {
+      display: none;
+    }
+    .top-bar-button {
+      padding: 8px; /* Make buttons square-ish */
+    }
+  }
+}
+
+@media screen and (max-width: 370px) {
+  .top-bar-button{
+    padding: 2px;
+  }
+}
