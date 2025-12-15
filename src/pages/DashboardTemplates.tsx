@@ -37,7 +37,7 @@ export default function DashboardTemplates() {
     { id: 5, name: "Kids Cartoon", category: "Kids", tier: "Free", image: "https://images.unsplash.com/photo-1519238263496-6361937a2717?w=500&auto=format&fit=crop&q=60" },
     { id: 6, name: "Abstract Art", category: "T-Shirts", tier: "Pro", image: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&auto=format&fit=crop&q=60" },
     { id: 7, name: "Gym Performance", category: "Sportswears", tier: "Free", image: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=500&auto=format&fit=crop&q=60" },
-    { id: 8, name: "Tote Bag Design", category: "Accessories", tier: "Free", image: "../design-tool/templates/design-001.png" },
+    { id: 8, name: "Tote Bag Design", category: "Accessories", tier: "Free", image: "../design-tool/templates/design-001.jpeg" },
   ];
 
   const filteredTemplates = useMemo(() => {
