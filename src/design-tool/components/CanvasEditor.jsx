@@ -140,7 +140,7 @@ export default function CanvasEditor({
       if (design.id) setEditingDesignId(design.id);
       else setEditingDesignId(null)
       if (typeof design.canvasJSON === 'string'){
-        
+        design.canvasJSON = JSON
       }
       fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
       setTimeout(() => {
