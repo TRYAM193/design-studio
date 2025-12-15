@@ -136,110 +136,110 @@ export default function CanvasEditor({
   // 🟩 Load Saved Designs / Templates (Improved Redux Sync)
   // REPLACE the useEffect at line 135 with this:
 
-useEffect(() => {
-  if (location.state?.designToLoad && fabricCanvas) {
-    const design = location.state.designToLoad;
-    
-    // 1. Set Design Metadata
-    setCurrentDesign(design);
-    if (design.id) {
-      setEditingDesignId(design.id);
-    } else {
-      setEditingDesignId(null);
-    }
+  useEffect(() => {
+    if (location.state?.designToLoad && fabricCanvas) {
+      const design = location.state.designToLoad;
 
-    // 2. Get the JSON Data
-    let jsonContent = design.canvasData || design.canvasJSON;
+      // 1. Set Design Metadata
+      setCurrentDesign(design);
+      if (design.id) {
+        setEditingDesignId(design.id);
+      } else {
+        setEditingDesignId(null);
+      }
 
-    if (jsonContent) {
-      // --- START FIX: Clean and Convert JSON ---
-      const parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+      // 2. Get the JSON Data
+      let jsonContent = design.canvasData || design.canvasJSON;
 
-      if (parsedData.objects) {
-        parsedData.objects = parsedData.objects.map((obj) => {
-          // Check for Textbox or huge Text
-          if (obj.type === 'textbox') {
-            
-            // A. Convert to Text
-            obj.type = 'text';
+      if (jsonContent) {
+        // --- START FIX: Clean and Convert JSON ---
+        const parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
 
-            // B. Fix Alignment 
-            // Textboxes are often Top/Left aligned. Text usually works best Center/Center.
-            // We shift the 'left' position by half the width to keep it visually in the same place.
-            if (obj.width && (!obj.originX || obj.originX === 'left')) {
-              obj.left = obj.left + (obj.width / 2);
+        if (parsedData.objects) {
+          parsedData.objects = parsedData.objects.map((obj) => {
+            // Check for Textbox or huge Text
+            if (obj.type === 'textbox') {
+
+              // A. Convert to Text
+              obj.type = 'text';
+
+              // B. Fix Alignment 
+              // Textboxes are often Top/Left aligned. Text usually works best Center/Center.
+              // We shift the 'left' position by half the width to keep it visually in the same place.
+              if (obj.width && (!obj.originX || obj.originX === 'left')) {
+                obj.left = obj.left + (obj.width / 2);
+              }
+              obj.originX = 'center';
+              obj.originY = 'center'; // Optional: helps with rotation
+
+              // C. Scale Down Huge Fonts
+              // If font is massive (over 100), force it to 80.
+              // Also reset scale to 1 to prevent distortion.
+              if (obj.fontSize > 100) obj.fontSize = 80;
+              obj.scaleX = 1;
+              obj.scaleY = 1;
+
+              // D. Remove Textbox-specific constraints
+              delete obj.width; // Text objects auto-width
+              delete obj.minWidth;
+              delete obj.splitByGrapheme;
             }
-            obj.originX = 'center';
-            obj.originY = 'center'; // Optional: helps with rotation
+            return obj;
+          });
+        }
+        // --- END FIX ---
 
-            // C. Scale Down Huge Fonts
-            // If font is massive (over 100), force it to 80.
-            // Also reset scale to 1 to prevent distortion.
-            if (obj.fontSize > 100) obj.fontSize = 80;
-            obj.scaleX = 1;
-            obj.scaleY = 1;
+        // 3. Load the Modified JSON
+        fabricCanvas.loadFromJSON(parsedData, () => {
 
-            // D. Remove Textbox-specific constraints
-            delete obj.width; // Text objects auto-width
-            delete obj.minWidth;
-            delete obj.splitByGrapheme;
-          }
-          return obj;
+          // 4. Sync to Redux (Your existing logic, adapted slightly)
+          const newReduxState = fabricCanvas.getObjects().map((obj) => {
+            if (!obj.customId) {
+              obj.customId = Date.now() + Math.random(); // Ensure unique ID if missing
+            }
+
+            return {
+              id: obj.customId,
+              type: obj.type,
+              props: {
+                text: obj.text || '',
+                left: obj.left,
+                top: obj.top,
+                angle: obj.angle,
+                fill: obj.fill,
+                width: obj.width, // Note: Text objects won't have fixed width, that's fine
+                height: obj.height,
+                scaleX: obj.scaleX || 1,
+                scaleY: obj.scaleY || 1,
+                fontSize: obj.fontSize || 20,
+                fontFamily: obj.fontFamily || 'Arial',
+                fontWeight: obj.fontWeight || 'normal',
+                opacity: obj.opacity ?? 1,
+                shadowBlur: obj.shadow?.blur || 0,
+                shadowOffsetX: obj.shadow?.offsetX || 0,
+                shadowOffsetY: obj.shadow?.offsetY || 0,
+                shadowColor: obj.shadow?.color || '#000000',
+                charSpacing: obj.charSpacing || 0,
+                stroke: obj.stroke || null,
+                strokeWidth: obj.strokeWidth || 0,
+                textStyle: obj.textStyle || 'normal',
+                textEffect: obj.textEffect || 'none',
+                effectValue: obj.effectValue || 0,
+                radius: obj.radius || 0,
+              },
+              ...{ src: obj.type === 'image' ? obj.src : '' },
+            };
+          });
+
+          // 5. Update Redux
+          store.dispatch(setCanvasObjects(newReduxState));
+
+          fabricCanvas.requestRenderAll();
+          console.log("Template loaded, converted, and synced.");
         });
       }
-      // --- END FIX ---
-
-      // 3. Load the Modified JSON
-      fabricCanvas.loadFromJSON(parsedData, () => {
-        
-        // 4. Sync to Redux (Your existing logic, adapted slightly)
-        const newReduxState = fabricCanvas.getObjects().map((obj) => {
-          if (!obj.customId) {
-            obj.customId = Date.now() + Math.random(); // Ensure unique ID if missing
-          }
-
-          return {
-            id: obj.customId,
-            type: obj.type,
-            props: {
-              text: obj.text || '',
-              left: obj.left,
-              top: obj.top,
-              angle: obj.angle,
-              fill: obj.fill,
-              width: obj.width, // Note: Text objects won't have fixed width, that's fine
-              height: obj.height,
-              scaleX: obj.scaleX || 1,
-              scaleY: obj.scaleY || 1,
-              fontSize: obj.fontSize || 20,
-              fontFamily: obj.fontFamily || 'Arial',
-              fontWeight: obj.fontWeight || 'normal',
-              opacity: obj.opacity ?? 1,
-              shadowBlur: obj.shadow?.blur || 0,
-              shadowOffsetX: obj.shadow?.offsetX || 0,
-              shadowOffsetY: obj.shadow?.offsetY || 0,
-              shadowColor: obj.shadow?.color || '#000000',
-              charSpacing: obj.charSpacing || 0,
-              stroke: obj.stroke || null,
-              strokeWidth: obj.strokeWidth || 0,
-              textStyle: obj.textStyle || 'normal',
-              textEffect: obj.textEffect || 'none',
-              effectValue: obj.effectValue || 0,
-              radius: obj.radius || 0,
-            },
-            ...{src: obj.type === 'image' ? obj.src : ''}, 
-          };
-        });
-
-        // 5. Update Redux
-        store.dispatch(setCanvasObjects(newReduxState));
-        
-        fabricCanvas.requestRenderAll();
-        console.log("Template loaded, converted, and synced.");
-      });
     }
-  }
-}, [location.state, fabricCanvas]);
+  }, [location.state, fabricCanvas]);
 
   // 🟩 Load from Persistence (LocalStorage/Firestore)
   useEffect(() => {
