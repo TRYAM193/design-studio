@@ -64,7 +64,7 @@ export default function DashboardTemplates() {
           // WE DO NOT PASS AN ID. This tells the editor "This is a NEW, Unsaved design"
           id: null, 
           name: `${template.name} (Copy)`,
-          canvasData: template.canvasData
+          canvasJSON: template.canvasData
         } 
       } 
     });
