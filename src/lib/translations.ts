@@ -41,7 +41,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.notifications": "Notifications",
     
     // Templates
-    "templates.title": "Template",
+    "templates.title": "Templates",
     "templates.search": "Search templates...",
     "templates.filterTier": "Tier",
     "templates.allTiers": "All Tiers",
