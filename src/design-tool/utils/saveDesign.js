@@ -25,7 +25,7 @@ const handleRedux = () => {
 //  const dispatch = useDispatch();
 
  store.dispatch(setCanvasObjects([]))
- store.dispatch(ActionCreators.clearHistory());
+//  store.dispatch(ActionCreators.clearHistory());
 }
 
 export const saveNewDesign = async (userId, canvas, setSaving) => {
