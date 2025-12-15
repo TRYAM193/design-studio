@@ -26,6 +26,7 @@ function loadDesign(canvas, designJson) {
   }
 
   canvas.loadFromJSON(designJson, () => {
+    console.log('Design Loaded')
     canvas.renderAll();
   });
 }
