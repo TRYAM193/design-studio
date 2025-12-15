@@ -313,7 +313,7 @@ export default function CanvasEditor({
       }
     };
     loadDesign();
-  }, [fabricCanvas, initialized]);
+  }, [fabricCanvas, initialized, location.state]);
 
   // 🟩 Handle Selection Events
   useEffect(() => {
