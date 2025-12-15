@@ -142,6 +142,7 @@ export default function CanvasEditor({
       if (typeof design.canvasJSON === 'string'){
         design.canvasJSON = JSON.parse(design.canvasJSON)
       }
+      
       fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
       setTimeout(() => {
         fabricCanvas.requestRenderAll();
