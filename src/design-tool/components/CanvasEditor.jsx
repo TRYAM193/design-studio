@@ -173,6 +173,8 @@ export default function CanvasEditor({
             }
           };
         });
+
+        
       }, 90);
     }
   }, [location.state, fabricCanvas]);
