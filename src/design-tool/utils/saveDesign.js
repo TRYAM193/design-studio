@@ -22,7 +22,7 @@ function removeUndefined(obj) {
 }
 
 const handleRedux = () => {
- const dispatch = useDispatch();
+//  const dispatch = useDispatch();
 
  store.dispatch(setCanvasObjects([]))
  store.dispatch(ActionCreators.clearHistory());
