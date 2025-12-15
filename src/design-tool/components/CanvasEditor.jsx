@@ -193,8 +193,7 @@ export default function CanvasEditor({
                 effectValue: obj.effectValue || 0,
                 radius: obj.radius || 0,
               },
-              // For images, we need the src at the top level for your specific logic
-              src: obj.src || '', 
+              ...src: obj.src || '', 
             };
           });
 
