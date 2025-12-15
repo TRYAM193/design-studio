@@ -147,7 +147,6 @@ export default function CanvasEditor({
 
       if (parsedData) {
         fabricCanvas.loadFromJSON(parsedData, () => {
-          fabricCanvas.requestRenderAll();
           const newObjs = fabricCanvas.getObjects().map((obj) => {
             return {
               id: obj.customId || Date.now(),
@@ -175,9 +174,9 @@ export default function CanvasEditor({
               }
             };
           });
-
           store.dispatch(setCanvasObjects(newObjs))
         });
+        fabricCanvas.requestRenderAll();
       }
     }
   }, [location.state, fabricCanvas]);
