@@ -195,7 +195,7 @@ export default function CanvasEditor({
     if (!fabricCanvas) return;
 
     loadDesign(fabricCanvas, template);
-  }, [fabricCanvas]);
+  }, [fabricCanva]);
 
   // 🟩 Load from Persistence (LocalStorage/Firestore)
   useEffect(() => {
