@@ -176,6 +176,7 @@ export default function CanvasEditor({
           });
           store.dispatch(setCanvasObjects(newObjs))
         });
+        
         fabricCanvas.requestRenderAll();
       }
     }
