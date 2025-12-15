@@ -166,7 +166,6 @@ export default function CanvasEditor({
             return {
               id: obj.customId,
               type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
-              // Map all necessary properties for Redux to recreate the object
               props: {
                 text: obj.text || '',
                 left: obj.left,
