@@ -19,7 +19,7 @@ export default function DashboardTemplates() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedTier, setSelectedTier] = useState("All");
 
-  const categories = ["All", "T-Shirts", "Hoodies", "Sportswears", "Kids", "Accessories"];
+  const categories = ["All", "T-Shirts", "Hoodies", "Sportswear", "Kids", "Accessories"];
 
   const getCategoryLabel = (cat: string) => {
     const key = `category.${cat.toLowerCase().replace(/[-\s]/g, "")}`;
