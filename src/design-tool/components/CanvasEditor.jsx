@@ -56,7 +56,6 @@ export default function CanvasEditor({
   const location = useLocation();
   const previousStatesRef = useRef(new Map());
   const dispatch = useDispatch();
-  const ignoreReduxUpdate = useRef(false);
 
   const [menuPosition, setMenuPosition] = useState(null);
   const [selectedObjectLocked, setSelectedObjectLocked] = useState(false);
@@ -133,53 +132,37 @@ export default function CanvasEditor({
     };
   }, []);
 
+  // 🟩 Load Saved Designs
   // 🟩 Load Saved Designs / Templates (Improved Redux Sync)
-  // REPLACE the useEffect at line 135 with this:
-
-  // 🟩 Load Saved Designs / Templates (Safer Version)
   useEffect(() => {
-    // Check if we have a design to load
     if (location.state?.designToLoad && fabricCanvas) {
       const design = location.state.designToLoad;
-
-      // 1. LOCK: Stop Redux from wiping the canvas while we work
-      ignoreReduxUpdate.current = true;
-      isSyncingRef.current = true; // Also stop Fabric listeners
-
+      
+      // 1. Set Design Metadata
       setCurrentDesign(design);
-      setEditingDesignId(design.id || null);
+      
+      // If no ID is passed (like from a template), we don't set editingDesignId
+      // This ensures the "Save" button treats it as a NEW design.
+      if (design.id) {
+        setEditingDesignId(design.id);
+      } else {
+        setEditingDesignId(null);
+      }
 
-      let jsonContent = design.canvasData || design.canvasJSON;
+      // 2. Determine which data field to use (Legacy vs New)
+      const jsonContent = design.canvasData || design.canvasJSON;
 
       if (jsonContent) {
-        // Parse and Clean JSON (The fix from before)
-        const parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
-        if (parsedData.objects) {
-          parsedData.objects = parsedData.objects.map((obj) => {
-            if (obj.type === 'textbox') {
-              obj.type = 'text';
-              if (obj.width && (!obj.originX || obj.originX === 'left')) {
-                obj.left = obj.left + (obj.width / 2);
-              }
-              obj.originX = 'center';
-              obj.originY = 'center';
-              if (obj.fontSize > 100) obj.fontSize = 80;
-              obj.scaleX = 1;
-              obj.scaleY = 1;
-              delete obj.width;
-              delete obj.minWidth;
-              delete obj.splitByGrapheme;
-            }
-            return obj;
-          });
-        }
-
-        // 2. Load to Canvas
-        fabricCanvas.loadFromJSON(parsedData, () => {
-
-          // 3. Prepare Redux State
+        // 3. Load into Fabric
+        fabricCanvas.loadFromJSON(jsonContent, () => {
+          
+          // 4. Sync to Redux (Build array first, then dispatch ONCE)
           const newReduxState = fabricCanvas.getObjects().map((obj) => {
-            if (!obj.customId) obj.customId = Date.now() + Math.random();
+            // Ensure every object has a customId
+            if (!obj.customId) {
+              obj.customId = Date.now();
+            }
+
             return {
               id: obj.customId,
               type: obj.type,
@@ -189,30 +172,36 @@ export default function CanvasEditor({
                 top: obj.top,
                 angle: obj.angle,
                 fill: obj.fill,
+                width: obj.width,
+                height: obj.height,
                 scaleX: obj.scaleX || 1,
                 scaleY: obj.scaleY || 1,
                 fontSize: obj.fontSize || 20,
                 fontFamily: obj.fontFamily || 'Arial',
                 fontWeight: obj.fontWeight || 'normal',
+                opacity: obj.opacity ?? 1,
+                shadowBlur: obj.shadow?.blur || 0,
+                shadowOffsetX: obj.shadow?.offsetX || 0,
+                shadowOffsetY: obj.shadow?.offsetY || 0,
+                shadowColor: obj.shadow?.color || '#000000',
+                charSpacing: obj.charSpacing || 0,
+                stroke: obj.stroke || null,
+                strokeWidth: obj.strokeWidth || 0,
+                textStyle: obj.textStyle || 'normal',
                 textEffect: obj.textEffect || 'none',
-                // ... add other props you need
+                effectValue: obj.effectValue || 0,
+                radius: obj.radius || 0,
               },
-              src: obj.type === 'image' ? obj.src : ''
+              ...{src: obj.type === 'image'? obj.src : ''}, 
             };
           });
 
-          // 4. Update Redux
-          dispatch(setCanvasObjects(newReduxState));
-
-          // 5. UNLOCK: Allow updates again
-          // We use a small timeout to let Redux process the dispatch first
-          setTimeout(() => {
-            ignoreReduxUpdate.current = false;
-            isSyncingRef.current = false;
-            console.log("Template loaded safely.");
-          }, 100);
-
+          // 5. Update Redux in one go
+          // This ensures "Undo" works correctly (1 step = 1 design load)
+          store.dispatch(setCanvasObjects(newReduxState));
+          
           fabricCanvas.requestRenderAll();
+          console.log("Template loaded and synced to Redux successfully");
         });
       }
     }
@@ -220,7 +209,6 @@ export default function CanvasEditor({
 
   // 🟩 Load from Persistence (LocalStorage/Firestore)
   useEffect(() => {
-    if (location.state?.designToLoad) return;
     if (!fabricCanvas || !initialized) return;
 
     const loadDesign = async () => {
@@ -291,7 +279,7 @@ export default function CanvasEditor({
       }
     };
     loadDesign();
-  }, [fabricCanvas, initialized, location.state]);
+  }, [fabricCanvas, initialized]);
 
   // 🟩 Handle Selection Events
   useEffect(() => {
@@ -472,7 +460,6 @@ export default function CanvasEditor({
   // 🟩 Sync Redux state → Fabric (THE FIX IS HERE)
   useEffect(() => {
     if (!initialized) return;
-    if (ignoreReduxUpdate.current) return;
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
 
