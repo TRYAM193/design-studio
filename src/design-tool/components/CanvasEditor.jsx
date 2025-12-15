@@ -147,8 +147,6 @@ export default function CanvasEditor({
       setTimeout(() => {
         fabricCanvas.requestRenderAll();
         const newObjs = fabricCanvas.getObjects().forEach((obj) => {
-          const state = store.getState();
-          const canvasObjects = state.canvas.present;
 
           const newObjs = {
             id: obj.customId || Date.now(),
