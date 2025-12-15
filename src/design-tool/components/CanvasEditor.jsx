@@ -139,7 +139,7 @@ export default function CanvasEditor({
 
       if (design.id) setEditingDesignId(design.id);
       else setEditingDesignId(null)
-      
+
       let parsedData
       let jsonContent = design.canvasJSON || design.canvasData
       if (jsonContent) {
@@ -176,6 +176,7 @@ export default function CanvasEditor({
               }
             };
           });
+          if ()
           store.dispatch(setCanvasObjects(newObjs))
         }, 50);
 
