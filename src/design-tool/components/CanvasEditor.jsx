@@ -142,7 +142,7 @@ export default function CanvasEditor({
 
       let jsonContent = design.canvasJSON || design.canvasData
       if (jsonContent) {
-        const parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+        let parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       }
 
       if (parsedData) {
