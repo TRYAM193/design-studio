@@ -54,7 +54,7 @@
     {
       "type": "textbox",
       "customId": "text_solves",
-      "text": "solves",
+      "text": "Solves",
       "left": 350,
       "top": 1200,
       "width": 2300,
@@ -69,7 +69,7 @@
     {
       "type": "textbox",
       "customId": "text_nothing",
-      "text": "nothing",
+      "text": "Nothing",
       "left": 300,
       "top": 1750,
       "width": 2400,
