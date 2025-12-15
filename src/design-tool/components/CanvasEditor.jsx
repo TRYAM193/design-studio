@@ -140,7 +140,7 @@ export default function CanvasEditor({
       if (design.id) setEditingDesignId(design.id);
       else setEditingDesignId(null)
 
-      let jsonContent = canvasJSON || canvasData
+      let jsonContent = design.canvasJSON || design.canvasData
       if (jsonContent) {
         const parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       }
@@ -176,7 +176,7 @@ export default function CanvasEditor({
           });
           store.dispatch(setCanvasObjects(newObjs))
         });
-        
+
         fabricCanvas.requestRenderAll();
       }
     }
