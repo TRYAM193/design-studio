@@ -2,6 +2,7 @@ import { db as firestore } from '@/firebase';
 import { collection, doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { store } from '../redux/store';
+import { setCanvasObjects } from '../redux/canvasSlice';
 
 function removeUndefined(obj) {
   if (Array.isArray(obj)) {
