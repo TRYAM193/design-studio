@@ -231,9 +231,9 @@ export default function CanvasEditor({
           });
 
           // 5. Update Redux
+          fabricCanvas.requestRenderAll();
           store.dispatch(setCanvasObjects(newReduxState));
 
-          fabricCanvas.requestRenderAll();
           console.log("Template loaded, converted, and synced.");
         });
       }
