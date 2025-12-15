@@ -160,7 +160,7 @@ export default function CanvasEditor({
           const newReduxState = fabricCanvas.getObjects().map((obj) => {
             // Ensure every object has a customId
             if (!obj.customId) {
-              obj.customId = `obj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              obj.customId = Date.now();
             }
 
             return {
