@@ -1,0 +1,98 @@
+{
+  "designId": "tryam_typo_overthinking_001",
+  "version": "6.9.0",
+  "width": 3000,
+  "height": 3600,
+  "objects": [
+    {
+      "type": "rect",
+      "customId": "background_black",
+      "left": 0,
+      "top": 0,
+      "width": 3000,
+      "height": 3600,
+      "fill": "#000000",
+      "selectable": false,
+      "evented": false,
+      "lockMovementX": true,
+      "lockMovementY": true,
+      "lockScalingX": true,
+      "lockScalingY": true,
+      "lockRotation": true
+    },
+
+    {
+      "type": "textbox",
+      "customId": "text_over",
+      "text": "over",
+      "left": 400,
+      "top": 300,
+      "width": 2200,
+      "fontSize": 420,
+      "fontFamily": "BubbleGraffiti",
+      "fontWeight": "bold",
+      "fill": "#ffffff",
+      "textAlign": "center",
+      "editable": true
+    },
+
+    {
+      "type": "textbox",
+      "customId": "text_thinking",
+      "text": "thinking",
+      "left": 300,
+      "top": 750,
+      "width": 2400,
+      "fontSize": 360,
+      "fontFamily": "BubbleGraffiti",
+      "fontWeight": "bold",
+      "fill": "#ffffff",
+      "textAlign": "center",
+      "editable": true
+    },
+
+    {
+      "type": "textbox",
+      "customId": "text_solves",
+      "text": "solves",
+      "left": 350,
+      "top": 1200,
+      "width": 2300,
+      "fontSize": 420,
+      "fontFamily": "BubbleGraffiti",
+      "fontWeight": "bold",
+      "fill": "#ffffff",
+      "textAlign": "center",
+      "editable": true
+    },
+
+    {
+      "type": "textbox",
+      "customId": "text_nothing",
+      "text": "nothing",
+      "left": 300,
+      "top": 1750,
+      "width": 2400,
+      "fontSize": 420,
+      "fontFamily": "BubbleGraffiti",
+      "fontWeight": "bold",
+      "fill": "#ffffff",
+      "textAlign": "center",
+      "editable": true
+    },
+
+    {
+      "type": "textbox",
+      "customId": "text_est_2025",
+      "text": "Est. 2025",
+      "left": 900,
+      "top": 2400,
+      "width": 1200,
+      "fontSize": 160,
+      "fontFamily": "ScriptHand",
+      "fill": "#ffffff",
+      "textAlign": "center",
+      "editable": true
+    }
+  ]
+}
