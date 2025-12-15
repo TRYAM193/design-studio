@@ -3,7 +3,7 @@ import { collection, doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { store } from '../redux/store';
 import { setCanvasObjects } from '../redux/canvasSlice';
-
+import { useDispatch } from 'react-redux';
 
 function removeUndefined(obj) {
   if (Array.isArray(obj)) {
