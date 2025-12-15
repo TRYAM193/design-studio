@@ -139,15 +139,16 @@ export default function CanvasEditor({
 
       if (design.id) setEditingDesignId(design.id);
       else setEditingDesignId(null)
-let parsedDat
+      
+      let parsedData
       let jsonContent = design.canvasJSON || design.canvasData
       if (jsonContent) {
         parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       }
 
       if (parsedData) {
-        fabricCanvas.loadFromJSON(parsedData, () => {})
-        setTimeout( () => {
+        fabricCanvas.loadFromJSON(parsedData, () => { })
+        setTimeout(() => {
           const newObjs = fabricCanvas.getObjects().map((obj) => {
             return {
               id: obj.customId || Date.now(),
@@ -176,7 +177,7 @@ let parsedDat
             };
           });
           store.dispatch(setCanvasObjects(newObjs))
-        });
+        }, 50);
 
         fabricCanvas.requestRenderAll();
       }
