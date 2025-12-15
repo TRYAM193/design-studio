@@ -193,7 +193,7 @@ export default function CanvasEditor({
                 effectValue: obj.effectValue || 0,
                 radius: obj.radius || 0,
               },
-              ...src: obj.src || '', 
+              ...{obj.type === 'image' ? src: obj.src || '', 
             };
           });
 
