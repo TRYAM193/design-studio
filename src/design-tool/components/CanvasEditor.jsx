@@ -176,6 +176,12 @@ export default function CanvasEditor({
     }
   }, [location.state, fabricCanvas]);
 
+  useEffect(() => {
+  if (!fabricCanvas) return;
+
+  loadDesign(fabricCanvas, template);
+}, [fabricCanvas]);
+
   // 🟩 Load from Persistence (LocalStorage/Firestore)
   useEffect(() => {
     if (!fabricCanvas || !initialized) return;
