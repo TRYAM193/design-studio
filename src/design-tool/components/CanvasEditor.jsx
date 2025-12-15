@@ -15,7 +15,6 @@ import updateExisting from '../utils/updateExisting'
 import FloatingMenu from './FloatingMenu';
 import { handleCanvasAction } from '../utils/canvasActions';
 import ShapeAdder from '../objectAdders/Shapes';
-
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
     return toObject.call(
@@ -133,77 +132,46 @@ export default function CanvasEditor({
   }, []);
 
   // 🟩 Load Saved Designs
-  // 🟩 Load Saved Designs / Templates (Improved Redux Sync)
   useEffect(() => {
     if (location.state?.designToLoad && fabricCanvas) {
       const design = location.state.designToLoad;
-      
-      // 1. Set Design Metadata
       setCurrentDesign(design);
-      
-      // If no ID is passed (like from a template), we don't set editingDesignId
-      // This ensures the "Save" button treats it as a NEW design.
-      if (design.id) {
-        setEditingDesignId(design.id);
-      } else {
-        setEditingDesignId(null);
-      }
+      setEditingDesignId(design.id);
 
-      // 2. Determine which data field to use (Legacy vs New)
-      const jsonContent = design.canvasData || design.canvasJSON;
+      fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
+      setTimeout(() => {
+        fabricCanvas.requestRenderAll();
+        fabricCanvas.getObjects().forEach((obj) => {
+          const state = store.getState();
+          const canvasObjects = state.canvas.present;
 
-      if (jsonContent) {
-        // 3. Load into Fabric
-        fabricCanvas.loadFromJSON(jsonContent, () => {
-          
-          // 4. Sync to Redux (Build array first, then dispatch ONCE)
-          const newReduxState = fabricCanvas.getObjects().map((obj) => {
-            // Ensure every object has a customId
-            if (!obj.customId) {
-              obj.customId = Date.now;
-            }
-
-            return {
-              id: obj.customId,
-              type: obj.type,
-              props: {
-                text: obj.text || '',
-                left: obj.left,
-                top: obj.top,
-                angle: obj.angle,
-                fill: obj.fill,
-                width: obj.width,
-                height: obj.height,
-                scaleX: obj.scaleX || 1,
-                scaleY: obj.scaleY || 1,
-                fontSize: obj.fontSize || 20,
-                fontFamily: obj.fontFamily || 'Arial',
-                fontWeight: obj.fontWeight || 'normal',
-                opacity: obj.opacity ?? 1,
-                shadowBlur: obj.shadow?.blur || 0,
-                shadowOffsetX: obj.shadow?.offsetX || 0,
-                shadowOffsetY: obj.shadow?.offsetY || 0,
-                shadowColor: obj.shadow?.color || '#000000',
-                charSpacing: obj.charSpacing || 0,
-                stroke: obj.stroke || null,
-                strokeWidth: obj.strokeWidth || 0,
-                textStyle: obj.textStyle || 'normal',
-                textEffect: obj.textEffect || 'none',
-                effectValue: obj.effectValue || 0,
-                radius: obj.radius || 0,
-              },
-              ...{src: obj.type === 'image'? obj.src : ''}, 
-            };
-          });
-
-          // 5. Update Redux in one go
-          // This ensures "Undo" works correctly (1 step = 1 design load)
-          store.dispatch(setCanvasObjects(newReduxState));
-          
-          fabricCanvas.requestRenderAll();
-          console.log("Template loaded and synced to Redux successfully");
+          const newObj = {
+            id: obj.customId,
+            type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+            props: {
+              text: obj.text,
+              left: obj.left,
+              top: obj.top,
+              angle: obj.angle,
+              fill: obj.fill,
+              fontSize: obj.fontSize,
+              opacity: obj.opacity,
+              shadowBlur: obj.shadowBlur,
+              shadowOffsetX: obj.shadowOffsetX,
+              shadowOffsetY: obj.shadowOffsetY,
+              shadowColor: obj.shadowColor,
+              charSpacing: obj.charSpacing,
+              stroke: obj.stroke,
+              strokeWidth: obj.strokeWidth,
+              textStyle: obj.textStyle,
+              textEffect: obj.textEffect,
+              effectValue: obj.effectValue,
+              radius: obj.radius
+            },
+          };
+          store.dispatch(setCanvasObjects([...canvasObjects, newObj]));
         });
-      }
+      }, 90);
     }
   }, [location.state, fabricCanvas]);
 
