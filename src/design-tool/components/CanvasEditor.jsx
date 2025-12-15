@@ -15,6 +15,7 @@ import updateExisting from '../utils/updateExisting'
 import FloatingMenu from './FloatingMenu';
 import { handleCanvasAction } from '../utils/canvasActions';
 import ShapeAdder from '../objectAdders/Shapes';
+import 
 
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
@@ -60,7 +61,7 @@ export default function CanvasEditor({
   const [menuPosition, setMenuPosition] = useState(null);
   const [selectedObjectLocked, setSelectedObjectLocked] = useState(false);
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
-  const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble' ];
+  const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
   const updateMenuPosition = () => {
     const canvas = fabricCanvasRef.current;
@@ -177,10 +178,10 @@ export default function CanvasEditor({
   }, [location.state, fabricCanvas]);
 
   useEffect(() => {
-  if (!fabricCanvas) return;
+    if (!fabricCanvas) return;
 
-  loadDesign(fabricCanvas, template);
-}, [fabricCanvas]);
+    loadDesign(fabricCanvas, template);
+  }, [fabricCanvas]);
 
   // 🟩 Load from Persistence (LocalStorage/Firestore)
   useEffect(() => {
