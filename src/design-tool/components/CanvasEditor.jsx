@@ -151,7 +151,7 @@ export default function CanvasEditor({
           const canvasObjects = state.canvas.present;
 
           const newObjs = {
-            id: obj.customId ,
+            id: obj.customId || Date.now(),
             type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
             props: {
               text: obj.text,
