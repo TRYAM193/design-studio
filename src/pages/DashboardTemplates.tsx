@@ -33,7 +33,7 @@ export default function DashboardTemplates() {
     { id: 1, name: "Urban Streetwear", category: "T-Shirts", tier: "Free", image: "https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=500&auto=format&fit=crop&q=60" },
     { id: 2, name: "Vintage 90s", category: "Hoodies", tier: "Pro", image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=500&auto=format&fit=crop&q=60" },
     { id: 3, name: "Minimalist Logo", category: "T-Shirts", tier: "Free", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop&q=60" },
-    { id: 4, name: "Sports Team Jersey", category: "Sportswear", tier: "pre", image: "https://images.unsplash.com/photo-1577210917260-94280f228e87?w=500&auto=format&fit=crop&q=60" },
+    { id: 4, name: "Sports Team Jersey", category: "Sportswear", tier: "Pro", image: "https://images.unsplash.com/photo-1577210917260-94280f228e87?w=500&auto=format&fit=crop&q=60" },
     { id: 5, name: "Kids Cartoon", category: "Kids", tier: "Free", image: "https://images.unsplash.com/photo-1519238263496-6361937a2717?w=500&auto=format&fit=crop&q=60" },
     { id: 6, name: "Abstract Art", category: "T-Shirts", tier: "Pro", image: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&auto=format&fit=crop&q=60" },
     { id: 7, name: "Gym Performance", category: "Sportswears", tier: "Free", image: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=500&auto=format&fit=crop&q=60" },
