@@ -176,7 +176,9 @@ export default function CanvasEditor({
               }
             };
           });
-          if (newObjs) store.dispatch(setCanvasObjects(newObjs))
+          if (newObjs) {
+            store.dispatch(setCanvasObjects(newObjs))
+            
         }, 50);
 
         fabricCanvas.requestRenderAll();
