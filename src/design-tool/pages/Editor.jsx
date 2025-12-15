@@ -78,7 +78,7 @@ export default function EditorPanel() {
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{cursor: 'pointer'}}>
             <div className="logo-circle">
                 <img
-                    src="/assets/.svg" 
+                    src="/assets/LOGO.png" 
                     alt="TRYAM Logo"
                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
