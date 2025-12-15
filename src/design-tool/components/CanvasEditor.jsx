@@ -137,8 +137,7 @@ export default function CanvasEditor({
       const design = location.state.designToLoad;
       setCurrentDesign(design);
 
-      if ()
-      setEditingDesignId(design.id);
+      if (design.id) setEditingDesignId(design.id);
 
       fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
       setTimeout(() => {
