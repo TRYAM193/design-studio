@@ -23,7 +23,8 @@ function removeUndefined(obj) {
 const handleRedux = () => {
  const dispatch = useDispatch();
 
- dispatch(setCanvasObjects([]))
+ store.dispatch(setCanvasObjects([]))
+ store.dispatch(ActionCreators.clearHistory());
 }
 
 export const saveNewDesign = async (userId, canvas, setSaving) => {
