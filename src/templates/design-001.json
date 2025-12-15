@@ -13,81 +13,71 @@
       "height": 800,
       "fill": "#000000",
       "selectable": false,
-      "evented": false,
-      "lockMovementX": true,
-      "lockMovementY": true,
-      "lockScalingX": true,
-      "lockScalingY": true,
-      "lockRotation": true
+      "evented": false
     },
     {
-      "type": "textbox",
+      "type": "text",
       "customId": "text_over",
       "text": "Over",
-      "left": 250,
+      "left": 400,
       "top": 150,
-      "width": 300,
-      "fontSize": 85,
+      "fontSize": 80,
       "fontFamily": "BubbleGraffiti",
       "fontWeight": "bold",
       "fill": "#ffffff",
-      "textAlign": "center",
-      "editable": true
+      "originX": "center",
+      "originY": "top"
     },
     {
-      "type": "textbox",
+      "type": "text",
       "customId": "text_thinking",
       "text": "Thinking",
-      "left": 200,
+      "left": 400,
       "top": 250,
-      "width": 400,
-      "fontSize": 85,
+      "fontSize": 80,
       "fontFamily": "BubbleGraffiti",
       "fontWeight": "bold",
       "fill": "#ffffff",
-      "textAlign": "center",
-      "editable": true
+      "originX": "center",
+      "originY": "top"
     },
     {
-      "type": "textbox",
+      "type": "text",
       "customId": "text_solves",
       "text": "Solves",
-      "left": 250,
+      "left": 400,
       "top": 350,
-      "width": 300,
-      "fontSize": 85,
+      "fontSize": 80,
       "fontFamily": "BubbleGraffiti",
       "fontWeight": "bold",
       "fill": "#ffffff",
-      "textAlign": "center",
-      "editable": true
+      "originX": "center",
+      "originY": "top"
     },
     {
-      "type": "textbox",
+      "type": "text",
       "customId": "text_nothing",
       "text": "Nothing",
-      "left": 200,
+      "left": 400,
       "top": 450,
-      "width": 400,
-      "fontSize": 85,
+      "fontSize": 80,
       "fontFamily": "BubbleGraffiti",
       "fontWeight": "bold",
       "fill": "#ffffff",
-      "textAlign": "center",
-      "editable": true
+      "originX": "center",
+      "originY": "top"
     },
     {
-      "type": "textbox",
+      "type": "text",
       "customId": "text_est_2025",
       "text": "Est. 2025",
-      "left": 580,
+      "left": 655,
       "top": 680,
-      "width": 150,
       "fontSize": 35,
       "fontFamily": "ScriptHand",
       "fill": "#ffffff",
-      "textAlign": "center",
-      "editable": true
+      "originX": "center",
+      "originY": "top"
     }
   ]
 }
