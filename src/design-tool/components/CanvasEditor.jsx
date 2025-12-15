@@ -139,10 +139,11 @@ export default function CanvasEditor({
 
       if (design.id) setEditingDesignId(design.id);
       else setEditingDesignId(null)
-let parsedDat
+      
+      let parsedData
       let jsonContent = design.canvasJSON || design.canvasData
       if (jsonContent) {
-        let parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+        parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       }
 
       if (parsedData) {
