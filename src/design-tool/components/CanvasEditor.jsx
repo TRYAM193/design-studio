@@ -142,7 +142,7 @@ export default function CanvasEditor({
       if (typeof design.canvasJSON === 'string'){
         design.canvasJSON = JSON.parse(design.canvasJSON)
       }
-      
+
       fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
       setTimeout(() => {
         fabricCanvas.requestRenderAll();
@@ -150,8 +150,8 @@ export default function CanvasEditor({
           const state = store.getState();
           const canvasObjects = state.canvas.present;
 
-          const newObj = {
-            id: obj.customId,
+          const newObjs = {
+            id: obj.customId ,
             type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
             props: {
               text: obj.text,
