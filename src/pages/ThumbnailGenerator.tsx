@@ -94,7 +94,7 @@ export default function ThumbnailGenerator() {
         {generatedImage && (
           <div className="flex flex-col gap-2">
             <p className="text-center p-2 bg-yellow-200 font-mono text-sm font-bold">
-              Right Click Image Below -> Save As...
+              Right Click Image Below - Save As...
             </p>
             <img 
               src={generatedImage} 
