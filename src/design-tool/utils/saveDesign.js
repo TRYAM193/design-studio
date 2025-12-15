@@ -61,6 +61,7 @@ export const saveNewDesign = async (userId, canvas, setSaving) => {
     setSaving(false);
     canvas.clear();
     canvas.renderAll();
+    hand
   }
 };
 
