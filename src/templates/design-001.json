@@ -24,7 +24,7 @@
     {
       "type": "textbox",
       "customId": "text_over",
-      "text": "over",
+      "text": "Over",
       "left": 400,
       "top": 300,
       "width": 2200,
@@ -39,7 +39,7 @@
     {
       "type": "textbox",
       "customId": "text_thinking",
-      "text": "thinking",
+      "text": "Thinking",
       "left": 300,
       "top": 750,
       "width": 2400,
