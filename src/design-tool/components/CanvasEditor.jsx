@@ -146,7 +146,7 @@ export default function CanvasEditor({
       fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
       setTimeout(() => {
         fabricCanvas.requestRenderAll();
-        fabricCanvas.getObjects().forEach((obj) => {
+        const fabricCanvas.getObjects().forEach((obj) => {
           const state = store.getState();
           const canvasObjects = state.canvas.present;
 
