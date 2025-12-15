@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { store } from '../redux/store';
 import { setCanvasObjects } from '../redux/canvasSlice';
 
+
 function removeUndefined(obj) {
   if (Array.isArray(obj)) {
     return obj.map(removeUndefined);
@@ -20,7 +21,7 @@ function removeUndefined(obj) {
 }
 
 const handleRedux = () => {
-  const 
+ const dispatch = useDispatch();
 }
 
 export const saveNewDesign = async (userId, canvas, setSaving) => {
