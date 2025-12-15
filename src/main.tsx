@@ -20,8 +20,9 @@ import DashboardProducts from "./pages/DashboardProducts";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
 // We will create this provider in the next step
-import { AuthProvider } from "./hooks/use-auth"; 
+import { AuthProvider } from "./hooks/use-auth";
 import DesignEditorPage from "./pages/DesignEditorPage";
+import ThumbnailGenerator from "./pages/ThumbnailGenerator";
 
 function RouteSyncer() {
   const location = useLocation();
@@ -56,9 +57,9 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
-            
-            <Route path="/design/*" element={<DesignEditorPage />} />
 
+            <Route path="/design/*" element={<DesignEditorPage />} />
+            <Route path="/generator" element={<ThumbnailGenerator />} />
             {/* Dashboard Routes */}
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
