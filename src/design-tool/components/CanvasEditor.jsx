@@ -139,11 +139,10 @@ export default function CanvasEditor({
 
       if (design.id) setEditingDesignId(design.id);
       else setEditingDesignId(null)
-      
-      let parsedData
-      let jsonContent = design.canvasJSON || design.canvasData
+
+      let jsonContent = canvasJSON || canvasData
       if (jsonContent) {
-        parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+        const parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       }
 
       if (parsedData) {
@@ -175,10 +174,10 @@ export default function CanvasEditor({
               }
             };
           });
+          
+          fabricCanvas.requestRenderAll();
           store.dispatch(setCanvasObjects(newObjs))
         });
-
-        fabricCanvas.requestRenderAll();
       }
     }
   }, [location.state, fabricCanvas]);
