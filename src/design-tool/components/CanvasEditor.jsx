@@ -132,7 +132,6 @@ export default function CanvasEditor({
     };
   }, []);
 
-  // 🟩 Load Saved Designs
   // 🟩 Load Saved Designs / Templates (Improved Redux Sync)
   // REPLACE the useEffect at line 135 with this:
 
