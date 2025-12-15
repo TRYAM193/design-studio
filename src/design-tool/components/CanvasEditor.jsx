@@ -174,7 +174,7 @@ export default function CanvasEditor({
           };
         });
 
-        
+        store.dispatch(setCanvasObjects())
       }, 90);
     }
   }, [location.state, fabricCanvas]);
