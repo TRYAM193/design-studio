@@ -15,7 +15,7 @@ import updateExisting from '../utils/updateExisting'
 import FloatingMenu from './FloatingMenu';
 import { handleCanvasAction } from '../utils/canvasActions';
 import ShapeAdder from '../objectAdders/Shapes';
-import template from '..templates/'
+import template from '../templates/design-001'
 
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
