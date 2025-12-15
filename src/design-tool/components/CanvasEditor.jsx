@@ -142,6 +142,7 @@ export default function CanvasEditor({
       
       let jsoncontent = canvasJSON || canvasData
 
+      parsed
       fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
       setTimeout(() => {
         fabricCanvas.requestRenderAll();
