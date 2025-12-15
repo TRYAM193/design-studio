@@ -174,7 +174,6 @@ export default function CanvasEditor({
               radius: obj.radius
             },
           };
-          store.dispatch(setCanvasObjects([...canvasObjects, newObj]));
         });
       }, 90);
     }
