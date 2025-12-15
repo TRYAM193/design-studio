@@ -180,7 +180,7 @@ export default function CanvasEditor({
             store.dispatch(setCanvasObjects(newObjs))
             console.log('Redux Synced')
           }
-        }, 50);
+        }, 100);
 
         fabricCanvas.requestRenderAll();
       }
