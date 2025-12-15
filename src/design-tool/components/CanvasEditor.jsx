@@ -147,8 +147,6 @@ export default function CanvasEditor({
       setTimeout(() => {
         fabricCanvas.requestRenderAll();
         const newObjs = fabricCanvas.getObjects().map((obj) => {
-
-          const newObjs = {
             id: obj.customId || Date.now(),
             type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
             props: {
@@ -170,7 +168,7 @@ export default function CanvasEditor({
               textEffect: obj.textEffect,
               effectValue: obj.effectValue,
               radius: obj.radius
-            },
+            
           };
         });
       }, 90);
