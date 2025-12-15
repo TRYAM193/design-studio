@@ -136,6 +136,7 @@ export default function CanvasEditor({
     if (location.state?.designToLoad && fabricCanvas) {
       const design = location.state.designToLoad;
       setCurrentDesign(design);
+      
       setEditingDesignId(design.id);
 
       fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
