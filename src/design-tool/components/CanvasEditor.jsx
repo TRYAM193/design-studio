@@ -143,41 +143,42 @@ export default function CanvasEditor({
       let jsonContent = canvasJSON || canvasData
       if (jsonContent) {
         const parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
-        fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
-        setTimeout(() => {
-          fabricCanvas.requestRenderAll();
-          const newObjs = fabricCanvas.getObjects().map((obj) => {
-            return {
-              id: obj.customId || Date.now(),
-              type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
-              ...{ src: obj.type === image ? obj.src : '' },
-              props: {
-                text: obj.text,
-                left: obj.left,
-                top: obj.top,
-                angle: obj.angle,
-                fill: obj.fill,
-                fontSize: obj.fontSize,
-                opacity: obj.opacity,
-                shadowBlur: obj.shadowBlur,
-                shadowOffsetX: obj.shadowOffsetX,
-                shadowOffsetY: obj.shadowOffsetY,
-                shadowColor: obj.shadowColor,
-                charSpacing: obj.charSpacing,
-                stroke: obj.stroke,
-                strokeWidth: obj.strokeWidth,
-                textStyle: obj.textStyle,
-                textEffect: obj.textEffect,
-                effectValue: obj.effectValue,
-                radius: obj.radius
-              }
-            };
-          });
-
-          store.dispatch(setCanvasObjects(newObjs))
-        }, 90);
       }
-    }, [location.state, fabricCanvas]);
+      fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
+      setTimeout(() => {
+        fabricCanvas.requestRenderAll();
+        const newObjs = fabricCanvas.getObjects().map((obj) => {
+          return {
+            id: obj.customId || Date.now(),
+            type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+            ...{ src: obj.type === image ? obj.src : '' },
+            props: {
+              text: obj.text,
+              left: obj.left,
+              top: obj.top,
+              angle: obj.angle,
+              fill: obj.fill,
+              fontSize: obj.fontSize,
+              opacity: obj.opacity,
+              shadowBlur: obj.shadowBlur,
+              shadowOffsetX: obj.shadowOffsetX,
+              shadowOffsetY: obj.shadowOffsetY,
+              shadowColor: obj.shadowColor,
+              charSpacing: obj.charSpacing,
+              stroke: obj.stroke,
+              strokeWidth: obj.strokeWidth,
+              textStyle: obj.textStyle,
+              textEffect: obj.textEffect,
+              effectValue: obj.effectValue,
+              radius: obj.radius
+            }
+          };
+        });
+
+        store.dispatch(setCanvasObjects(newObjs))
+      }, 90);
+    }
+  }, [location.state, fabricCanvas]);
 
   // 🟩 Load from Persistence (LocalStorage/Firestore)
   useEffect(() => {
