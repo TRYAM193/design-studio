@@ -56,6 +56,7 @@ export default function CanvasEditor({
   const location = useLocation();
   const previousStatesRef = useRef(new Map());
   const dispatch = useDispatch();
+const ignoreReduxUpdate = useRef(false);
 
   const [menuPosition, setMenuPosition] = useState(null);
   const [selectedObjectLocked, setSelectedObjectLocked] = useState(false);
