@@ -139,7 +139,7 @@ export default function CanvasEditor({
 
       if (design.id) setEditingDesignId(design.id);
       else setEditingDesignId(null)
-      if (typeof design.canvasJSON === 'string'){
+      if (typeof design.canvasJSON === 'string') {
         design.canvasJSON = JSON.parse(design.canvasJSON)
       }
 
@@ -147,7 +147,7 @@ export default function CanvasEditor({
       setTimeout(() => {
         fabricCanvas.requestRenderAll();
         const newObjs = fabricCanvas.getObjects().map((obj) => {
-          return{
+          return {
             id: obj.customId || Date.now(),
             type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
             props: {
@@ -169,7 +169,7 @@ export default function CanvasEditor({
               textEffect: obj.textEffect,
               effectValue: obj.effectValue,
               radius: obj.radius
-            
+            }
           };
         });
       }, 90);
