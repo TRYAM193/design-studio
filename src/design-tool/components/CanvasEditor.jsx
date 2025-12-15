@@ -17,6 +17,20 @@ import { handleCanvasAction } from '../utils/canvasActions';
 import ShapeAdder from '../objectAdders/Shapes';
 import template from '../templates/design-001.json'
 
+export function loadDesign(canvas, designJson) {
+  canvas.clear();
+
+  if (designJson.width && designJson.height) {
+    canvas.setWidth(designJson.width);
+    canvas.setHeight(designJson.height);
+  }
+
+  canvas.loadFromJSON(designJson, () => {
+    canvas.renderAll();
+  });
+}
+
+
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
     return toObject.call(
