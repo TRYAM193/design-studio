@@ -495,6 +495,7 @@ const ignoreReduxUpdate = useRef(false);
   // 🟩 Sync Redux state → Fabric (THE FIX IS HERE)
   useEffect(() => {
     if (!initialized) return;
+    if (ignoreReduxUpdate.current) return;
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
 
