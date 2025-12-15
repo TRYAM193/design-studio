@@ -150,7 +150,7 @@ export default function CanvasEditor({
           return {
             id: obj.customId || Date.now(),
             type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
-            ...{src: obj.type === image ? obj.src}
+            ...{src: obj.type === image ? obj.src },
             props: {
               text: obj.text,
               left: obj.left,
