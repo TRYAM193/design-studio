@@ -17,7 +17,7 @@ import { handleCanvasAction } from '../utils/canvasActions';
 import ShapeAdder from '../objectAdders/Shapes';
 import template from '../templates/design-001.json'
 
-export function loadDesign(canvas, designJson) {
+function loadDesign(canvas, designJson) {
   canvas.clear();
 
   if (designJson.width && designJson.height) {
