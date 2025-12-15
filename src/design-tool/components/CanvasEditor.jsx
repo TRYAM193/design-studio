@@ -15,22 +15,6 @@ import updateExisting from '../utils/updateExisting'
 import FloatingMenu from './FloatingMenu';
 import { handleCanvasAction } from '../utils/canvasActions';
 import ShapeAdder from '../objectAdders/Shapes';
-import template from '../templates/design-001.json'
-
-function loadDesign(canvas, designJson) {
-  canvas.clear();
-
-  if (designJson.width && designJson.height) {
-    canvas.setWidth(designJson.width);
-    canvas.setHeight(designJson.height);
-  }
-
-  canvas.loadFromJSON(designJson, () => {
-    console.log('Design Loaded')
-    canvas.renderAll();
-  });
-}
-
 
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
@@ -191,12 +175,6 @@ export default function CanvasEditor({
       }, 90);
     }
   }, [location.state, fabricCanvas]);
-
-  useEffect(() => {
-    if (!fabricCanvas) return;
-
-    loadDesign(fabricCanvas, template);
-  }, [fabricCanvas]);
 
   // 🟩 Load from Persistence (LocalStorage/Firestore)
   useEffect(() => {
