@@ -19,7 +19,9 @@ function removeUndefined(obj) {
   return obj;
 }
 
-const handleRedux = ()
+const handleRedux = () => {
+  const 
+}
 
 export const saveNewDesign = async (userId, canvas, setSaving) => {
   if (!canvas) return;
