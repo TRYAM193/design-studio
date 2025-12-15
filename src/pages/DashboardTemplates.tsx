@@ -12,9 +12,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useTranslation } from "@/hooks/use-translation";
+import { useNavigate } from "react-router"; 
+
+// 1. IMPORT YOUR REAL JSON TEMPLATE
+import design001Data from "@/templates/design-001.json";
 
 export default function DashboardTemplates() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedTier, setSelectedTier] = useState("All");
@@ -28,16 +33,18 @@ export default function DashboardTemplates() {
     return t(key) !== key ? t(key) : cat;
   };
 
-  // Mock Data
+  // 2. DEFINE ONLY YOUR REAL TEMPLATES
   const templates = [
-    { id: 1, name: "Urban Streetwear", category: "T-Shirts", tier: "Free", image: "https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=500&auto=format&fit=crop&q=60" },
-    { id: 2, name: "Vintage 90s", category: "Hoodies", tier: "Pro", image: "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=500&auto=format&fit=crop&q=60" },
-    { id: 3, name: "Minimalist Logo", category: "T-Shirts", tier: "Free", image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop&q=60" },
-    { id: 4, name: "Sports Team Jersey", category: "Sportswear", tier: "Pro", image: "https://images.unsplash.com/photo-1577210917260-94280f228e87?w=500&auto=format&fit=crop&q=60" },
-    { id: 5, name: "Kids Cartoon", category: "Kids", tier: "Free", image: "https://images.unsplash.com/photo-1519238263496-6361937a2717?w=500&auto=format&fit=crop&q=60" },
-    { id: 6, name: "Abstract Art", category: "T-Shirts", tier: "Pro", image: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&auto=format&fit=crop&q=60" },
-    { id: 7, name: "Gym Performance", category: "Sportswears", tier: "Free", image: "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=500&auto=format&fit=crop&q=60" },
-    { id: 8, name: "Tote Bag Design", category: "Accessories", tier: "Free", image: "/assets/design-001.jpeg" },
+    { 
+      id: "template-001",
+      name: "Overthinking Typo", 
+      category: "T-Shirts", 
+      tier: "Free", 
+      image: "/templates/design-001.png", 
+      isLocal: true, 
+      canvasData: design001Data 
+    },
+    // Add more local templates here in the future...
   ];
 
   const filteredTemplates = useMemo(() => {
@@ -47,10 +54,25 @@ export default function DashboardTemplates() {
       const matchesTier = selectedTier === "All" || template.tier === selectedTier;
       return matchesSearch && matchesCategory && matchesTier;
     });
-  }, [searchQuery, selectedCategory, selectedTier]);
+  }, [searchQuery, selectedCategory, selectedTier, templates]);
+
+  // 3. HANDLE CLICK: LOAD AS NEW DESIGN
+  const handleUseTemplate = (template: any) => {
+    navigate('/design', { 
+      state: { 
+        designToLoad: {
+          // WE DO NOT PASS AN ID. This tells the editor "This is a NEW, Unsaved design"
+          id: null, 
+          name: `${template.name} (Copy)`,
+          canvasData: template.canvasData
+        } 
+      } 
+    });
+  };
 
   return (
     <div className="space-y-8">
+      {/* Header and Filter Controls */}
       <div className="flex flex-col gap-6">
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}
@@ -102,6 +124,7 @@ export default function DashboardTemplates() {
         </div>
       </div>
 
+      {/* Grid of Templates */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {filteredTemplates.length > 0 ? (
           filteredTemplates.map((template, i) => (
@@ -112,11 +135,15 @@ export default function DashboardTemplates() {
               transition={{ delay: i * 0.05 }}
               className="group cursor-pointer"
             >
-              <div className="aspect-[3/4] rounded-xl bg-secondary mb-3 overflow-hidden relative">
+              <div className="aspect-[3/4] rounded-xl bg-secondary mb-3 overflow-hidden relative border shadow-sm">
                  <img 
                    src={template.image} 
                    alt={template.name}
-                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                   className="w-full h-full object-contain p-2 bg-white transition-transform duration-500 group-hover:scale-105"
+                   onError={(e) => {
+                     // Fallback if image not found
+                     (e.target as HTMLImageElement).src = "https://placehold.co/400x500?text=No+Image";
+                   }}
                  />
                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                  
@@ -128,7 +155,11 @@ export default function DashboardTemplates() {
                  )}
 
                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                   <Button size="sm" className="w-full bg-white text-black hover:bg-white/90">
+                   <Button 
+                     size="sm" 
+                     className="w-full bg-white text-black hover:bg-white/90"
+                     onClick={() => handleUseTemplate(template)}
+                   >
                      {t("templates.useTemplate")}
                    </Button>
                  </div>
