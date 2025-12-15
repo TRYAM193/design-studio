@@ -141,8 +141,9 @@ export default function CanvasEditor({
       else setEditingDesignId(null)
       
       let jsoncontent = canvasJSON || canvasData
-
-      parsedData = 
+ if (jsonContent) {
+        // Parse and Clean JSON (The fix from before)
+        const parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
       setTimeout(() => {
         fabricCanvas.requestRenderAll();
