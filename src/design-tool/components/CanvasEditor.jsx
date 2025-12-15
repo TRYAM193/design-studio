@@ -146,7 +146,7 @@ export default function CanvasEditor({
       }
 
       if (parsedData) {
-        fabricCanvas.loadFromJSON(par, () => { });
+        fabricCanvas.loadFromJSON(parsedData, () => { });
         setTimeout(() => {
           fabricCanvas.requestRenderAll();
           const newObjs = fabricCanvas.getObjects().map((obj) => {
