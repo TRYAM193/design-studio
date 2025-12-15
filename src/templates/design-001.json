@@ -7,8 +7,8 @@
     {
       "type": "rect",
       "customId": "background_black",
-      "left": 0,
-      "top": 0,
+      "left": 100,
+      "top": 100,
       "width": 800,
       "height": 800,
       "fill": "#000000",
