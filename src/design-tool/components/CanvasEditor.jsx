@@ -146,7 +146,7 @@ export default function CanvasEditor({
       fabricCanvas.loadFromJSON(design.canvasJSON, () => { });
       setTimeout(() => {
         fabricCanvas.requestRenderAll();
-        const newObjs = fabricCanvas.getObjects().forEach((obj) => {
+        const newObjs = fabricCanvas.getObjects().map((obj) => {
 
           const newObjs = {
             id: obj.customId || Date.now(),
