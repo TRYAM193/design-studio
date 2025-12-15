@@ -1,7 +1,7 @@
 import { db as firestore } from '@/firebase';
 import { collection, doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-imp
+import { store } from '../redux/store';
 
 function removeUndefined(obj) {
   if (Array.isArray(obj)) {
