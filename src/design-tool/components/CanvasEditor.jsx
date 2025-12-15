@@ -147,7 +147,7 @@ let parsedDat
 
       if (parsedData) {
         fabricCanvas.loadFromJSON(parsedData, () => {})
-        setTimeout()
+        setTimeout( () => {
           const newObjs = fabricCanvas.getObjects().map((obj) => {
             return {
               id: obj.customId || Date.now(),
