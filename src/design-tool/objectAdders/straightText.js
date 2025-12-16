@@ -22,12 +22,10 @@ export default function StraightText(obj) {
     customId: obj.id
   });
 
-  if (props.stroke || props.strokeWidth){
-    StraightText.set({
-      stroke: props.stroke || 'white',
-      strokeWidth: props.strokeWidth || 0
-    })
-  }
+  if (obj.strokeWidth > 0) {
+      StraightText.set('stroke', obj.strokeColor || '#000');
+      fabricChar.set('strokeWidth', obj.strokeWidth);
+    }
 
   if (props.shadowColor || )
 }
