@@ -200,12 +200,6 @@ export default function CanvasEditor({
                   textEffect: obj.textEffect,
                   effectValue: obj.effectValue,
                   radius: obj.radius,
-                  ...{width: obj.width,
-                  height: obj.height,
-                  scaleX: obj.scaleX || 1,
-                  scaleY: obj.scaleY || 1,
-                  rx: obj.rx || 0, // For rounded rectangles
-                  ry: obj.ry || 0,}
                 }
               };
             });
