@@ -4,7 +4,8 @@ export default function StraightText(obj) {
   if (!obj) return;
   const props = obj.props;
   const shadows = {
-    color: props.
+    color: props.shadowColor,
+    offsetX
   }
 
   const StraightText = new FabricText(obj.props.text, {
