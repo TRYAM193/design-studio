@@ -23,6 +23,14 @@ fabric.Object.prototype.toObject = (function (toObject) {
     );
   };
 })(fabric.Object.prototype.toObject);
+'customId', 
+    'textStyle', 
+    'textEffect', 
+    'radius', 
+    'effectValue',
+    'selectable',
+    'lockMovementX',
+    'lockMovementY'
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
