@@ -1,5 +1,4 @@
 import { FabricText } from 'fabric';
-import { blur } from 'three/tsl';
 
 export default function StraightText(obj) {
   if (!obj) return;
