@@ -1,7 +1,6 @@
 // src/main.tsx
 import { Toaster } from "@/components/ui/sonner";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
-import { InstrumentationProvider } from "@/instrumentation.tsx";
 import AuthPage from "@/pages/Auth.tsx";
 // Removed Convex imports
 import { StrictMode, useEffect } from "react";
@@ -19,6 +18,7 @@ import DashboardPricing from "./pages/DashboardPricing";
 import DashboardProducts from "./pages/DashboardProducts";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
+// We will create this provider in the next step
 import { AuthProvider } from "./hooks/use-auth";
 import DesignEditorPage from "./pages/DesignEditorPage";
 import ThumbnailGenerator from "./pages/ThumbnailGenerator";
@@ -49,32 +49,30 @@ function RouteSyncer() {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <VlyToolbar />
-    <InstrumentationProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <RouteSyncer />
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <RouteSyncer />
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
 
-            <Route path="/design/*" element={<DesignEditorPage />} />
-            <Route path="/generator" element={<ThumbnailGenerator />} />
-            {/* Dashboard Routes */}
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<DashboardHome />} />
-              <Route path="templates" element={<DashboardTemplates />} />
-              <Route path="projects" element={<DashboardProjects />} />
-              <Route path="products" element={<DashboardProducts />} />
-              <Route path="orders" element={<DashboardOrders />} />
-              <Route path="pricing" element={<DashboardPricing />} />
-              <Route path="settings" element={<DashboardSettings />} />
-            </Route>
+          <Route path="/design/*" element={<DesignEditorPage />} />
+          <Route path="/generator" element={<ThumbnailGenerator />} />
+          {/* Dashboard Routes */}
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<DashboardHome />} />
+            <Route path="templates" element={<DashboardTemplates />} />
+            <Route path="projects" element={<DashboardProjects />} />
+            <Route path="products" element={<DashboardProducts />} />
+            <Route path="orders" element={<DashboardOrders />} />
+            <Route path="pricing" element={<DashboardPricing />} />
+            <Route path="settings" element={<DashboardSettings />} />
+          </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-        <Toaster />
-      </AuthProvider>
-    </InstrumentationProvider>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+      <Toaster />
+    </AuthProvider>
   </StrictMode>,
 );
