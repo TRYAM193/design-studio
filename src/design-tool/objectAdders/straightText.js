@@ -4,10 +4,7 @@ export default function StraightText(obj) {
   if (!obj) return;
   const props = obj.props;
   const shadows = {
-    color: props.shadowColor,
-    blur: props.shadowBlur,
-    offsetX: props.shadowOffsetX,
-    offsetY: props.shadowOffsetY
+    color: 
   }
 
   const StraightText = new FabricText(obj.props.text, {
@@ -16,7 +13,7 @@ export default function StraightText(obj) {
     width: props.width,
     height: props.height,
     opacity: props.opacity,
-    fontFamily: props.fontFamily || 'Arial',
+    fontFamily: props.fontFamily,
     fontSize: props.fontSize,
     fill: props.fill,
     charSpacing: props.charSpacing || 0, 
@@ -24,14 +21,12 @@ export default function StraightText(obj) {
     customId: obj.id
   });
 
-  if (obj.strokeWidth > 0) {
-      StraightText.set('stroke', props.strokeColor || '#000');
-      StraightText.set('strokeWidth', props.strokeWidth);
-    }
-
-  if (shadows) {
-    StraightText.set('shadow', shadows)
+  if (props.stroke || props.strokeWidth){
+    StraightText.set({
+      stroke: props.stroke || 'white',
+      strokeWidth: props.strokeWidth || 0
+    })
   }
 
-  return StraightText
+  if (props.shadowColor || )
 }
