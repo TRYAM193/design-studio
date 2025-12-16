@@ -19,18 +19,10 @@ fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
     return toObject.call(
       this,
-      (propertiesToInclude || []).concat(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue','selectable','lockMovementX','lockMovement'])
+      (propertiesToInclude || []).concat(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue','selectable','lockMovementX','lockMovementY'])
     );
   };
 })(fabric.Object.prototype.toObject);
-'customId', 
-    'textStyle', 
-    'textEffect', 
-    'radius', 
-    'effectValue',
-    'selectable',
-    'lockMovementX',
-    'lockMovementY'
 
 function getCookie(name) {
   const value = `; ${document.cookie}`;
