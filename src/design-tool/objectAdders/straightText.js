@@ -9,6 +9,7 @@ export default function StraightText(obj) {
     width: props.width,
     height: props.height,
     opacity: props.opacity,
+    fontFamily: props.fontFamily,
     
     customType: 'text',
     customId: obj.id
