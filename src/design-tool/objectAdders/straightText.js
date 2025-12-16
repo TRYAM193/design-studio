@@ -16,7 +16,7 @@ export default function StraightText(obj) {
     width: props.width,
     height: props.height,
     opacity: props.opacity,
-    fontFamily: props.fontFamily,
+    fontFamily: props.fontFamily || 'Arial',
     fontSize: props.fontSize,
     fill: props.fill,
     charSpacing: props.charSpacing || 0, 
