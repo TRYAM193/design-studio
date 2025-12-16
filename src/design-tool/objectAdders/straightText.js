@@ -19,8 +19,8 @@ export default function StraightText(obj) {
 
   if (props.stroke || props.strokeWidth){
     StraightText.set({
-      stroke: props.stroke,
-      strokeWidth: props.strokeWidth
+      stroke: props.stroke ,
+      strokeWidth: props.strokeWidth || 0
     })
   }
 
