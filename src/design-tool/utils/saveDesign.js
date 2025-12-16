@@ -105,5 +105,5 @@ export const handleSaveTemp = (canvas) => {
 
   const rawJSON = canvas.toJSON();
 
-  console.log(removeUndefined)
+  console.log(removeUndefined())
 } 
