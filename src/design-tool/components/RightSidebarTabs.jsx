@@ -29,8 +29,6 @@ export default function RightSidebarTabs(props) {
         </button>
       </div>
 
-      <button onC>Save as json </button>
-
       {/* Tab Content Area */}
       <div className="tab-content-area">
         {/* Render the existing Toolbar when on the Properties tab */}
