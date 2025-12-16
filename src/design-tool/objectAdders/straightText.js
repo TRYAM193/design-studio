@@ -30,5 +30,7 @@ export default function StraightText(obj) {
       StraightText.set('strokeWidth', props.strokeWidth);
     }
 
-  if (props.shadowColor || )
+  if (shadows) {
+    StraightText.set('shadow')
+  }
 }
