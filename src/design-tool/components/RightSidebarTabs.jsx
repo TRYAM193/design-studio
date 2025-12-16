@@ -29,6 +29,8 @@ export default function RightSidebarTabs(props) {
         </button>
       </div>
 
+      <button></button>
+
       {/* Tab Content Area */}
       <div className="tab-content-area">
         {/* Render the existing Toolbar when on the Properties tab */}
