@@ -1,7 +1,8 @@
-// src/components/CanvasEditor.jsx
+// src/design-tool/components/CanvasEditor.jsx
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import * as fabric from 'fabric';
+import WebFont from 'webfontloader'; // 1. Import WebFontLoader
 import StraightText from '../objectAdders/straightText';
 import CircleText from '../objectAdders/CircleText';
 import updateObject from '../functions/update';
@@ -15,6 +16,23 @@ import updateExisting from '../utils/updateExisting'
 import FloatingMenu from './FloatingMenu';
 import { handleCanvasAction } from '../utils/canvasActions';
 import ShapeAdder from '../objectAdders/Shapes';
+
+// 2. Helper to find fonts in the JSON
+const extractFontsFromJSON = (json) => {
+  const fonts = new Set();
+  const data = typeof json === 'string' ? JSON.parse(json) : json;
+  
+  if (data.objects) {
+    data.objects.forEach((obj) => {
+      // Filter out system fonts or empty values
+      if (obj.fontFamily && obj.fontFamily !== 'Times New Roman' && obj.fontFamily !== 'Arial') {
+        fonts.add(obj.fontFamily);
+      }
+    });
+  }
+  return Array.from(fonts);
+};
+
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
     return toObject.call(
@@ -131,7 +149,7 @@ export default function CanvasEditor({
     };
   }, []);
 
-  // 🟩 Load Saved Designs
+  // 🟩 Load Saved Designs (From Navigation State)
   useEffect(() => {
     if (location.state?.designToLoad && fabricCanvas) {
       const design = location.state.designToLoad;
@@ -140,50 +158,73 @@ export default function CanvasEditor({
       if (design.id) setEditingDesignId(design.id);
       else setEditingDesignId(null)
 
-      let parsedData
-      let jsonContent = design.canvasJSON || design.canvasData
+      let parsedData;
+      let jsonContent = design.canvasJSON || design.canvasData;
+      
       if (jsonContent) {
         parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       }
 
       if (parsedData) {
-        fabricCanvas.loadFromJSON(parsedData, () => { })
-        setTimeout(() => {
-          const newObjs = fabricCanvas.getObjects().map((obj, i) => {
-            return {
-              id: obj.customId || Date.now() + i,
-              type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
-              ...{ src: obj.type === 'image' ? obj.src : ''},
-              props: {
-                text: obj.text,
-                left: obj.left,
-                top: obj.top,
-                angle: obj.angle,
-                fill: obj.fill,
-                fontSize: obj.fontSize,
-                fontFamily: obj.fontFamily,
-                opacity: obj.opacity,
-                shadowBlur: obj.shadowBlur,
-                shadowOffsetX: obj.shadowOffsetX,
-                shadowOffsetY: obj.shadowOffsetY,
-                shadowColor: obj.shadowColor,
-                charSpacing: obj.charSpacing,
-                stroke: obj.stroke,
-                strokeWidth: obj.strokeWidth,
-                textStyle: obj.textStyle,
-                textEffect: obj.textEffect,
-                effectValue: obj.effectValue,
-                radius: obj.radius
-              }
-            };
-          });
-          if (newObjs) {
-            store.dispatch(setCanvasObjects(newObjs))
-            console.log('Redux Synced')
-          }
-        }, 100);
+        // 3a. Extract fonts
+        const fontsToLoad = extractFontsFromJSON(parsedData);
 
-        fabricCanvas.requestRenderAll();
+        // Define the logic to run once fonts are ready
+        const loadCanvasData = () => {
+          fabricCanvas.loadFromJSON(parsedData, () => { 
+            // Callback loop to sync Redux
+          });
+          
+          setTimeout(() => {
+            const newObjs = fabricCanvas.getObjects().map((obj, i) => {
+              return {
+                id: obj.customId || Date.now() + i,
+                type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+                ...{ src: obj.type === 'image' ? obj.src : ''},
+                props: {
+                  text: obj.text,
+                  left: obj.left,
+                  top: obj.top,
+                  angle: obj.angle,
+                  fill: obj.fill,
+                  fontSize: obj.fontSize,
+                  fontFamily: obj.fontFamily,
+                  opacity: obj.opacity,
+                  shadowBlur: obj.shadowBlur,
+                  shadowOffsetX: obj.shadowOffsetX,
+                  shadowOffsetY: obj.shadowOffsetY,
+                  shadowColor: obj.shadowColor,
+                  charSpacing: obj.charSpacing,
+                  stroke: obj.stroke,
+                  strokeWidth: obj.strokeWidth,
+                  textStyle: obj.textStyle,
+                  textEffect: obj.textEffect,
+                  effectValue: obj.effectValue,
+                  radius: obj.radius
+                }
+              };
+            });
+            if (newObjs) {
+              store.dispatch(setCanvasObjects(newObjs))
+              console.log('Redux Synced')
+            }
+            fabricCanvas.requestRenderAll();
+          }, 100);
+        };
+
+        // 3b. Load fonts if needed, otherwise just load canvas
+        if (fontsToLoad.length > 0) {
+           WebFont.load({
+             google: { families: fontsToLoad },
+             active: () => {
+                console.log("Fonts loaded for new design.");
+                loadCanvasData();
+             },
+             inactive: loadCanvasData // Fallback if fonts fail
+           });
+        } else {
+           loadCanvasData();
+        }
       }
     }
   }, [location.state, fabricCanvas]);
@@ -196,8 +237,6 @@ export default function CanvasEditor({
       let designToLoad = null;
       let designId = null;
 
-      // ... (Existing loading logic kept same for brevity) ... 
-      // [Previous Logic Preserved]
       try {
         const sessionData = sessionStorage.getItem('editingDesign');
         if (sessionData) {
@@ -241,21 +280,43 @@ export default function CanvasEditor({
       if (designToLoad) {
         setCurrentDesign(designToLoad);
         setEditingDesignId(designToLoad.id);
+        
         if (designToLoad.canvasJSON) {
-          fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
-            // ... (Existing mapping logic) ...
-            setTimeout(() => {
-              fabricCanvas.requestRenderAll();
-              fabricCanvas.getObjects().forEach(obj => {
-                const state = store.getState();
-                const currentObjs = state.canvas.present;
-                // Simple duplication check before adding
-                if (!currentObjs.find(o => o.id === obj.customId)) {
-                  // Add logic here if needed
-                }
+          // 3c. Extract fonts for persistence load
+          const parsedData = typeof designToLoad.canvasJSON === 'string' 
+            ? JSON.parse(designToLoad.canvasJSON) 
+            : designToLoad.canvasJSON;
+
+          const fontsToLoad = extractFontsFromJSON(parsedData);
+
+          const loadCanvasPersistence = () => {
+             fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
+                setTimeout(() => {
+                  fabricCanvas.requestRenderAll();
+                  fabricCanvas.getObjects().forEach(obj => {
+                    const state = store.getState();
+                    const currentObjs = state.canvas.present;
+                    // Simple duplication check before adding
+                    if (!currentObjs.find(o => o.id === obj.customId)) {
+                      // Add logic here if needed
+                    }
+                  });
+                }, 90);
               });
-            }, 90);
-          });
+          };
+
+          if (fontsToLoad.length > 0) {
+             WebFont.load({
+               google: { families: fontsToLoad },
+               active: () => {
+                  console.log("Fonts loaded from persistence.");
+                  loadCanvasPersistence();
+               },
+               inactive: loadCanvasPersistence
+             });
+          } else {
+             loadCanvasPersistence();
+          }
         }
       }
     };
@@ -264,11 +325,11 @@ export default function CanvasEditor({
 
   // 🟩 Handle Selection Events
   useEffect(() => {
+    // ... (No changes needed here) ...
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
     const handleSelection = (e) => {
-      // 🔒 Prevent UI updates during Sync
       if (isSyncingRef.current) return;
 
       const selected = e.selected?.[0];
@@ -280,9 +341,7 @@ export default function CanvasEditor({
     };
 
     const handleCleared = () => {
-      // 🔒 Prevent UI updates during Sync
       if (isSyncingRef.current) return;
-
       setSelectedId(null);
       setActiveTool(null);
       setMenuPosition(null);
@@ -314,17 +373,15 @@ export default function CanvasEditor({
 
   // 🟩 Touch / Pinch Logic (Preserved)
   useEffect(() => {
-    // ... (Your existing touch logic here) ...
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
   }, [initialized]);
 
   // 🟩 Handle Modifications (User Actions)
   useEffect(() => {
+     // ... (No changes needed here) ...
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
-
-    // src/components/CanvasEditor.jsx (inside the useEffect)
 
     const handleObjectModified = (e) => {
       if (isSyncingRef.current) return;
@@ -334,14 +391,10 @@ export default function CanvasEditor({
 
       const type = obj.type ? obj.type.toLowerCase() : '';
 
-      // --- HANDLE ACTIVE SELECTION (GROUPS) ---
       if (type === 'activeselection') {
         const children = [...obj.getObjects()];
 
-        // ⚡ FIX: Use setTimeout to prevent "Maximum call stack size exceeded"
         setTimeout(() => {
-          // 1. Discard the group. This forces Fabric to apply the group's 
-          //    transformations to the children's properties automatically.
           fabricCanvas.discardActiveObject();
 
           const present = store.getState().canvas.present;
@@ -352,11 +405,7 @@ export default function CanvasEditor({
             const index = updatedPresent.findIndex((o) => o.id === child.customId);
             if (index === -1) return;
 
-            // 2. Read the "Trust Fabric" values directly from the child
-            //    (No complex matrix math needed anymore)
-
             if (child.type === 'text' || child.type === 'textbox' || child.customType === 'text') {
-              // For text, we normalize scale into fontSize
               const newFontSize = child.fontSize * child.scaleX;
               child.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
               child.setCoords();
@@ -371,8 +420,6 @@ export default function CanvasEditor({
                 scaleY: 1
               };
             } else {
-              // For Shapes & Images: Read exact values
-              // ⚡ FIX: Ensure scaleY is saved separately to prevent jumping/snapping
               updatedPresent[index].props = {
                 ...updatedPresent[index].props,
                 left: child.left,
@@ -380,7 +427,6 @@ export default function CanvasEditor({
                 angle: child.angle,
                 scaleX: child.scaleX,
                 scaleY: child.scaleY,
-                // Note: Do not force width/height updates here unless necessary
               };
             }
             hasChanges = true;
@@ -390,7 +436,6 @@ export default function CanvasEditor({
             store.dispatch(setCanvasObjects(updatedPresent));
           }
 
-          // 3. Restore selection quietly
           if (children.length > 0) {
             const sel = new fabric.ActiveSelection(children, {
               canvas: fabricCanvas,
@@ -403,7 +448,6 @@ export default function CanvasEditor({
         return;
       }
 
-      // --- SINGLE OBJECT HANDLING ---
       if (type === 'text' || type === 'textbox') {
         const newFontSize = obj.fontSize * obj.scaleX;
         obj.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
@@ -419,7 +463,6 @@ export default function CanvasEditor({
         return;
       }
 
-      // Single Shape/Image
       updateObject(obj.customId, {
         left: obj.left,
         top: obj.top,
@@ -437,14 +480,13 @@ export default function CanvasEditor({
     };
   }, []);
 
-
-  // 🟩 Sync Redux state → Fabric (THE FIX IS HERE)
+  // 🟩 Sync Redux state → Fabric
   useEffect(() => {
+    // ... (No changes needed here) ...
     if (!initialized) return;
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
 
-    // 1. Handle Active Selection (Multiselect)
     let selectedIds = [];
     const activeObject = fabricCanvas.getActiveObject();
     const isMultiSelect = activeObject && activeObject.type?.toLowerCase() === 'activeselection';
@@ -453,7 +495,6 @@ export default function CanvasEditor({
       selectedIds = activeObject.getObjects().map(o => o.customId);
       fabricCanvas.discardActiveObject();
     } else if (activeObject) {
-      // Also capture single selection to restore it if needed
       selectedIds = [activeObject.customId];
     }
 
@@ -470,11 +511,9 @@ export default function CanvasEditor({
 
       let existing = fabricObjects.find((o) => o.customId === objData.id);
 
-      // --- A. TEXT / SHAPES OBJECTS ---
       if (objData.type === 'text' || shapes.includes(objData.type)) {
         const isCircle = objData.props.textEffect === 'circle';
 
-        // Check if we can just update properties (avoids destroy/create flicker)
         if (existing && existing.type === objData.type && !isCircle) {
           existing.set(objData.props);
           existing.setCoords();
@@ -486,7 +525,6 @@ export default function CanvasEditor({
           if (isCircle) {
             newObj = CircleText(objData);
           }
-          // Use ShapeAdder here if you have it:
           else if (shapes.includes(objData.type)) {
             newObj = ShapeAdder(objData);
           }
@@ -501,7 +539,6 @@ export default function CanvasEditor({
         }
       }
 
-      // --- B. IMAGE OBJECTS ---
       if (objData.type === 'image') {
         if (!existing && !fabricCanvas.getObjects().some(obj => obj.customId === objData.id)) {
           try {
@@ -518,7 +555,6 @@ export default function CanvasEditor({
       previousStatesRef.current.set(objData.id, currentString);
     });
 
-    // 3. Remove deleted objects
     const reduxIds = new Set(canvasObjects.map(o => o.id));
     fabricObjects.forEach((obj) => {
       if (!reduxIds.has(obj.customId)) {
@@ -527,7 +563,6 @@ export default function CanvasEditor({
       }
     });
 
-    // 4. Layer Management
     const currentFabricObjects = fabricCanvas.getObjects();
     let fabricObjectsArray = fabricCanvas._objects;
 
@@ -541,7 +576,6 @@ export default function CanvasEditor({
       }
     });
 
-    // 5. Restore Selection (ONLY ONCE AT THE END)
     if (selectedIds.length > 0) {
       const objectsToSelect = fabricCanvas.getObjects().filter(obj => selectedIds.includes(obj.customId));
 
