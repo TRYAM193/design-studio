@@ -149,9 +149,9 @@ export default function CanvasEditor({
       if (parsedData) {
         fabricCanvas.loadFromJSON(parsedData, () => { })
         setTimeout(() => {
-          const newObjs = fabricCanvas.getObjects().map((obj) => {
+          const newObjs = fabricCanvas.getObjects().map((obj,) => {
             return {
-              id: obj.customId || `${Date.now() + Math.random()}`,
+              id: obj.customId || 
               type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
               ...{ src: obj.type === 'image' ? obj.src : ''},
               props: {
