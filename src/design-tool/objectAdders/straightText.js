@@ -31,6 +31,8 @@ export default function StraightText(obj) {
     }
 
   if (shadows) {
-    StraightText.set('shadow')
+    StraightText.set('shadow',{
+      ...shadows
+    })
   }
 }
