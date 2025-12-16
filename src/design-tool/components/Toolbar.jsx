@@ -305,9 +305,9 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
               className="text-input"
               rows="3"
               value={liveProps.text || ''}
-              onBlur={(e) => handleUpdateAndHistory('text', e.target.value)}
-              onChange={(e) => handleLiveUpdate('text', e.target.value)}
+              onChange={(e) => handleUpdateAndHistory('text', e.target.value)}
               placeholder="Enter your text here"
+              style={{color: '#000000'}}
             />
           </div>
 
@@ -358,6 +358,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
               onChange={(e) => handleLiveUpdate('fontFamily', e.target.value)}
               placeholder="Enter font name (e.g., Roboto)"
               disabled={isFontLoading}
+              style={{color: '#000000'}}
             />
             <div className="font-link-helper">
               <button
@@ -381,6 +382,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
                 value={googleFontUrl}
                 onChange={(e) => setGoogleFontUrl(e.target.value)}
                 placeholder="e.g., https://fonts.googleapis.com/css2?family=Roboto..."
+
               />
               <button
                 className="primary-button small-button"
@@ -397,7 +399,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
             <select
               className="font-select"
               value={liveProps.fontFamily || 'Arial'}
-              onChange={(e) => handleLiveUpdate('fontFamily', e.target.value)}
+              onChange={(e) => handleUpdateAndHistory('fontFamily', e.target.value)}
               disabled={isFontLoading}
             >
               {FONT_OPTIONS.map(font => <option key={font} value={font}>{font}</option>)}

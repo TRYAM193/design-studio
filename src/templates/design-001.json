@@ -6,7 +6,6 @@
   "objects": [
     {
       "type": "rect",
-      "customId": "background_black",
       "left": 100,
       "top": 100,
       "width": 800,
@@ -17,7 +16,6 @@
     },
     {
       "type": "text",
-      "customId": "text_over",
       "text": "Over",
       "left": 400,
       "top": 150,
@@ -30,7 +28,6 @@
     },
     {
       "type": "text",
-      "customId": "text_thinking",
       "text": "Thinking",
       "left": 400,
       "top": 250,
@@ -43,7 +40,6 @@
     },
     {
       "type": "text",
-      "customId": "text_solves",
       "text": "Solves",
       "left": 400,
       "top": 350,
@@ -56,7 +52,6 @@
     },
     {
       "type": "text",
-      "customId": "text_nothing",
       "text": "Nothing",
       "left": 400,
       "top": 450,
@@ -69,7 +64,6 @@
     },
     {
       "type": "text",
-      "customId": "text_est_2025",
       "text": "Est. 2025",
       "left": 655,
       "top": 680,
