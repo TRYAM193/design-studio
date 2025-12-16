@@ -24,7 +24,7 @@ export default function StraightText(obj) {
 
   if (obj.strokeWidth > 0) {
       StraightText.set('stroke', obj.strokeColor || '#000');
-      fabricChar.set('strokeWidth', obj.strokeWidth);
+      StraightText.set('strokeWidth', props.strokeWidth);
     }
 
   if (props.shadowColor || )
