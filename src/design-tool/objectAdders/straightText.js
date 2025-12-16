@@ -11,6 +11,7 @@ export default function StraightText(obj) {
     opacity: props.opacity,
     fontFamily: props.fontFamily,
     fontSize: props.fontSize,
+    fill: props.fill,
     customType: 'text',
     customId: obj.id
   });
