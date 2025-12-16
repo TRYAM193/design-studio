@@ -103,6 +103,26 @@ export const overwriteDesign = async (userId, designId, canvas, setSaving) => {
 export const handleSaveTemp = (canvas) => {
   if (!canvas) return
 
-  const rawJSON = removeUndefined(canvas.toJSON());
-  console.log(rawJSON)
+  const rawJSON = canvas.toJSON();
+  const cleanJSON = removeUndefined(rawJSON);
+
+  // 3. Convert to a formatted string
+  const jsonString = JSON.stringify(cleanJSON, null, 2);
+
+  // 4. Create a Blob (File-like object)
+  const blob = new Blob([jsonString], { type: "application/json" });
+
+  // 5. Create a temporary link to trigger the download
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName.endsWith('.json') ? fileName : `${fileName}.json`;
+  
+  // 6. Programmatically click the link
+  document.body.appendChild(link);
+  link.click();
+
+  // 7. Cleanup
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 } 
