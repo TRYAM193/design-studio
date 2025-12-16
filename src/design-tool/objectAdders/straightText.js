@@ -17,5 +17,5 @@ export default function StraightText(obj) {
     customId: obj.id
   });
 
-  if (props.stro)
+  if (props.stroke && props.strokeWidth)
 }
