@@ -1,10 +1,12 @@
 import { FabricText } from 'fabric';
+import { blur } from 'three/tsl';
 
 export default function StraightText(obj) {
   if (!obj) return;
   const props = obj.props;
   const shadows = {
     color: props.shadowColor,
+    blur: props.shadow
     offsetX
   }
 
