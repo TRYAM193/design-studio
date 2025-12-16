@@ -19,7 +19,7 @@ fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
     return toObject.call(
       this,
-      (propertiesToInclude || []).concat(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue','selectable',])
+      (propertiesToInclude || []).concat(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue','selectable','lockMovementX','lockMovement'])
     );
   };
 })(fabric.Object.prototype.toObject);
