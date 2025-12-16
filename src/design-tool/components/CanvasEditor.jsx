@@ -161,7 +161,7 @@ export default function CanvasEditor({
                 angle: obj.angle,
                 fill: obj.fill,
                 fontSize: obj.fontSize,
-                fontFamily: obj.
+                fontFamily: obj.fontFamily,
                 opacity: obj.opacity,
                 shadowBlur: obj.shadowBlur,
                 shadowOffsetX: obj.shadowOffsetX,
