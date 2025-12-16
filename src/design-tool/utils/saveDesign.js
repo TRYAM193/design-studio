@@ -104,6 +104,5 @@ export const handleSaveTemp = (canvas) => {
   if (!canvas) return
 
   const rawJSON = removeUndefined(canvas.toJSON());
-
   console.log(rawJSON)
 } 
