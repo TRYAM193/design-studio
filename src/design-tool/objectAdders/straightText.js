@@ -24,5 +24,5 @@ export default function StraightText(obj) {
     })
   }
 
-  
+  if (props.shadow)
 }
