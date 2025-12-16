@@ -7,7 +7,8 @@ export default function StraightText(obj) {
     left: props.left,
     top: props.top,
     width: props.width,
-    
+    height: props.height,
+    opacity
     customType: 'text',
     customId: obj.id
   });
