@@ -29,7 +29,7 @@ export default function RightSidebarTabs(props) {
         </button>
       </div>
 
-      <button>Save as json file</button>
+      <button >Save as json file</button>
 
       {/* Tab Content Area */}
       <div className="tab-content-area">
