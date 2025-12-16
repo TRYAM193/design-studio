@@ -180,7 +180,6 @@ export default function CanvasEditor({
               const newObj = {
                 id: obj.customId || Date.now() + i,
                 type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
-                ...{ src: obj.type === 'image' ? obj.src : '' },
                 props: {
                   text: obj.text,
                   left: obj.left,
