@@ -12,6 +12,7 @@ export default function StraightText(obj) {
     fontFamily: props.fontFamily,
     fontSize: props.fontSize,
     fill: props.fill,
+    charSpacing: obj.letterSpacing,
     customType: 'text',
     customId: obj.id
   });
