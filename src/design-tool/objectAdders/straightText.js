@@ -7,7 +7,8 @@ export default function StraightText(obj) {
   const shadows = {
     color: props.shadowColor,
     blur: props.shadowBlur,
-    offsetX: props.shadow
+    offsetX: props.shadowOffsetX,
+    offsetY: props.shad
   }
 
   const StraightText = new FabricText(obj.props.text, {
