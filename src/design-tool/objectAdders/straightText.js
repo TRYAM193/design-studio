@@ -23,7 +23,7 @@ export default function StraightText(obj) {
   });
 
   if (obj.strokeWidth > 0) {
-      StraightText.set('stroke', obj.strokeColor || '#000');
+      StraightText.set('stroke', props.strokeColor || '#000');
       StraightText.set('strokeWidth', props.strokeWidth);
     }
 
