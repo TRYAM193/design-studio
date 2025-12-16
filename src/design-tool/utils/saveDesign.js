@@ -106,6 +106,8 @@ export const handleSaveTemp = (canvas) => {
   const rawJSON = canvas.toJSON();
   const cleanJSON = removeUndefined(rawJSON);
 
+  let filename = 
+
   // 3. Convert to a formatted string
   const jsonString = JSON.stringify(cleanJSON, null, 2);
 
