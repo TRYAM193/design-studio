@@ -21,7 +21,7 @@ import ShapeAdder from '../objectAdders/Shapes';
 const extractFontsFromJSON = (json) => {
   const fonts = new Set();
   const data = typeof json === 'string' ? JSON.parse(json) : json;
-  
+
   if (data.objects) {
     data.objects.forEach((obj) => {
       // Filter out system fonts or empty values
@@ -37,7 +37,7 @@ fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
     return toObject.call(
       this,
-      (propertiesToInclude || []).concat(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue','selectable','lockMovementX','lockMovementY'])
+      (propertiesToInclude || []).concat(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue', 'selectable', 'lockMovementX', 'lockMovementY'])
     );
   };
 })(fabric.Object.prototype.toObject);
@@ -160,7 +160,7 @@ export default function CanvasEditor({
 
       let parsedData;
       let jsonContent = design.canvasJSON || design.canvasData;
-      
+
       if (jsonContent) {
         parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
       }
@@ -171,16 +171,16 @@ export default function CanvasEditor({
 
         // Define the logic to run once fonts are ready
         const loadCanvasData = () => {
-          fabricCanvas.loadFromJSON(parsedData, () => { 
+          fabricCanvas.loadFromJSON(parsedData, () => {
             // Callback loop to sync Redux
           });
-          
+
           setTimeout(() => {
             const newObjs = fabricCanvas.getObjects().map((obj, i) => {
               return {
                 id: obj.customId || Date.now() + i,
                 type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
-                ...{ src: obj.type === 'image' ? obj.src : ''},
+                ...{ src: obj.type === 'image' ? obj.src : '' },
                 props: {
                   text: obj.text,
                   left: obj.left,
@@ -200,7 +200,13 @@ export default function CanvasEditor({
                   textStyle: obj.textStyle,
                   textEffect: obj.textEffect,
                   effectValue: obj.effectValue,
-                  radius: obj.radius
+                  radius: obj.radius,
+                  width: obj.width,
+                  height: obj.height,
+                  scaleX: obj.scaleX || 1,
+                  scaleY: obj.scaleY || 1,
+                  rx: obj.rx || 0, // For rounded rectangles
+                  ry: obj.ry || 0,
                 }
               };
             });
@@ -214,16 +220,16 @@ export default function CanvasEditor({
 
         // 3b. Load fonts if needed, otherwise just load canvas
         if (fontsToLoad.length > 0) {
-           WebFont.load({
-             google: { families: fontsToLoad },
-             active: () => {
-                console.log("Fonts loaded for new design.");
-                loadCanvasData();
-             },
-             inactive: loadCanvasData // Fallback if fonts fail
-           });
+          WebFont.load({
+            google: { families: fontsToLoad },
+            active: () => {
+              console.log("Fonts loaded for new design.");
+              loadCanvasData();
+            },
+            inactive: loadCanvasData // Fallback if fonts fail
+          });
         } else {
-           loadCanvasData();
+          loadCanvasData();
         }
       }
     }
@@ -280,42 +286,42 @@ export default function CanvasEditor({
       if (designToLoad) {
         setCurrentDesign(designToLoad);
         setEditingDesignId(designToLoad.id);
-        
+
         if (designToLoad.canvasJSON) {
           // 3c. Extract fonts for persistence load
-          const parsedData = typeof designToLoad.canvasJSON === 'string' 
-            ? JSON.parse(designToLoad.canvasJSON) 
+          const parsedData = typeof designToLoad.canvasJSON === 'string'
+            ? JSON.parse(designToLoad.canvasJSON)
             : designToLoad.canvasJSON;
 
           const fontsToLoad = extractFontsFromJSON(parsedData);
 
           const loadCanvasPersistence = () => {
-             fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
-                setTimeout(() => {
-                  fabricCanvas.requestRenderAll();
-                  fabricCanvas.getObjects().forEach(obj => {
-                    const state = store.getState();
-                    const currentObjs = state.canvas.present;
-                    // Simple duplication check before adding
-                    if (!currentObjs.find(o => o.id === obj.customId)) {
-                      // Add logic here if needed
-                    }
-                  });
-                }, 90);
-              });
+            fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
+              setTimeout(() => {
+                fabricCanvas.requestRenderAll();
+                fabricCanvas.getObjects().forEach(obj => {
+                  const state = store.getState();
+                  const currentObjs = state.canvas.present;
+                  // Simple duplication check before adding
+                  if (!currentObjs.find(o => o.id === obj.customId)) {
+                    // Add logic here if needed
+                  }
+                });
+              }, 90);
+            });
           };
 
           if (fontsToLoad.length > 0) {
-             WebFont.load({
-               google: { families: fontsToLoad },
-               active: () => {
-                  console.log("Fonts loaded from persistence.");
-                  loadCanvasPersistence();
-               },
-               inactive: loadCanvasPersistence
-             });
+            WebFont.load({
+              google: { families: fontsToLoad },
+              active: () => {
+                console.log("Fonts loaded from persistence.");
+                loadCanvasPersistence();
+              },
+              inactive: loadCanvasPersistence
+            });
           } else {
-             loadCanvasPersistence();
+            loadCanvasPersistence();
           }
         }
       }
@@ -379,7 +385,7 @@ export default function CanvasEditor({
 
   // 🟩 Handle Modifications (User Actions)
   useEffect(() => {
-     // ... (No changes needed here) ...
+    // ... (No changes needed here) ...
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
 
