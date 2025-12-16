@@ -177,30 +177,70 @@ export default function CanvasEditor({
 
           setTimeout(() => {
             const newObjs = fabricCanvas.getObjects().map((obj, i) => {
-              const newObj = {
-                id: obj.customId || Date.now() + i,
-                type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
-                props: {
+              // 1. COMMON PROPS (Applied to ALL objects)
+              const commonProps = {
+                left: obj.left,
+                top: obj.top,
+                angle: obj.angle,
+                fill: obj.fill,
+                opacity: obj.opacity,
+                shadowBlur: obj.shadowBlur || 0,
+                shadowOffsetX: obj.shadowOffsetX || 0,
+                shadowOffsetY: obj.shadowOffsetY || 0,
+                shadowColor: obj.shadowColor || '',
+                stroke: obj.stroke,
+                strokeWidth: obj.strokeWidth,
+                scaleX: obj.scaleX || 1,
+                scaleY: obj.scaleY || 1,
+                lockMovementX: obj.lockMovementX,
+                lockMovementY: obj.lockMovementY,
+              };
+
+              // 2. SPECIFIC PROPS (Based on Type)
+              let specificProps = {};
+
+              // IMAGE: Only Width/Height in props. SRC is handled outside.
+              if (obj.type === 'image') {
+                specificProps = {
+                  width: obj.width,
+                  height: obj.height,
+                  cropX: obj.cropX,
+                  cropY: obj.cropY,
+                };
+              }
+              // TEXT: Text-specific fields. No Width/Height/Src.
+              else if (['text', 'textbox', 'i-text', 'circle-text'].includes(obj.type) || obj.textEffect === 'circle') {
+                specificProps = {
                   text: obj.text,
-                  left: obj.left,
-                  top: obj.top,
-                  angle: obj.angle,
-                  opacity: obj.opacity,
-                  shadowBlur: obj.shadowBlur,
-                  shadowOffsetX: obj.shadowOffsetX,
-                  shadowOffsetY: obj.shadowOffsetY,
-                  shadowColor: obj.shadowColor,
-                  fill: obj.fill,
                   fontSize: obj.fontSize,
                   fontFamily: obj.fontFamily,
                   charSpacing: obj.charSpacing,
-                  stroke: obj.stroke,
-                  strokeWidth: obj.strokeWidth,
+                  textAlign: obj.textAlign,
                   textStyle: obj.textStyle,
                   textEffect: obj.textEffect,
                   effectValue: obj.effectValue,
+                };
+              }
+              // SHAPES: Width/Height/Radius. No Text/Src.
+              else {
+                specificProps = {
+                  width: obj.width,
+                  height: obj.height,
                   radius: obj.radius,
-                }
+                  rx: obj.rx,
+                  ry: obj.ry,
+                };
+              }
+
+              // 3. FINAL OBJECT CONSTRUCTION
+              return {
+                id: obj.customId || Date.now() + i,
+                type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+
+                // ⭐️ SRC IS HERE ONLY (Top Level)
+                ...(obj.type === 'image' && { src: obj.src }),
+
+                props: { ...commonProps, ...specificProps }
               };
             });
             if (newObjs) {
