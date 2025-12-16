@@ -103,7 +103,7 @@ export const overwriteDesign = async (userId, designId, canvas, setSaving) => {
 export const handleSaveTemp = (canvas) => {
   if (!canvas) return
 
-  const rawJSON = canvas.toJSON();
+  const rawJSON = removeUndefined(canvas.toJSON();
 
-  console.log(removeUndefined())
+  console.log()
 } 
