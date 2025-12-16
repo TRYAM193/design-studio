@@ -177,7 +177,7 @@ export default function CanvasEditor({
 
           setTimeout(() => {
             const newObjs = fabricCanvas.getObjects().map((obj, i) => {
-              rurn {
+              const newObj = {
                 id: obj.customId || Date.now() + i,
                 type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
                 ...{ src: obj.type === 'image' ? obj.src : '' },
