@@ -1,15 +1,17 @@
 import {
   Bell,
+  CreditCard,
   FolderOpen,
+  Home,
   LayoutTemplate,
+  LogIn,
   LogOut,
+  Package,
+  Plus,
   Settings,
   ShoppingBag,
-  Store, // NEW: For the Store link
-  User,
-  CreditCard
 } from "lucide-react";
-import { Link, useLocation } from "react-router"; // Fixed import
+import { Link, useLocation } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +23,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
+import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "@/hooks/use-translation";
+// Added Firestore imports
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebase";
@@ -31,119 +35,160 @@ export function DashboardSidebar() {
   const { user, signOut, isAuthenticated } = useAuth();
   const { t } = useTranslation();
 
-  // Keep your existing profile fetching logic
+  // State to hold profile data from Firestore
   const [userProfile, setUserProfile] = useState<{ name?: string; image?: string } | null>(null);
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Listen to Firestore for real-time profile updates
   useEffect(() => {
     if (user?.uid) {
       const unsub = onSnapshot(doc(db, "users", user.uid), (doc) => {
         if (doc.exists()) {
-          setUserProfile(doc.data() as any);
+          setUserProfile(doc.data() as { name?: string; image?: string });
         }
       });
       return () => unsub();
+    } else {
+      setUserProfile(null);
     }
-  }, [user]);
+  }, [user?.uid]);
 
+  // Determine display name: Firestore Name -> Auth Name -> Email -> Guest
+  const displayName =
+    userProfile?.name ||
+    user?.displayName ||
+    user?.email?.split('@')[0] ||
+    t("common.guest");
+
+  const initials = displayName.charAt(0).toUpperCase();
+
+  // Determine display image: Firestore Image -> Auth Photo -> undefined
   const userImage = userProfile?.image || user?.photoURL || undefined;
-  const initials = (userProfile?.name || user?.displayName || "U").charAt(0).toUpperCase();
 
-  // User Profile Dropdown Content (Kept from your logic)
+  const navItems = [
+    { icon: Home, label: t("nav.home"), path: "/dashboard" },
+    { icon: LayoutTemplate, label: t("nav.templates"), path: "/dashboard/templates" },
+    { icon: FolderOpen, label: t("nav.projects"), path: "/dashboard/projects" },
+    { icon: ShoppingBag, label: t("nav.products"), path: "/dashboard/products" },
+    { icon: Package, label: t("nav.orders"), path: "/dashboard/orders" },
+    { icon: CreditCard, label: t("nav.pricing"), path: "/dashboard/pricing" },
+  ];
+
   const UserProfileContent = () => (
     <>
-      <div className="flex items-center justify-start gap-2 p-2">
-        <div className="flex flex-col space-y-1 leading-none">
-          <p className="font-medium">{userProfile?.name || user?.displayName}</p>
-          <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+      <div className="flex items-center gap-3 p-2">
+        <Avatar className="h-10 w-10 border">
+          <AvatarImage src={userImage} />
+          <AvatarFallback>{initials}</AvatarFallback>
+        </Avatar>
+        <div className="flex flex-col overflow-hidden">
+          <span className="text-sm font-semibold truncate">{displayName}</span>
+          <span className="text-xs text-muted-foreground truncate">{user?.email || t("sidebar.signInSync")}</span>
         </div>
       </div>
       <DropdownMenuSeparator />
-      <DropdownMenuItem asChild>
-        <Link to="/dashboard/settings" className="cursor-pointer">
-          <User className="mr-2 h-4 w-4" />
-          <span>{t("nav.profile")}</span>
-        </Link>
-      </DropdownMenuItem>
-      <DropdownMenuItem asChild>
-        <Link to="/dashboard/pricing" className="cursor-pointer">
-          <CreditCard className="mr-2 h-4 w-4" />
-          <span>{t("nav.subscription")}</span>
-        </Link>
+      <div className="p-2">
+        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+          <span>{t("sidebar.currentPlan")}</span>
+          <Badge variant="secondary" className="text-[10px] h-5">{t("pricing.plan.pro").toUpperCase()}</Badge>
+        </div>
+        <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
+          <div className="bg-primary h-full w-[75%]" />
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1 text-right">75% {t("sidebar.storageUsed")}</p>
+      </div>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem className="cursor-pointer">
+        <CreditCard className="mr-2 h-4 w-4" />
+        <span>{t("nav.billing")}</span>
       </DropdownMenuItem>
       <DropdownMenuSeparator />
-      <DropdownMenuItem 
-        className="cursor-pointer text-red-600 focus:text-red-600" 
+      <DropdownMenuItem
+        className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
         onClick={() => signOut()}
       >
         <LogOut className="mr-2 h-4 w-4" />
-        <span>{t("nav.signout")}</span>
+        <span>{t("nav.logout")}</span>
       </DropdownMenuItem>
     </>
   );
 
   return (
-    <div className="h-screen w-[72px] flex flex-col items-center py-6 border-r bg-background/50 backdrop-blur-xl fixed left-0 top-0 z-50">
-      {/* Brand Logo */}
-      <Link to="/" className="mb-8">
-        <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-bold text-xl">
-          D
-        </div>
-      </Link>
-
-      {/* Main Navigation */}
-      <div className="flex-1 flex flex-col gap-4 w-full px-2">
-        <Link to="/dashboard">
-          <Button
-            variant={isActive("/dashboard") ? "secondary" : "ghost"}
-            size="icon"
-            className="w-full h-10 rounded-xl"
-            title={t("nav.dashboard")}
-          >
-            <LayoutTemplate className="h-5 w-5" />
-          </Button>
+    <div className="
+      fixed z-30 bg-sidebar border-sidebar-border transition-all duration-300
+      /* Mobile: Bottom Bar */
+      bottom-0 left-0 w-full h-16 border-t flex flex-row items-center justify-around px-2
+      /* Desktop: Left Sidebar */
+      sm:top-0 sm:left-0 sm:h-screen sm:w-20 sm:border-r sm:flex-col sm:justify-start sm:py-6
+    ">
+      {/* Logo Area - Desktop Only */}
+      <div className="hidden sm:flex mb-8">
+        <Link to="/">
+          <div className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center bg-black">
+            {/* Using local logo since storage isn't set up yet */}
+            <img
+              src="/assets/LOGO.png"
+              alt="TRYAM Logo"
+              className="h-full w-full object-cover"
+            />
+          </div>
         </Link>
+      </div>
 
-        {/* NEW: Store Link (Replaces Products) */}
-        <Link to="/store">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-full h-10 rounded-xl text-indigo-500 hover:text-indigo-600 hover:bg-indigo-50"
-            title="Browse Catalog"
-          >
-            <Store className="h-5 w-5" />
-          </Button>
-        </Link>
-
-        {/* My Projects (Saved Designs) */}
-        <Link to="/dashboard/projects">
-          <Button
-            variant={isActive("/dashboard/projects") ? "secondary" : "ghost"}
-            size="icon"
-            className="w-full h-10 rounded-xl"
-            title="My Projects"
-          >
-            <FolderOpen className="h-5 w-5" />
-          </Button>
-        </Link>
-
-        {/* My Orders */}
-        <Link to="/dashboard/orders">
-          <Button
-            variant={isActive("/dashboard/orders") ? "secondary" : "ghost"}
-            size="icon"
-            className="w-full h-10 rounded-xl"
-            title={t("nav.orders")}
-          >
-            <ShoppingBag className="h-5 w-5" />
+      {/* New Design Button - Desktop Only */}
+      <div className="hidden sm:flex mb-6">
+        <Link to="/design">
+          <Button className="h-10 w-10 rounded-full p-0 shadow-none" size="icon" title={t("common.newDesign")}>
+            <Plus className="h-5 w-5" />
           </Button>
         </Link>
       </div>
 
-      {/* Bottom Actions & User Profile */}
-      <div className="flex flex-col gap-4 w-full px-2">
+      {/* Navigation */}
+      <nav className="flex items-center w-full justify-around sm:flex-col sm:justify-start sm:space-y-4 sm:w-auto">
+        {navItems.map((item) => (
+          <Link key={item.path} to={item.path}>
+            <Button
+              variant={isActive(item.path) ? "secondary" : "ghost"}
+              size="icon"
+              className={`rounded-xl transition-all ${isActive(item.path) ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-muted-foreground"
+                } h-10 w-10`}
+              title={item.label}
+            >
+              <item.icon className="h-5 w-5" />
+            </Button>
+          </Link>
+        ))}
+
+        {/* Mobile Profile Trigger */}
+        <div className="sm:hidden">
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="cursor-pointer outline-none">
+                  <Avatar className="h-8 w-8 border hover:ring-2 hover:ring-primary/20 transition-all">
+                    <AvatarImage src={userImage} />
+                    <AvatarFallback>{initials}</AvatarFallback>
+                  </Avatar>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64 mb-2" side="top" align="end">
+                <UserProfileContent />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground">
+                <LogIn className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
+        </div>
+      </nav>
+
+      {/* Bottom Actions - Desktop Only */}
+      <div className="hidden sm:flex space-y-4 flex-col items-center mt-auto">
         {isAuthenticated && (
           <>
             <Button variant="ghost" size="icon" className="text-muted-foreground h-10 w-10" title={t("common.notifications")}>
@@ -154,11 +199,11 @@ export function DashboardSidebar() {
                 <Settings className="h-5 w-5" />
               </Button>
             </Link>
-            <Separator className="w-8 mx-auto" />
+            <Separator className="w-8" />
           </>
         )}
 
-        {/* User Profile Dropdown */}
+        {/* User Profile */}
         {isAuthenticated ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -175,7 +220,9 @@ export function DashboardSidebar() {
           </DropdownMenu>
         ) : (
           <Link to="/auth">
-             {/* Fallback if somehow viewing dashboard without auth */}
+            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-muted-foreground" title={t("nav.signin")}>
+              <LogIn className="h-5 w-5" />
+            </Button>
           </Link>
         )}
       </div>
