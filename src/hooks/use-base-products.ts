@@ -18,6 +18,7 @@ export function useBaseProducts() {
     async function fetchProducts() {
       try {
         const q = query(collection(db, "base_products"), where("active", "==", true));
+        console.log()
         const querySnapshot = await getDocs(q);
         
         const fetched: BaseProduct[] = [];
