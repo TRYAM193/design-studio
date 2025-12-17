@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Clock, Plus, Shirt, Star } from "lucide-react";
+import { ArrowRight, Clock, Plus, Shirt, Star, Store } from "lucide-react"; // Added Store icon
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
-import { Link } from "react-router";
+import { Link } from "react-router-dom"; // Fixed import
 import { useTranslation } from "@/hooks/use-translation";
 
 export default function DashboardHome() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { t } = useTranslation();
 
   return (
@@ -19,62 +19,76 @@ export default function DashboardHome() {
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl font-bold tracking-tight"
         >
-          {t("dashboard.welcome")}
+          {t("dashboard.welcome")}, {user?.displayName?.split(" ")[0] || "Creator"}!
         </motion.h1>
         
-        {/* Quick Actions */}
+        {/* Quick Actions - NOW LINKED TO STORE */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: t("dashboard.quick.tshirt"), icon: Plus },
-            { label: t("dashboard.quick.hoodie"), icon: Plus },
-            { label: t("dashboard.quick.longsleeve"), icon: Plus },
-            { label: t("dashboard.quick.totebag"), icon: Plus }
-          ].map((item, i) => (
+            { label: "T-Shirt", icon: Plus, query: "tee" },
+            { label: "Hoodie", icon: Plus, query: "hoodie" },
+            { label: "Long Sleeve", icon: Plus, query: "long" },
+            { label: "Tote Bag", icon: Plus, query: "tote" }
+          ].map((action, i) => (
             <motion.div
-              key={item.label}
+              key={i}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
             >
-              <Button 
-                variant="outline" 
-                className="w-full h-24 flex flex-col gap-2 text-lg font-normal hover:border-primary hover:bg-secondary/50 transition-all"
-              >
-                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-                  <item.icon className="h-4 w-4" />
-                </div>
-                {item.label}
-              </Button>
+              {/* Link to Store with Search Query */}
+              <Link to={`/store?search=${action.query}`}>
+                <Button 
+                  variant="outline" 
+                  className="w-full h-32 flex flex-col gap-4 border-dashed hover:border-solid hover:border-primary hover:bg-primary/5 transition-all group"
+                >
+                  <div className="h-10 w-10 rounded-full bg-secondary group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
+                    <action.icon className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium">{action.label}</span>
+                </Button>
+              </Link>
             </motion.div>
           ))}
         </div>
       </section>
 
-      {/* Recent Designs - Only for authenticated users */}
+      {/* Recent Projects Section */}
+      {/* (Logic: If user has projects, show them. Else show 'Start Free') */}
       {isAuthenticated ? (
-        <section className="space-y-6">
+         <section className="space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold tracking-tight">{t("dashboard.recent")}</h2>
-            <Button variant="link" className="text-muted-foreground">{t("dashboard.viewAll")} <ArrowRight className="ml-2 h-4 w-4" /></Button>
+            <h2 className="text-2xl font-semibold">{t("dashboard.recent")}</h2>
+            <Link to="/dashboard/projects">
+              <Button variant="ghost" className="gap-2">
+                {t("dashboard.viewAll")} <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="group cursor-pointer border-0 shadow-none bg-transparent">
-                <div className="aspect-[4/3] rounded-xl bg-secondary mb-3 overflow-hidden relative flex items-center justify-center">
+          {/* Placeholder for Recent Projects Grid */}
+          {/* You can connect this to useUserDesigns() later */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <Link to="/store">
+                <Card className="group cursor-pointer hover:shadow-md transition-all border-dashed bg-muted/30 flex items-center justify-center h-full min-h-[200px]">
+                    <div className="text-center space-y-2">
+                        <Store className="h-8 w-8 mx-auto text-muted-foreground" />
+                        <p className="font-medium text-muted-foreground">Browse Store</p>
+                    </div>
+                </Card>
+            </Link>
+            {/* Example Placeholders - Replace with real data */}
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="group cursor-pointer hover:shadow-md transition-all overflow-hidden">
+                <div className="aspect-square bg-secondary relative flex items-center justify-center">
                   <Shirt className="h-16 w-16 text-muted-foreground/20" />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full">
-                      <Star className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
-                <CardContent className="p-0">
+                <CardContent className="p-4">
                   <h3 className="font-medium truncate">{t("dashboard.untitled")} {i}</h3>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                     <Clock className="h-3 w-3" />
-                    <span>{t("dashboard.edited")} {i}h {t("dashboard.ago")}</span>
+                    <span>{i}h {t("dashboard.ago")}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -87,8 +101,10 @@ export default function DashboardHome() {
           <p className="text-muted-foreground max-w-xl mx-auto">
             {t("dashboard.startDesc")}
           </p>
-          <Link to="/auth">
-            <Button>{t("dashboard.signInSave")}</Button>
+          <Link to="/store">
+             <Button size="lg" className="mt-4">
+               Go to Catalog
+             </Button>
           </Link>
         </section>
       )}
