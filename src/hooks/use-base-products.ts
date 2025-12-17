@@ -19,7 +19,6 @@ export function useBaseProducts() {
       try {
         const q = query(collection(db, "base_products"), where("active", "==", true));
         const querySnapshot = await getDocs(q);
-        console.log(querySnapshot)
         
         const fetched: BaseProduct[] = [];
         querySnapshot.forEach((doc) => {
