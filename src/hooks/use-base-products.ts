@@ -32,7 +32,8 @@ export function useBaseProducts() {
             // Fallback image if the seed script didn't save one
             image: data.image || "/assets/t_shirt.glb", 
             base_cost_inr: inrPrice,
-            colors: data.options?.colors || []
+            colors: data.options?.colors || [],
+            stock_status: data.stock_status || 'in_stock'
           });
         });
         
