@@ -173,7 +173,7 @@ export default function DashboardProducts() {
                 Reset Filters
               </Button>
             </div>
-          </PopoverTrigger>
+          {/* </PopoverTrigger> */}
         </Popover>
       </div>
 
