@@ -1,97 +1,98 @@
-import { motion } from "framer-motion";
-import { ArrowRight, Clock, Plus, Shirt, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight, FolderOpen, ShoppingBag, Store, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import { Link } from "react-router";
-import { useTranslation } from "@/hooks/use-translation";
 
 export default function DashboardHome() {
-  const { isAuthenticated } = useAuth();
-  const { t } = useTranslation();
+  const { user } = useAuth();
+
+  const stats = [
+    { label: "Total Projects", value: "0", icon: FolderOpen, color: "text-blue-500" },
+    { label: "Orders Placed", value: "0", icon: ShoppingBag, color: "text-purple-500" },
+    { label: "Wallet Credits", value: "₹0", icon: TrendingUp, color: "text-green-500" },
+  ];
 
   return (
-    <div className="space-y-12">
-      {/* Hero Section */}
-      <section className="space-y-6">
-        <motion.h1 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl font-bold tracking-tight"
-        >
-          {t("dashboard.welcome")}
-        </motion.h1>
-        
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: t("dashboard.quick.tshirt"), icon: Plus },
-            { label: t("dashboard.quick.hoodie"), icon: Plus },
-            { label: t("dashboard.quick.longsleeve"), icon: Plus },
-            { label: t("dashboard.quick.totebag"), icon: Plus }
-          ].map((item, i) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.1 }}
-            >
-              <Button 
-                variant="outline" 
-                className="w-full h-24 flex flex-col gap-2 text-lg font-normal hover:border-primary hover:bg-secondary/50 transition-all"
-              >
-                <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-                  <item.icon className="h-4 w-4" />
-                </div>
-                {item.label}
-              </Button>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* Recent Designs - Only for authenticated users */}
-      {isAuthenticated ? (
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold tracking-tight">{t("dashboard.recent")}</h2>
-            <Button variant="link" className="text-muted-foreground">{t("dashboard.viewAll")} <ArrowRight className="ml-2 h-4 w-4" /></Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="group cursor-pointer border-0 shadow-none bg-transparent">
-                <div className="aspect-[4/3] rounded-xl bg-secondary mb-3 overflow-hidden relative flex items-center justify-center">
-                  <Shirt className="h-16 w-16 text-muted-foreground/20" />
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors" />
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button size="icon" variant="secondary" className="h-8 w-8 rounded-full">
-                      <Star className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <CardContent className="p-0">
-                  <h3 className="font-medium truncate">{t("dashboard.untitled")} {i}</h3>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                    <Clock className="h-3 w-3" />
-                    <span>{t("dashboard.edited")} {i}h {t("dashboard.ago")}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-      ) : (
-        <section className="bg-secondary/30 rounded-2xl p-8 text-center space-y-4">
-          <h2 className="text-2xl font-semibold">{t("dashboard.startFree")}</h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            {t("dashboard.startDesc")}
+    <div className="space-y-8 p-6">
+      {/* 1. Welcome Section with CTA */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-indigo-50 to-purple-50 p-8 rounded-2xl border border-indigo-100">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900">Welcome back, {user?.displayName || "Creator"}! 👋</h1>
+          <p className="text-slate-600 mt-2 max-w-xl">
+            Ready to design something amazing today? Pick a product from our catalog to get started.
           </p>
-          <Link to="/auth">
-            <Button>{t("dashboard.signInSave")}</Button>
-          </Link>
-        </section>
-      )}
+        </div>
+        <Link to="/store">
+          <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 shadow-lg gap-2">
+            <Store className="h-5 w-5" />
+            Start New Project
+          </Button>
+        </Link>
+      </div>
+
+      {/* 2. Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {stats.map((stat, index) => (
+          <Card key={index} className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.label}
+              </CardTitle>
+              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* 3. Recent Activity / Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Link to="/store">
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors group">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white p-2 rounded-md shadow-sm">
+                    <Store className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-900">Browse Catalog</h4>
+                    <p className="text-sm text-slate-500">View blank products</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+            
+            <Link to="/dashboard/projects">
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors group">
+                <div className="flex items-center gap-3">
+                   <div className="bg-white p-2 rounded-md shadow-sm">
+                    <FolderOpen className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-900">View My Projects</h4>
+                    <p className="text-sm text-slate-500">Edit saved designs</p>
+                  </div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
+              </div>
+            </Link>
+          </CardContent>
+        </Card>
+
+        {/* Placeholder for Recent Orders */}
+        <Card className="h-full flex flex-col justify-center items-center text-center p-6 text-muted-foreground border-dashed">
+           <ShoppingBag className="h-10 w-10 mb-3 opacity-20" />
+           <p>No recent orders found</p>
+        </Card>
+      </div>
     </div>
   );
 }
