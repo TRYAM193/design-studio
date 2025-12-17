@@ -3,7 +3,7 @@ import { ArrowRight, Clock, Plus, Shirt, Star, Store } from "lucide-react"; // A
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
-import { Link } from "react-router-dom"; // Fixed import
+import { Link } from "react-router"; // Fixed import
 import { useTranslation } from "@/hooks/use-translation";
 
 export default function DashboardHome() {
