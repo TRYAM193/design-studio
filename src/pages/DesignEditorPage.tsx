@@ -12,7 +12,7 @@ export default function DesignEditorPage() {
     <Provider store={store}>
       <div className="w-full h-screen bg-background overflow-hidden">
         <Routes>
-          <Route path="/" element={<EditorPanel />} />
+          <Route path="/*" element={<EditorPanel />} />
           
           <Route path="/saved" element={<SavedDesignsPage />} />
         </Routes>
