@@ -2,7 +2,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import AuthPage from "@/pages/Auth.tsx";
-// Removed Convex imports
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
@@ -17,11 +16,13 @@ import DashboardProjects from "./pages/DashboardProjects";
 import DashboardPricing from "./pages/DashboardPricing";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
-// We will create this provider in the next step
 import { AuthProvider } from "./hooks/use-auth";
 import DesignEditorPage from "./pages/DesignEditorPage";
 import ThumbnailGenerator from "./pages/ThumbnailGenerator";
-import Storefront from './pages/StoreFront.tsx' // Import the new page
+import Storefront from './pages/StoreFront.tsx'; 
+
+// ✅ IMPORT THE NEW PAGE
+import ProductDetails from "./pages/ProductDetails"; 
 
 function RouteSyncer() {
   const location = useLocation();
@@ -55,10 +56,14 @@ createRoot(document.getElementById("root")!).render(
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
+          
+          {/* Store Routes */}
           <Route path="/store" element={<Storefront />} />
+          <Route path="/product/:productId" element={<ProductDetails />} /> {/* ✅ ADDED THIS */}
 
           <Route path="/design/*" element={<DesignEditorPage />} />
           <Route path="/generator" element={<ThumbnailGenerator />} />
+          
           {/* Dashboard Routes */}
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<DashboardHome />} />
