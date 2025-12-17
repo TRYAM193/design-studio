@@ -36,7 +36,7 @@ async function seedProducts() {
   // 1. Process Qikink (India)
   console.log("🇮🇳 Fetching Qikink Catalog...");
   try {
-    const qikRes = await axios.get("https://api.qik.dev/v1/products", { // Try this endpoint first
+    const qikRes = await axios.get("https://api.qik.dev/api/v1/items", { // Try this endpoint first
       headers: { "Authorization": `Bearer ${QIKINK_ACCESS_TOKEN}` }
     });
     // Fallback if the first URL fails, try /api/v1/items or similar
