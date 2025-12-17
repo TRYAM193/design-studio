@@ -46,6 +46,7 @@ export function useBaseProducts() {
 
     fetchProducts();
   }, []);
+  console.lo
 
   return { products, loading };
 }
