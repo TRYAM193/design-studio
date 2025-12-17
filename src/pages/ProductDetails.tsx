@@ -5,7 +5,7 @@ import { db } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Paintbrush, ArrowLeft, Truck, ShieldCheck, ChevronRight } from "lucide-react";
+import { Loader2, Paintbrush, ArrowLeft, Truck, ShieldCheck, ChevronRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
