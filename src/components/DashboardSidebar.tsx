@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom"; // In React + Vite + TS, 'react-router-dom' is the standard for web routing.
+import { Link, useLocation } from "react-router"; // In React + Vite + TS, 'react-router-dom' is the standard for web routing.
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
