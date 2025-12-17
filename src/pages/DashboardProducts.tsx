@@ -36,7 +36,7 @@ interface UserProduct {
 export default function DashboardProducts() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  
+
   // Real State
   const [products, setProducts] = useState<UserProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +51,7 @@ export default function DashboardProducts() {
   useEffect(() => {
     async function fetchUserDesigns() {
       if (!user) return;
-      
+
       try {
         const designsRef = collection(db, `users/${user.uid}/designs`);
         const q = query(designsRef, orderBy("updatedAt", "desc"));
@@ -116,7 +116,7 @@ export default function DashboardProducts() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
+
         <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="gap-2">
@@ -160,8 +160,8 @@ export default function DashboardProducts() {
                   className="mt-2"
                 />
               </div>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="w-full"
                 onClick={() => {
                   setSelectedCategory("All");
@@ -173,7 +173,7 @@ export default function DashboardProducts() {
                 Reset Filters
               </Button>
             </div>
-          {/* </PopoverTrigger> */}
+            {/* </PopoverTrigger> */}
         </Popover>
       </div>
 
@@ -193,13 +193,13 @@ export default function DashboardProducts() {
                 className="group cursor-pointer bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-all"
               >
                 <div className="aspect-square bg-secondary/30 m-1 rounded-lg overflow-hidden relative flex items-center justify-center">
-                   {product.thumbnail ? (
-                     <img src={product.thumbnail} alt={product.title} className="object-cover w-full h-full" />
-                   ) : (
-                     <ShoppingBag className="h-12 w-12 text-muted-foreground/20" />
-                   )}
+                  {product.thumbnail ? (
+                    <img src={product.thumbnail} alt={product.title} className="object-cover w-full h-full" />
+                  ) : (
+                    <ShoppingBag className="h-12 w-12 text-muted-foreground/20" />
+                  )}
                 </div>
-                
+
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-2">
                     <div>
@@ -210,7 +210,7 @@ export default function DashboardProducts() {
                     </div>
                     <span className="font-semibold text-sm">₹{product.price_inr}</span>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <Badge variant="secondary" className="text-xs font-normal">
                       {product.status}
