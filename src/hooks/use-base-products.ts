@@ -37,7 +37,6 @@ export function useBaseProducts() {
         });
         
         setProducts(fetched);
-         c
       } catch (error) {
         console.error("Error fetching base products:", error);
       } finally {
