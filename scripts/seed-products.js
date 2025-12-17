@@ -7,49 +7,34 @@ const require = createRequire(import.meta.url);
 const serviceAccount = require("./service-account.json");
 
 // --- CONFIGURATION ---
+// 🛑 PASTE YOUR PRINTIFY TOKEN HERE
+const PRINTIFY_API_TOKEN = "YOUR_PRINTIFY_ACCESS_TOKEN"; 
 
-// --- QIKINK STATIC DATA (Since they don't have a Catalog API) ---
-// I have manually mapped their most popular products here for you.
+// --- MAPPING LOGIC ---
+// We map our "Universal IDs" to the specific Printify Blueprint IDs 
+// so we can steal their images.
+const IMAGE_SOURCE_MAP = {
+  "mens_cotton_tee": 12,      // Bella+Canvas 3001 (Men's Tee)
+  "unisex_hoodie": 77,        // Gildan 18500 (Hoodie)
+  "womens_crop_top": 1058,    // Example Crop Top ID (Check Printify for exact ID)
+  "oversized_tee": 12         // Using Tee as placeholder if Oversized not found
+};
+
 const QIKINK_CATALOG = [
   {
     id: "mens_cotton_tee",
     title: "Men's Classic Cotton T-Shirt",
-    qikink_ref: "Men's Round Neck", // This is for your reference
-    options: {
-      colors: ["White", "Black", "Navy Blue", "Red", "Melange Grey", "Yellow"],
-      sizes: ["S", "M", "L", "XL", "XXL"]
-    },
-    price_inr: 200 // Approximate base cost
+    price_inr: 200
   },
   {
     id: "unisex_hoodie",
     title: "Unisex Premium Hoodie",
-    qikink_ref: "Unisex Hoodie",
-    options: {
-      colors: ["Black", "Navy Blue", "Melange Grey", "Red"],
-      sizes: ["S", "M", "L", "XL", "XXL"]
-    },
     price_inr: 450
   },
   {
     id: "womens_crop_top",
     title: "Women's Crop Top",
-    qikink_ref: "Crop Top",
-    options: {
-      colors: ["White", "Black", "Pink", "Lavender"],
-      sizes: ["XS", "S", "M", "L", "XL"]
-    },
     price_inr: 240
-  },
-  {
-    id: "oversized_tee",
-    title: "Unisex Oversized T-Shirt",
-    qikink_ref: "Oversized Tee",
-    options: {
-      colors: ["Black", "White", "Beige", "Olive Green"],
-      sizes: ["S", "M", "L", "XL"]
-    },
-    price_inr: 320
   }
 ];
 
@@ -61,89 +46,82 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-// --- MAIN SEED FUNCTION ---
 async function seedProducts() {
   const batch = db.batch();
   let count = 0;
 
-  console.log("🚀 Starting Super Seeder...");
+  console.log("🚀 Starting Smart Seeder...");
 
-  // 1. Process Qikink (From Static List)
-  console.log("🇮🇳 Seeding Qikink Products (Static)...");
-  for (const item of QIKINK_CATALOG) {
-    const docRef = db.collection("base_products").doc(item.id);
-    
-    batch.set(docRef, {
-      id: item.id,
-      title: item.title,
-      active: true,
-      options: item.options,
-      providers: {
-        india_qikink: {
-          active: true,
-          provider_id: "qikink",
-          external_ref: item.qikink_ref, // Just a label, since we can't link via API yet
-          base_cost: item.price_inr,
-          currency: "INR"
-        }
-      },
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-    
-    count++;
-    console.log(`   MATCH (IN): ${item.title} -> ${item.id}`);
-  }
-
-  // 2. Process Printify (From Live API)
-  console.log("🇺🇸 Fetching Printify Catalog...");
   try {
+    // 1. Fetch Printify Catalog to get the Images
+    console.log("📸 Fetching High-Quality Images from Printify...");
     const pRes = await axios.get("https://api.printify.com/v1/catalog/blueprints.json", {
       headers: { "Authorization": `Bearer ${PRINTIFY_API_TOKEN}` }
     });
     
-    // Map Printify names to our Universal IDs
-    const PRINTIFY_MAP = {
-      "Unisex Jersey Short Sleeve Tee": "mens_cotton_tee",
-      "Unisex Heavy Blend™ Hooded Sweatshirt": "unisex_hoodie",
-      "Women’s Crop Tee": "womens_crop_top",
-      "Unisex Heavy Cotton™ Tee": "oversized_tee" // Approximate match
-    };
+    // Create a lookup map: Blueprint ID -> Image URL
+    const imageMap = {};
+    pRes.data.forEach(bp => {
+      // Printify gives images in an array, we take the first one
+      if (bp.images && bp.images.length > 0) {
+        imageMap[bp.id] = bp.images[0];
+      }
+    });
 
-    for (const item of pRes.data) {
-      const universalId = PRINTIFY_MAP[item.title];
-      if (!universalId) continue;
+    // 2. Update Database with Merged Data
+    console.log("💾 Updating Firestore...");
 
-      const docRef = db.collection("base_products").doc(universalId);
+    for (const item of QIKINK_CATALOG) {
+      const docRef = db.collection("base_products").doc(item.id);
       
-      // We use Monster Digital (ID 29) as the default US provider
-      const PREFERRED_PROVIDER_ID = 29; 
+      // Find the matching image
+      const printifyBlueprintId = IMAGE_SOURCE_MAP[item.id];
+      const realImageUrl = imageMap[printifyBlueprintId] || "";
+
+      if (realImageUrl) {
+        console.log(`   ✅ Found Image for ${item.title}`);
+      } else {
+        console.log(`   ⚠️ No Image found for ${item.title} (Using placeholder)`);
+      }
 
       batch.set(docRef, {
+        id: item.id,
+        title: item.title,
+        active: true,
+        // HERE IS THE MAGIC: We save the Printify Image URL as the main image
+        image: realImageUrl || "https://placehold.co/600x600?text=No+Image",
+        
+        options: { 
+          colors: ["White", "Black", "Navy", "Red"], 
+          sizes: ["S", "M", "L", "XL", "XXL"] 
+        },
+        
         providers: {
+          india_qikink: {
+            active: true,
+            provider_id: "qikink",
+            base_cost: item.price_inr,
+            currency: "INR"
+          },
+          // We keep Printify data ready for global expansion
           global_printify: {
             active: true,
             provider_id: "printify",
-            blueprint_id: item.id,
-            print_provider_id: PREFERRED_PROVIDER_ID,
-            title: item.title,
-            image: item.images[0],
-            base_cost: 800, // Placeholder $8.00 (Printify API doesn't give price in this list)
-            currency: "USD"
+            blueprint_id: printifyBlueprintId,
+            image: realImageUrl
           }
-        }
+        },
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
-
+      
       count++;
-      console.log(`   MATCH (US): ${item.title} -> ${universalId}`);
     }
-  } catch (error) {
-    console.error("❌ Printify Error:", error.message);
-  }
 
-  // 3. Commit
-  if (count > 0) {
     await batch.commit();
-    console.log(`✅ Database Updated! ${count} products merged.`);
+    console.log(`🎉 Success! Updated ${count} products with Real Images.`);
+
+  } catch (error) {
+    console.error("❌ Error:", error.message);
   }
 }
 
