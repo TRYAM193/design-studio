@@ -72,7 +72,7 @@ async function seedProducts() {
       // 1. CALL PRINTIFY API
       let imageUrls = [];
       try {
-        const res = await axios.get(`https://api.printify.com/v1/catalog/blueprints/${blueprintId}`, {
+        const res = await axios.get(`https://api.printify.com/v1/catalog/blueprints/${blueprintId}.json`, {
           headers: { "Authorization": `Bearer ${PRINTIFY_API_TOKEN}` }
         });
         
