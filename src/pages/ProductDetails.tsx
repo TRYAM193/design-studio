@@ -140,96 +140,96 @@ export default function ProductDetails() {
                                 dangerouslySetInnerHTML={{ __html: product.description }}
                             />
                         </div>
-                    </div>
 
-                    <div className="flex items-baseline gap-3">
-                        <span className="text-4xl font-bold text-slate-900">₹{sellingPrice}</span>
-                        <span className="text-lg text-slate-400 line-through">₹{sellingPrice + 200}</span>
-                        <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded">20% OFF</span>
-                    </div>
 
-                    <Separator />
-
-                    {/* COLOR SELECTOR */}
-                    <div className="space-y-3">
-                        <span className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
-                            Color: <span className="text-indigo-600 ml-1">{selectedColor}</span>
-                        </span>
-                        <div className="flex flex-wrap gap-3">
-                            {product.options.colors.map((color) => (
-                                <button
-                                    key={color}
-                                    onClick={() => setSelectedColor(color)}
-                                    className={cn(
-                                        "px-4 py-2 rounded-full border text-sm font-medium transition-all",
-                                        selectedColor === color
-                                            ? "border-indigo-600 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-600"
-                                            : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                                    )}
-                                >
-                                    {color}
-                                </button>
-                            ))}
+                        <div className="flex items-baseline gap-3">
+                            <span className="text-4xl font-bold text-slate-900">₹{sellingPrice}</span>
+                            <span className="text-lg text-slate-400 line-through">₹{sellingPrice + 200}</span>
+                            <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded">20% OFF</span>
                         </div>
-                    </div>
 
-                    {/* SIZE SELECTOR */}
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Size</span>
-                            <span className="text-xs text-indigo-600 cursor-pointer hover:underline">Size Chart</span>
-                        </div>
-                        <div className="grid grid-cols-5 gap-3">
-                            {product.options.sizes.map((size) => (
-                                <button
-                                    key={size}
-                                    onClick={() => setSelectedSize(size)}
-                                    className={cn(
-                                        "h-12 rounded-lg border text-sm font-bold flex items-center justify-center transition-all",
-                                        selectedSize === size
-                                            ? "border-black bg-black text-white shadow-lg scale-105"
-                                            : "border-slate-200 text-slate-900 hover:border-slate-400 hover:bg-slate-50"
-                                    )}
-                                >
-                                    {size}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                        <Separator />
 
-                    {/* ACTION BUTTON */}
-                    <div className="pt-6">
-                        <Button
-                            size="lg"
-                            className="w-full h-14 text-lg font-bold shadow-xl bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-[1.01]"
-                            onClick={handleStartDesigning}
-                            disabled={product.stock_status !== 'in_stock'}
-                        >
-                            {product.stock_status === 'in_stock' ? (
-                                <>
-                                    <Paintbrush className="w-5 h-5 mr-2" /> Start Designing
-                                </>
-                            ) : (
-                                "Currently Unavailable"
-                            )}
-                        </Button>
-                    </div>
-
-                    {/* Trust Badges */}
-                    <div className="grid grid-cols-2 gap-4 pt-6 border-t">
-                        <div className="flex items-center gap-3 text-sm text-slate-600">
-                            <div className="p-2 bg-slate-100 rounded-full"><Truck className="w-4 h-4 text-slate-600" /></div>
-                            <span>Fast Delivery</span>
+                        {/* COLOR SELECTOR */}
+                        <div className="space-y-3">
+                            <span className="text-sm font-semibold text-slate-900 uppercase tracking-wide">
+                                Color: <span className="text-indigo-600 ml-1">{selectedColor}</span>
+                            </span>
+                            <div className="flex flex-wrap gap-3">
+                                {product.options.colors.map((color) => (
+                                    <button
+                                        key={color}
+                                        onClick={() => setSelectedColor(color)}
+                                        className={cn(
+                                            "px-4 py-2 rounded-full border text-sm font-medium transition-all",
+                                            selectedColor === color
+                                                ? "border-indigo-600 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-600"
+                                                : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        {color}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex items-center gap-3 text-sm text-slate-600">
-                            <div className="p-2 bg-slate-100 rounded-full"><ShieldCheck className="w-4 h-4 text-slate-600" /></div>
-                            <span>Quality Guarantee</span>
-                        </div>
-                    </div>
 
+                        {/* SIZE SELECTOR */}
+                        <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm font-semibold text-slate-900 uppercase tracking-wide">Size</span>
+                                <span className="text-xs text-indigo-600 cursor-pointer hover:underline">Size Chart</span>
+                            </div>
+                            <div className="grid grid-cols-5 gap-3">
+                                {product.options.sizes.map((size) => (
+                                    <button
+                                        key={size}
+                                        onClick={() => setSelectedSize(size)}
+                                        className={cn(
+                                            "h-12 rounded-lg border text-sm font-bold flex items-center justify-center transition-all",
+                                            selectedSize === size
+                                                ? "border-black bg-black text-white shadow-lg scale-105"
+                                                : "border-slate-200 text-slate-900 hover:border-slate-400 hover:bg-slate-50"
+                                        )}
+                                    >
+                                        {size}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* ACTION BUTTON */}
+                        <div className="pt-6">
+                            <Button
+                                size="lg"
+                                className="w-full h-14 text-lg font-bold shadow-xl bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-[1.01]"
+                                onClick={handleStartDesigning}
+                                disabled={product.stock_status !== 'in_stock'}
+                            >
+                                {product.stock_status === 'in_stock' ? (
+                                    <>
+                                        <Paintbrush className="w-5 h-5 mr-2" /> Start Designing
+                                    </>
+                                ) : (
+                                    "Currently Unavailable"
+                                )}
+                            </Button>
+                        </div>
+
+                        {/* Trust Badges */}
+                        <div className="grid grid-cols-2 gap-4 pt-6 border-t">
+                            <div className="flex items-center gap-3 text-sm text-slate-600">
+                                <div className="p-2 bg-slate-100 rounded-full"><Truck className="w-4 h-4 text-slate-600" /></div>
+                                <span>Fast Delivery</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-sm text-slate-600">
+                                <div className="p-2 bg-slate-100 rounded-full"><ShieldCheck className="w-4 h-4 text-slate-600" /></div>
+                                <span>Quality Guarantee</span>
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
-        </div>
-    </div >
-  );
+        </div >
+    );
 }
