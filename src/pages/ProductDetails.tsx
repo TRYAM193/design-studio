@@ -134,7 +134,7 @@ export default function ProductDetails() {
                  )}
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">{product.title}</h1>
-              <p className="text-slate-500 mt-3 text-lg leading-relaxed">{product.description}</p>
+              <product.description/>
             </div>
 
             <div className="flex items-baseline gap-3">
