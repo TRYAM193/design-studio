@@ -22,7 +22,7 @@ const PRODUCT_MAP = {
 // 2. We add 'main_image_index' to pick the best photo (0 = first, 1 = second, etc.)
 const PRODUCT_CONFIG = {
   "mens_cotton_tee": {
-    main_image_index: 4, // <--- Change this to pick a different specific image
+    main_image_index: 2, // <--- Change this to pick a different specific image
     category: "Apparel",
     qikink_cost: 200, 
     printify_cost: 900
