@@ -15,7 +15,6 @@ import DashboardHome from "./pages/DashboardHome";
 import DashboardTemplates from "./pages/DashboardTemplates";
 import DashboardProjects from "./pages/DashboardProjects";
 import DashboardPricing from "./pages/DashboardPricing";
-import DashboardProducts from "./pages/DashboardProducts";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardSettings from "./pages/DashboardSettings";
 // We will create this provider in the next step
