@@ -56,6 +56,7 @@ createRoot(document.getElementById("root")!).render(
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
+          <Route path="/store" element={<Storefront />} />
 
           <Route path="/design/*" element={<DesignEditorPage />} />
           <Route path="/generator" element={<ThumbnailGenerator />} />
