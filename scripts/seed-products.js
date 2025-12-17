@@ -112,6 +112,7 @@ async function seedProducts() {
         title: item.title,
         active: true,
         category: item.category,
+        stock_status: "in_stock",
         image: correctImage, // <--- Guaranteed Correct Image
         options: item.options,
         
