@@ -22,7 +22,7 @@ import DashboardSettings from "./pages/DashboardSettings";
 import { AuthProvider } from "./hooks/use-auth";
 import DesignEditorPage from "./pages/DesignEditorPage";
 import ThumbnailGenerator from "./pages/ThumbnailGenerator";
-import Storefront from './pages/Storefront'; // Import the new page
+import Storefront from './pages/Storefront.tsx'; // Import the new page
 
 function RouteSyncer() {
   const location = useLocation();
