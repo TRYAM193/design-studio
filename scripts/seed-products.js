@@ -1,7 +1,10 @@
-const admin = require("firebase-admin");
-const axios = require("axios");
-const serviceAccount = require("./service-account.json");
+import admin from "firebase-admin";
+import axios from "axios";
+import { createRequire } from "module";
 
+
+const require = createRequire(import.meta.url);
+const serviceAccount = require("./service-account.json");
 // --- CONFIGURATION ---
 // 🛑 REPLACE THESE WITH YOUR REAL KEYS
 const QIKINK_CLIENT_ID = "794819035708802";
