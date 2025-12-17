@@ -9,7 +9,6 @@ import {
   Package,
   Plus,
   Settings,
-  ShoppingBag,
 } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -70,7 +69,6 @@ export function DashboardSidebar() {
     { icon: Home, label: t("nav.home"), path: "/dashboard" },
     { icon: LayoutTemplate, label: t("nav.templates"), path: "/dashboard/templates" },
     { icon: FolderOpen, label: t("nav.projects"), path: "/dashboard/projects" },
-    { icon: ShoppingBag, label: t("nav.products"), path: "/dashboard/products" },
     { icon: Package, label: t("nav.orders"), path: "/dashboard/orders" },
     { icon: CreditCard, label: t("nav.pricing"), path: "/dashboard/pricing" },
   ];
