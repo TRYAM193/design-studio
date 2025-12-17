@@ -1,4 +1,3 @@
-// src/design-tool/pages/Editor.jsx
 import React, { useState, useEffect } from 'react';
 import '../styles/Editor.css';
 import CanvasEditor from '../components/CanvasEditor';
@@ -9,13 +8,17 @@ import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
 import { undo, redo } from '../redux/canvasSlice';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useLocation } from 'react-router'; // UPDATED: use react-router
-import { useAuth } from '@/hooks/use-auth'; // NEW: Get real auth
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/hooks/use-auth';
 import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
+import { db } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { PreviewModal } from '@/components/PreviewModal'; // Ensure you created this file!
+
 import {
     FiTrash2, FiRotateCcw, FiRotateCw, FiDownload, FiShoppingBag,
-    FiSettings, FiX
+    FiSettings, FiX, FiCheckCircle
 } from 'react-icons/fi';
 
 export default function EditorPanel() {
@@ -26,49 +29,72 @@ export default function EditorPanel() {
     const [editingDesignId, setEditingDesignId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
 
-    // NEW: Get the real user from your main App
+    // --- NEW: PRODUCT & PREVIEW STATE ---
+    const [searchParams] = useSearchParams();
+    const productId = searchParams.get('product');
+    const selectedColor = searchParams.get('color');
+    const selectedSize = searchParams.get('size');
+
+    const [baseImage, setBaseImage] = useState(null);
+    const [productTitle, setProductTitle] = useState("Custom Design");
+    
+    // Preview Modal State
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [designPreview, setDesignPreview] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
     const { user } = useAuth();
-    // If user is guest (anonymous), they still have a valid UID in Firebase
     const userId = user?.uid; 
 
     const navigation = useNavigate();
-    const location = useLocation(); // NEW: To get data from Dashboard
+    const location = useLocation();
     const dispatch = useDispatch();
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
-    console.log('present', useSelector((state) => state.canvas.present))
-    console.log('past', useSelector((state) => state.canvas.past))
-    console.log('future', useSelector((state) => state.canvas.future))
     
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
 
-    // NEW: Effect to load an existing design if passed from Dashboard
+    // 1. FETCH PRODUCT DETAILS (If URL has ?product=...)
+    useEffect(() => {
+        async function loadBaseProduct() {
+            if (!productId) return;
+            try {
+                const docRef = doc(db, "base_products", productId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setBaseImage(data.image); // Use the specific image we seeded
+                    setProductTitle(data.title);
+                }
+            } catch (err) {
+                console.error("Error loading product:", err);
+            }
+        }
+        loadBaseProduct();
+    }, [productId]);
+
+    // 2. LOAD EXISTING DESIGN (If passed from Dashboard)
     useEffect(() => {
         if (location.state?.designToLoad && fabricCanvas) {
             const { designToLoad } = location.state;
-            console.log("Loading design:", designToLoad);
-            
             setEditingDesignId(designToLoad.id);
             setCurrentDesign(designToLoad);
 
-            // Load the JSON data into Fabric canvas
             if (designToLoad.canvasData) {
-                // Determine if it is a string or object
                 const jsonContent = typeof designToLoad.canvasData === 'string' 
                     ? designToLoad.canvasData 
                     : JSON.stringify(designToLoad.canvasData);
 
                 fabricCanvas.loadFromJSON(jsonContent, () => {
                     fabricCanvas.renderAll();
-                    console.log("Canvas loaded successfully");
                 });
             }
         }
     }, [location.state, fabricCanvas]);
 
-    // Close properties panel automatically when selection changes
+    // Close properties on selection change
     useEffect(() => {
         setShowProperties(false);
     }, [selectedId]);
@@ -77,14 +103,44 @@ export default function EditorPanel() {
         setActivePanel(prev => prev === tool ? null : tool);
     };
 
+    // --- NEW: GENERATE PREVIEW (Mockup Logic) ---
+    const handleGeneratePreview = () => {
+        if (!fabricCanvas) return;
+
+        // 1. Deselect objects so borders don't show
+        fabricCanvas.discardActiveObject();
+        fabricCanvas.requestRenderAll();
+
+        // 2. Export ONLY the design (transparent PNG)
+        const dataUrl = fabricCanvas.toDataURL({
+            format: 'png',
+            quality: 1,
+            multiplier: 2 // High res
+        });
+
+        setDesignPreview(dataUrl);
+        setIsPreviewOpen(true);
+    };
+
+    const handleAddToCart = async () => {
+        setIsSaving(true);
+        // TODO: Implement actual Firestore "Add to Cart" here
+        console.log("Adding to cart:", {
+             productId, color: selectedColor, size: selectedSize, design: designPreview 
+        });
+        
+        setTimeout(() => {
+            setIsSaving(false);
+            setIsPreviewOpen(false);
+            alert("Added to Cart! (Logic to be connected)"); 
+            navigation('/dashboard/orders'); // Redirect to orders or cart
+        }, 1500);
+    };
+
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{cursor: 'pointer'}}>
             <div className="logo-circle">
-                <img
-                    src="/assets/LOGO.png" 
-                    alt="TRYAM Logo"
-                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
+                <img src="/assets/LOGO.png" alt="TRYAM" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <h1>TRYAM</h1>
         </div>
@@ -114,50 +170,33 @@ export default function EditorPanel() {
                     />
                 )}
 
-                <main className="preview-area">
+                <main className="preview-area relative">
+                    {/* Top Bar */}
                     <div className="top-bar consolidated-bar">
                         <div className="control-group">
-                            <button
-                                title="Undo"
-                                className="top-bar-button"
-                                onClick={() => dispatch(undo())}
-                                disabled={past.length === 0}
-                                style={{ opacity: past.length === 0 ? 0.25 : 1 }}
-                            >
+                            <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={past.length === 0} style={{ opacity: past.length === 0 ? 0.25 : 1 }}>
                                 <FiRotateCcw size={18} />
                             </button>
-                            <button
-                                title="Redo"
-                                className="top-bar-button"
-                                onClick={() => dispatch(redo())}
-                                disabled={future.length === 0}
-                                style={{ opacity: future.length === 0 ? 0.25 : 1 }}
-                            >
+                            <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={future.length === 0} style={{ opacity: future.length === 0 ? 0.25 : 1 }}>
                                 <FiRotateCw size={18} />
                             </button>
                         </div>
 
                         <div className="control-group divider">
-                            <button title="Delete" className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{ opacity: !selectedId ? 0.25 : 1 }}>
+                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{ opacity: !selectedId ? 0.25 : 1 }}>
                                 <FiTrash2 size={18} />
                             </button>
                         </div>
 
                         {selectedId && !showProperties && (
                             <div className="control-group phone-only">
-                                <button
-                                    className="top-bar-button accent"
-                                    onClick={() => setShowProperties(true)}
-                                    title="Edit Properties"
-                                >
-                                    <FiSettings size={18} />
-                                    <span>Edit</span>
+                                <button className="top-bar-button accent" onClick={() => setShowProperties(true)}>
+                                    <FiSettings size={18} /> <span>Edit</span>
                                 </button>
                             </div>
                         )}
 
                         <div className="control-group">
-                            {/* Pass real userId and existing design info */}
                             {fabricCanvas && (
                                 <SaveDesignButton
                                     canvas={fabricCanvas}
@@ -167,35 +206,43 @@ export default function EditorPanel() {
                                     className="top-bar-button"
                                 />
                             )}
-
-                            <button title="Download" className="top-bar-button text-button">
-                                <FiDownload size={18} />
-                                <span>Export</span>
-                            </button>
-
-                            <button
-                                title="Order Print"
-                                className="top-bar-button text-button accent"
-                                onClick={() => navigation('/checkout')}
+                            
+                            {/* FINISH BUTTON */}
+                            <button 
+                                onClick={handleGeneratePreview}
+                                className="bg-black text-white px-5 py-2 rounded-full font-bold shadow-md hover:bg-gray-800 transition-all flex items-center gap-2"
                             >
-                                <FiShoppingBag size={18} />
-                                <span>Order</span>
+                                <FiCheckCircle size={18} />
+                                <span>Finish</span>
                             </button>
                         </div>
-
                     </div>
 
-                    <CanvasEditor
-                        setFabricCanvas={setFabricCanvas}
-                        canvasObjects={canvasObjects}
-                        selectedId={selectedId}
-                        setActiveTool={setActiveTool}
-                        setSelectedId={setSelectedId}
-                        fabricCanvas={fabricCanvas}
-                        setCurrentDesign={setCurrentDesign}
-                        setEditingDesignId={setEditingDesignId}
-                        past={past}
-                    />
+                    {/* --- THE CANVAS AREA (With Shirt Background) --- */}
+                    <div 
+                        className="canvas-wrapper flex justify-center items-center h-full w-full bg-slate-100"
+                        style={{
+                            // If baseImage exists, set it as background for the whole wrapper
+                            // NOTE: You might need to adjust CSS to ensure CanvasEditor is centered properly over the shirt
+                            backgroundImage: baseImage ? `url(${baseImage})` : 'none',
+                            backgroundSize: 'contain',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat'
+                        }}
+                    >
+                         {/* Pass fabricCanvas setter to child */}
+                        <CanvasEditor
+                            setFabricCanvas={setFabricCanvas}
+                            canvasObjects={canvasObjects}
+                            selectedId={selectedId}
+                            setActiveTool={setActiveTool}
+                            setSelectedId={setSelectedId}
+                            fabricCanvas={fabricCanvas}
+                            setCurrentDesign={setCurrentDesign}
+                            setEditingDesignId={setEditingDesignId}
+                            past={past}
+                        />
+                    </div>
                 </main>
 
                 <aside className={`right-panel ${showProperties ? 'active' : ''}`}>
@@ -217,10 +264,20 @@ export default function EditorPanel() {
                         setSelectedId={setSelectedId}
                     />
                 </aside>
+
+                {/* --- MOCKUP PREVIEW MODAL --- */}
+                <PreviewModal 
+                    isOpen={isPreviewOpen}
+                    onClose={() => setIsPreviewOpen(false)}
+                    baseImage={baseImage || "https://placehold.co/600x600?text=No+Product"}
+                    overlayImage={designPreview}
+                    onAddToCart={handleAddToCart}
+                    isSaving={isSaving}
+                />
+
             </div>
         </div>
     );
 }
-
 // https://github.com/TRYAM193/DesignPage.git
 // powershell -ExecutionPolicy Bypass -File autosync.ps1
