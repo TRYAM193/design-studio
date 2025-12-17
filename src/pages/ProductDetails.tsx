@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { Button } from "@/components/ui/button";
