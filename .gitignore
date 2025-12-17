@@ -23,3 +23,4 @@ dist-ssr
 *.sln
 *.sw?
 scripts/service-account.json
+scripts/seed-products.js
