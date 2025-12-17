@@ -8,7 +8,7 @@ export interface BaseProduct {
   image: string; // We will use a placeholder if missing
   base_cost_inr: number;
   colors: string[];
-  stock_status: 'in_stock' | 'out_of_stock'
+  stock_status: 'in_stock' | 'out_of_stock';
 }
 
 export function useBaseProducts() {
