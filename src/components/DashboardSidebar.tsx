@@ -47,7 +47,7 @@ export function DashboardSidebar() {
     }
   }, [user]);
 
-  const userImage = userProfile?.image || user?.photoURL;
+  const userImage = userProfile?.image || user?.photoURL || undefined;
   const initials = (userProfile?.name || user?.displayName || "U").charAt(0).toUpperCase();
 
   // User Profile Dropdown Content (Kept from your logic)
