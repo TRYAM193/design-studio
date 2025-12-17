@@ -25,7 +25,7 @@ export function useBaseProducts() {
           const data = doc.data();
           // Logic: Grab the India price for display
           const inrPrice = data.providers?.india_qikink?.base_cost || 0;
-          
+          console.log(data)
           fetched.push({
             id: doc.id,
             title: data.title,
