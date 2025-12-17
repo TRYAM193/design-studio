@@ -6,10 +6,9 @@ const require = createRequire(import.meta.url);
 const serviceAccount = require("./service-account.json");
 
 // 🛑 PASTE YOUR PRINTIFY TOKEN HERE
-const PRINTIFY_API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzN2Q0YmQzMDM1ZmUxMWU5YTgwM2FiN2VlYjNjY2M5NyIsImp0aSI6ImUxY2EzOGEzMmM2NGM5M2YxNGQ3MTM3MmI1ZmQwZWY1N2ZlOWMzZTVkMDI0YmRlMWE3ODBkNDM4NmZlNDQyOTVmODIzZDA2NmE5YWQxMjE4IiwiaWF0IjoxNzY1OTA3NjA4LjM5MTAxNSwibmJmIjoxNzY1OTA3NjA4LjM5MTAxNywiZXhwIjoxNzk3NDQzNjA4LjM4MjYyMSwic3ViIjoiMjU3MDI3MjEiLCJzY29wZXMiOlsic2hvcHMubWFuYWdlIiwic2hvcHMucmVhZCIsImNhdGFsb2cucmVhZCIsIm9yZGVycy5yZWFkIiwib3JkZXJzLndyaXRlIiwicHJvZHVjdHMucmVhZCIsInByb2R1Y3RzLndyaXRlIiwid2ViaG9va3MucmVhZCIsIndlYmhvb2tzLndyaXRlIiwidXBsb2Fkcy5yZWFkIiwidXBsb2Fkcy53cml0ZSIsInByaW50X3Byb3ZpZGVycy5yZWFkIiwidXNlci5pbmZvIl19.cwmW9eDrWz6Urfizuz-u7JYfYLEH_Q8_oAUsK4fINEfwlVRLaXX-HuNvygiuFBkCPOkK6cQ2nlunOMHzdWVVNdYTHnuo5DRuO0Va5GC3MH9zBwiiMnaYQjtB9upRbKvAF8PkdWfLLzCuqasoVhJswDX3KPpcmESEki7wA0Q-J3AQjyY2OZplGgQzDwJq3ck4AyWgeLrr5Ntd3Pb5OtXQfJoJ5n1W0TfAwYyhVrOnfhjcQd7rZsD29gBHRUNrCJYhoCF44Kv9p9vzfu_fc7AwkKPfl0XTId4x3wYa0GM-cSZ3ATt5Ndc2VSeQkx5FfzJqwkLDWlrnG58dMVNbWuG9EF4NpfJj9wsiWFXzLjLDcBNcD1JbTQMGQDNDbogdNhULVFHBHhX8LEj7F3aF3JjsqO5e3Ivf3hfL68culz4XGkp9LKLypZ1o5c5Csq-9KNOxV08KBYBa76ewenMdCQMXbiMjcZTvTK9cn2twp6cC3Av7mifkFWfy-e1XfJ7x6wjIr5wxzGDYrdQ6SOBPHtiK_J_Az2hwiIaNN7cfnmXt02WFZL8Mvkd58YxPtlwrr9eVJQdc3nSz0sqXv6Zg1_si3gr3JH_MxFZYj7yEO39CPuv-2_6foI6EpGoio6C5JIOqt9rxL9AraAhcdIPRdn6OAw79YIsIbmUQZs7NHYowQEQ"; 
+const PRINTIFY_API_TOKEN = "YOUR_PRINTIFY_ACCESS_TOKEN"; 
 
-// --- THE HYBRID MAP ---
-// We map our Internal IDs to Printify Blueprint IDs.
+// --- PRODUCT MAPPING ---
 const PRODUCT_MAP = {
   "mens_cotton_tee": 12,      // Bella+Canvas 3001
   "unisex_hoodie": 77,        // Gildan 18500
@@ -18,37 +17,39 @@ const PRODUCT_MAP = {
   "ceramic_mug": 68           // 11oz Mug
 };
 
-// --- MANUAL DETAILS (To keep pricing/titles clean) ---
-const PRODUCT_DETAILS = {
+// --- CONFIGURATION ---
+// 1. We remove manual titles (we will get them from API)
+// 2. We add 'main_image_index' to pick the best photo (0 = first, 1 = second, etc.)
+const PRODUCT_CONFIG = {
   "mens_cotton_tee": {
-    title: "Men's Classic Cotton T-Shirt",
-    description: "A staple of any wardrobe. 100% Ring-Spun Cotton.",
-    qikink_cost: 200,
-    category: "Apparel"
+    main_image_index: 2, // <--- Change this to pick a different specific image
+    category: "Apparel",
+    qikink_cost: 200, 
+    printify_cost: 900
   },
   "unisex_hoodie": {
-    title: "Premium Unisex Hoodie",
-    description: "Warm, cozy and perfect for printing.",
+    main_image_index: 0, // Default to first
+    category: "Apparel",
     qikink_cost: 450,
-    category: "Apparel"
+    printify_cost: 1600
   },
   "womens_crop_top": {
-    title: "Women's Crop Top",
-    description: "Trendy, relaxed fit crop top.",
+    main_image_index: 1, // Maybe the 2nd image is a better model shot?
+    category: "Apparel",
     qikink_cost: 240,
-    category: "Apparel"
+    printify_cost: 1200
   },
   "oversized_tee": {
-    title: "Streetwear Oversized T-Shirt",
-    description: "Drop shoulder, loose fit. The ultimate streetwear essential.",
+    main_image_index: 0,
+    category: "Apparel",
     qikink_cost: 320,
-    category: "Apparel"
+    printify_cost: 1400
   },
   "ceramic_mug": {
-    title: "Glossy Ceramic Mug (11oz)",
-    description: "Durable white ceramic mug. Microwave safe.",
+    main_image_index: 0,
+    category: "Home & Living",
     qikink_cost: 120,
-    category: "Home & Living"
+    printify_cost: 500
   }
 };
 
@@ -62,63 +63,90 @@ const db = admin.firestore();
 
 async function seedProducts() {
   const batch = db.batch();
-  console.log("🌏 Starting Printify Image Sync...");
+  console.log("🌏 Starting Fully Dynamic Sync...");
 
   try {
     for (const [internalId, blueprintId] of Object.entries(PRODUCT_MAP)) {
-      const details = PRODUCT_DETAILS[internalId];
-      console.log(`\n📸 Fetching images for: ${details.title} (ID: ${blueprintId})...`);
+      const config = PRODUCT_CONFIG[internalId];
+      console.log(`\n🔍 Fetching details for ID: ${blueprintId}...`);
 
-      // 1. CALL PRINTIFY API
+      let title = "Unknown Product";
+      let description = "";
       let imageUrls = [];
+      let dynamicColors = ["White", "Black"]; 
+      let dynamicSizes = ["S", "M", "L"];
+
       try {
         const res = await axios.get(`https://api.printify.com/v1/catalog/blueprints/${blueprintId}.json`, {
           headers: { "Authorization": `Bearer ${PRINTIFY_API_TOKEN}` }
         });
         
-        // Printify returns strictly URLs in the 'images' array
-        imageUrls = res.data.images || [];
-        console.log(`   ✅ Found ${imageUrls.length} images.`);
+        const data = res.data;
+
+        // 1. GET TITLE & DESC FROM API
+        title = data.title;
+        description = data.description;
+        console.log(`   📝 Title: "${title}"`);
+
+        // 2. GET IMAGES
+        imageUrls = data.images || [];
+        console.log(`   📸 Found ${imageUrls.length} images.`);
+
+        // 3. GET COLORS & SIZES
+        if (data.options) {
+          const colorOption = data.options.find(opt => opt.type === 'color' || opt.name === 'Colors');
+          const sizeOption = data.options.find(opt => opt.type === 'size' || opt.name === 'Sizes');
+
+          if (colorOption && colorOption.values) {
+            dynamicColors = colorOption.values.map(v => v.title).slice(0, 15);
+          }
+          if (sizeOption && sizeOption.values) {
+            dynamicSizes = sizeOption.values.map(v => v.title);
+          }
+        }
+
       } catch (err) {
-        console.error(`   ❌ Failed to fetch from Printify: ${err.message}`);
-        // Fallback if API fails
+        console.error(`   ❌ API Error: ${err.message}`);
         imageUrls = ["https://placehold.co/600x600?text=No+Image"]; 
       }
 
-      // 2. PREPARE DATA
+      // 4. SELECT SPECIFIC IMAGE
+      // Use the index from config, or fallback to 0 if that index doesn't exist
+      const safeIndex = (config.main_image_index < imageUrls.length) ? config.main_image_index : 0;
+      const mainImage = imageUrls[safeIndex];
+      console.log(`   🖼️ Selected Image Index: ${safeIndex}`);
+
+      // 5. UPDATE FIRESTORE
       const docRef = db.collection("base_products").doc(internalId);
       
       batch.set(docRef, {
         id: internalId,
-        title: details.title,
-        description: details.description,
+        title: title,       // ✅ From API
+        description: description, // ✅ From API
         active: true,
         stock_status: "in_stock",
-        category: details.category,
+        category: config.category,
         
-        // MAIN IMAGE (Use the first one found)
-        image: imageUrls[0], 
-        
-        // FULL GALLERY (We save ALL images here)
+        image: mainImage,   // ✅ Specific Selected Image
         gallery: imageUrls, 
 
         options: { 
-          colors: ["White", "Black", "Navy", "Red", "Grey"], 
-          sizes: ["S", "M", "L", "XL", "XXL"] 
+          colors: dynamicColors, // ✅ Real Colors
+          sizes: dynamicSizes    // ✅ Real Sizes
         },
         
         providers: {
           india_qikink: {
             active: true,
             provider_id: "qikink",
-            base_cost: details.qikink_cost,
+            base_cost: config.qikink_cost,
             currency: "INR"
           },
           global_printify: {
             active: true,
             provider_id: "printify",
             blueprint_id: blueprintId,
-            base_cost: details.qikink_cost * 4, // Rough conversion for comparison
+            base_cost: config.printify_cost,
             currency: "INR"
           }
         },
@@ -127,7 +155,7 @@ async function seedProducts() {
     }
 
     await batch.commit();
-    console.log("\n🎉 Database updated! You now have REAL Printify images.");
+    console.log("\n🎉 Database Updated! Titles, Colors, and Specific Images are live.");
 
   } catch (error) {
     console.error("Critical Error:", error);
