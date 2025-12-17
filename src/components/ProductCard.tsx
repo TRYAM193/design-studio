@@ -26,7 +26,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* LAYER 1: The Base Image (Model/Blank) */}
         {/* We use a placeholder if no image exists in DB */}
         <img 
-          src={product.image } 
+          src={product.image && product.image.startsWith('https') ? product.image : "/assets/design-001.jpeg"} 
           alt={product.title}
           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
         />
