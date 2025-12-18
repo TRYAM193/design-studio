@@ -11,7 +11,7 @@ import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
 import { undo, redo } from '../redux/canvasSlice';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useLocation, useSearchParams } from 'react-router';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
@@ -23,8 +23,7 @@ import {
     FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX, FiLayers
 } from 'react-icons/fi';
 
-// Helper to map common Printify color names to CSS Hex for the UI
-// You can expand this list as needed
+// Color Palette for Background Simulation
 const COLOR_MAP = {
     "White": "#FFFFFF",
     "Black": "#000000",
@@ -46,7 +45,6 @@ const COLOR_MAP = {
 };
 
 export default function EditorPanel() {
-    // --- REDUX & ROUTER ---
     const dispatch = useDispatch();
     const navigation = useNavigate();
     const location = useLocation();
@@ -57,27 +55,31 @@ export default function EditorPanel() {
     // --- CANVAS STATE ---
     const [fabricCanvas, setFabricCanvas] = useState(null);
     const [activeTool, setActiveTool] = useState('');
+    const [selectedId, setSelectedId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
     
-    // Redux Selectors
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
 
-    // --- PRODUCT & VIEW STATE ---
+    // --- PRODUCT STATE ---
     const productId = searchParams.get('product');
     const urlColor = searchParams.get('color');
     
     const [productData, setProductData] = useState({
         title: "Custom Design",
         category: "Apparel",
-        print_areas: { front: { width: 3000, height: 4000 } },
-        options: { colors: ["White", "Black", "Navy", "Red", "Royal", "Sport Grey"] } // Fallback colors
+        print_areas: { front: { width: 4500, height: 5400 } }, // Default High-Res
+        options: { colors: ["White", "Black", "Navy", "Red", "Royal", "Sport Grey"] }
     });
 
     const [baseImage, setBaseImage] = useState("https://placehold.co/800x800?text=Product+Preview");
-    const [canvasBg, setCanvasBg] = useState("#FFFFFF"); // Visual background for the canvas
+    const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
+
+    // --- SCALING STATE ---
+    const containerRef = useRef(null);
+    const [scaleFactor, setScaleFactor] = useState(0.2); // Start small, update on mount
 
     // --- PREVIEW STATE ---
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -91,7 +93,6 @@ export default function EditorPanel() {
     useEffect(() => {
         async function initEditor() {
             if (!productId) {
-                // Blank Canvas Mode
                 if (urlColor) setCanvasBg(COLOR_MAP[urlColor] || urlColor);
                 return;
             }
@@ -101,17 +102,12 @@ export default function EditorPanel() {
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    
                     setProductData({
                         ...data,
-                        // Ensure we have defaults if data is missing
-                        print_areas: data.print_areas || { front: { width: 3000, height: 4000 } },
+                        print_areas: data.print_areas || { front: { width: 4500, height: 5400 } },
                         options: data.options || { colors: [] }
                     });
-
                     setBaseImage(data.image);
-                    
-                    // Set initial color from URL or First Available
                     const initialColor = urlColor || (data.options?.colors?.[0] || "White");
                     setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
                 }
@@ -122,65 +118,70 @@ export default function EditorPanel() {
         initEditor();
     }, [productId]);
 
-    // 2. VIEW SWITCHER
+    // 2. AUTO-SCALE LOGIC (The Fix for "Too Small")
+    useEffect(() => {
+        function calculateScale() {
+            if (!containerRef.current) return;
+            
+            const realWidth = productData.print_areas?.[currentView]?.width || 4500;
+            const realHeight = productData.print_areas?.[currentView]?.height || 5400;
+            
+            const availableWidth = containerRef.current.clientWidth;
+            const availableHeight = containerRef.current.clientHeight;
+
+            // Padding: Keep 80% of screen height/width occupied
+            const widthRatio = (availableWidth * 0.85) / realWidth;
+            const heightRatio = (availableHeight * 0.85) / realHeight;
+
+            // Choose the smaller ratio to ensure it fits completely
+            const bestScale = Math.min(widthRatio, heightRatio);
+            
+            setScaleFactor(bestScale);
+        }
+
+        // Run initially and on resize
+        calculateScale();
+        window.addEventListener('resize', calculateScale);
+        return () => window.removeEventListener('resize', calculateScale);
+    }, [productData, currentView]);
+
     const handleSwitchView = (newView) => {
-        if (!fabricCanvas) return;
-        if (newView === currentView) return;
-        
-        // In a full implementation, you would save the JSON for the current view 
-        // and load the JSON for the new view here.
-        // For now, we just update the dimension reference.
+        if (!fabricCanvas || newView === currentView) return;
         setCurrentView(newView);
-        
-        // Resize logic would go here if dimensions differ significantly between views
         fabricCanvas.requestRenderAll();
     };
 
-    // 3. COLOR SELECTION HANDLER
     const handleColorChange = (colorName) => {
         const hex = COLOR_MAP[colorName] || colorName;
         setCanvasBg(hex);
-        // Also update URL param nicely without reload (optional)
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('color', colorName);
-        window.history.replaceState({}, '', `${location.pathname}?${newParams}`);
     };
 
-    // 4. PREVIEW GENERATION
     const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
-        fabricCanvas.discardActiveObject(); // Deselect items
+        fabricCanvas.discardActiveObject();
         
-        // A. Hide the background color so we get a transparent design PNG
-        // The user wants to see the design ON the product image in the modal
-        const originalBg = fabricCanvas.backgroundColor;
+        // 1. Hide bg to get transparent PNG
         fabricCanvas.setBackgroundColor(null, () => {
             fabricCanvas.renderAll();
             
-            // B. Export the transparent design
+            // 2. Export High-Res Design
             const dataUrl = fabricCanvas.toDataURL({
                 format: 'png',
                 quality: 1,
-                multiplier: 2
+                multiplier: 1 // Actual print size
             });
 
             setDesignPreview(dataUrl);
             setIsPreviewOpen(true);
 
-            // C. Restore the visual background color for editing
-            // We use the state 'canvasBg' effectively acting as the background
+            // 3. Restore visual bg
             fabricCanvas.renderAll(); 
         });
     };
 
     const handleAddToCart = async () => {
         setIsSaving(true);
-        console.log("Saving Order:", {
-            product: productData.title,
-            design: designPreview,
-            view: currentView
-        });
-        
+        console.log("Saving Order:", { product: productData.title, design: designPreview });
         setTimeout(() => {
             setIsSaving(false);
             setIsPreviewOpen(false);
@@ -188,16 +189,10 @@ export default function EditorPanel() {
         }, 1500);
     };
 
-    // --- SCALE LOGIC ---
-    // We want the canvas to be BIG (Print Size) but look SMALL (Screen Size)
-    // We use CSS scale to achieve this.
-    const realWidth = productData.print_areas?.[currentView]?.width || 3000;
-    const realHeight = productData.print_areas?.[currentView]?.height || 4000;
-    
-    // Calculate scale to fit in a ~500px screen area
-    const displayScale = 450 / realWidth; 
+    // Helper for canvas dimensions
+    const realWidth = productData.print_areas?.[currentView]?.width || 4500;
+    const realHeight = productData.print_areas?.[currentView]?.height || 5400;
 
-    // Branding
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{cursor: 'pointer'}}>
             <div className="logo-circle">
@@ -231,10 +226,10 @@ export default function EditorPanel() {
                     />
                 )}
 
-                {/* --- MAIN EDITOR AREA --- */}
-                <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden">
+                {/* --- WORKSPACE CONTAINER --- */}
+                <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
                     
-                    {/* View Switcher Tabs */}
+                    {/* View Tabs */}
                     {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
                             {Object.keys(productData.print_areas).map(view => (
@@ -242,9 +237,7 @@ export default function EditorPanel() {
                                     key={view}
                                     onClick={() => handleSwitchView(view)}
                                     className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${
-                                        currentView === view 
-                                            ? "bg-black text-white" 
-                                            : "text-slate-600 hover:bg-slate-100"
+                                        currentView === view ? "bg-black text-white" : "text-slate-600 hover:bg-slate-100"
                                     }`}
                                 >
                                     {view.replace('_', ' ')}
@@ -295,49 +288,41 @@ export default function EditorPanel() {
                         </div>
                     </div>
 
-                    {/* --- THE CANVAS WORKSPACE --- */}
-                    <div className="relative flex justify-center items-center h-full w-full p-10">
-                        {/* This wrapper simulates the "Print Area".
-                           It scales down the huge canvas to fit the screen.
-                           The background color is applied HERE to simulate the shirt color.
-                        */}
-                        <div 
-                            className="shadow-2xl"
-                            style={{
-                                width: 'fit-content',
-                                height: realHeight,
-                                backgroundColor: canvasBg, // The shirt color simulation
-                                transform: `scale(${displayScale})`, // Zoom out to fit screen
-                                transformOrigin: 'center center',
-                                border: '1px dashed rgba(0,0,0,0.1)',
-                                transition: 'background-color 0.3s ease'
-                            }}
-                        >
-                            <CanvasEditor
-                                setFabricCanvas={setFabricCanvas}
-                                canvasObjects={canvasObjects}
-                                selectedId={selectedId}
-                                setActiveTool={setActiveTool}
-                                setSelectedId={setSelectedId}
-                                fabricCanvas={fabricCanvas}
-                                setCurrentDesign={setCurrentDesign}
-                                setEditingDesignId={setEditingDesignId}
-                                past={past}
-                            />
-                        </div>
+                    {/* --- THE SCALED CANVAS --- */}
+                    {/* This wrapper uses transform: scale() to fit the massive print canvas onto the screen.
+                        It calculates based on the parent container size (containerRef).
+                    */}
+                    <div 
+                        className="shadow-2xl transition-transform duration-300 ease-out"
+                        style={{
+                            width: realWidth,
+                            height: realHeight,
+                            backgroundColor: canvasBg,
+                            transform: `scale(${scaleFactor})`,
+                            transformOrigin: 'center center',
+                            border: '2px solid rgba(0,0,0,0.05)',
+                        }}
+                    >
+                        <CanvasEditor
+                            setFabricCanvas={setFabricCanvas}
+                            canvasObjects={canvasObjects}
+                            selectedId={selectedId}
+                            setActiveTool={setActiveTool}
+                            setSelectedId={setSelectedId}
+                            fabricCanvas={fabricCanvas}
+                            setCurrentDesign={setCurrentDesign}
+                            setEditingDesignId={setEditingDesignId}
+                            past={past}
+                        />
                     </div>
                 </main>
 
-                {/* --- RIGHT PANEL --- */}
                 <aside className={`right-panel ${showProperties || !selectedId ? 'active' : ''}`}>
                     {selectedId ? (
-                        /* Case A: Object Selected -> Show Properties */
                         <>
                             <div className="mobile-panel-header">
                                 <span className="mobile-panel-title">Edit Properties</span>
-                                <button onClick={() => setShowProperties(false)} className="mobile-close-btn">
-                                    <FiX size={20} />
-                                </button>
+                                <button onClick={() => setShowProperties(false)} className="mobile-close-btn"><FiX size={20} /></button>
                             </div>
                             <RightSidebarTabs
                                 id={selectedId}
@@ -351,16 +336,12 @@ export default function EditorPanel() {
                             />
                         </>
                     ) : (
-                        /* Case B: Nothing Selected -> Show Product Colors */
                         <div className="p-5">
-                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">
-                                Available Colors
-                            </h3>
+                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
                             <div className="grid grid-cols-4 gap-3">
                                 {productData.options.colors.map((color) => {
                                     const hex = COLOR_MAP[color] || "#ccc";
                                     const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
-                                    
                                     return (
                                         <button
                                             key={color}
@@ -371,24 +352,15 @@ export default function EditorPanel() {
                                             style={{ backgroundColor: hex }}
                                             title={color}
                                         >
-                                            {/* Checkmark if active */}
-                                            {isActive && (
-                                                <span className="absolute inset-0 flex items-center justify-center text-white/90">
-                                                    <FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}/>
-                                                </span>
-                                            )}
+                                            {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}/></span>}
                                         </button>
                                     );
                                 })}
                             </div>
-                            <p className="text-xs text-slate-400 mt-4 leading-relaxed">
-                                Select a color to visualize your design on different backgrounds.
-                            </p>
                         </div>
                     )}
                 </aside>
 
-                {/* --- PREVIEW MODAL (The Realistic Look) --- */}
                 <PreviewModal 
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
@@ -397,7 +369,6 @@ export default function EditorPanel() {
                     onAddToCart={handleAddToCart}
                     isSaving={isSaving}
                 />
-
             </div>
         </div>
     );
