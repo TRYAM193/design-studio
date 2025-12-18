@@ -161,21 +161,21 @@ export default function EditorPanel() {
 
         // 1. Hide bg to get transparent PNG
         fabricCanvas.backgroundColor = null
-            fabricCanvas.renderAll();
+        fabricCanvas.renderAll();
 
-            // 2. Export High-Res Design
-            const dataUrl = fabricCanvas.toDataURL({
-                format: 'png',
-                quality: 1,
-                multiplier: 1 // Actual print size
-            });
+        // 2. Export High-Res Design
+        const dataUrl = fabricCanvas.toDataURL({
+            format: 'png',
+            quality: 1,
+            multiplier: 1 // Actual print size
+        });
 
-            setDesignPreview(dataUrl);
-            setIsPreviewOpen(true);
+        setDesignPreview(dataUrl);
+        setIsPreviewOpen(true);
 
-            // 3. Restore visual bg
-            fabricCanvas.renderAll();
-        
+        // 3. Restore visual bg
+        fabricCanvas.renderAll();
+
     };
 
     const handleAddToCart = async () => {
