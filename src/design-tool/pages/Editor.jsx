@@ -232,10 +232,12 @@ export default function EditorPanel() {
     };
 
     const handleColorChange = (colorName) => {
+if (!)
+
         const hex = COLOR_MAP[colorName] || colorName;
         setCanvasBg(hex);
         fabricCanvas.backgroundColor = hex
-        fa
+        fabricCanvas.renderAll()
     };
 
     const handleGeneratePreview = () => {
