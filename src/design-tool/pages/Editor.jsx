@@ -234,6 +234,7 @@ export default function EditorPanel() {
     const handleColorChange = (colorName) => {
         const hex = COLOR_MAP[colorName] || colorName;
         setCanvasBg(hex);
+        fabricCanvas.
     };
 
     const handleGeneratePreview = () => {
