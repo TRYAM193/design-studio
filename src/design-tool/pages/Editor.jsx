@@ -318,7 +318,6 @@ export default function EditorPanel() {
                                 setActiveTool={setActiveTool}
                                 setSelectedId={setSelectedId}
                                 fabricCanvas={fabricCanvas}
-                                setCurrentDesign={setCurrentDesign}
                                 setEditingDesignId={setEditingDesignId}
                                 past={past}
                             />
