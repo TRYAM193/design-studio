@@ -42,6 +42,7 @@ export function PreviewModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
+          Di
             {/* Increased width to max-w-7xl for a cinematic preview */}
             <DialogContent className="max-w-7xl w-[95vw] h-[90vh] p-0 overflow-hidden bg-white border-0 flex flex-col md:flex-row">
                 
