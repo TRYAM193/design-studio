@@ -304,7 +304,7 @@ export default function EditorPanel() {
                         <div 
                             className="shadow-2xl"
                             style={{
-                                width: 'fit-to-content',
+                                width: 'fit-content',
                                 height: realHeight,
                                 backgroundColor: canvasBg, // The shirt color simulation
                                 transform: `scale(${displayScale})`, // Zoom out to fit screen
