@@ -55,6 +55,8 @@ export default function EditorPanel() {
     const [fabricCanvas, setFabricCanvas] = useState(null);
     const [activeTool, setActiveTool] = useState('');
     const [selectedId, setSelectedId] = useState(null);
+    const [currentDesign, setCurrentDesign] = useState(null);
+    const [editingDesignId, setEditingDesignId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
     
     // Redux Selectors
