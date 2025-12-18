@@ -175,7 +175,7 @@ export default function EditorPanel() {
 
             // 3. Restore visual bg
             fabricCanvas.renderAll();
-        });
+        
     };
 
     const handleAddToCart = async () => {
