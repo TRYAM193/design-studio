@@ -448,7 +448,6 @@ export default function EditorPanel() {
                 <PreviewModal
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
-                    baseImage={null}
                     overlayImage={designPreview}
                     onAddToCart={handleAddToCart}
                     isSaving={isSaving}
