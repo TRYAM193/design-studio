@@ -37,14 +37,16 @@ export default function EditorPanel() {
 
     const [baseImage, setBaseImage] = useState(null);
     const [productTitle, setProductTitle] = useState("Custom Design");
-    
+    const isApparel = product?.category === "Apparel";
+    const isMug = product?.category === "Home & Living";
+
     // Preview Modal State
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [designPreview, setDesignPreview] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
     const { user } = useAuth();
-    const userId = user?.uid; 
+    const userId = user?.uid;
 
     const navigation = useNavigate();
     const location = useLocation();
@@ -52,7 +54,7 @@ export default function EditorPanel() {
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
-    
+
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
 
@@ -83,8 +85,8 @@ export default function EditorPanel() {
             setCurrentDesign(designToLoad);
 
             if (designToLoad.canvasData) {
-                const jsonContent = typeof designToLoad.canvasData === 'string' 
-                    ? designToLoad.canvasData 
+                const jsonContent = typeof designToLoad.canvasData === 'string'
+                    ? designToLoad.canvasData
                     : JSON.stringify(designToLoad.canvasData);
 
                 fabricCanvas.loadFromJSON(jsonContent, () => {
@@ -126,19 +128,19 @@ export default function EditorPanel() {
         setIsSaving(true);
         // TODO: Implement actual Firestore "Add to Cart" here
         console.log("Adding to cart:", {
-             productId, color: selectedColor, size: selectedSize, design: designPreview 
+            productId, color: selectedColor, size: selectedSize, design: designPreview
         });
-        
+
         setTimeout(() => {
             setIsSaving(false);
             setIsPreviewOpen(false);
-            alert("Added to Cart! (Logic to be connected)"); 
+            alert("Added to Cart! (Logic to be connected)");
             navigation('/dashboard/orders'); // Redirect to orders or cart
         }, 1500);
     };
 
     const BrandDisplay = (
-        <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{cursor: 'pointer'}}>
+        <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
             <div className="logo-circle">
                 <img src="/assets/LOGO.png" alt="TRYAM" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
@@ -200,15 +202,15 @@ export default function EditorPanel() {
                             {fabricCanvas && (
                                 <SaveDesignButton
                                     canvas={fabricCanvas}
-                                    userId={userId} 
+                                    userId={userId}
                                     currentDesign={currentDesign}
                                     editingDesignId={editingDesignId}
                                     className="top-bar-button"
                                 />
                             )}
-                            
+
                             {/* FINISH BUTTON */}
-                            <button 
+                            <button
                                 onClick={handleGeneratePreview}
                                 className="bg-black text-white px-5 py-2 rounded-full font-bold shadow-md hover:bg-gray-800 transition-all flex items-center gap-2"
                             >
@@ -219,7 +221,7 @@ export default function EditorPanel() {
                     </div>
 
                     {/* --- THE CANVAS AREA (With Shirt Background) --- */}
-                    <div 
+                    <div
                         className="canvas-wrapper flex justify-center items-center h-full w-full bg-slate-100"
                         style={{
                             // If baseImage exists, set it as background for the whole wrapper
@@ -230,7 +232,7 @@ export default function EditorPanel() {
                             backgroundRepeat: 'no-repeat'
                         }}
                     >
-                         {/* Pass fabricCanvas setter to child */}
+                        {/* Pass fabricCanvas setter to child */}
                         <CanvasEditor
                             setFabricCanvas={setFabricCanvas}
                             canvasObjects={canvasObjects}
@@ -266,7 +268,7 @@ export default function EditorPanel() {
                 </aside>
 
                 {/* --- MOCKUP PREVIEW MODAL --- */}
-                <PreviewModal 
+                <PreviewModal
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
                     baseImage={baseImage || "https://placehold.co/600x600?text=No+Product"}
