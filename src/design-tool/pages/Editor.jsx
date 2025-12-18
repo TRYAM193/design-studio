@@ -200,21 +200,30 @@ export default function EditorPanel() {
 
                 <main className="preview-area relative overflow-hidden bg-slate-50">
                     {/* Multi-Side Switcher (Floating) */}
-                    {isApparel && product?.print_areas && Object.keys(product.print_areas).length > 1 && (
-                        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-lg backdrop-blur-sm">
-                            {Object.keys(product.print_areas).map(view => (
-                                <button 
-                                    key={view}
-                                    onClick={() => setCurrentView(view)}
-                                    className={`px-5 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${
-                                        currentView === view ? "bg-indigo-600 text-white shadow-md scale-105" : "text-slate-600 hover:bg-slate-100"
-                                    }`}
-                                >
-                                    {view}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                    <div className="mockup-stage flex justify-center items-center h-full">
+                    
+                    {/* 2D CARTOON MOCKUP CONTAINER */}
+                    <div className="relative flex justify-center items-center">
+                        
+                        {/* THE 2D T-SHIRT/MUG VECTOR */}
+                        <img 
+                            src={baseMockup} 
+                            className="mockup-vector-base select-none pointer-events-none"
+                            style={{ width: isMug ? '500px' : '600px' }}
+                        />
+
+                        {/* THE DESIGN CANVAS (Floating over the vector) */}
+                        <div 
+                            className="canvas-container-overlay"
+                            style={{
+                                position: 'absolute',
+                                // Position the box on the chest for shirts, or center for mugs
+                                top: isMug ? '35%' : '22%', 
+                                width: isMug ? '380px' : '220px',
+                                aspectRatio: `${productData.print_areas.front.width} / ${productData.printData.front.height}`,
+                                border: '1px dashed rgba(63, 81, 181, 0.3)'
+                            }}
+                        >
 
                     {/* Toolbar Controls */}
                     <div className="top-bar consolidated-bar">
