@@ -454,8 +454,7 @@ export default function EditorPanel() {
                     onAddToCart={handleAddToCart}
                     isSaving={isSaving}
                     productCategory={productId ? productData.category : undefined}
-    selectedColor={productId ? canvasBg : undefined}
-/>
+                    selectedColor={productId ? canvasBg : undefined}
                 />
             </div>
         </div>
