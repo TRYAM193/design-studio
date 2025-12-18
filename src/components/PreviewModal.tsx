@@ -1,29 +1,16 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, Download, ShoppingBag, X, AlertCircle } from "lucide-react";
+import { Loader2, Download, ShoppingBag, X, Printer, ShieldCheck } from "lucide-react";
 
 interface PreviewModalProps {
     isOpen: boolean;
     onClose: () => void;
-    overlayImage: string;     // The transparent design from Editor
+    overlayImage: string;
     onAddToCart: () => void;
     isSaving: boolean;
-    productCategory?: string; // "Apparel" | "Home & Living" | etc.
-    selectedColor?: string;   // Hex code from Editor
+    productCategory?: string;
+    selectedColor?: string;
 }
-
-// --- REALISTIC ASSETS ---
-// These should be transparent PNGs in your public folder for best results
-const MOCKUP_ASSETS = {
-    apparel: {
-        base: "https://placehold.co/1200x1200/ffffff/ffffff?text=Apparel+Base", 
-        shadows: "https://placehold.co/1200x1200/000000/ffffff?text=Shadows" 
-    },
-    mug: {
-        base: "https://placehold.co/1000x1000/ffffff/cccccc?text=Mug+Base",
-        gloss: "https://placehold.co/1000x1000/ffffff/000000?text=Gloss"
-    }
-};
 
 export function PreviewModal({ 
     isOpen, 
@@ -31,132 +18,154 @@ export function PreviewModal({
     overlayImage, 
     onAddToCart, 
     isSaving,
-    productCategory,
-    selectedColor = "#ffffff"
+    productCategory = "Apparel",
+    selectedColor = "#FFFFFF"
 }: PreviewModalProps) {
 
-    // 1. Detect Mode
-    const isApparel = productCategory === "Apparel";
     const isMug = productCategory === "Home & Living";
-    const isBlank = !productCategory; // Started with Blank Canvas
+    const isApparel = !isMug;
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-7xl w-[95vw] h-[90vh] p-0 overflow-hidden bg-white border-0 flex flex-col md:flex-row">
+          <DialogTitle>
+            
+            {/* Wide, cinematic modal */}
+            <DialogContent className="max-w-[90vw] w-full h-[85vh] p-0 gap-0 bg-zinc-950 border-zinc-800 flex  shadow-2xl rounded-xl">
                 
-                {/* --- LEFT: PREVIEW STAGE --- */}
-                <div className="flex-1 relative bg-slate-100 flex items-center justify-center overflow-hidden p-10">
+                {/* --- LEFT: THE DIGITAL PROOFING STAGE --- */}
+                <div className="flex-[2] relative bg-zinc-900 flex flex-col items-center justify-center p-8 ">
                     
-                    {/* SCENARIO A: REALISTIC SHIRT (Color Tinting) */}
-                    {isApparel && (
-                        <div className="relative w-full h-full max-w-[800px] max-h-[800px] flex items-center justify-center shadow-2xl bg-white rounded-xl">
-                            {/* Base Shirt - Tinted dynamically */}
-                            <div 
-                                className="absolute inset-0 bg-contain bg-center bg-no-repeat transition-colors duration-300"
-                                style={{ 
-                                    backgroundImage: `url(${MOCKUP_ASSETS.apparel.base})`,
-                                    backgroundColor: selectedColor, 
-                                    backgroundBlendMode: 'multiply' 
-                                }}
-                            />
-                            
-                            {/* User Design - Slight Perspective Tilt */}
-                            <img 
-                                src={overlayImage} 
-                                alt="Design"
-                                className="absolute w-[38%] top-[20%] mix-blend-multiply opacity-95"
-                                style={{ transform: 'perspective(500px) rotateX(1deg)' }}
-                            />
+                    {/* Grid Pattern Background */}
+                    <div className="absolute inset-0 opacity-[0.03]" 
+                        style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
+                    />
 
-                            {/* Shadow Overlay - For wrinkles over the design */}
-                            <div 
-                                className="absolute inset-0 bg-contain bg-center bg-no-repeat pointer-events-none mix-blend-multiply opacity-30"
-                                style={{ backgroundImage: `url(${MOCKUP_ASSETS.apparel.base})` }}
-                            />
-                        </div>
-                    )}
-
-                    {/* SCENARIO B: REALISTIC MUG (Curved Wrap) */}
-                    {isMug && (
-                        <div className="relative w-full h-full max-w-[800px] max-h-[800px] flex items-center justify-center">
-                            <img src={MOCKUP_ASSETS.mug.base} className="absolute w-[60%] object-contain drop-shadow-2xl" />
-
-                            {/* Warped Design Container */}
-                            <div 
-                                className="absolute w-[30%] h-[30%] flex items-center justify-center overflow-hidden"
-                                style={{
-                                    top: '35%', 
-                                    borderRadius: '0 0 30px 30px', 
-                                    maskImage: 'linear-gradient(to right, transparent 5%, black 20%, black 80%, transparent 95%)'
-                                }}
-                            >
-                                <img src={overlayImage} className="w-full h-full object-contain mix-blend-multiply opacity-90" />
-                            </div>
-                            
-                            {/* Gloss Reflection */}
-                            <img src={MOCKUP_ASSETS.mug.gloss} className="absolute w-[60%] object-contain pointer-events-none mix-blend-screen opacity-40" />
-                        </div>
-                    )}
-
-                    {/* SCENARIO C: BLANK CANVAS (Raw File) */}
-                    {isBlank && (
-                        <div className="flex flex-col items-center gap-6 text-center">
-                            <div className="relative bg-[url('https://placehold.co/20x20/f1f5f9/ffffff?text=+')] bg-repeat p-8 border-2 border-dashed border-slate-300 shadow-sm rounded-lg">
-                                <img src={overlayImage} className="max-w-[500px] max-h-[500px] object-contain shadow-lg" />
-                            </div>
-                            <div className="bg-blue-50 text-blue-700 px-4 py-3 rounded-lg flex items-center gap-3 border border-blue-100 max-w-md">
-                                <AlertCircle size={20} />
-                                <div className="text-left">
-                                    <p className="font-bold text-sm">Design Only Mode</p>
-                                    <p className="text-xs opacity-90">This design is saved as a template. You can apply it to products later from your dashboard.</p>
+                    {/* --- THE VIRTUAL MOCKUP --- */}
+                    <div className="relative z-10 animate-in fade-in zoom-in duration-500">
+                        
+                        {/* SCENARIO A: CSS T-SHIRT (No Image Required) */}
+                        {isApparel && (
+                            <div className="relative w-[500px] h-[600px] flex items-center justify-center">
+                                {/* The Shirt Shape (CSS Mask) */}
+                                <div 
+                                    className="absolute inset-0 shadow-2xl transition-all duration-500"
+                                    style={{
+                                        backgroundColor: selectedColor,
+                                        // A simple SVG path for a T-shirt shape clip-path
+                                        clipPath: "path('M 150 0 L 190 40 Q 250 80 310 40 L 350 0 L 480 50 L 450 150 L 400 130 L 400 600 L 100 600 L 100 130 L 50 150 L 20 50 Z')",
+                                        boxShadow: "inset 0 0 50px rgba(0,0,0,0.2)" // Inner shadow for depth
+                                    }}
+                                >
+                                    {/* Texture/Noise Overlay for Fabric feel */}
+                                    <div className="absolute inset-0 opacity-20 mix-blend-multiply bg-[url('https://www.transparenttextures.com/patterns/fabric-of-squares.png')]"></div>
+                                    
+                                    {/* Fold Shadows */}
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-black/10 via-transparent to-white/10 mix-blend-overlay"></div>
                                 </div>
+
+                                {/* The User Design */}
+                                <img 
+                                    src={overlayImage} 
+                                    alt="Print" 
+                                    className="relative w-[180px] z-20 mix-blend-multiply opacity-90"
+                                    style={{ top: '-20px' }} // Adjust based on clip-path
+                                />
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )}
 
-                {/* --- RIGHT: ACTIONS --- */}
-                <div className="w-full md:w-96 bg-white border-l p-8 flex flex-col z-20 shadow-xl">
-                    <div className="flex justify-between items-start mb-8">
-                        <div>
-                            <h2 className="text-2xl font-bold text-slate-900">Final Review</h2>
-                            <p className="text-slate-500 text-sm mt-1">Ready to create?</p>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={onClose}><X size={24}/></Button>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 mb-8 space-y-3">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-slate-500">Type</span>
-                            <span className="font-semibold text-slate-900">{isBlank ? "Template" : productCategory}</span>
-                        </div>
-                        {!isBlank && selectedColor && (
-                            <div className="flex justify-between text-sm">
-                                <span className="text-slate-500">Color</span>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: selectedColor }} />
-                                    <span className="font-semibold text-slate-900 uppercase">{selectedColor}</span>
+                        {/* SCENARIO B: CSS MUG (No Image Required) */}
+                        {isMug && (
+                            <div className="relative w-[500px] h-[500px] flex items-center justify-center">
+                                {/* Mug Body */}
+                                <div 
+                                    className="relative w-[280px] h-[350px] bg-white rounded-b-[40px] shadow-xl overflow-hidden"
+                                    style={{
+                                        background: `linear-gradient(135deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%)`
+                                    }}
+                                >
+                                    {/* The Design Wrapped */}
+                                    <div className="absolute top-[80px] left-0 w-full h-[200px] flex items-center justify-center">
+                                        <img 
+                                            src={overlayImage} 
+                                            className="w-[80%] object-contain mix-blend-multiply opacity-95" 
+                                        />
+                                    </div>
+                                    
+                                    {/* Glossy Reflection */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none"></div>
                                 </div>
+
+                                {/* Mug Handle */}
+                                <div className="absolute right-[60px] top-[100px] w-[80px] h-[180px] border-[25px] border-l-0 border-white rounded-r-[50px] shadow-lg -z-10"></div>
                             </div>
                         )}
                     </div>
 
-                    <div className="space-y-3 mt-auto pt-6 border-t">
-                        <Button variant="outline" className="w-full h-12 gap-2">
-                            <Download size={18} /> Download Proof
-                        </Button>
+                    <div className="mt-12 flex gap-6 text-zinc-500 text-sm font-medium tracking-wide">
+                        <div className="flex items-center gap-2"><ShieldCheck size={16}/> High Quality Print</div>
+                        <div className="flex items-center gap-2"><Printer size={16}/> DTG Technology</div>
+                    </div>
+                </div>
+
+                {/* --- RIGHT: ORDER DETAILS --- */}
+                <div className="flex-1 min-w-[350px] max-w-[400px] bg-white p-10 flex flex-col relative z-20">
+                    <Button variant="ghost" size="icon" onClick={onClose} className="absolute right-6 top-6 rounded-full hover:bg-slate-100">
+                        <X size={24} className="text-slate-400"/>
+                    </Button>
+
+                    <div className="mb-10">
+                        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Digital Proof</h2>
+                        <p className="text-slate-500 mt-2 font-medium">Review your configuration before production.</p>
+                    </div>
+
+                    <div className="space-y-8 flex-1">
+                        {/* Product Info Block */}
+                        <div className="space-y-4">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Configuration</label>
+                            <div className="flex items-center justify-between py-3 border-b border-slate-100">
+                                <span className="text-slate-600 font-medium">Item Type</span>
+                                <span className="text-slate-900 font-bold">{productCategory}</span>
+                            </div>
+                            {isApparel && (
+                                <div className="flex items-center justify-between py-3 border-b border-slate-100">
+                                    <span className="text-slate-600 font-medium">Selected Base</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full border border-slate-200 shadow-sm" style={{ backgroundColor: selectedColor }}></div>
+                                        <span className="text-slate-900 font-bold uppercase">{selectedColor}</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* File Status Block */}
+                        <div className="p-5 rounded-xl bg-emerald-50 border border-emerald-100 flex gap-4 items-start">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                <ShieldCheck size={16} className="text-emerald-600"/>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-emerald-900">Print File Ready</h4>
+                                <p className="text-xs text-emerald-700 mt-1 leading-relaxed">Resolution is optimized for {isMug ? 'ceramic' : 'fabric'} printing. No artifacts detected.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-auto space-y-3 pt-6">
                         <Button 
-                            className="w-full h-14 text-lg font-bold bg-black hover:bg-slate-800 gap-2"
+                            className="w-full h-14 text-lg font-bold bg-zinc-900 hover:bg-zinc-800 text-white shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all rounded-xl gap-3"
                             onClick={onAddToCart}
                             disabled={isSaving}
                         >
                             {isSaving ? <Loader2 className="animate-spin" /> : <ShoppingBag size={20} />}
-                            {isBlank ? "Save to Library" : "Add to Cart"}
+                            {isSaving ? "Processing..." : "Confirm & Add to Cart"}
+                        </Button>
+                        <Button variant="ghost" className="w-full text-slate-400 hover:text-slate-600">
+                            Download PDF Proof
                         </Button>
                     </div>
                 </div>
 
             </DialogContent>
+          </DialogTitle>
         </Dialog>
     );
 }

@@ -244,29 +244,53 @@ export default function EditorPanel() {
         if (!fabricCanvas) return;
         fabricCanvas.discardActiveObject();
 
-        // 1. Hide bg (if any) to get transparent PNG
+        // 1. Capture the transparent design
         const originalBg = fabricCanvas.backgroundColor;
         fabricCanvas.backgroundColor = null
         fabricCanvas.renderAll();
 
-        // 2. Export Design
         const dataUrl = fabricCanvas.toDataURL({
             format: 'png',
             quality: 1,
-            multiplier: 1
+            multiplier: 2 // High Res
         });
 
-        setDesignPreview(dataUrl);
-        setIsPreviewOpen(true);
+        // 2. LOGIC BRANCH:
+        if (productId) {
+            // A. Product Selected -> Show Realistic Preview
+            setDesignPreview(dataUrl);
+            setIsPreviewOpen(true);
+        } else {
+            // B. Blank Canvas -> Skip Preview, Save Directly
+            console.log("🎨 Blank Canvas: Saving directly as template...");
+            setDesignPreview(dataUrl);
+            // We set state just in case, but call save immediately
+            handleAddToCartDirectly(dataUrl);
+        }
 
-        // 3. Restore bg (if needed internally by fabric, though we use DIV for bg)
+        // 3. Restore visual bg for editing
         fabricCanvas.renderAll();
 
     };
 
-    const handleAddToCart = async () => {
+    // Helper for direct saving (bypassing modal)
+    const handleAddToCartDirectly = (designData) => {
         setIsSaving(true);
-        console.log("Saving Order:", { product: productData.title, design: designPreview });
+        console.log("Saving Template:", { design: designData });
+        setTimeout(() => {
+            setIsSaving(false);
+            navigation('/dashboard/templates'); // Redirect to templates
+        }, 1500);
+    };
+
+    const handleAddToCart = async () => {
+        // This is called FROM the modal (Product Mode)
+        setIsSaving(true);
+        console.log("Saving Order:", {
+            product: productData.title,
+            design: designPreview,
+            color: canvasBg
+        });
         setTimeout(() => {
             setIsSaving(false);
             setIsPreviewOpen(false);
@@ -364,9 +388,13 @@ export default function EditorPanel() {
                                     className="top-bar-button"
                                 />
                             )}
-                            <button onClick={handleGeneratePreview} className="bg-black text-white px-5 py-2 rounded-full font-bold shadow-md hover:bg-gray-800 transition-all flex items-center gap-2">
+                            <button
+                                onClick={handleGeneratePreview}
+                                className="bg-black text-white px-6 py-2.5 rounded-full font-bold shadow-lg hover:bg-gray-800 transition-all flex items-center gap-2"
+                            >
                                 <FiCheckCircle size={18} />
-                                <span>Finish</span>
+                                {/* Change Text Based on Mode */}
+                                <span>{productId ? "Preview" : "Save Template"}</span>
                             </button>
                         </div>
                     </div>
@@ -458,3 +486,4 @@ export default function EditorPanel() {
         </div>
     );
 }
+
