@@ -21,24 +21,86 @@ import {
 } from 'react-icons/fi';
 
 // Color Palette for Background Simulation
+// Comprehensive Color Map for all Product Variants
 const COLOR_MAP = {
+    // --- WHITES & CREAMS ---
     "White": "#FFFFFF",
+    "Natural": "#F3E5AB",
+    "Soft Cream": "#F5F5DC",
+    "Sand": "#C2B280",
+    "Silver": "#C0C0C0",
+    
+    // --- BLACKS & GREYS ---
     "Black": "#000000",
-    "Red": "#EF4444",
-    "Royal": "#2563EB",
-    "Navy": "#1E3A8A",
-    "Sport Grey": "#9CA3AF",
-    "Heather Grey": "#9CA3AF",
+    "Solid Black Blend": "#1a1a1a",
+    "Black Heather": "#2D2D2D",
+    "Charcoal": "#36454F",
+    "Dark Grey": "#4A4A4A",
+    "Asphalt": "#505050",
     "Dark Heather": "#4B5563",
-    "Maroon": "#7F1D1D",
-    "Green": "#16A34A",
-    "Orange": "#F97316",
-    "Purple": "#9333EA",
-    "Pink": "#EC4899",
-    "Sand": "#D6C3A3",
-    "Forest Green": "#14532D",
-    "Gold": "#EAB308",
-    "Light Blue": "#54adddff"
+    "Dark Grey Heather": "#525252",
+    "Graphite Heather": "#374151",
+    "Deep Heather": "#606060",
+    "Sport Grey": "#9CA3AF",
+    "Athletic Heather": "#9E9E9E",
+    "Ash": "#D1D5DB",
+
+    // --- BLUES ---
+    "Navy": "#000080",
+    "Heather Navy": "#34495E",
+    "Royal": "#2563EB",
+    "True Royal": "#1C39BB",
+    "Heather True Royal": "#4169E1",
+    "Steel Blue": "#4682B4",
+    "Carolina Blue": "#7BAFD4",
+    "Heather Columbia Blue": "#7897BB",
+    "Light Blue": "#ADD8E6",
+    "Baby Blue": "#89CFF0",
+    "Heather Ice Blue": "#A4D3EE",
+    "Turquoise": "#40E0D0",
+    "Aqua": "#00FFFF",
+    "Heather Aqua": "#66CDAA",
+
+    // --- REDS & PINKS ---
+    "Red": "#EF4444",
+    "Heather Red": "#CD5C5C",
+    "Cardinal": "#C41E3A",
+    "Maroon": "#800000",
+    "Heliconia": "#DB2763", // Bright Pink
+    "Berry": "#C32148",
+    "Pink": "#FFC0CB",
+    "Light Pink": "#FFB6C1",
+    "Soft Pink": "#FDE9EA",
+    "Charity Pink": "#FF69B4",
+    "Heather Mauve": "#C18995",
+
+    // --- PURPLES ---
+    "Purple": "#6A0DAD",
+    "Team Purple": "#4B0082",
+    "Heather Team Purple": "#663399",
+
+    // --- GREENS ---
+    "Forest Green": "#228B22",
+    "Forest": "#0B6623",
+    "Military Green": "#4B5320",
+    "Army": "#454B1B",
+    "Olive": "#808000",
+    "Heather Olive": "#556B2F",
+    "Irish Green": "#009E60",
+    "Kelly": "#4CBB17",
+    "Heather Kelly": "#3CB371",
+    "Heather Green": "#608060",
+    "Leaf": "#76904A",
+    "Heather Mint": "#98FF98",
+
+    // --- YELLOWS & ORANGES & BROWNS ---
+    "Gold": "#FFD700",
+    "Yellow": "#FFFF00",
+    "Orange": "#FFA500",
+    "Autumn": "#D2691E",
+    "Brown": "#8B4513",
+    "Heather Clay": "#B66A50",
+    "Heather Peach": "#FFCBA4"
 };
 
 export default function EditorPanel() {
