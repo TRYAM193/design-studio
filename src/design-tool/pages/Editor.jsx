@@ -303,15 +303,15 @@ export default function EditorPanel() {
                         */}
                         <div 
                             className="shadow-2xl"
-                            // style={{
-                            //     width: realWidth,
-                            //     height: realHeight,
-                            //     backgroundColor: canvasBg, // The shirt color simulation
-                            //     transform: `scale(${displayScale})`, // Zoom out to fit screen
-                            //     transformOrigin: 'center center',
-                            //     border: '1px dashed rgba(0,0,0,0.1)',
-                            //     transition: 'background-color 0.3s ease'
-                            // }}
+                            style={{
+                                width: realWidth,
+                                height: realHeight,
+                                backgroundColor: canvasBg, // The shirt color simulation
+                                transform: `scale(${displayScale})`, // Zoom out to fit screen
+                                transformOrigin: 'center center',
+                                border: '1px dashed rgba(0,0,0,0.1)',
+                                transition: 'background-color 0.3s ease'
+                            }}
                         >
                             <CanvasEditor
                                 setFabricCanvas={setFabricCanvas}
