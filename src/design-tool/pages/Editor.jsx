@@ -10,7 +10,7 @@ import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
 import { undo, redo } from '../redux/canvasSlice';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useLocation, useSearchParams } from 'react-router';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
@@ -44,41 +44,42 @@ const COLOR_MAP = {
 };
 
 export default function EditorPanel() {
+    // --- REDUX & ROUTER ---
     const dispatch = useDispatch();
     const navigation = useNavigate();
     const location = useLocation();
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
-    const userId = user?.uid;
+    const userId = user?.uid; 
 
     // --- CANVAS STATE ---
     const [fabricCanvas, setFabricCanvas] = useState(null);
     const [activeTool, setActiveTool] = useState('');
     const [selectedId, setSelectedId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
-
+    
+    // Redux Selectors
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
 
-    // --- PRODUCT STATE ---
+    // --- PRODUCT & VIEW STATE ---
     const productId = searchParams.get('product');
     const urlColor = searchParams.get('color');
-
+    
     const [productData, setProductData] = useState({
         title: "Custom Design",
         category: "Apparel",
         print_areas: { front: { width: 4500, height: 5400 } }, // Default High-Res
-        options: { colors: ["White", "Black", "Navy", "Red", "Royal", "Sport Grey"] }
+        options: { colors: [] }
     });
 
-    const [baseImage, setBaseImage] = useState("https://placehold.co/800x800?text=Product+Preview");
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
 
     // --- SCALING STATE ---
     const containerRef = useRef(null);
-    const [scaleFactor, setScaleFactor] = useState(0.2); // Start small, update on mount
+    const [scaleFactor, setScaleFactor] = useState(0.2); 
 
     // --- PREVIEW STATE ---
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -91,11 +92,14 @@ export default function EditorPanel() {
     // 1. INITIAL LOAD
     useEffect(() => {
         async function initEditor() {
+            // Case A: Blank Canvas (No Product ID)
             if (!productId) {
-                if (urlColor) setCanvasBg(COLOR_MAP[urlColor] || urlColor);
+                // Keep default productData
+                // Do NOT set a background color logic here, will handle in render
                 return;
             }
 
+            // Case B: Product Selected
             try {
                 const docRef = doc(db, "base_products", productId);
                 const docSnap = await getDoc(docRef);
@@ -106,7 +110,8 @@ export default function EditorPanel() {
                         print_areas: data.print_areas || { front: { width: 4500, height: 5400 } },
                         options: data.options || { colors: [] }
                     });
-                    setBaseImage(data.image);
+                    
+                    // Set initial background color if product exists
                     const initialColor = urlColor || (data.options?.colors?.[0] || "White");
                     setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
                 }
@@ -117,36 +122,50 @@ export default function EditorPanel() {
         initEditor();
     }, [productId]);
 
-    // 2. AUTO-SCALE LOGIC (The Fix for "Too Small")
+    // 2. AUTO-SCALE LOGIC
     useEffect(() => {
         function calculateScale() {
             if (!containerRef.current) return;
-
+            
             const realWidth = productData.print_areas?.[currentView]?.width || 4500;
             const realHeight = productData.print_areas?.[currentView]?.height || 5400;
-
+            
             const availableWidth = containerRef.current.clientWidth;
             const availableHeight = containerRef.current.clientHeight;
 
-            // Padding: Keep 80% of screen height/width occupied
+            // Fit to 85% of screen space
             const widthRatio = (availableWidth * 0.85) / realWidth;
             const heightRatio = (availableHeight * 0.85) / realHeight;
 
-            // Choose the smaller ratio to ensure it fits completely
             const bestScale = Math.min(widthRatio, heightRatio);
-
             setScaleFactor(bestScale);
         }
 
-        // Run initially and on resize
         calculateScale();
         window.addEventListener('resize', calculateScale);
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
+    // 3. LOAD EXISTING DESIGN (Drafts)
+    useEffect(() => {
+        if (location.state?.designToLoad && fabricCanvas) {
+            const { designToLoad } = location.state;
+            if (designToLoad.canvasData) {
+                const jsonContent = typeof designToLoad.canvasData === 'string' 
+                    ? designToLoad.canvasData 
+                    : JSON.stringify(designToLoad.canvasData);
+
+                fabricCanvas.loadFromJSON(jsonContent, () => {
+                    fabricCanvas.renderAll();
+                });
+            }
+        }
+    }, [location.state, fabricCanvas]);
+
     const handleSwitchView = (newView) => {
         if (!fabricCanvas || newView === currentView) return;
         setCurrentView(newView);
+        // Note: You would typically save/load JSON state here for multi-side
         fabricCanvas.requestRenderAll();
     };
 
@@ -158,24 +177,25 @@ export default function EditorPanel() {
     const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
         fabricCanvas.discardActiveObject();
+        
+        // 1. Hide bg (if any) to get transparent PNG
+        const originalBg = fabricCanvas.backgroundColor;
+        fabricCanvas.setBackgroundColor(null, () => {
+            fabricCanvas.renderAll();
+            
+            // 2. Export Design
+            const dataUrl = fabricCanvas.toDataURL({
+                format: 'png',
+                quality: 1,
+                multiplier: 1 
+            });
 
-        // 1. Hide bg to get transparent PNG
-        fabricCanvas.backgroundColor = null
-        fabricCanvas.renderAll();
+            setDesignPreview(dataUrl);
+            setIsPreviewOpen(true);
 
-        // 2. Export High-Res Design
-        const dataUrl = fabricCanvas.toDataURL({
-            format: 'png',
-            quality: 1,
-            multiplier: 1 // Actual print size
+            // 3. Restore bg (if needed internally by fabric, though we use DIV for bg)
+            fabricCanvas.renderAll(); 
         });
-
-        setDesignPreview(dataUrl);
-        setIsPreviewOpen(true);
-
-        // 3. Restore visual bg
-        fabricCanvas.renderAll();
-
     };
 
     const handleAddToCart = async () => {
@@ -188,12 +208,11 @@ export default function EditorPanel() {
         }, 1500);
     };
 
-    // Helper for canvas dimensions
     const realWidth = productData.print_areas?.[currentView]?.width || 4500;
     const realHeight = productData.print_areas?.[currentView]?.height || 5400;
 
     const BrandDisplay = (
-        <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
+        <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{cursor: 'pointer'}}>
             <div className="logo-circle">
                 <img src="/assets/LOGO.png" alt="TRYAM" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
@@ -227,16 +246,17 @@ export default function EditorPanel() {
 
                 {/* --- WORKSPACE CONTAINER --- */}
                 <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
-
-                    {/* View Tabs */}
-                    {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
+                    
+                    {/* View Tabs (Only if Product has Views) */}
+                    {productId && productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
                             {Object.keys(productData.print_areas).map(view => (
-                                <button
+                                <button 
                                     key={view}
                                     onClick={() => handleSwitchView(view)}
-                                    className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${currentView === view ? "bg-black text-white" : "text-slate-600 hover:bg-slate-100"
-                                        }`}
+                                    className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${
+                                        currentView === view ? "bg-black text-white" : "text-slate-600 hover:bg-slate-100"
+                                    }`}
                                 >
                                     {view.replace('_', ' ')}
                                 </button>
@@ -273,7 +293,7 @@ export default function EditorPanel() {
                             {fabricCanvas && (
                                 <SaveDesignButton
                                     canvas={fabricCanvas}
-                                    userId={userId}
+                                    userId={userId} 
                                     currentDesign={currentDesign}
                                     editingDesignId={editingDesignId}
                                     className="top-bar-button"
@@ -286,27 +306,36 @@ export default function EditorPanel() {
                         </div>
                     </div>
 
-                    {/* --- THE SCALED CANVAS --- */}
-                    {/* This wrapper uses transform: scale() to fit the massive print canvas onto the screen.
-                        It calculates based on the parent container size (containerRef).
-                    */}
-
-                    <CanvasEditor
-                        setFabricCanvas={setFabricCanvas}
-                        canvasObjects={canvasObjects}
-                        selectedId={selectedId}
-                        setActiveTool={setActiveTool}
-                        setSelectedId={setSelectedId}
-                        fabricCanvas={fabricCanvas}
-                        setCurrentDesign={setCurrentDesign}
-                        setEditingDesignId={setEditingDesignId}
-                        past={past}
-                    />
-
+                    {/* --- THE SCALED CANVAS (Visual Workspace) --- */}
+                    <div 
+                        className="shadow-2xl transition-transform duration-300 ease-out"
+                        style={{
+                            width: realWidth,
+                            height: realHeight,
+                            // Only show background color if we have a productId. Otherwise White.
+                            backgroundColor: productId ? canvasBg : "#FFFFFF",
+                            transform: `scale(${scaleFactor})`, 
+                            transformOrigin: 'center center',
+                            border: '1px dashed rgba(0,0,0,0.1)',
+                        }}
+                    >
+                        <CanvasEditor
+                            setFabricCanvas={setFabricCanvas}
+                            canvasObjects={canvasObjects}
+                            selectedId={selectedId}
+                            setActiveTool={setActiveTool}
+                            setSelectedId={setSelectedId}
+                            fabricCanvas={fabricCanvas}
+                            setCurrentDesign={setCurrentDesign}
+                            setEditingDesignId={setEditingDesignId}
+                            past={past}
+                        />
+                    </div>
                 </main>
 
                 <aside className={`right-panel ${showProperties || !selectedId ? 'active' : ''}`}>
                     {selectedId ? (
+                        /* Case A: Object Selected -> Show Properties */
                         <>
                             <div className="mobile-panel-header">
                                 <span className="mobile-panel-title">Edit Properties</span>
@@ -324,35 +353,49 @@ export default function EditorPanel() {
                             />
                         </>
                     ) : (
+                        /* Case B: Nothing Selected */
                         <div className="p-5">
-                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
-                            <div className="grid grid-cols-4 gap-3">
-                                {productData.options.colors.map((color) => {
-                                    const hex = COLOR_MAP[color] || "#ccc";
-                                    const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
-                                    return (
-                                        <button
-                                            key={color}
-                                            onClick={() => handleColorChange(color)}
-                                            className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group
-                                                ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}
-                                            `}
-                                            style={{ backgroundColor: hex }}
-                                            title={color}
-                                        >
-                                            {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} /></span>}
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                            {/* Only Show Colors if Product is Selected */}
+                            {productId && productData.options?.colors?.length > 0 ? (
+                                <>
+                                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
+                                    <div className="grid grid-cols-4 gap-3">
+                                        {productData.options.colors.map((color) => {
+                                            const hex = COLOR_MAP[color] || "#ccc";
+                                            const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
+                                            return (
+                                                <button
+                                                    key={color}
+                                                    onClick={() => handleColorChange(color)}
+                                                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group
+                                                        ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}
+                                                    `}
+                                                    style={{ backgroundColor: hex }}
+                                                    title={color}
+                                                >
+                                                    {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}/></span>}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className="text-xs text-slate-400 mt-4 leading-relaxed">
+                                        Visualize your design on different fabric colors.
+                                    </p>
+                                </>
+                            ) : (
+                                <div className="text-center text-slate-400 py-10">
+                                    <p>Select an element to edit properties.</p>
+                                </div>
+                            )}
                         </div>
                     )}
                 </aside>
 
-                <PreviewModal
+                <PreviewModal 
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
-                    baseImage={baseImage}
+                    // Pass null as baseImage so preview logic knows there is no "Photo"
+                    baseImage={null} 
                     overlayImage={designPreview}
                     onAddToCart={handleAddToCart}
                     isSaving={isSaving}
