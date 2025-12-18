@@ -135,6 +135,32 @@ export default function EditorPanel() {
         }, 1500);
     };
 
+    useEffect(() => {
+        async function loadEditorContext() {
+            // IF NO PRODUCT: Keep defaults (Blank Canvas mode)
+            if (!productId) {
+                console.log("🎨 Blank Canvas Mode: Loading generic 2D template.");
+                return;
+            }
+
+            // IF PRODUCT SELECTED: Fetch its specific 2D frame
+            try {
+                const docRef = doc(db, "base_products", productId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    setProductData(data);
+                    // Use a 2D vector version of the image if you have one, 
+                    // otherwise fall back to the product image
+                    setBaseMockup(data.vector_mockup || data.image);
+                }
+            } catch (err) {
+                console.error("Error loading product context:", err);
+            }
+        }
+        loadEditorContext();
+    }, [productId]);
+
     // Categorization logic
     const isApparel = product?.category === "Apparel";
     const isMug = product?.category === "Home & Living";
