@@ -160,7 +160,7 @@ export default function EditorPanel() {
         fabricCanvas.discardActiveObject();
 
         // 1. Hide bg to get transparent PNG
-        fabricCanvas.setBackgroundColor(null, () => {
+        fabricCanvas.backgroundColor = null
             fabricCanvas.renderAll();
 
             // 2. Export High-Res Design
