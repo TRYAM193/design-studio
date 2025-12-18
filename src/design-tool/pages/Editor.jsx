@@ -29,7 +29,7 @@ const COLOR_MAP = {
     "Soft Cream": "#F5F5DC",
     "Sand": "#C2B280",
     "Silver": "#C0C0C0",
-    
+
     // --- BLACKS & GREYS ---
     "Black": "#000000",
     "Solid Black Blend": "#1a1a1a",
@@ -232,7 +232,7 @@ export default function EditorPanel() {
     };
 
     const handleColorChange = (colorName) => {
-if (!)
+        if (!fabricCanvas) return
 
         const hex = COLOR_MAP[colorName] || colorName;
         setCanvasBg(hex);
