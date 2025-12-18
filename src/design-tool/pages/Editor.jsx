@@ -1,6 +1,3 @@
-const [selectedId, setSelectedId] = useState(null);
-const [currentDesign, setCurrentDesign] = useState(null);
-const [editingDesignId, setEditingDesignId] = useState(null);
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
 import CanvasEditor from '../components/CanvasEditor';
@@ -50,14 +47,16 @@ export default function EditorPanel() {
     const location = useLocation();
     const [searchParams] = useSearchParams();
     const { user } = useAuth();
-    const userId = user?.uid; 
+    const userId = user?.uid;
 
     // --- CANVAS STATE ---
     const [fabricCanvas, setFabricCanvas] = useState(null);
     const [activeTool, setActiveTool] = useState('');
     const [selectedId, setSelectedId] = useState(null);
+    const [currentDesign, setCurrentDesign] = useState(null);
+    const [editingDesignId, setEditingDesignId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
-    
+
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
@@ -65,7 +64,7 @@ export default function EditorPanel() {
     // --- PRODUCT STATE ---
     const productId = searchParams.get('product');
     const urlColor = searchParams.get('color');
-    
+
     const [productData, setProductData] = useState({
         title: "Custom Design",
         category: "Apparel",
@@ -122,10 +121,10 @@ export default function EditorPanel() {
     useEffect(() => {
         function calculateScale() {
             if (!containerRef.current) return;
-            
+
             const realWidth = productData.print_areas?.[currentView]?.width || 4500;
             const realHeight = productData.print_areas?.[currentView]?.height || 5400;
-            
+
             const availableWidth = containerRef.current.clientWidth;
             const availableHeight = containerRef.current.clientHeight;
 
@@ -135,7 +134,7 @@ export default function EditorPanel() {
 
             // Choose the smaller ratio to ensure it fits completely
             const bestScale = Math.min(widthRatio, heightRatio);
-            
+
             setScaleFactor(bestScale);
         }
 
@@ -159,11 +158,11 @@ export default function EditorPanel() {
     const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
         fabricCanvas.discardActiveObject();
-        
+
         // 1. Hide bg to get transparent PNG
         fabricCanvas.setBackgroundColor(null, () => {
             fabricCanvas.renderAll();
-            
+
             // 2. Export High-Res Design
             const dataUrl = fabricCanvas.toDataURL({
                 format: 'png',
@@ -175,7 +174,7 @@ export default function EditorPanel() {
             setIsPreviewOpen(true);
 
             // 3. Restore visual bg
-            fabricCanvas.renderAll(); 
+            fabricCanvas.renderAll();
         });
     };
 
@@ -194,7 +193,7 @@ export default function EditorPanel() {
     const realHeight = productData.print_areas?.[currentView]?.height || 5400;
 
     const BrandDisplay = (
-        <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{cursor: 'pointer'}}>
+        <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
             <div className="logo-circle">
                 <img src="/assets/LOGO.png" alt="TRYAM" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
@@ -228,17 +227,16 @@ export default function EditorPanel() {
 
                 {/* --- WORKSPACE CONTAINER --- */}
                 <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
-                    
+
                     {/* View Tabs */}
                     {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
                             {Object.keys(productData.print_areas).map(view => (
-                                <button 
+                                <button
                                     key={view}
                                     onClick={() => handleSwitchView(view)}
-                                    className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${
-                                        currentView === view ? "bg-black text-white" : "text-slate-600 hover:bg-slate-100"
-                                    }`}
+                                    className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${currentView === view ? "bg-black text-white" : "text-slate-600 hover:bg-slate-100"
+                                        }`}
                                 >
                                     {view.replace('_', ' ')}
                                 </button>
@@ -275,7 +273,7 @@ export default function EditorPanel() {
                             {fabricCanvas && (
                                 <SaveDesignButton
                                     canvas={fabricCanvas}
-                                    userId={userId} 
+                                    userId={userId}
                                     currentDesign={currentDesign}
                                     editingDesignId={editingDesignId}
                                     className="top-bar-button"
@@ -292,7 +290,7 @@ export default function EditorPanel() {
                     {/* This wrapper uses transform: scale() to fit the massive print canvas onto the screen.
                         It calculates based on the parent container size (containerRef).
                     */}
-                    <div 
+                    <div
                         className="shadow-2xl transition-transform duration-300 ease-out"
                         style={{
                             width: realWidth,
@@ -352,7 +350,7 @@ export default function EditorPanel() {
                                             style={{ backgroundColor: hex }}
                                             title={color}
                                         >
-                                            {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}/></span>}
+                                            {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} /></span>}
                                         </button>
                                     );
                                 })}
@@ -361,7 +359,7 @@ export default function EditorPanel() {
                     )}
                 </aside>
 
-                <PreviewModal 
+                <PreviewModal
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
                     baseImage={baseImage}
