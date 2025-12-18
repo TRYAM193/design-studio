@@ -261,7 +261,7 @@ export default function EditorPanel() {
 
             // 3. Restore bg (if needed internally by fabric, though we use DIV for bg)
             fabricCanvas.renderAll();
-        });
+        
     };
 
     const handleAddToCart = async () => {
