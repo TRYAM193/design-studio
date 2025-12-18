@@ -246,22 +246,22 @@ export default function EditorPanel() {
 
         // 1. Hide bg (if any) to get transparent PNG
         const originalBg = fabricCanvas.backgroundColor;
-        fabricCanvas.backgroundColor
-            fabricCanvas.renderAll();
+        fabricCanvas.backgroundColor = null
+        fabricCanvas.renderAll();
 
-            // 2. Export Design
-            const dataUrl = fabricCanvas.toDataURL({
-                format: 'png',
-                quality: 1,
-                multiplier: 1
-            });
+        // 2. Export Design
+        const dataUrl = fabricCanvas.toDataURL({
+            format: 'png',
+            quality: 1,
+            multiplier: 1
+        });
 
-            setDesignPreview(dataUrl);
-            setIsPreviewOpen(true);
+        setDesignPreview(dataUrl);
+        setIsPreviewOpen(true);
 
-            // 3. Restore bg (if needed internally by fabric, though we use DIV for bg)
-            fabricCanvas.renderAll();
-        
+        // 3. Restore bg (if needed internally by fabric, though we use DIV for bg)
+        fabricCanvas.renderAll();
+
     };
 
     const handleAddToCart = async () => {
