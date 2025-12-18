@@ -202,7 +202,6 @@ html,
   top: 60px;
   /* Space for the floating top-bar */
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  background-color: white;
 }
 
 /* Ensure canvas editor is below top bar */
