@@ -220,7 +220,7 @@ export default function EditorPanel() {
 
                     {/* --- THE CANVAS AREA (With Shirt Background) --- */}
                     <div 
-                        className="canvas-wrapper flex justify-center items-center h-full w-full bg-slate-100"
+                        className="canvas-wrapper flex justify-center items-center h-full w-full"
                         style={{
                             // If baseImage exists, set it as background for the whole wrapper
                             // NOTE: You might need to adjust CSS to ensure CanvasEditor is centered properly over the shirt
