@@ -17,11 +17,11 @@ import { doc, getDoc } from 'firebase/firestore';
 import { PreviewModal } from '@/components/PreviewModal';
 
 import {
-    FiTrash2, FiRotateCcw, FiRotateCw, FiDownload, FiShoppingBag,
-    FiSettings, FiX, FiCheckCircle
+    FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX
 } from 'react-icons/fi';
 
 export default function EditorPanel() {
+    // --- CANVAS & TOOL STATE ---
     const [fabricCanvas, setFabricCanvas] = useState(null);
     const [activeTool, setActiveTool] = useState('');
     const [selectedId, setSelectedId] = useState(null);
@@ -29,32 +29,39 @@ export default function EditorPanel() {
     const [editingDesignId, setEditingDesignId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
 
-    // --- PRODUCT & VIEW STATE ---
+    // --- PRODUCT & MOCKUP STATE ---
     const [searchParams] = useSearchParams();
     const productId = searchParams.get('product');
     const selectedColor = searchParams.get('color');
     const selectedSize = searchParams.get('size');
 
-    const [product, setProduct] = useState(null);
-   const [baseMockup, setBaseMockup] = useState("/assets/mockups/generic-tee-vector.png");
+    // Default "Blank Canvas" Configuration
     const [productData, setProductData] = useState({
-        title: "New Design",
-        category: "Apparel",
-        print_areas: { front: { width: 3000, height: 4000 } }
+        title: "Custom Project",
+        category: "Apparel", // Default category
+        print_areas: { 
+            front: { width: 3000, height: 4000 } // Default A3-ish ratio
+        }
     });
-    const [currentView, setCurrentView] = useState("front"); // 'front', 'back', etc.
     
-    // Preview Modal State
+    // The visual base image (2D vector or Photo)
+    // You can replace this URL with your local 'assets/mockups/generic-tee.png'
+    const [baseImage, setBaseImage] = useState("https://placehold.co/800x800/e2e8f0/94a3b8?text=Blank+Tee"); 
+    const [currentView, setCurrentView] = useState("front");
+
+    // --- PREVIEW / CART STATE ---
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [designPreview, setDesignPreview] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
+    // --- HOOKS ---
     const { user } = useAuth();
     const userId = user?.uid; 
-
     const navigation = useNavigate();
     const location = useLocation();
     const dispatch = useDispatch();
+    
+    // Redux Selectors
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
@@ -62,26 +69,40 @@ export default function EditorPanel() {
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
 
-    // 1. FETCH FULL PRODUCT DATA
+    // 1. LOAD PRODUCT CONTEXT (or set Blank Canvas)
     useEffect(() => {
-        async function loadProduct() {
-            if (!productId) return;
-            try {
-                const docRef = doc(db, "base_products", productId);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setProduct(data);
-                    setBaseImage(data.image); 
+        async function loadContext() {
+            // Case A: User came from Store (Has Product ID)
+            if (productId) {
+                try {
+                    const docRef = doc(db, "base_products", productId);
+                    const docSnap = await getDoc(docRef);
+                    
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        
+                        setProductData({
+                            title: data.title,
+                            category: data.category || "Apparel",
+                            print_areas: data.print_areas || { front: { width: 3000, height: 4000 } }
+                        });
+
+                        // Prefer a specific 2D vector if you added it to DB, else use main image
+                        setBaseImage(data.vector_mockup || data.image);
+                    }
+                } catch (err) {
+                    console.error("Error loading product:", err);
                 }
-            } catch (err) {
-                console.error("Error loading product:", err);
+            } 
+            // Case B: Blank Canvas (No ID) - Defaults already set in state
+            else {
+                console.log("🎨 Loading Blank Canvas Mode");
             }
         }
-        loadProduct();
+        loadContext();
     }, [productId]);
 
-    // 2. LOAD EXISTING DESIGN
+    // 2. LOAD EXISTING DESIGN (If editing a saved project)
     useEffect(() => {
         if (location.state?.designToLoad && fabricCanvas) {
             const { designToLoad } = location.state;
@@ -100,20 +121,24 @@ export default function EditorPanel() {
         }
     }, [location.state, fabricCanvas]);
 
+    // Close property panel when selection clears
     useEffect(() => {
-        setShowProperties(false);
+        setShowProperties(!!selectedId);
     }, [selectedId]);
 
     const handleToolClick = (tool) => {
         setActivePanel(prev => prev === tool ? null : tool);
     };
 
-    // 3. MOCKUP PREVIEW GENERATION
+    // 3. GENERATE PREVIEW IMAGE
     const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
+
+        // Deselect everything for a clean snapshot
         fabricCanvas.discardActiveObject();
         fabricCanvas.requestRenderAll();
 
+        // Export high-quality transparent PNG
         const dataUrl = fabricCanvas.toDataURL({
             format: 'png',
             quality: 1,
@@ -126,7 +151,13 @@ export default function EditorPanel() {
 
     const handleAddToCart = async () => {
         setIsSaving(true);
-        console.log("Adding to cart:", { productId, color: selectedColor, size: selectedSize });
+        // TODO: Save to Firestore 'cart' collection
+        console.log("Adding to cart:", { 
+            product: productData.title,
+            color: selectedColor, 
+            size: selectedSize, 
+            design: designPreview 
+        });
         
         setTimeout(() => {
             setIsSaving(false);
@@ -135,36 +166,11 @@ export default function EditorPanel() {
         }, 1500);
     };
 
-    useEffect(() => {
-        async function loadEditorContext() {
-            // IF NO PRODUCT: Keep defaults (Blank Canvas mode)
-            if (!productId) {
-                console.log("🎨 Blank Canvas Mode: Loading generic 2D template.");
-                return;
-            }
+    // --- CATEGORY & LAYOUT HELPERS ---
+    const isApparel = productData.category === "Apparel";
+    const isMug = productData.category === "Home & Living";
 
-            // IF PRODUCT SELECTED: Fetch its specific 2D frame
-            try {
-                const docRef = doc(db, "base_products", productId);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setProductData(data);
-                    // Use a 2D vector version of the image if you have one, 
-                    // otherwise fall back to the product image
-                    setBaseMockup(data.vector_mockup || data.image);
-                }
-            } catch (err) {
-                console.error("Error loading product context:", err);
-            }
-        }
-        loadEditorContext();
-    }, [productId]);
-
-    // Categorization logic
-    const isApparel = product?.category === "Apparel";
-    const isMug = product?.category === "Home & Living";
-
+    // Branding Component
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{cursor: 'pointer'}}>
             <div className="logo-circle">
@@ -198,16 +204,20 @@ export default function EditorPanel() {
                     />
                 )}
 
-                <main className="preview-area relative overflow-hidden bg-slate-50">
-                    {/* Multi-Side Switcher (Floating) */}
-                    {isApparel && product?.print_areas && Object.keys(product.print_areas).length > 1 && (
+                {/* --- MAIN PREVIEW AREA (The "Desk") --- */}
+                <main className="preview-area relative bg-slate-50 overflow-hidden">
+                    
+                    {/* View Switcher (Front/Back) - Only if multiple views exist */}
+                    {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-lg backdrop-blur-sm">
-                            {Object.keys(product.print_areas).map(view => (
+                            {Object.keys(productData.print_areas).map(view => (
                                 <button 
                                     key={view}
                                     onClick={() => setCurrentView(view)}
                                     className={`px-5 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${
-                                        currentView === view ? "bg-indigo-600 text-white shadow-md scale-105" : "text-slate-600 hover:bg-slate-100"
+                                        currentView === view 
+                                            ? "bg-black text-white shadow-md scale-105" 
+                                            : "text-slate-600 hover:bg-slate-100"
                                     }`}
                                 >
                                     {view}
@@ -216,7 +226,7 @@ export default function EditorPanel() {
                         </div>
                     )}
 
-                    {/* Toolbar Controls */}
+                    {/* Top Toolbar (Undo/Redo/Save) */}
                     <div className="top-bar consolidated-bar">
                         <div className="control-group">
                             <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={past.length === 0} style={{ opacity: past.length === 0 ? 0.25 : 1 }}>
@@ -233,6 +243,14 @@ export default function EditorPanel() {
                             </button>
                         </div>
 
+                        {selectedId && !showProperties && (
+                            <div className="control-group phone-only">
+                                <button className="top-bar-button accent" onClick={() => setShowProperties(true)}>
+                                    <FiSettings size={18} /> <span>Edit</span>
+                                </button>
+                            </div>
+                        )}
+
                         <div className="control-group">
                             {fabricCanvas && (
                                 <SaveDesignButton
@@ -243,31 +261,46 @@ export default function EditorPanel() {
                                     className="top-bar-button"
                                 />
                             )}
-                            <button onClick={handleGeneratePreview} className="bg-black text-white px-5 py-2 rounded-full font-bold shadow-md hover:bg-gray-800 transition-all flex items-center gap-2">
+                            
+                            <button 
+                                onClick={handleGeneratePreview}
+                                className="bg-black text-white px-5 py-2 rounded-full font-bold shadow-md hover:bg-gray-800 transition-all flex items-center gap-2"
+                            >
                                 <FiCheckCircle size={18} />
                                 <span>Finish</span>
                             </button>
                         </div>
                     </div>
 
-                    {/* --- THE LAYERED MOCKUP SYSTEM --- */}
-                    <div className="main-mockup-container">
-                        {/* 1. BOTTOM LAYER: The Product Base */}
+                    {/* --- LAYERED MOCKUP SYSTEM --- */}
+                    <div className="main-mockup-container relative flex justify-center items-center h-full w-full">
+                        
+                        {/* LAYER 1: Base Mockup (Cartoon Vector or Photo) */}
                         <img 
                             src={baseImage} 
-                            className="product-base-image" 
-                            alt="Mockup" 
+                            className="product-base-image pointer-events-none select-none"
+                            alt="Product Base"
+                            style={{ 
+                                maxHeight: '85%', 
+                                maxWidth: '85%', 
+                                objectFit: 'contain',
+                                filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))' // Adds depth
+                            }} 
                         />
 
-                        {/* 2. MIDDLE LAYER: The Fabric Canvas Box */}
+                        {/* LAYER 2: The Design Canvas (Positioned dynamically) */}
                         <div 
                             className={`design-placement-box ${isMug ? 'mug-frame' : 'shirt-frame'}`}
                             style={{
-                                // Use the exact print area from Printify for aspect ratio
-                                aspectRatio: `${product?.print_areas?.[currentView]?.width || 3000} / ${product?.print_areas?.[currentView]?.height || 4000}`,
-                                // Adjust position based on category
+                                position: 'absolute',
+                                zIndex: 10,
+                                border: '1px dashed rgba(99, 102, 241, 0.4)', // Helper guide
+                                // Dynamic Sizing from DB
+                                aspectRatio: `${productData.print_areas[currentView]?.width || 3000} / ${productData.print_areas[currentView]?.height || 4000}`,
+                                // Positioning Logic
                                 width: isMug ? '400px' : '280px',
-                                marginTop: isApparel ? '-40px' : '20px'
+                                top: isApparel ? '24%' : '35%',
+                                borderRadius: isMug ? '4px' : '0px'
                             }}
                         >
                             <CanvasEditor
@@ -283,15 +316,30 @@ export default function EditorPanel() {
                             />
                         </div>
 
-                        {/* 3. TOP LAYER: Shadow Mask (The Realism Secret) */}
+                        {/* LAYER 3: Texture Overlay (For Realism) */}
                         <div 
-                            className="product-shadow-overlay" 
-                            style={{ backgroundImage: `url(${baseImage})` }} 
+                            className="product-shadow-overlay absolute inset-0 pointer-events-none"
+                            style={{ 
+                                backgroundImage: `url(${baseImage})`,
+                                backgroundSize: 'contain',
+                                backgroundPosition: 'center',
+                                backgroundRepeat: 'no-repeat',
+                                mixBlendMode: 'multiply',
+                                opacity: 0.15,
+                                zIndex: 11
+                            }}
                         />
                     </div>
                 </main>
 
                 <aside className={`right-panel ${showProperties ? 'active' : ''}`}>
+                    <div className="mobile-panel-header">
+                        <span className="mobile-panel-title">Edit Properties</span>
+                        <button onClick={() => setShowProperties(false)} className="mobile-close-btn">
+                            <FiX size={20} />
+                        </button>
+                    </div>
+
                     <RightSidebarTabs
                         id={selectedId}
                         type={activeTool}
@@ -304,14 +352,16 @@ export default function EditorPanel() {
                     />
                 </aside>
 
+                {/* --- PREVIEW MODAL --- */}
                 <PreviewModal 
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
-                    baseImage={baseImage || "https://placehold.co/600x600?text=No+Product"}
+                    baseImage={baseImage}
                     overlayImage={designPreview}
                     onAddToCart={handleAddToCart}
                     isSaving={isSaving}
                 />
+
             </div>
         </div>
     );
