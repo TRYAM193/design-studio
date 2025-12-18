@@ -36,7 +36,12 @@ export default function EditorPanel() {
     const selectedSize = searchParams.get('size');
 
     const [product, setProduct] = useState(null);
-    const [baseImage, setBaseImage] = useState(null);
+   const [baseMockup, setBaseMockup] = useState("/assets/mockups/generic-tee-vector.png");
+    const [productData, setProductData] = useState({
+        title: "New Design",
+        category: "Apparel",
+        print_areas: { front: { width: 3000, height: 4000 } }
+    });
     const [currentView, setCurrentView] = useState("front"); // 'front', 'back', etc.
     
     // Preview Modal State
