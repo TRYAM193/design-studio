@@ -448,7 +448,6 @@ export default function EditorPanel() {
                 <PreviewModal
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
-                    // Pass null as baseImage so preview logic knows there is no "Photo"
                     baseImage={null}
                     overlayImage={designPreview}
                     onAddToCart={handleAddToCart}
