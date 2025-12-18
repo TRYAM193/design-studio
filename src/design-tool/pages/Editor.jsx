@@ -1,3 +1,6 @@
+const [selectedId, setSelectedId] = useState(null);
+const [currentDesign, setCurrentDesign] = useState(null);
+const [editingDesignId, setEditingDesignId] = useState(null);
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
 import CanvasEditor from '../components/CanvasEditor';
@@ -54,9 +57,6 @@ export default function EditorPanel() {
     // --- CANVAS STATE ---
     const [fabricCanvas, setFabricCanvas] = useState(null);
     const [activeTool, setActiveTool] = useState('');
-    const [selectedId, setSelectedId] = useState(null);
-    const [currentDesign, setCurrentDesign] = useState(null);
-    const [editingDesignId, setEditingDesignId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
     
     // Redux Selectors
