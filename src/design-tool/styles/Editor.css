@@ -321,6 +321,7 @@ html,
   padding: 15px;
   color: #333;
   max-height: none;
+  width: 100%;
   overflow-y: auto; /* scroll vertically when content is too long */
   overflow-x: hidden;
 }
