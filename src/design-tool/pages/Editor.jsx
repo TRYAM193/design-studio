@@ -8,7 +8,7 @@ import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
 import { undo, redo } from '../redux/canvasSlice';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useLocation, useSearchParams } from 'react-router';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'; // Fixed import
 import { useAuth } from '@/hooks/use-auth';
 import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
@@ -19,6 +19,17 @@ import { PreviewModal } from '@/components/PreviewModal';
 import {
     FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX
 } from 'react-icons/fi';
+
+// --- CONFIGURATION: 2D VECTOR ASSETS ---
+// Replace these URLs with your actual local assets (e.g., "/assets/vectors/tshirt.png")
+const VECTOR_ASSETS = {
+    default: "https://placehold.co/800x800/f1f5f9/cbd5e1?text=Generic+T-Shirt+(Vector)",
+    "mens_cotton_tee": "https://placehold.co/800x800/fff/000?text=T-Shirt+Vector",
+    "unisex_hoodie": "https://placehold.co/800x800/fff/000?text=Hoodie+Vector",
+    "oversized_tee": "https://placehold.co/800x800/fff/000?text=Oversized+Tee+Vector",
+    "womens_crop_top": "https://placehold.co/800x800/fff/000?text=Crop+Top+Vector",
+    "ceramic_mug": "https://placehold.co/800x600/fff/000?text=Mug+Wrap+Vector",
+};
 
 export default function EditorPanel() {
     // --- CANVAS & TOOL STATE ---
@@ -31,22 +42,22 @@ export default function EditorPanel() {
 
     // --- PRODUCT & MOCKUP STATE ---
     const [searchParams] = useSearchParams();
-    const productId = searchParams.get('product');
+    const productId = searchParams.get('product'); // Might be null (Blank Canvas Mode)
     const selectedColor = searchParams.get('color');
     const selectedSize = searchParams.get('size');
 
     // Default "Blank Canvas" Configuration
     const [productData, setProductData] = useState({
-        title: "Custom Project",
-        category: "Apparel", // Default category
+        id: "generic",
+        title: "Future Order Design",
+        category: "Apparel", 
         print_areas: { 
-            front: { width: 3000, height: 4000 } // Default A3-ish ratio
+            front: { width: 3000, height: 4000 } // Default printable area
         }
     });
     
-    // The visual base image (2D vector or Photo)
-    // You can replace this URL with your local 'assets/mockups/generic-tee.png'
-    const [baseImage, setBaseImage] = useState("https://placehold.co/800x800/e2e8f0/94a3b8?text=Blank+Tee"); 
+    // Default to the Generic Vector
+    const [baseImage, setBaseImage] = useState(VECTOR_ASSETS.default); 
     const [currentView, setCurrentView] = useState("front");
 
     // --- PREVIEW / CART STATE ---
@@ -61,7 +72,6 @@ export default function EditorPanel() {
     const location = useLocation();
     const dispatch = useDispatch();
     
-    // Redux Selectors
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
@@ -69,10 +79,10 @@ export default function EditorPanel() {
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
 
-    // 1. LOAD PRODUCT CONTEXT (or set Blank Canvas)
+    // 1. LOAD CONTEXT (Product or Blank)
     useEffect(() => {
         async function loadContext() {
-            // Case A: User came from Store (Has Product ID)
+            // Case A: User selected a specific product
             if (productId) {
                 try {
                     const docRef = doc(db, "base_products", productId);
@@ -82,27 +92,32 @@ export default function EditorPanel() {
                         const data = docSnap.data();
                         
                         setProductData({
+                            id: data.id,
                             title: data.title,
                             category: data.category || "Apparel",
                             print_areas: data.print_areas || { front: { width: 3000, height: 4000 } }
                         });
 
-                        // Prefer a specific 2D vector if you added it to DB, else use main image
-                        setBaseImage(data.vector_mockup || data.image);
+                        // ✅ FORCE VECTOR: Look up the 2D image based on ID, fallback to default
+                        // This prevents loading the realistic photo
+                        const vectorUrl = VECTOR_ASSETS[data.id] || VECTOR_ASSETS.default;
+                        setBaseImage(vectorUrl);
                     }
                 } catch (err) {
                     console.error("Error loading product:", err);
                 }
             } 
-            // Case B: Blank Canvas (No ID) - Defaults already set in state
+            // Case B: Blank Canvas (No ID)
             else {
-                console.log("🎨 Loading Blank Canvas Mode");
+                console.log("🎨 Mode: Blank Canvas (Future Order)");
+                setBaseImage(VECTOR_ASSETS.default);
+                // Keep default productData state
             }
         }
         loadContext();
     }, [productId]);
 
-    // 2. LOAD EXISTING DESIGN (If editing a saved project)
+    // 2. LOAD EXISTING DESIGN (If passed from Dashboard)
     useEffect(() => {
         if (location.state?.designToLoad && fabricCanvas) {
             const { designToLoad } = location.state;
@@ -121,7 +136,6 @@ export default function EditorPanel() {
         }
     }, [location.state, fabricCanvas]);
 
-    // Close property panel when selection clears
     useEffect(() => {
         setShowProperties(!!selectedId);
     }, [selectedId]);
@@ -130,15 +144,12 @@ export default function EditorPanel() {
         setActivePanel(prev => prev === tool ? null : tool);
     };
 
-    // 3. GENERATE PREVIEW IMAGE
+    // 3. GENERATE PREVIEW
     const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
-
-        // Deselect everything for a clean snapshot
         fabricCanvas.discardActiveObject();
         fabricCanvas.requestRenderAll();
 
-        // Export high-quality transparent PNG
         const dataUrl = fabricCanvas.toDataURL({
             format: 'png',
             quality: 1,
@@ -151,26 +162,23 @@ export default function EditorPanel() {
 
     const handleAddToCart = async () => {
         setIsSaving(true);
-        // TODO: Save to Firestore 'cart' collection
-        console.log("Adding to cart:", { 
+        console.log("Saving Design:", { 
+            isDraft: !productId, // Use this flag to save as 'Template' vs 'Order'
             product: productData.title,
-            color: selectedColor, 
-            size: selectedSize, 
             design: designPreview 
         });
         
         setTimeout(() => {
             setIsSaving(false);
             setIsPreviewOpen(false);
-            navigation('/dashboard/orders');
+            // If it was a blank canvas, maybe go to templates?
+            navigation(productId ? '/dashboard/orders' : '/dashboard/templates');
         }, 1500);
     };
 
-    // --- CATEGORY & LAYOUT HELPERS ---
     const isApparel = productData.category === "Apparel";
     const isMug = productData.category === "Home & Living";
 
-    // Branding Component
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{cursor: 'pointer'}}>
             <div className="logo-circle">
@@ -204,11 +212,11 @@ export default function EditorPanel() {
                     />
                 )}
 
-                {/* --- MAIN PREVIEW AREA (The "Desk") --- */}
-                <main className="preview-area relative bg-slate-50 overflow-hidden">
+                {/* --- MAIN WORKSPACE --- */}
+                <main className="preview-area relative bg-slate-50 overflow-hidden flex items-center justify-center">
                     
-                    {/* View Switcher (Front/Back) - Only if multiple views exist */}
-                    {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
+                    {/* View Switcher (Only if Product has defined views) */}
+                    {isApparel && productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-lg backdrop-blur-sm">
                             {Object.keys(productData.print_areas).map(view => (
                                 <button 
@@ -226,7 +234,7 @@ export default function EditorPanel() {
                         </div>
                     )}
 
-                    {/* Top Toolbar (Undo/Redo/Save) */}
+                    {/* Toolbar */}
                     <div className="top-bar consolidated-bar">
                         <div className="control-group">
                             <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={past.length === 0} style={{ opacity: past.length === 0 ? 0.25 : 1 }}>
@@ -261,45 +269,43 @@ export default function EditorPanel() {
                                     className="top-bar-button"
                                 />
                             )}
-                            
-                            <button 
-                                onClick={handleGeneratePreview}
-                                className="bg-black text-white px-5 py-2 rounded-full font-bold shadow-md hover:bg-gray-800 transition-all flex items-center gap-2"
-                            >
+                            <button onClick={handleGeneratePreview} className="bg-black text-white px-5 py-2 rounded-full font-bold shadow-md hover:bg-gray-800 transition-all flex items-center gap-2">
                                 <FiCheckCircle size={18} />
                                 <span>Finish</span>
                             </button>
                         </div>
                     </div>
 
-                    {/* --- LAYERED MOCKUP SYSTEM --- */}
-                    <div className="main-mockup-container relative flex justify-center items-center h-full w-full">
+                    {/* --- 2D CARTOON MOCKUP CONTAINER --- */}
+                    <div className="relative flex justify-center items-center h-full w-full">
                         
-                        {/* LAYER 1: Base Mockup (Cartoon Vector or Photo) */}
+                        {/* LAYER 1: The 2D Cartoon/Vector Base */}
                         <img 
                             src={baseImage} 
-                            className="product-base-image pointer-events-none select-none"
-                            alt="Product Base"
+                            className="pointer-events-none select-none drop-shadow-xl"
+                            alt="2D Mockup"
                             style={{ 
-                                maxHeight: '85%', 
-                                maxWidth: '85%', 
-                                objectFit: 'contain',
-                                filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.1))' // Adds depth
+                                maxHeight: '80%', 
+                                maxWidth: '80%', 
+                                objectFit: 'contain'
                             }} 
                         />
 
-                        {/* LAYER 2: The Design Canvas (Positioned dynamically) */}
+                        {/* LAYER 2: The Design Canvas Box */}
                         <div 
                             className={`design-placement-box ${isMug ? 'mug-frame' : 'shirt-frame'}`}
                             style={{
                                 position: 'absolute',
                                 zIndex: 10,
-                                border: '1px dashed rgba(99, 102, 241, 0.4)', // Helper guide
-                                // Dynamic Sizing from DB
-                                aspectRatio: `${productData.print_areas[currentView]?.width || 3000} / ${productData.print_areas[currentView]?.height || 4000}`,
-                                // Positioning Logic
-                                width: isMug ? '400px' : '280px',
-                                top: isApparel ? '24%' : '35%',
+                                border: '1px dashed rgba(99, 102, 241, 0.5)',
+                                backgroundColor: 'rgba(255,255,255,0.05)', // Slight highlight to show printable area
+                                
+                                // Dynamic Sizing from DB or Default
+                                aspectRatio: `${productData.print_areas?.[currentView]?.width || 3000} / ${productData.print_areas?.[currentView]?.height || 4000}`,
+                                
+                                // Category-Specific Positioning (Adjust these pixel values to match your Vectors)
+                                width: isMug ? '400px' : '260px',
+                                top: isApparel ? '28%' : '35%',
                                 borderRadius: isMug ? '4px' : '0px'
                             }}
                         >
@@ -315,31 +321,10 @@ export default function EditorPanel() {
                                 past={past}
                             />
                         </div>
-
-                        {/* LAYER 3: Texture Overlay (For Realism) */}
-                        <div 
-                            className="product-shadow-overlay absolute inset-0 pointer-events-none"
-                            style={{ 
-                                backgroundImage: `url(${baseImage})`,
-                                backgroundSize: 'contain',
-                                backgroundPosition: 'center',
-                                backgroundRepeat: 'no-repeat',
-                                mixBlendMode: 'multiply',
-                                opacity: 0.15,
-                                zIndex: 11
-                            }}
-                        />
                     </div>
                 </main>
 
                 <aside className={`right-panel ${showProperties ? 'active' : ''}`}>
-                    <div className="mobile-panel-header">
-                        <span className="mobile-panel-title">Edit Properties</span>
-                        <button onClick={() => setShowProperties(false)} className="mobile-close-btn">
-                            <FiX size={20} />
-                        </button>
-                    </div>
-
                     <RightSidebarTabs
                         id={selectedId}
                         type={activeTool}
@@ -352,7 +337,6 @@ export default function EditorPanel() {
                     />
                 </aside>
 
-                {/* --- PREVIEW MODAL --- */}
                 <PreviewModal 
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
