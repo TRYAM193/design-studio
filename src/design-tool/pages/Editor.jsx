@@ -453,6 +453,9 @@ export default function EditorPanel() {
                     overlayImage={designPreview}
                     onAddToCart={handleAddToCart}
                     isSaving={isSaving}
+                    productCategory={productId ? productData.category : undefined}
+    selectedColor={productId ? canvasBg : undefined}
+/>
                 />
             </div>
         </div>
