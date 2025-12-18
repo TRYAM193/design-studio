@@ -290,29 +290,19 @@ export default function EditorPanel() {
                     {/* This wrapper uses transform: scale() to fit the massive print canvas onto the screen.
                         It calculates based on the parent container size (containerRef).
                     */}
-                    <div
-                        className="shadow-2xl transition-transform duration-300 ease-out"
-                        style={{
-                            width: realWidth,
-                            height: realHeight,
-                            backgroundColor: canvasBg,
-                            transform: `scale(${scaleFactor})`,
-                            transformOrigin: 'center center',
-                            border: '2px solid rgba(0,0,0,0.05)',
-                        }}
-                    >
-                        <CanvasEditor
-                            setFabricCanvas={setFabricCanvas}
-                            canvasObjects={canvasObjects}
-                            selectedId={selectedId}
-                            setActiveTool={setActiveTool}
-                            setSelectedId={setSelectedId}
-                            fabricCanvas={fabricCanvas}
-                            setCurrentDesign={setCurrentDesign}
-                            setEditingDesignId={setEditingDesignId}
-                            past={past}
-                        />
-                  
+
+                    <CanvasEditor
+                        setFabricCanvas={setFabricCanvas}
+                        canvasObjects={canvasObjects}
+                        selectedId={selectedId}
+                        setActiveTool={setActiveTool}
+                        setSelectedId={setSelectedId}
+                        fabricCanvas={fabricCanvas}
+                        setCurrentDesign={setCurrentDesign}
+                        setEditingDesignId={setEditingDesignId}
+                        past={past}
+                    />
+
                 </main>
 
                 <aside className={`right-panel ${showProperties || !selectedId ? 'active' : ''}`}>
