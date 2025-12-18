@@ -312,7 +312,7 @@ export default function EditorPanel() {
                             setEditingDesignId={setEditingDesignId}
                             past={past}
                         />
-                    </div>
+                  
                 </main>
 
                 <aside className={`right-panel ${showProperties || !selectedId ? 'active' : ''}`}>
