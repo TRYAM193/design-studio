@@ -10,7 +10,7 @@ export default function Text(setSelectedId, setActiveTool) {
     const currentObjects = getCanvasObjects();
     const newObjects = [...currentObjects, obj];
     store.dispatch(setCanvasObjects(newObjects));
-    if (setActiveTool) setActiveTool(obj.type);
+    // if (setActiveTool) setActiveTool(obj.type);
     if (setSelectedId) setSelectedId(obj.id);
   }
 
