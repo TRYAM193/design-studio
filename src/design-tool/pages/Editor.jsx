@@ -38,7 +38,7 @@ const COLOR_MAP = {
     "Sand": "#D6C3A3",
     "Forest Green": "#14532D",
     "Gold": "#EAB308",
-    "Light Blue": "#BAE6FD"
+    "Light Blue": "#247ba9ff"
 };
 
 export default function EditorPanel() {
