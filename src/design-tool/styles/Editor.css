@@ -1037,3 +1037,47 @@ input[type="range"],
     padding: 2px;
   }
 }
+
+.main-mockup-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.product-base-image {
+  max-width: 85%;
+  max-height: 85%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.design-placement-box {
+  position: absolute;
+  z-index: 10;
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+}
+
+/* Realism Overlay */
+.product-shadow-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  mix-blend-mode: multiply; /* Crucial for realistic shadows on design */
+  opacity: 0.15;
+  z-index: 11;
+}
+
+.mug-frame {
+  top: 35%;
+  border-radius: 4px;
+}
+
+.shirt-frame {
+  top: 24%;
+}
