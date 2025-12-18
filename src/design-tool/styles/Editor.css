@@ -322,6 +322,8 @@ html,
   padding: 15px;
   color: #333;
   max-height: none;
+  overflow-y: auto; /* scroll vertically when content is too long */
+  overflow-x: hidden;
 }
 
 /* --- Add this to src/styles/Editor.css --- */
