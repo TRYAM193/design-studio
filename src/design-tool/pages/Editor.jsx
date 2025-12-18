@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
 import CanvasEditor from '../components/CanvasEditor';
 import Text from '../functions/text';
@@ -8,7 +8,7 @@ import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
 import { undo, redo } from '../redux/canvasSlice';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, useLocation, useSearchParams } from 'react-router'; // Fixed import
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
@@ -17,168 +17,185 @@ import { doc, getDoc } from 'firebase/firestore';
 import { PreviewModal } from '@/components/PreviewModal';
 
 import {
-    FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX
+    FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX, FiLayers
 } from 'react-icons/fi';
 
-// --- CONFIGURATION: 2D VECTOR ASSETS ---
-// Replace these URLs with your actual local assets (e.g., "/assets/vectors/tshirt.png")
-const VECTOR_ASSETS = {
-    default: "https://placehold.co/800x800/f1f5f9/cbd5e1?text=Generic+T-Shirt+(Vector)",
-    "mens_cotton_tee": "https://placehold.co/800x800/fff/000?text=T-Shirt+Vector",
-    "unisex_hoodie": "https://placehold.co/800x800/fff/000?text=Hoodie+Vector",
-    "oversized_tee": "https://placehold.co/800x800/fff/000?text=Oversized+Tee+Vector",
-    "womens_crop_top": "https://placehold.co/800x800/fff/000?text=Crop+Top+Vector",
-    "ceramic_mug": "https://placehold.co/800x600/fff/000?text=Mug+Wrap+Vector",
+// Helper to map common Printify color names to CSS Hex for the UI
+// You can expand this list as needed
+const COLOR_MAP = {
+    "White": "#FFFFFF",
+    "Black": "#000000",
+    "Red": "#EF4444",
+    "Royal": "#2563EB",
+    "Navy": "#1E3A8A",
+    "Sport Grey": "#9CA3AF",
+    "Heather Grey": "#9CA3AF",
+    "Dark Heather": "#4B5563",
+    "Maroon": "#7F1D1D",
+    "Green": "#16A34A",
+    "Orange": "#F97316",
+    "Purple": "#9333EA",
+    "Pink": "#EC4899",
+    "Sand": "#D6C3A3",
+    "Forest Green": "#14532D",
+    "Gold": "#EAB308",
+    "Light Blue": "#BAE6FD"
 };
 
 export default function EditorPanel() {
-    // --- CANVAS & TOOL STATE ---
+    // --- REDUX & ROUTER ---
+    const dispatch = useDispatch();
+    const navigation = useNavigate();
+    const location = useLocation();
+    const [searchParams] = useSearchParams();
+    const { user } = useAuth();
+    const userId = user?.uid; 
+
+    // --- CANVAS STATE ---
     const [fabricCanvas, setFabricCanvas] = useState(null);
     const [activeTool, setActiveTool] = useState('');
     const [selectedId, setSelectedId] = useState(null);
-    const [currentDesign, setCurrentDesign] = useState(null);
-    const [editingDesignId, setEditingDesignId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
-
-    // --- PRODUCT & MOCKUP STATE ---
-    const [searchParams] = useSearchParams();
-    const productId = searchParams.get('product'); // Might be null (Blank Canvas Mode)
-    const selectedColor = searchParams.get('color');
-    const selectedSize = searchParams.get('size');
-
-    // Default "Blank Canvas" Configuration
-    const [productData, setProductData] = useState({
-        id: "generic",
-        title: "Future Order Design",
-        category: "Apparel", 
-        print_areas: { 
-            front: { width: 3000, height: 4000 } // Default printable area
-        }
-    });
     
-    // Default to the Generic Vector
-    const [baseImage, setBaseImage] = useState(VECTOR_ASSETS.default); 
+    // Redux Selectors
+    const canvasObjects = useSelector((state) => state.canvas.present);
+    const past = useSelector((state) => state.canvas.past);
+    const future = useSelector((state) => state.canvas.future);
+
+    // --- PRODUCT & VIEW STATE ---
+    const productId = searchParams.get('product');
+    const urlColor = searchParams.get('color');
+    
+    const [productData, setProductData] = useState({
+        title: "Custom Design",
+        category: "Apparel",
+        print_areas: { front: { width: 3000, height: 4000 } },
+        options: { colors: ["White", "Black", "Navy", "Red", "Royal", "Sport Grey"] } // Fallback colors
+    });
+
+    const [baseImage, setBaseImage] = useState("https://placehold.co/800x800?text=Product+Preview");
+    const [canvasBg, setCanvasBg] = useState("#FFFFFF"); // Visual background for the canvas
     const [currentView, setCurrentView] = useState("front");
 
-    // --- PREVIEW / CART STATE ---
+    // --- PREVIEW STATE ---
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [designPreview, setDesignPreview] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
-    // --- HOOKS ---
-    const { user } = useAuth();
-    const userId = user?.uid; 
-    const navigation = useNavigate();
-    const location = useLocation();
-    const dispatch = useDispatch();
-    
-    const canvasObjects = useSelector((state) => state.canvas.present);
-    const past = useSelector((state) => state.canvas.past);
-    const future = useSelector((state) => state.canvas.future);
-    
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
 
-    // 1. LOAD CONTEXT (Product or Blank)
+    // 1. INITIAL LOAD
     useEffect(() => {
-        async function loadContext() {
-            // Case A: User selected a specific product
-            if (productId) {
-                try {
-                    const docRef = doc(db, "base_products", productId);
-                    const docSnap = await getDoc(docRef);
-                    
-                    if (docSnap.exists()) {
-                        const data = docSnap.data();
-                        
-                        setProductData({
-                            id: data.id,
-                            title: data.title,
-                            category: data.category || "Apparel",
-                            print_areas: data.print_areas || { front: { width: 3000, height: 4000 } }
-                        });
+        async function initEditor() {
+            if (!productId) {
+                // Blank Canvas Mode
+                if (urlColor) setCanvasBg(COLOR_MAP[urlColor] || urlColor);
+                return;
+            }
 
-                        // ✅ FORCE VECTOR: Look up the 2D image based on ID, fallback to default
-                        // This prevents loading the realistic photo
-                        const vectorUrl = VECTOR_ASSETS[data.id] || VECTOR_ASSETS.default;
-                        setBaseImage(vectorUrl);
-                    }
-                } catch (err) {
-                    console.error("Error loading product:", err);
+            try {
+                const docRef = doc(db, "base_products", productId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    
+                    setProductData({
+                        ...data,
+                        // Ensure we have defaults if data is missing
+                        print_areas: data.print_areas || { front: { width: 3000, height: 4000 } },
+                        options: data.options || { colors: [] }
+                    });
+
+                    setBaseImage(data.image);
+                    
+                    // Set initial color from URL or First Available
+                    const initialColor = urlColor || (data.options?.colors?.[0] || "White");
+                    setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
                 }
-            } 
-            // Case B: Blank Canvas (No ID)
-            else {
-                console.log("🎨 Mode: Blank Canvas (Future Order)");
-                setBaseImage(VECTOR_ASSETS.default);
-                // Keep default productData state
+            } catch (err) {
+                console.error("Error loading product:", err);
             }
         }
-        loadContext();
+        initEditor();
     }, [productId]);
 
-    // 2. LOAD EXISTING DESIGN (If passed from Dashboard)
-    useEffect(() => {
-        if (location.state?.designToLoad && fabricCanvas) {
-            const { designToLoad } = location.state;
-            setEditingDesignId(designToLoad.id);
-            setCurrentDesign(designToLoad);
-
-            if (designToLoad.canvasData) {
-                const jsonContent = typeof designToLoad.canvasData === 'string' 
-                    ? designToLoad.canvasData 
-                    : JSON.stringify(designToLoad.canvasData);
-
-                fabricCanvas.loadFromJSON(jsonContent, () => {
-                    fabricCanvas.renderAll();
-                });
-            }
-        }
-    }, [location.state, fabricCanvas]);
-
-    useEffect(() => {
-        setShowProperties(!!selectedId);
-    }, [selectedId]);
-
-    const handleToolClick = (tool) => {
-        setActivePanel(prev => prev === tool ? null : tool);
+    // 2. VIEW SWITCHER
+    const handleSwitchView = (newView) => {
+        if (!fabricCanvas) return;
+        if (newView === currentView) return;
+        
+        // In a full implementation, you would save the JSON for the current view 
+        // and load the JSON for the new view here.
+        // For now, we just update the dimension reference.
+        setCurrentView(newView);
+        
+        // Resize logic would go here if dimensions differ significantly between views
+        fabricCanvas.requestRenderAll();
     };
 
-    // 3. GENERATE PREVIEW
+    // 3. COLOR SELECTION HANDLER
+    const handleColorChange = (colorName) => {
+        const hex = COLOR_MAP[colorName] || colorName;
+        setCanvasBg(hex);
+        // Also update URL param nicely without reload (optional)
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('color', colorName);
+        window.history.replaceState({}, '', `${location.pathname}?${newParams}`);
+    };
+
+    // 4. PREVIEW GENERATION
     const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
-        fabricCanvas.discardActiveObject();
-        fabricCanvas.requestRenderAll();
+        fabricCanvas.discardActiveObject(); // Deselect items
+        
+        // A. Hide the background color so we get a transparent design PNG
+        // The user wants to see the design ON the product image in the modal
+        const originalBg = fabricCanvas.backgroundColor;
+        fabricCanvas.setBackgroundColor(null, () => {
+            fabricCanvas.renderAll();
+            
+            // B. Export the transparent design
+            const dataUrl = fabricCanvas.toDataURL({
+                format: 'png',
+                quality: 1,
+                multiplier: 2
+            });
 
-        const dataUrl = fabricCanvas.toDataURL({
-            format: 'png',
-            quality: 1,
-            multiplier: 2 
+            setDesignPreview(dataUrl);
+            setIsPreviewOpen(true);
+
+            // C. Restore the visual background color for editing
+            // We use the state 'canvasBg' effectively acting as the background
+            fabricCanvas.renderAll(); 
         });
-
-        setDesignPreview(dataUrl);
-        setIsPreviewOpen(true);
     };
 
     const handleAddToCart = async () => {
         setIsSaving(true);
-        console.log("Saving Design:", { 
-            isDraft: !productId, // Use this flag to save as 'Template' vs 'Order'
+        console.log("Saving Order:", {
             product: productData.title,
-            design: designPreview 
+            design: designPreview,
+            view: currentView
         });
         
         setTimeout(() => {
             setIsSaving(false);
             setIsPreviewOpen(false);
-            // If it was a blank canvas, maybe go to templates?
-            navigation(productId ? '/dashboard/orders' : '/dashboard/templates');
+            navigation('/dashboard/orders');
         }, 1500);
     };
 
-    const isApparel = productData.category === "Apparel";
-    const isMug = productData.category === "Home & Living";
+    // --- SCALE LOGIC ---
+    // We want the canvas to be BIG (Print Size) but look SMALL (Screen Size)
+    // We use CSS scale to achieve this.
+    const realWidth = productData.print_areas?.[currentView]?.width || 3000;
+    const realHeight = productData.print_areas?.[currentView]?.height || 4000;
+    
+    // Calculate scale to fit in a ~500px screen area
+    const displayScale = 450 / realWidth; 
 
+    // Branding
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{cursor: 'pointer'}}>
             <div className="logo-circle">
@@ -194,7 +211,7 @@ export default function EditorPanel() {
 
                 <MainToolbar
                     activePanel={activePanel}
-                    onSelectTool={handleToolClick}
+                    onSelectTool={(tool) => setActivePanel(prev => prev === tool ? null : tool)}
                     setSelectedId={setSelectedId}
                     setActiveTool={setActiveTool}
                     navigation={navigation}
@@ -212,23 +229,23 @@ export default function EditorPanel() {
                     />
                 )}
 
-                {/* --- MAIN WORKSPACE --- */}
-                <main className="preview-area relative bg-slate-50 overflow-hidden flex items-center justify-center">
+                {/* --- MAIN EDITOR AREA --- */}
+                <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden">
                     
-                    {/* View Switcher (Only if Product has defined views) */}
-                    {isApparel && productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
-                        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-lg backdrop-blur-sm">
+                    {/* View Switcher Tabs */}
+                    {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
+                        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
                             {Object.keys(productData.print_areas).map(view => (
                                 <button 
                                     key={view}
-                                    onClick={() => setCurrentView(view)}
-                                    className={`px-5 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${
+                                    onClick={() => handleSwitchView(view)}
+                                    className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${
                                         currentView === view 
-                                            ? "bg-black text-white shadow-md scale-105" 
+                                            ? "bg-black text-white" 
                                             : "text-slate-600 hover:bg-slate-100"
                                     }`}
                                 >
-                                    {view}
+                                    {view.replace('_', ' ')}
                                 </button>
                             ))}
                         </div>
@@ -276,37 +293,22 @@ export default function EditorPanel() {
                         </div>
                     </div>
 
-                    {/* --- 2D CARTOON MOCKUP CONTAINER --- */}
-                    <div className="relative flex justify-center items-center h-full w-full">
-                        
-                        {/* LAYER 1: The 2D Cartoon/Vector Base */}
-                        <img 
-                            src={baseImage} 
-                            className="pointer-events-none select-none drop-shadow-xl"
-                            alt="2D Mockup"
-                            style={{ 
-                                maxHeight: '80%', 
-                                maxWidth: '80%', 
-                                objectFit: 'contain'
-                            }} 
-                        />
-
-                        {/* LAYER 2: The Design Canvas Box */}
+                    {/* --- THE CANVAS WORKSPACE --- */}
+                    <div className="relative flex justify-center items-center h-full w-full p-10">
+                        {/* This wrapper simulates the "Print Area".
+                           It scales down the huge canvas to fit the screen.
+                           The background color is applied HERE to simulate the shirt color.
+                        */}
                         <div 
-                            className={`design-placement-box ${isMug ? 'mug-frame' : 'shirt-frame'}`}
+                            className="shadow-2xl"
                             style={{
-                                position: 'absolute',
-                                zIndex: 10,
-                                border: '1px dashed rgba(99, 102, 241, 0.5)',
-                                backgroundColor: 'rgba(255,255,255,0.05)', // Slight highlight to show printable area
-                                
-                                // Dynamic Sizing from DB or Default
-                                aspectRatio: `${productData.print_areas?.[currentView]?.width || 3000} / ${productData.print_areas?.[currentView]?.height || 4000}`,
-                                
-                                // Category-Specific Positioning (Adjust these pixel values to match your Vectors)
-                                width: isMug ? '400px' : '260px',
-                                top: isApparel ? '28%' : '35%',
-                                borderRadius: isMug ? '4px' : '0px'
+                                width: realWidth,
+                                height: realHeight,
+                                backgroundColor: canvasBg, // The shirt color simulation
+                                transform: `scale(${displayScale})`, // Zoom out to fit screen
+                                transformOrigin: 'center center',
+                                border: '1px dashed rgba(0,0,0,0.1)',
+                                transition: 'background-color 0.3s ease'
                             }}
                         >
                             <CanvasEditor
@@ -324,19 +326,67 @@ export default function EditorPanel() {
                     </div>
                 </main>
 
-                <aside className={`right-panel ${showProperties ? 'active' : ''}`}>
-                    <RightSidebarTabs
-                        id={selectedId}
-                        type={activeTool}
-                        object={canvasObjects.find((obj) => obj.id === selectedId)}
-                        updateObject={updateObject}
-                        removeObject={removeObject}
-                        addText={addText}
-                        fabricCanvas={fabricCanvas}
-                        setSelectedId={setSelectedId}
-                    />
+                {/* --- RIGHT PANEL --- */}
+                <aside className={`right-panel ${showProperties || !selectedId ? 'active' : ''}`}>
+                    {selectedId ? (
+                        /* Case A: Object Selected -> Show Properties */
+                        <>
+                            <div className="mobile-panel-header">
+                                <span className="mobile-panel-title">Edit Properties</span>
+                                <button onClick={() => setShowProperties(false)} className="mobile-close-btn">
+                                    <FiX size={20} />
+                                </button>
+                            </div>
+                            <RightSidebarTabs
+                                id={selectedId}
+                                type={activeTool}
+                                object={canvasObjects.find((obj) => obj.id === selectedId)}
+                                updateObject={updateObject}
+                                removeObject={removeObject}
+                                addText={addText}
+                                fabricCanvas={fabricCanvas}
+                                setSelectedId={setSelectedId}
+                            />
+                        </>
+                    ) : (
+                        /* Case B: Nothing Selected -> Show Product Colors */
+                        <div className="p-5">
+                            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">
+                                Available Colors
+                            </h3>
+                            <div className="grid grid-cols-4 gap-3">
+                                {productData.options.colors.map((color) => {
+                                    const hex = COLOR_MAP[color] || "#ccc";
+                                    const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
+                                    
+                                    return (
+                                        <button
+                                            key={color}
+                                            onClick={() => handleColorChange(color)}
+                                            className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group
+                                                ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}
+                                            `}
+                                            style={{ backgroundColor: hex }}
+                                            title={color}
+                                        >
+                                            {/* Checkmark if active */}
+                                            {isActive && (
+                                                <span className="absolute inset-0 flex items-center justify-center text-white/90">
+                                                    <FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }}/>
+                                                </span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-4 leading-relaxed">
+                                Select a color to visualize your design on different backgrounds.
+                            </p>
+                        </div>
+                    )}
                 </aside>
 
+                {/* --- PREVIEW MODAL (The Realistic Look) --- */}
                 <PreviewModal 
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
