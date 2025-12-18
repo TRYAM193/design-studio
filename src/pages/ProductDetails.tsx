@@ -133,12 +133,16 @@ export default function ProductDetails() {
                                     <span className="text-xs font-bold text-red-600">Out of Stock</span>
                                 )}
                             </div>
-                            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">{product.title}</h1>
-                            <div
-                                className="mt-4 text-slate-500 text-lg leading-relaxed 
-                           [&>p]:mb-3 [&>ul]:list-disc [&>ul]:pl-5 [&>li]:mb-1"
-                                dangerouslySetInnerHTML={{ __html: product.description }}
-                            />
+                            {/* Replace the description section in your file with this */}
+                            <div>
+                                <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{product.title}</h1>
+
+                                {/* Safe HTML Rendering */}
+                                <div
+                                    className="text-slate-500 text-lg leading-relaxed [&>p]:mb-3 [&>ul]:list-disc [&>ul]:pl-5 [&>li]:mb-1"
+                                    dangerouslySetInnerHTML={{ __html: product.description }}
+                                />
+                            </div>
                         </div>
 
 

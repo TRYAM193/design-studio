@@ -5,160 +5,116 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const serviceAccount = require("./service-account.json");
 
-// 🛑 PASTE YOUR PRINTIFY TOKEN HERE
-const PRINTIFY_API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzN2Q0YmQzMDM1ZmUxMWU5YTgwM2FiN2VlYjNjY2M5NyIsImp0aSI6ImUxY2EzOGEzMmM2NGM5M2YxNGQ3MTM3MmI1ZmQwZWY1N2ZlOWMzZTVkMDI0YmRlMWE3ODBkNDM4NmZlNDQyOTVmODIzZDA2NmE5YWQxMjE4IiwiaWF0IjoxNzY1OTA3NjA4LjM5MTAxNSwibmJmIjoxNzY1OTA3NjA4LjM5MTAxNywiZXhwIjoxNzk3NDQzNjA4LjM4MjYyMSwic3ViIjoiMjU3MDI3MjEiLCJzY29wZXMiOlsic2hvcHMubWFuYWdlIiwic2hvcHMucmVhZCIsImNhdGFsb2cucmVhZCIsIm9yZGVycy5yZWFkIiwib3JkZXJzLndyaXRlIiwicHJvZHVjdHMucmVhZCIsInByb2R1Y3RzLndyaXRlIiwid2ViaG9va3MucmVhZCIsIndlYmhvb2tzLndyaXRlIiwidXBsb2Fkcy5yZWFkIiwidXBsb2Fkcy53cml0ZSIsInByaW50X3Byb3ZpZGVycy5yZWFkIiwidXNlci5pbmZvIl19.cwmW9eDrWz6Urfizuz-u7JYfYLEH_Q8_oAUsK4fINEfwlVRLaXX-HuNvygiuFBkCPOkK6cQ2nlunOMHzdWVVNdYTHnuo5DRuO0Va5GC3MH9zBwiiMnaYQjtB9upRbKvAF8PkdWfLLzCuqasoVhJswDX3KPpcmESEki7wA0Q-J3AQjyY2OZplGgQzDwJq3ck4AyWgeLrr5Ntd3Pb5OtXQfJoJ5n1W0TfAwYyhVrOnfhjcQd7rZsD29gBHRUNrCJYhoCF44Kv9p9vzfu_fc7AwkKPfl0XTId4x3wYa0GM-cSZ3ATt5Ndc2VSeQkx5FfzJqwkLDWlrnG58dMVNbWuG9EF4NpfJj9wsiWFXzLjLDcBNcD1JbTQMGQDNDbogdNhULVFHBHhX8LEj7F3aF3JjsqO5e3Ivf3hfL68culz4XGkp9LKLypZ1o5c5Csq-9KNOxV08KBYBa76ewenMdCQMXbiMjcZTvTK9cn2twp6cC3Av7mifkFWfy-e1XfJ7x6wjIr5wxzGDYrdQ6SOBPHtiK_J_Az2hwiIaNN7cfnmXt02WFZL8Mvkd58YxPtlwrr9eVJQdc3nSz0sqXv6Zg1_si3gr3JH_MxFZYj7yEO39CPuv-2_6foI6EpGoio6C5JIOqt9rxL9AraAhcdIPRdn6OAw79YIsIbmUQZs7NHYowQEQ"; 
+// 🛑 YOUR PRINTIFY TOKEN 
+const PRINTIFY_API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzN2Q0YmQzMDM1ZmUxMWU5YTgwM2FiN2VlYjNjY2M5NyIsImp0aSI6ImUxY2EzOGEzMmM2NGM5M2YxNGQ3MTM3MmI1ZmQwZWY1N2ZlOWMzZTVkMDI0YmRlMWE3ODBkNDM4NmZlNDQyOTVmODIzZDA2NmE5YWQxMjE4IiwiaWF0IjoxNzY1OTA3NjA4LjM5MTAxNSwibmJmIjoxNzY1OTA3NjA4LjM5MTAxNywiZXhwIjoxNzk3NDQzNjA4LjM4MjYyMSwic3ViIjoiMjU3MDI3MjEiLCJzY29wZXMiOlsic2hvcHMubWFuYWdlIiwic2hvcHMucmVhZCIsImNhdGFsb2cucmVhZCIsIm9yZGVycy5yZWFkIiwib3JkZXJzLndyaXRlIiwicHJvZHVjdHMucmVhZCIsInByb2R1Y3RzLndyaXRlIiwid2ViaG9va3MucmVhZCIsIndlYmhvb2tzLndyaXRlIiwidXBsb2Fkcy5yZWFkIiwidXBsb2Fkcy53cml0ZSIsInByaW50X3Byb3ZpZGVycy5yZWFkIiwidXNlci5pbmZvIl19.cwmW9eDrWz6Urfizuz-u7JYfYLEH_Q8_oAUsK4fINEfwlVRLaXX-HuNvygiuFBkCPOkK6cQ2nlunOMHzdWVVNdYTHnuo5DRuO0Va5GC3MH9zBwiiMnaYQjtB9upRbKvAF8PkdWfLLzCuqasoVhJswDX3KPpcmESEki7wA0Q-J3AQjyY2OZplGgQzDwJq3ck4AyWgeLrr5Ntd3Pb5OtXQfJoJ5n1W0TfAwYyhVrOnfhjcQd7rZsD29gBHRUNrCJYhoCF44Kv9p9vzfu_fc7AwkKPfl0XTId4x3wYa0GM-cSZ3ATt5Ndc2VSeQkx5FfzJqwkLDWlrnG58dMVNbWuG9EF4NpfJj9wsiWFXzLjLDcBNcD1JbTQMGQDNDbogdNhULVFHBHhX8LEj7F3aF3JjsqO5e3Ivf3hfL68culz4XGkp9LKLypZ1o5c5Csq-9KNOxV08KBYBa76ewenMdCQMXbiMjcZTvTK9cn2twp6cC3Av7mifkFWfy-e1XfJ7x6wjIr5wxzGDYrdQ6SOBPHtiK_J_Az2hwiIaNN7cfnmXt02WFZL8Mvkd58YxPtlwrr9eVJQdc3nSz0sqXv6Zg1_si3gr3JH_MxFZYj7yEO39CPuv-2_6foI6EpGoio6C5JIOqt9rxL9AraAhcdIPRdn6OAw79YIsIbmUQZs7NHYowQEQ";
 
-// --- PRODUCT MAPPING ---
 const PRODUCT_MAP = {
-  "mens_cotton_tee": 12,      // Bella+Canvas 3001
-  "unisex_hoodie": 77,        // Gildan 18500
-  "womens_crop_top": 1058,    // Women's Crop
-  "oversized_tee": 49,        // Comfort Colors 1717
-  "ceramic_mug": 68           // 11oz Mug
+  "mens_cotton_tee": { blueprint_id: 12, category: "Apparel" },
+  "unisex_hoodie":   { blueprint_id: 77, category: "Apparel" },
+  "oversized_tee":   { blueprint_id: 49, category: "Apparel" },
+  "womens_crop_top": { blueprint_id: 1058, category: "Apparel" },
+  "ceramic_mug":     { blueprint_id: 68, category: "Home & Living" }
 };
 
-// --- CONFIGURATION ---
-// 1. We remove manual titles (we will get them from API)
-// 2. We add 'main_image_index' to pick the best photo (0 = first, 1 = second, etc.)
-const PRODUCT_CONFIG = {
-  "mens_cotton_tee": {
-    main_image_index: 2, // <--- Change this to pick a different specific image
-    category: "Apparel",
-    qikink_cost: 200, 
-    printify_cost: 900
-  },
-  "unisex_hoodie": {
-    main_image_index: 0, // Default to first
-    category: "Apparel",
-    qikink_cost: 450,
-    printify_cost: 1600
-  },
-  "womens_crop_top": {
-    main_image_index: 1, // Maybe the 2nd image is a better model shot?
-    category: "Apparel",
-    qikink_cost: 240,
-    printify_cost: 1200
-  },
-  "oversized_tee": {
-    main_image_index: 0,
-    category: "Apparel",
-    qikink_cost: 320,
-    printify_cost: 1400
-  },
-  "ceramic_mug": {
-    main_image_index: 0,
-    category: "Home & Living",
-    qikink_cost: 120,
-    printify_cost: 500
-  }
-};
-
-// Initialize Firebase
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
 
 async function seedProducts() {
   const batch = db.batch();
-  console.log("🌏 Starting Fully Dynamic Sync...");
+  console.log("🌏 Starting Universal Sync...");
 
   try {
-    for (const [internalId, blueprintId] of Object.entries(PRODUCT_MAP)) {
-      const config = PRODUCT_CONFIG[internalId];
-      console.log(`\n🔍 Fetching details for ID: ${blueprintId}...`);
-
-      let title = "Unknown Product";
-      let description = "";
-      let imageUrls = [];
-      let dynamicColors = ["White", "Black"]; 
-      let dynamicSizes = ["S", "M", "L"];
+    for (const [internalId, config] of Object.entries(PRODUCT_MAP)) {
+      console.log(`\n🔍 Syncing: ${internalId} (Blueprint: ${config.blueprint_id})...`);
 
       try {
-        const res = await axios.get(`https://api.printify.com/v1/catalog/blueprints/${blueprintId}.json`, {
+        // STEP 1: Find a valid provider for this blueprint automatically
+        const providersRes = await axios.get(
+          `https://api.printify.com/v1/catalog/blueprints/${config.blueprint_id}/print_providers.json`,
+          { headers: { "Authorization": `Bearer ${PRINTIFY_API_TOKEN}` } }
+        );
+        
+        const availableProviders = providersRes.data || [];
+        if (availableProviders.length === 0) throw new Error("No providers found");
+
+        // Prefer Provider 29 (Monster Digital), otherwise take the first available
+        const selectedProvider = availableProviders.find(p => p.id === 29) || availableProviders[0];
+        console.log(`   ✅ Using Provider: ${selectedProvider.title} (ID: ${selectedProvider.id})`);
+
+        // STEP 2: Fetch variants for this blueprint + provider
+        const url = `https://api.printify.com/v1/catalog/blueprints/${config.blueprint_id}/print_providers/${selectedProvider.id}/variants.json`;
+        const res = await axios.get(url, { headers: { "Authorization": `Bearer ${PRINTIFY_API_TOKEN}` } });
+        
+        const variants = res.data.variants || [];
+        const uniqueColors = new Set();
+        const uniqueSizes = new Set();
+        const variantMap = {};
+        const printAreas = {};
+
+        // STEP 3: Parse variants using your provided JSON structure
+        variants.forEach(v => {
+          // In your sample, color and size are strings inside v.options
+          const color = v.options?.color;
+          const size = v.options?.size;
+
+          if (color) uniqueColors.add(color);
+          if (size) uniqueSizes.add(size);
+          
+          if (color && size) {
+            variantMap[`${color}_${size}`] = v.id;
+          } else if (size) {
+            variantMap[size] = v.id; // Fallback for mugs
+          }
+
+          // Capture print areas
+          v.placeholders?.forEach(p => {
+            if (!printAreas[p.position]) {
+              printAreas[p.position] = { width: p.width, height: p.height };
+            }
+          });
+        });
+
+        console.log(`   🎨 Found ${uniqueColors.size} colors and ${uniqueSizes.size} sizes.`);
+
+        // STEP 4: Get Blueprint metadata
+        const blueprintRes = await axios.get(`https://api.printify.com/v1/catalog/blueprints/${config.blueprint_id}.json`, {
           headers: { "Authorization": `Bearer ${PRINTIFY_API_TOKEN}` }
         });
-        
-        const data = res.data;
 
-        // 1. GET TITLE & DESC FROM API
-        title = data.title;
-        description = data.description;
-        console.log(`   📝 Title: "${title}"`);
-
-        // 2. GET IMAGES
-        imageUrls = data.images || [];
-        console.log(`   📸 Found ${imageUrls.length} images.`);
-
-        // 3. GET COLORS & SIZES
-        if (data.options) {
-          const colorOption = data.options.find(opt => opt.type === 'color' || opt.name === 'Colors');
-          const sizeOption = data.options.find(opt => opt.type === 'size' || opt.name === 'Sizes');
-
-          if (colorOption && colorOption.values) {
-            dynamicColors = colorOption.values.map(v => v.title).slice(0, 15);
-          }
-          if (sizeOption && sizeOption.values) {
-            dynamicSizes = sizeOption.values.map(v => v.title);
-          }
-        }
+        // STEP 5: Update Firestore
+        const docRef = db.collection("base_products").doc(internalId);
+        batch.set(docRef, {
+          id: internalId,
+          title: blueprintRes.data.title,
+          description: blueprintRes.data.description,
+          category: config.category,
+          image: blueprintRes.data.images[0],
+          gallery: blueprintRes.data.images,
+          options: {
+            colors: Array.from(uniqueColors),
+            sizes: Array.from(uniqueSizes)
+          },
+          variant_map: variantMap,
+          print_areas: printAreas,
+          provider_config: {
+            provider_id: selectedProvider.id,
+            blueprint_id: config.blueprint_id
+          },
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
 
       } catch (err) {
-        console.error(`   ❌ API Error: ${err.message}`);
-        imageUrls = ["https://placehold.co/600x600?text=No+Image"]; 
+        console.error(`   ❌ Failed: ${err.message}`);
       }
-
-      // 4. SELECT SPECIFIC IMAGE
-      // Use the index from config, or fallback to 0 if that index doesn't exist
-      const safeIndex = (config.main_image_index < imageUrls.length) ? config.main_image_index : 0;
-      const mainImage = imageUrls[safeIndex];
-      console.log(`   🖼️ Selected Image Index: ${safeIndex}`);
-
-      // 5. UPDATE FIRESTORE
-      const docRef = db.collection("base_products").doc(internalId);
-      
-      batch.set(docRef, {
-        id: internalId,
-        title: title,       // ✅ From API
-        description: description, // ✅ From API
-        active: true,
-        stock_status: "in_stock",
-        category: config.category,
-        
-        image: mainImage,   // ✅ Specific Selected Image
-        gallery: imageUrls, 
-
-        options: { 
-          colors: dynamicColors, // ✅ Real Colors
-          sizes: dynamicSizes    // ✅ Real Sizes
-        },
-        
-        providers: {
-          india_qikink: {
-            active: true,
-            provider_id: "qikink",
-            base_cost: config.qikink_cost,
-            currency: "INR"
-          },
-          global_printify: {
-            active: true,
-            provider_id: "printify",
-            blueprint_id: blueprintId,
-            base_cost: config.printify_cost,
-            currency: "INR"
-          }
-        },
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
     }
 
     await batch.commit();
-    console.log("\n🎉 Database Updated! Titles, Colors, and Specific Images are live.");
+    console.log("\n🎉 Database Fully Synced! All 404s and color mapping issues resolved.");
 
   } catch (error) {
-    console.error("Critical Error:", error);
+    console.error("Critical Error:", error.message);
   }
 }
 

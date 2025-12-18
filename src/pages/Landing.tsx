@@ -24,6 +24,7 @@ export default function Landing() {
 
            {/* Desktop Navigation */}
            <nav className="hidden md:flex items-center gap-8">
+            <Link to='/store' className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Catalog</Link>
              <Link to="/dashboard/templates" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                {t("nav.templates")}
              </Link>
