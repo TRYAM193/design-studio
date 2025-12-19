@@ -9,15 +9,14 @@ const CHECKERBOARD_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAA
 
 // Toggle this to TRUE to ignore your design and force the checkerboard
 const FORCE_DEBUG_TEXTURE = false;
-const materialRef = useRe
 
 function useTextureSafe(url, label) {
     const [texture, setTexture] = useState(null);
 
     // 1. Force debug texture if flag is on, otherwise use the passed url
     // (Make sure FORCE_DEBUG_TEXTURE and CHECKERBOARD_TEXTURE are defined or imported)
-    const targetUrl = (typeof FORCE_DEBUG_TEXTURE !== 'undefined' && FORCE_DEBUG_TEXTURE)
-        ? CHECKERBOARD_TEXTURE
+    const targetUrl = (typeof FORCE_DEBUG_TEXTURE !== 'undefined' && FORCE_DEBUG_TEXTURE) 
+        ? CHECKERBOARD_TEXTURE 
         : url;
 
     useEffect(() => {
@@ -53,21 +52,6 @@ function useTextureSafe(url, label) {
                 tex.colorSpace = THREE.SRGBColorSpace;
                 tex.anisotropy = 16;
                 tex.needsUpdate = true; // Often helps with initial render
-                tex.flipY = false; // Try toggling this to 'true' if the text is upside down
-
-                // 2. APPLY TO MATERIAL
-                if (materialRef.current) {
-                    materialRef.current.map = tex;
-
-                    // 🛑 CRITICAL FIX FOR TRANSPARENCY
-                    materialRef.current.transparent = true;  // Enable alpha channel
-                    materialRef.current.side = THREE.DoubleSide; // Fixes visibility issues
-
-                    // Optional: Helps remove "white outlines" on transparent edges
-                    materialRef.current.alphaTest = 0.1;
-
-                    materialRef.current.needsUpdate = true;
-                }
 
                 setTexture(tex);
             },
