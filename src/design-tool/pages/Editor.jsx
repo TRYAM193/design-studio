@@ -141,53 +141,76 @@ export default function EditorPanel() {
 
     // In Editor.jsx
 
-const captureCurrentCanvas = async () => {
-    if (!fabricCanvas) return null;
+    const captureCurrentCanvas = async () => {
+        if (!fabricCanvas) return null;
 
-    // 1. Save the original background settings so we can restore them later
-    const originalBg = fabricCanvas.backgroundColor;
+        // 1. Save original background state
+        const originalBg = fabricCanvas.backgroundColor;
 
-    try {
-        // 2. AGGRESSIVELY REMOVE BACKGROUNDS
-        // We use .set() to ensure Fabric updates its internal state
-        fabricCanvas.set('backgroundColor', null);
-        fabricCanvas.set('backgroundImage', null);
-        
-        // Force a render to clear the canvas visually before capturing
-        fabricCanvas.renderAll(); 
+        try {
+            // 2. Clear background for transparency
+            fabricCanvas.set('backgroundColor', null);
+            fabricCanvas.set('backgroundImage', null);
+            fabricCanvas.renderAll();
 
-        // 3. Define settings
-        const TARGET_SIZE = 2048; 
-        const currentWidth = fabricCanvas.getWidth();
-        const multiplier = TARGET_SIZE / currentWidth;
+            // 3. Create a temporary canvas to FORCE the exact size
+            const targetSize = 2048;
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = targetSize;
+            tempCanvas.height = targetSize;
+            const ctx = tempCanvas.getContext('2d');
 
-        // 4. Generate the Blob from the TRANSPARENT canvas
-        return new Promise((resolve) => {
-            fabricCanvas.toCanvasElement(multiplier, {
-                width: currentWidth * multiplier,
-                height: fabricCanvas.getHeight() * multiplier,
-                enableRetinaScaling: false // Keep false to prevent 4096px crash
-            }).toBlob((blob) => {
-                if (!blob || blob.size < 1000) {
-                    console.error("❌ Blob generation failed");
-                    resolve(null);
-                    return;
-                }
-                const blobUrl = URL.createObjectURL(blob);
-                resolve(blobUrl);
-            }, 'image/png'); // PNG is required for transparency
-        });
+            // 4. Calculate aspect-ratio safe scaling
+            // This centers your design inside the 2048x2048 square
+            const canvasWidth = fabricCanvas.getWidth();
+            const canvasHeight = fabricCanvas.getHeight();
+            const scale = Math.min(targetSize / canvasWidth, targetSize / canvasHeight);
 
-    } catch (err) {
-        console.error("Error generating 3D texture:", err);
-        return null;
-    } finally {
-        // 5. RESTORE BACKGROUND (Crucial!)
-        // Put the user's color/image back immediately
-        fabricCanvas.set('backgroundColor', originalBg);
-        fabricCanvas.renderAll();
-    }
-};
+            // 5. Generate the image from Fabric
+            const dataURL = fabricCanvas.toDataURL({
+                format: 'png',
+                quality: 1,
+                multiplier: scale, // Use calculated scale
+                enableRetinaScaling: false
+            });
+
+            // 6. Draw the image onto our Fixed-Size Canvas
+            // This acts as a "filter" that strips away any weird scaling or artifacts
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Clear the temp canvas
+                    ctx.clearRect(0, 0, targetSize, targetSize);
+                    // Draw image centered
+                    const w = img.width;
+                    const h = img.height;
+                    const x = (targetSize - w) / 2;
+                    const y = (targetSize - h) / 2;
+                    ctx.drawImage(img, x, y, w, h);
+
+                    // Convert to Blob
+                    tempCanvas.toBlob((blob) => {
+                        if (!blob) {
+                            resolve(null);
+                            return;
+                        }
+                        const url = URL.createObjectURL(blob);
+                        console.log(`✅ Final Texture Generated: ${targetSize}x${targetSize}`);
+                        resolve(url);
+                    }, 'image/png');
+                };
+                img.src = dataURL;
+            });
+
+        } catch (err) {
+            console.error("Error generating texture:", err);
+            return null;
+        } finally {
+            // 7. Restore the Editor Background
+            fabricCanvas.set('backgroundColor', originalBg);
+            fabricCanvas.renderAll();
+        }
+    };
 
 
     const handleSwitchView = async (newView) => {
