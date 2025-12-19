@@ -162,7 +162,7 @@ export default function EditorPanel() {
                 format: 'png',
                 multiplier: multiplier,
                 quality: 1,
-                enableRetinaScaling: true
+                enableRetinaScaling: false
             });
 
             // Convert Base64 -> Blob -> URL
