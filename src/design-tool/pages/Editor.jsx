@@ -410,7 +410,7 @@ export default function EditorPanel() {
                     isSaving={isSaving}
                     productId={productId}
                     productCategory={productId ? productData.category : undefined}
-                    selectedColor={productId ? canvasBg : undefined}
+                    color={productId ? canvasBg : undefined}
                 />
             </div>
         </div>
