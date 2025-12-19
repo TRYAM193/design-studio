@@ -32,7 +32,7 @@ function useTextureSafe(url, label) {
 
         // ... inside useTextureSafe ...
 
-        loader.load(
+        loader.loadAsync(
             targetUrl,
             (tex) => {
                 if (!isActive) return;
