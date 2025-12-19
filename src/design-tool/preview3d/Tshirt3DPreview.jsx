@@ -32,7 +32,7 @@ function useProductTexture(url, label) {
             (err) => console.error(`[${label}] Failed to load texture:`, err)
         );
     }, [url, label]);
-    cons
+    console.log(texture)
     return texture;
 }
 
