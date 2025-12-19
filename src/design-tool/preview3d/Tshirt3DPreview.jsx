@@ -99,7 +99,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
         }
         return null;
     }, [nodes, meshName]);
-    console.log(geometr)
+    console.log(geometry)
 
     if (!geometry) return null;
 
