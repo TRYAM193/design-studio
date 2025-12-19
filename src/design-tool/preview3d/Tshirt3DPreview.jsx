@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, Suspense, useRef } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment, Center, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
@@ -9,7 +9,7 @@ const CHECKERBOARD_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAA
 
 // Toggle this to TRUE to ignore your design and force the checkerboard
 const FORCE_DEBUG_TEXTURE = false;
-const materialRef = useRef()
+const materialRef = useRe
 
 function useTextureSafe(url, label) {
     const [texture, setTexture] = useState(null);
