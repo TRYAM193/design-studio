@@ -428,4 +428,15 @@ export default function EditorPanel() {
             </div>
         </div>
     );
-}
+} Standard Blob generation failed. Attempting fallback...
+captureCurrentCanvas @ Editor.jsx:169
+await in captureCurrentCanvas
+handleGeneratePreview @ Editor.jsx:224
+executeDispatch @ chunk-P7R3MQQ5.js?v=990b6515:13622
+runWithFiberInDEV @ chunk-P7R3MQQ5.js?v=990b6515:997
+processDispatchQueue @ chunk-P7R3MQQ5.js?v=990b6515:13658
+(anonymous) @ chunk-P7R3MQQ5.js?v=990b6515:14071
+batchedUpdates$1 @ chunk-P7R3MQQ5.js?v=990b6515:2626
+dispatchEventForPluginEventSystem @ chunk-P7R3MQQ5.js?v=990b6515:13763
+dispatchEvent @ chunk-P7R3MQQ5.js?v=990b6515:16784
+dispatchDiscreteEvent @ chunk-P7R3MQQ5.js?v=990b6515:16765Understand this warning
