@@ -14,14 +14,12 @@ import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
 import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { PreviewModal } from '@/components/PreviewModal';
+import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 
 import {
-    FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX, FiLayers
+    FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX
 } from 'react-icons/fi';
 
-// Color Palette for Background Simulation
-// Comprehensive Color Map for all Product Variants
 const COLOR_MAP = {
     // --- WHITES & CREAMS ---
     "White": "#FFFFFF",
@@ -66,7 +64,7 @@ const COLOR_MAP = {
     "Heather Red": "#CD5C5C",
     "Cardinal": "#C41E3A",
     "Maroon": "#800000",
-    "Heliconia": "#DB2763", // Bright Pink
+    "Heliconia": "#DB2763",
     "Berry": "#C32148",
     "Pink": "#FFC0CB",
     "Light Pink": "#FFB6C1",
@@ -103,8 +101,9 @@ const COLOR_MAP = {
     "Heather Peach": "#FFCBA4"
 };
 
+// ... (Keep existing COLOR_MAP constant exactly as is) 
+
 export default function EditorPanel() {
-    // --- REDUX & ROUTER ---
     const dispatch = useDispatch();
     const navigation = useNavigate();
     const location = useLocation();
@@ -120,7 +119,6 @@ export default function EditorPanel() {
     const [editingDesignId, setEditingDesignId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
 
-    // Redux Selectors
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
@@ -132,12 +130,20 @@ export default function EditorPanel() {
     const [productData, setProductData] = useState({
         title: "Custom Design",
         category: "Apparel",
-        print_areas: { front: { width: 4500, height: 5400 } }, // Default High-Res
+        print_areas: { front: { width: 4500, height: 5400 } },
         options: { colors: [] }
     });
 
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
+
+    // NEW: Store textures for all views
+    const [designTextures, setDesignTextures] = useState({
+        front: null,
+        back: null,
+        leftSleeve: null,
+        rightSleeve: null
+    });
 
     // --- SCALING STATE ---
     const containerRef = useRef(null);
@@ -145,7 +151,6 @@ export default function EditorPanel() {
 
     // --- PREVIEW STATE ---
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-    const [designPreview, setDesignPreview] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
@@ -154,14 +159,7 @@ export default function EditorPanel() {
     // 1. INITIAL LOAD
     useEffect(() => {
         async function initEditor() {
-            // Case A: Blank Canvas (No Product ID)
-            if (!productId) {
-                // Keep default productData
-                // Do NOT set a background color logic here, will handle in render
-                return;
-            }
-
-            // Case B: Product Selected
+            if (!productId) return;
             try {
                 const docRef = doc(db, "base_products", productId);
                 const docSnap = await getDoc(docRef);
@@ -172,8 +170,6 @@ export default function EditorPanel() {
                         print_areas: data.print_areas || { front: { width: 4500, height: 5400 } },
                         options: data.options || { colors: [] }
                     });
-
-                    // Set initial background color if product exists
                     const initialColor = urlColor || (data.options?.colors?.[0] || "White");
                     setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
                 }
@@ -188,27 +184,20 @@ export default function EditorPanel() {
     useEffect(() => {
         function calculateScale() {
             if (!containerRef.current) return;
-
             const realWidth = productData.print_areas?.[currentView]?.width || 4500;
             const realHeight = productData.print_areas?.[currentView]?.height || 5400;
-
             const availableWidth = containerRef.current.clientWidth;
             const availableHeight = containerRef.current.clientHeight;
-
-            // Fit to 85% of screen space
             const widthRatio = (availableWidth * 0.85) / realWidth;
             const heightRatio = (availableHeight * 0.85) / realHeight;
-
-            const bestScale = Math.min(widthRatio, heightRatio);
-            setScaleFactor(bestScale);
+            setScaleFactor(Math.min(widthRatio, heightRatio));
         }
-
         calculateScale();
         window.addEventListener('resize', calculateScale);
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
-    // 3. LOAD EXISTING DESIGN (Drafts)
+    // 3. LOAD EXISTING DESIGN
     useEffect(() => {
         if (location.state?.designToLoad && fabricCanvas) {
             const { designToLoad } = location.state;
@@ -216,79 +205,90 @@ export default function EditorPanel() {
                 const jsonContent = typeof designToLoad.canvasData === 'string'
                     ? designToLoad.canvasData
                     : JSON.stringify(designToLoad.canvasData);
-
-                fabricCanvas.loadFromJSON(jsonContent, () => {
-                    fabricCanvas.renderAll();
-                });
+                fabricCanvas.loadFromJSON(jsonContent, () => fabricCanvas.renderAll());
             }
         }
     }, [location.state, fabricCanvas]);
 
+    // --- CAPTURE TEXTURES HELPER ---
+    const captureCurrentCanvas = () => {
+        if (!fabricCanvas) return null;
+
+        // Calculate a safe multiplier for the preview (target ~1200px width)
+        // If canvas is 4500px, multiplier should be ~0.26
+        const originalWidth = fabricCanvas.getWidth(); // e.g., 4500
+        const targetWidth = 1200; 
+        const previewMultiplier = Math.min(1, targetWidth / originalWidth);
+
+        const originalBg = fabricCanvas.backgroundColor;
+        fabricCanvas.backgroundColor = null; // Transparent capture
+        fabricCanvas.renderAll();
+        
+        const dataUrl = fabricCanvas.toDataURL({
+            format: 'png',
+            quality: 0.8,
+            multiplier: previewMultiplier // <--- CHANGED FROM 2
+        });
+
+        fabricCanvas.backgroundColor = originalBg;
+        fabricCanvas.renderAll();
+        return dataUrl;
+    };
+
     const handleSwitchView = (newView) => {
         if (!fabricCanvas || newView === currentView) return;
+
+        // Snapshot current view before leaving
+        const currentSnapshot = captureCurrentCanvas();
+        setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
+
         setCurrentView(newView);
-        // Note: You would typically save/load JSON state here for multi-side
         fabricCanvas.requestRenderAll();
+        // Note: Logic to load 'newView' JSON state would go here in full implementation
     };
 
     const handleColorChange = (colorName) => {
-        if (!fabricCanvas) return
-
+        if (!fabricCanvas) return;
         const hex = COLOR_MAP[colorName] || colorName;
         setCanvasBg(hex);
-        fabricCanvas.backgroundColor = hex
-        fabricCanvas.renderAll()
+        fabricCanvas.backgroundColor = hex;
+        fabricCanvas.renderAll();
     };
 
     const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
         fabricCanvas.discardActiveObject();
 
-        // 1. Capture the transparent design
-        const originalBg = fabricCanvas.backgroundColor;
-        fabricCanvas.backgroundColor = null
-        fabricCanvas.renderAll();
+        const currentSnapshot = captureCurrentCanvas();
+        
+        // Update state with freshest current view
+        const updatedTextures = {
+            ...designTextures,
+            [currentView]: currentSnapshot
+        };
+        setDesignTextures(updatedTextures);
 
-        const dataUrl = fabricCanvas.toDataURL({
-            format: 'png',
-            quality: 1,
-            multiplier: 2 // High Res
-        });
-
-        // 2. LOGIC BRANCH:
         if (productId) {
-            // A. Product Selected -> Show Realistic Preview
-            setDesignPreview(dataUrl);
             setIsPreviewOpen(true);
         } else {
-            // B. Blank Canvas -> Skip Preview, Save Directly
-            console.log("🎨 Blank Canvas: Saving directly as template...");
-            setDesignPreview(dataUrl);
-            // We set state just in case, but call save immediately
-            handleAddToCartDirectly(dataUrl);
+            console.log("🎨 Blank Canvas: Saving directly...");
+            handleAddToCartDirectly(currentSnapshot);
         }
-
-        // 3. Restore visual bg for editing
-        fabricCanvas.renderAll();
-
     };
 
-    // Helper for direct saving (bypassing modal)
     const handleAddToCartDirectly = (designData) => {
         setIsSaving(true);
-        console.log("Saving Template:", { design: designData });
         setTimeout(() => {
             setIsSaving(false);
-            navigation('/dashboard/templates'); // Redirect to templates
+            navigation('/dashboard/templates'); 
         }, 1500);
     };
 
     const handleAddToCart = async () => {
-        // This is called FROM the modal (Product Mode)
         setIsSaving(true);
         console.log("Saving Order:", {
             product: productData.title,
-            design: designPreview,
+            textures: designTextures,
             color: canvasBg
         });
         setTimeout(() => {
@@ -297,9 +297,6 @@ export default function EditorPanel() {
             navigation('/dashboard/orders');
         }, 1500);
     };
-
-    const realWidth = productData.print_areas?.[currentView]?.width || 4500;
-    const realHeight = productData.print_areas?.[currentView]?.height || 5400;
 
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
@@ -334,18 +331,16 @@ export default function EditorPanel() {
                     />
                 )}
 
-                {/* --- WORKSPACE CONTAINER --- */}
                 <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
 
-                    {/* View Tabs (Only if Product has Views) */}
+                    {/* View Switcher */}
                     {productId && productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
                             {Object.keys(productData.print_areas).map(view => (
                                 <button
                                     key={view}
                                     onClick={() => handleSwitchView(view)}
-                                    className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${currentView === view ? "bg-black text-white" : "text-slate-600 hover:bg-slate-100"
-                                        }`}
+                                    className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${currentView === view ? "bg-black text-white" : "text-slate-600 hover:bg-slate-100"}`}
                                 >
                                     {view.replace('_', ' ')}
                                 </button>
@@ -353,7 +348,7 @@ export default function EditorPanel() {
                         </div>
                     )}
 
-                    {/* Toolbar */}
+                    {/* Top Toolbar */}
                     <div className="top-bar consolidated-bar">
                         <div className="control-group">
                             <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={past.length === 0} style={{ opacity: past.length === 0 ? 0.25 : 1 }}>
@@ -393,13 +388,10 @@ export default function EditorPanel() {
                                 className="bg-black text-white px-6 py-2.5 rounded-full font-bold shadow-lg hover:bg-gray-800 transition-all flex items-center gap-2"
                             >
                                 <FiCheckCircle size={18} />
-                                {/* Change Text Based on Mode */}
-                                <span>{productId ? "Preview" : "Save Template"}</span>
+                                <span>{productId ? "3D Preview" : "Save Template"}</span>
                             </button>
                         </div>
                     </div>
-
-                    {/* --- THE SCALED CANVAS (Visual Workspace) --- */}
 
                     <CanvasEditor
                         setFabricCanvas={setFabricCanvas}
@@ -417,7 +409,6 @@ export default function EditorPanel() {
 
                 <aside className={`right-panel ${showProperties || !selectedId ? 'active' : ''}`}>
                     {selectedId ? (
-                        /* Case A: Object Selected -> Show Properties */
                         <>
                             <div className="mobile-panel-header">
                                 <span className="mobile-panel-title">Edit Properties</span>
@@ -435,9 +426,7 @@ export default function EditorPanel() {
                             />
                         </>
                     ) : (
-                        /* Case B: Nothing Selected */
                         <div className="p-5">
-                            {/* Only Show Colors if Product is Selected */}
                             {productId && productData.options?.colors?.length > 0 ? (
                                 <>
                                     <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
@@ -473,12 +462,13 @@ export default function EditorPanel() {
                     )}
                 </aside>
 
-                <PreviewModal
+                <ThreeDPreviewModal
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
-                    overlayImage={designPreview}
+                    textures={designTextures}
                     onAddToCart={handleAddToCart}
                     isSaving={isSaving}
+                    productId={productId}
                     productCategory={productId ? productData.category : undefined}
                     selectedColor={productId ? canvasBg : undefined}
                 />
@@ -486,4 +476,3 @@ export default function EditorPanel() {
         </div>
     );
 }
-
