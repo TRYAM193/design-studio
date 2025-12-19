@@ -154,7 +154,7 @@ export default function EditorPanel() {
             fabricCanvas.renderAll();
 
             // 3. Create a temporary canvas to FORCE the exact size
-            const targetSize = 2048;
+            const targetSize = 1024;
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = targetSize;
             tempCanvas.height = targetSize;
