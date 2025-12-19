@@ -193,7 +193,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
                 <Environment preset="city" blur={0.8} />
                 
                 <ContactShadows 
-                    position={[0, -0.85, 0]} 
+                    position={[1, -0.85, 0]} 
                     opacity={0.5} 
                     scale={10} 
                     blur={2} 
