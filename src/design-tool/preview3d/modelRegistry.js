@@ -4,7 +4,7 @@ export const MODEL_REGISTRY = {
         path: "/assets/t-shirt.glb",
         meshes: {
             front: "Body_Front_Node",
-            back: "Body_",
+            back: "Body_Back_Node",
             leftSleeve: "Sleeve_Left",
             rightSleeve: "Sleeve_Right",
             collar: "Collar"
