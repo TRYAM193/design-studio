@@ -60,7 +60,7 @@ function useTextureSafe(url, label) {
         );
         return () => { isActive = false; };
     }, [targetUrl, label]);
-    console.log(texture)
+    console.log(targetUrl)
     return texture;
 }
 
