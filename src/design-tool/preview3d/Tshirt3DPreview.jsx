@@ -65,6 +65,7 @@ function useTextureSafe(url, label) {
 
 // --- 2. MESH LAYER ---
 function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
+    console.log()
     const texture = useTextureSafe(textureUrl, label);
 
     const geometry = useMemo(() => {
