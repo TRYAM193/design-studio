@@ -10,6 +10,7 @@ const EMPTY_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQ
 // --- COMPONENT: DECAL LAYER (THE DESIGN) ---
 function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
     const [texture, setTexture] = React.useState(null);
+    const [error, setError] = React.useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -17,6 +18,7 @@ function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
 
         if (!textureUrl) {
             setTexture(null);
+            setError(false);
             return;
         }
 
@@ -30,9 +32,14 @@ function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
 
                 if (isMounted) {
                     setTexture(tex);
+                    setError(false);
                 }
             } catch (err) {
                 console.error("Texture load failed:", err);
+                if (isMounted) {
+                    setError(true);
+                    setTexture(null);
+                }
             }
         })();
 
@@ -42,7 +49,7 @@ function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
         };
     }, [textureUrl]);
 
-    if (!texture) return null;
+    if (error || !texture) return null;
 
     return (
         <mesh geometry={geometry}>
@@ -59,70 +66,56 @@ function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
     );
 }
 
-
 // --- COMPONENT: REAL GLB MODEL ---
-
 function ProductModel({ productType, textures, color }) {
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
     const { nodes } = useGLTF(config.path, true);
 
-    console.log(textures)
-
-    const mappedTextures = useMemo(() => ({
-        front: textures.front || textures.Front,
-        back: textures.back || textures.Back,
-        leftSleeve: textures.leftSleeve || textures.left_sleeve || textures.Left_Sleeve || textures.left,
-        rightSleeve: textures.rightSleeve || textures.right_sleeve || textures.Right_Sleeve || textures.right,
-    }), [textures]);
-
     // Robust Mesh Finder
     const getMesh = (name) => {
-        if (!name) return null;
+        if (!name || !nodes) return null;
         if (nodes[name]) return nodes[name];
         const noDots = name.replace(/\./g, '');
         const underscore = name.replace(/\./g, '_');
-        return nodes[noDots] || nodes[underscore];
+        return nodes[noDots] || nodes[underscore] || null;
     };
 
-    const matBase = useMemo(() => new THREE.MeshStandardMaterial({ 
+    const matBase = useMemo(() => new THREE.MeshStandardMaterial({
         color: color,
         roughness: 0.6,
         metalness: 0.1,
         side: THREE.DoubleSide
     }), [color]);
 
+    // Collect all meshes that should have base material
+    const allMeshes = new Set();
+    Object.keys(textures || {}).forEach(meshName => {
+        const mesh = getMesh(meshName);
+        if (mesh) allMeshes.add(meshName);
+    });
+    // Add config meshes if not already included
+    Object.values(config.meshes || {}).forEach(meshName => {
+        if (meshName) allMeshes.add(meshName);
+    });
+
     return (
         <group dispose={null}>
-            {getMesh(config.meshes.front) && (
-                <group>
-                    <mesh geometry={getMesh(config.meshes.front).geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={getMesh(config.meshes.front).geometry} textureUrl={mappedTextures.front} />
-                </group>
-            )}
-            {getMesh(config.meshes.back) && (
-                <group>
-                    <mesh geometry={getMesh(config.meshes.back).geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={getMesh(config.meshes.back).geometry} textureUrl={mappedTextures.back} />
-                </group>
-            )}
-            {getMesh(config.meshes.leftSleeve) && (
-                <group>
-                    <mesh geometry={getMesh(config.meshes.leftSleeve).geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={getMesh(config.meshes.leftSleeve).geometry} textureUrl={mappedTextures.leftSleeve} />
-                </group>
-            )}
-            {getMesh(config.meshes.rightSleeve) && (
-                <group>
-                    <mesh geometry={getMesh(config.meshes.rightSleeve).geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={getMesh(config.meshes.rightSleeve).geometry} textureUrl={mappedTextures.rightSleeve} />
-                </group>
-            )}
-            {getMesh(config.meshes.fcollar) && (
-                <mesh geometry={getMesh(config.meshes.fcollar).geometry} material={matBase} />
-            )}
-            {getMesh(config.meshes.bcollar) && (
-                <mesh geometry={getMesh(config.meshes.bcollar).geometry} material={matBase} />
-            )}
+            {/* Render base meshes */}
+            {Array.from(allMeshes).map(meshName => {
+                const mesh = getMesh(meshName);
+                if (!mesh) return null;
+                return (
+                    <mesh key={`base-${meshName}`} geometry={mesh.geometry} material={matBase} castShadow />
+                );
+            })}
+            {/* Render decals for textured meshes */}
+            {Object.entries(textures || {}).map(([meshName, textureUrl]) => {
+                const mesh = getMesh(meshName);
+                if (!mesh) return null;
+                return (
+                    <DecalLayer key={`decal-${meshName}`} geometry={mesh.geometry} textureUrl={textureUrl} />
+                );
+            })}
         </group>
     );
 }
@@ -151,9 +144,9 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
 
     return (
         <div className="w-full h-full relative bg-zinc-900">
-            <Canvas 
-                shadows 
-                gl={{ preserveDrawingBuffer: true, antialias: true }} 
+            <Canvas
+                shadows
+                gl={{ preserveDrawingBuffer: true, antialias: true }}
                 camera={{ position: [0, 0, 2.5], fov: 45 }}
             >
                 <ambientLight intensity={1.2} />
@@ -165,7 +158,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
                     <Center>
                         <ModelErrorBoundary fallback={<FallbackTshirt textures={textures} color={color} />}>
                             <React.Suspense fallback={<FallbackTshirt textures={textures} color={color} />}>
-                                 <ProductModel productType={productType} textures={textures} color={color} />
+                                <ProductModel productType={productType} textures={textures} color={color} />
                             </React.Suspense>
                         </ModelErrorBoundary>
                     </Center>
@@ -175,11 +168,11 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
                 <Environment preset="city" />
                 <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={10} blur={2} />
             </Canvas>
-            
+
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none text-center">
-                 <span className="bg-black/40 text-white/80 text-[10px] px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
+                <span className="bg-black/40 text-white/80 text-[10px] px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
                     Drag to Rotate
-                 </span>
+                </span>
             </div>
         </div>
     );
