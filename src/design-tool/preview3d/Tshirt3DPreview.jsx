@@ -4,10 +4,7 @@ import { useGLTF, OrbitControls, Environment, Center, ContactShadows } from '@re
 import * as THREE from 'three';
 import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 
-/**
- * Custom Hook: Loads a texture safely
- * Handles Blob URLs and prevents race conditions.
- */
+// --- 1. SAFE TEXTURE HOOK ---
 function useTextureSafe(url) {
   const [texture, setTexture] = useState(null);
 
@@ -17,73 +14,67 @@ function useTextureSafe(url) {
       return;
     }
 
-    console.log("Loading Texture URL:", url); // Debugging
-
     let isActive = true;
     const loader = new THREE.TextureLoader();
 
     loader.load(
       url,
-      (loadedTex) => {
-        if (!isActive) {
-          loadedTex.dispose();
-          return;
-        }
-
-        // TEXTURE SETTINGS
-        loadedTex.flipY = false; // CRITICAL for GLB models
-        loadedTex.colorSpace = THREE.SRGBColorSpace;
-        loadedTex.anisotropy = 16; // Makes texture sharp at angles
-        loadedTex.needsUpdate = true;
-        
-        setTexture(loadedTex);
+      (tex) => {
+        if (!isActive) return;
+        // Textures on GLB models must be flipped false
+        tex.flipY = false;
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = 16;
+        tex.needsUpdate = true;
+        setTexture(tex);
       },
       undefined,
-      (err) => {
-        console.error("Texture Load Error:", err);
-        if (isActive) setTexture(null);
-      }
+      (err) => console.error("Texture Error:", err)
     );
 
-    return () => {
-      isActive = false;
-    };
+    return () => { isActive = false; };
   }, [url]);
 
   return texture;
 }
 
-/**
- * Layer Component
- * Renders the shirt color + the design overlaid on top
- */
-function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
+// --- 2. SMART MESH COMPONENT ---
+function MeshLayer({ nodes, meshName, textureUrl, baseColor, debug = false }) {
   const texture = useTextureSafe(textureUrl);
-  
-  // 1. Find the node
-  const node = useMemo(() => {
-    if (!nodes || !meshName) return null;
-    return nodes[meshName] || nodes[meshName.replace(/\./g, '_')]; 
+
+  // SMART FINDER: Handles naming mismatches and Groups vs Meshes
+  const geometry = useMemo(() => {
+    if (!nodes) return null;
+
+    // A. Try exact name
+    let node = nodes[meshName];
+
+    // B. Try Fuzzy Matching (e.g. find "Ribbing" if looking for "Ribbon")
+    if (!node) {
+      const cleanName = meshName.split('_')[0]; // "Ribbon"
+      const match = Object.keys(nodes).find(n => n.includes(cleanName));
+      if (match) node = nodes[match];
+    }
+
+    if (!node) {
+      console.warn(`❌ Node not found: ${meshName}`);
+      return null;
+    }
+
+    // C. Extract Geometry (Handle Groups)
+    if (node.geometry) return node.geometry;
+    if (node.children && node.children.length > 0) {
+      // Find first child with geometry
+      const child = node.children.find(c => c.geometry);
+      if (child) return child.geometry;
+    }
+
+    console.warn(`⚠️ Node ${meshName} found but has no geometry.`);
+    return null;
   }, [nodes, meshName]);
 
-  // 2. SAFETY CHECK: Extract geometry even if node is a Group
-  const geometry = useMemo(() => {
-    if (!node) return null;
-    if (node.geometry) return node.geometry; // It's a Mesh
-    if (node.children && node.children.length > 0) {
-        // It's a Group, find the first mesh child
-        const childMesh = node.children.find(child => child.geometry);
-        return childMesh ? childMesh.geometry : null;
-    }
-    return null;
-  }, [node]);
+  if (!geometry) return null;
 
-  if (!geometry) {
-      if (meshName) console.warn(`⚠️ Mesh "${meshName}" found but has no geometry.`);
-      return null;
-  }
-
-  // Material for the shirt fabric
   const baseMaterial = useMemo(() => new THREE.MeshStandardMaterial({
     color: baseColor,
     roughness: 0.7,
@@ -92,26 +83,23 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
 
   return (
     <group>
-      {/* Base Layer */}
-      <mesh 
-        geometry={geometry} 
-        material={baseMaterial} 
-        castShadow 
-        receiveShadow 
-      />
+      {/* 1. Base Shirt Layer */}
+      <mesh geometry={geometry} material={baseMaterial} castShadow receiveShadow />
 
-      {/* Design Overlay Layer */}
-      {texture && (
+      {/* 2. Decal Layer (The Design) */}
+      {(texture || debug) && (
         <mesh geometry={geometry}>
           <meshStandardMaterial
             map={texture}
+            color={debug ? "red" : "white"} // Debug: Show bright red if no texture
             transparent={true}
             opacity={1}
             roughness={0.8}
             side={THREE.DoubleSide}
+            // Z-Fighting Fix: Pushes decal slightly towards camera
             polygonOffset={true}
             polygonOffsetFactor={-4}
-            depthWrite={false} 
+            depthWrite={false}
           />
         </mesh>
       )}
@@ -119,83 +107,59 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
   );
 }
 
-/**
- * Main Product Model
- */
-// Inside design-tool/preview3d/Tshirt3DPreview.jsx
-
-function ProductModel({ productId, textures, color }) {
+// --- 3. MODEL COMPONENT ---
+function ProductModel({ productId, textures, color, debug }) {
   const productType = resolveProductType(productId);
   const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
   const { nodes } = useGLTF(config.path);
 
-  // 🔍 DEBUG: Log all available mesh names to the console
-  React.useEffect(() => {
-    console.group("🔍 3D Model Debug Info");
-    console.log("Loaded GLB Nodes:", Object.keys(nodes));
-    console.log("Targeting Meshes:", config.meshes);
-    console.groupEnd();
-  }, [nodes, config]);
-
-  const meshKeys = Object.keys(config.meshes);
-
   return (
     <group dispose={null}>
-      {meshKeys.map((key) => (
+      {Object.keys(config.meshes).map((key) => (
         <MeshLayer
           key={key}
           nodes={nodes}
-          meshName={config.meshes[key]} // This name MUST match one in "Loaded GLB Nodes"
+          meshName={config.meshes[key]}
           textureUrl={textures[key]}
           baseColor={color}
+          debug={debug}
         />
       ))}
     </group>
   );
 }
 
-function Loader() {
-  return (
-    <mesh>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="#333" wireframe />
-    </mesh>
-  );
-}
-
+// --- 4. MAIN EXPORT ---
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
+  // Toggle this to TRUE if you still don't see anything. 
+  // It will make the design layer bright RED to prove the mesh exists.
+  const DEBUG_MODE = false; 
+
   return (
     <div className="w-full h-full relative bg-zinc-900">
       <Canvas
         shadows
-        dpr={[1, 2]}
         gl={{ preserveDrawingBuffer: true, antialias: true }}
-        camera={{ position: [0, 0, 3.5], fov: 40 }}
+        camera={{ position: [0, 0, 4.5], fov: 35 }} // Adjusted camera
       >
-        <ambientLight intensity={0.7} />
+        <ambientLight intensity={0.8} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
         <pointLight position={[-10, -10, -10]} intensity={0.5} />
-        
-        <group position={[0, -0.2, 0]}>
+
+        <group position={[0, -0.4, 0]}>
           <Center>
-            <Suspense fallback={<Loader />}>
+            <Suspense fallback={null}>
               <ProductModel 
                 productId={productId} 
                 textures={textures} 
                 color={color} 
+                debug={DEBUG_MODE}
               />
             </Suspense>
           </Center>
         </group>
 
-        <OrbitControls 
-          enablePan={false} 
-          minPolarAngle={Math.PI / 4} 
-          maxPolarAngle={Math.PI / 1.5}
-          minDistance={2}
-          maxDistance={8}
-        />
-        
+        <OrbitControls minDistance={2} maxDistance={8} />
         <Environment preset="city" />
         <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={10} blur={2.5} far={4} />
       </Canvas>
