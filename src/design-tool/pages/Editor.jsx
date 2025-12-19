@@ -152,7 +152,6 @@ export default function EditorPanel() {
             const originalWidth = fabricCanvas.getWidth();
             const targetWidth = 2048; // Good balance of quality vs performance
             const multiplier = originalWidth > 0 ? targetWidth / originalWidth : 1;
-            console.log(originalWidth)
 
             // 3. Export to Blob (Async & Efficient)
             // We wrap fabric's toDataURL in a promise to simulate async blob behavior 
