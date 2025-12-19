@@ -119,7 +119,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
 
                         // Z-Fighting Fix
                         polygonOffset={true}
-                        polygonOffsetFactor={-2}
+                        polygonOffsetFactor={2}
                         depthWrite={false}
 
                         // Force bright white so checkerboard is visible
