@@ -67,26 +67,20 @@ function useTextureSafe(url, label) {
     return texture;
 }
 
-// --- 2. MESH LAYER ---
-// --- 2. MESH LAYER (FIXED) ---
+// --- 2. MESH LAYER (FIXED LAYERING) ---
 function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
-    // 1. Create a reference to the material so we can modify it directly
     const designMaterialRef = React.useRef(null);
-    
-    // 2. Load the texture
     const texture = useTextureSafe(textureUrl, label);
 
-    // 3. Update material settings whenever the texture loads
+    // Update material settings when texture loads
     useEffect(() => {
         if (designMaterialRef.current && texture) {
             const mat = designMaterialRef.current;
-            
             mat.map = texture;
             mat.transparent = true;
             mat.opacity = 1;
             
-            // ⭐️ THE MAGIC FIX: alphaTest
-            // This cuts out the "grey box" by discarding semi-transparent pixels
+            // Transparency Fix
             mat.alphaTest = 0.1; 
             
             mat.side = THREE.DoubleSide;
@@ -121,23 +115,38 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
 
     return (
         <group>
-            {/* Base Layer (The Shirt Fabric) */}
-            <mesh geometry={geometry} material={baseMaterial} castShadow receiveShadow />
+            {/* 1. Base Layer (The Shirt Fabric) */}
+            {/* Render Order 0 = Draws first (background) */}
+            <mesh 
+                geometry={geometry} 
+                material={baseMaterial} 
+                renderOrder={0} 
+                castShadow 
+                receiveShadow 
+            />
 
-            {/* Design Layer (The Print) */}
+            {/* 2. Design Layer (The Print) */}
             {texture && (
-                <mesh geometry={geometry}>
-                    {/* 👇 ATTACH THE REF HERE */}
+                <mesh 
+                    geometry={geometry} 
+                    renderOrder={1} // 🟢 FORCE DRAW ON TOP
+                >
                     <meshStandardMaterial
                         ref={designMaterialRef}
                         transparent={true}
                         
-                        // Z-Fighting Fix (Prevents flickering)
+                        // 🟢 LAYERING MAGIC:
+                        // polygonOffset moves the pixels "closer" to the camera
+                        // without moving the actual 3D object.
                         polygonOffset={true}
-                        polygonOffsetFactor={-1} 
-                        depthWrite={false} 
+                        polygonOffsetFactor={-4} // Stronger "pull" towards camera
+                        polygonOffsetUnits={-4}
                         
-                        // Force white base so colors pop correctly
+                        // Ensure it doesn't mess up the depth buffer for other objects
+                        depthWrite={false} 
+                        depthTest={true} 
+
+                        // Visuals
                         color="#ffffff"
                         roughness={1}
                     />
