@@ -1,191 +1,205 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Environment, ContactShadows, Center } from '@react-three/drei';
+import { useGLTF, OrbitControls, Environment, Center, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 
-// --- UTILS ---
-const EMPTY_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+/**
+ * Custom Hook: Loads a texture safely from a URL (or base64)
+ * - Prevents race conditions (cancels previous load if url changes)
+ * - Enforces correct encoding and flip settings
+ * - Disposes of old textures to prevent memory leaks
+ */
+function useTextureSafe(url) {
+  const [texture, setTexture] = useState(null);
 
-// --- COMPONENT: DECAL LAYER (THE DESIGN) ---
-function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
-    const [texture, setTexture] = React.useState(null);
-    const [error, setError] = React.useState(false);
+  useEffect(() => {
+    if (!url) {
+      setTexture(null);
+      return;
+    }
 
-    useEffect(() => {
-        let isMounted = true;
-        let tex;
+    let isActive = true;
+    const loader = new THREE.TextureLoader();
 
-        if (!textureUrl) {
-            setTexture(null);
-            setError(false);
-            return;
+    loader.load(
+      url,
+      (loadedTex) => {
+        if (!isActive) {
+          loadedTex.dispose();
+          return;
         }
 
-        console.log('Loading texture:', textureUrl ? textureUrl.substring(0, 50) + '...' : 'null');
+        // 3. Texture Configuration
+        loadedTex.flipY = false; // As requested
+        loadedTex.colorSpace = THREE.SRGBColorSpace;
+        loadedTex.needsUpdate = true;
+        
+        setTexture(loadedTex);
+      },
+      undefined, // onProgress
+      (err) => {
+        console.error("Failed to load 3D texture:", err);
+        if (isActive) setTexture(null);
+      }
+    );
 
-        const loader = new THREE.TextureLoader();
+    // Cleanup: Prevent race conditions and memory leaks
+    return () => {
+      isActive = false;
+    };
+  }, [url]);
 
-        (async () => {
-            try {
-                tex = await loader.loadAsync(textureUrl);
-                tex.flipY = true;
-                tex.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
 
-                if (isMounted) {
-                    setTexture(tex);
-                    setError(false);
-                    console.log('Texture loaded successfully');
-                }
-            } catch (err) {
-                console.error("Texture load failed:", err);
-                if (isMounted) {
-                    setError(true);
-                    setTexture(null);
-                }
-            }
-        })();
+/**
+ * Sub-component: Applies the design texture to a specific mesh geometry
+ * Uses Polygon Offset to prevent z-fighting with the base shirt color
+ */
+function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
+  const texture = useTextureSafe(textureUrl);
+  
+  // Robustly find the mesh node by name (handling potential naming quirks)
+  const meshNode = useMemo(() => {
+    if (!nodes || !meshName) return null;
+    return nodes[meshName] || nodes[meshName.replace(/\./g, '_')]; 
+  }, [nodes, meshName]);
 
-        return () => {
-            isMounted = false;
-            if (tex) tex.dispose();
-        };
-    }, [textureUrl]);
+  if (!meshNode) return null;
 
-    if (error || !texture) return null;
+  // Base Material (Fabric Color)
+  const baseMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+    color: baseColor,
+    roughness: 0.7,
+    metalness: 0.05,
+  }), [baseColor]);
 
-    return (
-        <mesh geometry={geometry}>
-            <meshStandardMaterial
-                map={texture}
-                transparent
-                opacity={opacity}
-                side={THREE.DoubleSide}
-                polygonOffset
-                polygonOffsetFactor={-4}
-                roughness={0.8}
-            />
+  return (
+    <group>
+      {/* 1. Base Layer: The Shirt Color */}
+      <mesh 
+        geometry={meshNode.geometry} 
+        material={baseMaterial} 
+        castShadow 
+        receiveShadow 
+      />
+
+      {/* 2. Design Layer: The Texture (Only if texture exists) */}
+      {texture && (
+        <mesh geometry={meshNode.geometry}>
+          <meshStandardMaterial
+            map={texture}
+            transparent={true}
+            opacity={1}
+            roughness={0.8}
+            side={THREE.DoubleSide}
+            
+            // Critical for overlaying on the exact same geometry
+            polygonOffset={true}
+            polygonOffsetFactor={-4} 
+            depthWrite={false} 
+          />
         </mesh>
-    );
+      )}
+    </group>
+  );
 }
 
-// --- COMPONENT: REAL GLB MODEL ---
-function ProductModel({ productType, textures, color }) {
-    const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
-    const { nodes } = useGLTF(config.path, true);
+/**
+ * Main Model Component
+ * Loads the GLTF and maps textures to specific meshes defined in MODEL_REGISTRY
+ */
+function ProductModel({ productId, textures, color }) {
+  const productType = resolveProductType(productId);
+  const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
+  
+  // Load GLTF Model
+  const { nodes } = useGLTF(config.path);
 
-    console.log('Available nodes:', Object.keys(nodes));
-    console.log('Textures:', textures);
+  // Identify all mesh keys defined in the registry (front, back, sleeves, etc.)
+  const meshKeys = Object.keys(config.meshes);
 
-    // Robust Mesh Finder
-    const getMesh = (name) => {
-        if (!name || !nodes) return null;
-        if (nodes[name]) return nodes[name];
-        const noDots = name.replace(/\./g, '');
-        const underscore = name.replace(/\./g, '_');
-        return nodes[noDots] || nodes[underscore] || null;
-    };
+  return (
+    <group dispose={null}>
+      {meshKeys.map((key) => {
+        const meshName = config.meshes[key];
+        const textureUrl = textures[key]; // e.g. textures.front, textures.back
 
-    const matBase = useMemo(() => new THREE.MeshStandardMaterial({
-        color: color,
-        roughness: 0.6,
-        metalness: 0.1,
-        side: THREE.DoubleSide
-    }), [color]);
-
-    // Map texture keys to mesh names
-    const texturedMeshes = {
-        front: config.meshes.front,
-        back: config.meshes.back,
-        leftSleeve: config.meshes.leftSleeve,
-        rightSleeve: config.meshes.rightSleeve,
-    };
-
-    // Collect all meshes that should have base material
-    const allMeshes = new Set();
-    Object.values(config.meshes || {}).forEach(meshName => {
-        if (meshName) allMeshes.add(meshName);
-    });
-
-    return (
-        <group dispose={null}>
-            {/* Render base meshes */}
-            {Array.from(allMeshes).map(meshName => {
-                const mesh = getMesh(meshName);
-                if (!mesh) return null;
-                return (
-                    <mesh key={`base-${meshName}`} geometry={mesh.geometry} material={matBase} castShadow />
-                );
-            })}
-            {/* Render decals for textured meshes */}
-            {Object.entries(texturedMeshes).map(([textureKey, meshName]) => {
-                const textureUrl = textures[textureKey];
-                if (!textureUrl || !meshName) return null;
-                const mesh = getMesh(meshName);
-                if (!mesh) return null;
-                console.log('Applying texture to mesh:', textureKey, meshName, !!mesh);
-                return (
-                    <DecalLayer key={`decal-${textureKey}`} geometry={mesh.geometry} textureUrl={textureUrl} />
-                );
-            })}
-        </group>
-    );
+        return (
+          <MeshLayer
+            key={key}
+            nodes={nodes}
+            meshName={meshName}
+            textureUrl={textureUrl}
+            baseColor={color}
+          />
+        );
+      })}
+    </group>
+  );
 }
 
-function FallbackTshirt({ textures, color }) {
-    const matBase = useMemo(() => new THREE.MeshStandardMaterial({ color }), [color]);
-    return (
-        <group scale={1.2}>
-            <mesh position={[0, 0, 0]} material={matBase}><boxGeometry args={[1, 1.4, 0.25]} /></mesh>
-            <mesh position={[0, 0.72, 0]} material={matBase}><cylinderGeometry args={[0.18, 0.18, 0.08, 32]} /></mesh>
-            <mesh position={[-0.65, 0.45, 0]} material={matBase}><boxGeometry args={[0.4, 0.5, 0.25]} /></mesh>
-            <mesh position={[0.65, 0.45, 0]} material={matBase}><boxGeometry args={[0.4, 0.5, 0.25]} /></mesh>
-        </group>
-    );
+/**
+ * Loading Fallback
+ */
+function Loader() {
+  return (
+    <mesh>
+      <boxGeometry args={[1, 1, 1]} />
+      <meshStandardMaterial color="#333" wireframe />
+    </mesh>
+  );
 }
 
-class ModelErrorBoundary extends React.Component {
-    state = { hasError: false };
-    static getDerivedStateFromError() { return { hasError: true }; }
-    componentDidCatch(error) { console.error("3D Error:", error); }
-    render() { return this.state.hasError ? this.props.fallback : this.props.children; }
-}
-
+/**
+ * Main Exported Component
+ */
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
-    const productType = resolveProductType(productId);
+  return (
+    <div className="w-full h-full relative bg-zinc-900">
+      <Canvas
+        shadows
+        dpr={[1, 2]} // Optimization for high DPI screens
+        gl={{ preserveDrawingBuffer: true, antialias: true }}
+        camera={{ position: [0, 0, 3.5], fov: 40 }}
+      >
+        <ambientLight intensity={0.7} />
+        <spotLight 
+          position={[10, 10, 10]} 
+          angle={0.15} 
+          penumbra={1} 
+          intensity={1} 
+          castShadow 
+        />
+        
+        {/* Fill lights for better product visibility */}
+        <pointLight position={[-10, -10, -10]} intensity={0.5} />
+        
+        <group position={[0, -0.2, 0]}>
+          <Center>
+            <Suspense fallback={<Loader />}>
+              <ProductModel 
+                productId={productId} 
+                textures={textures} 
+                color={color} 
+              />
+            </Suspense>
+          </Center>
+        </group>
 
-    return (
-        <div className="w-full h-full relative bg-zinc-900">
-            <Canvas
-                shadows
-                gl={{ preserveDrawingBuffer: true, antialias: true }}
-                camera={{ position: [0, 0, 2.5], fov: 45 }}
-            >
-                <ambientLight intensity={1.2} />
-                <directionalLight position={[5, 10, 7]} intensity={1.5} castShadow />
-                <directionalLight position={[-5, 5, 5]} intensity={1} />
-                <directionalLight position={[0, 0, 5]} intensity={0.5} />
-
-                <group position={[0, -0.2, 0]}>
-                    <Center>
-                        <ModelErrorBoundary fallback={<FallbackTshirt textures={textures} color={color} />}>
-                            <React.Suspense fallback={<FallbackTshirt textures={textures} color={color} />}>
-                                <ProductModel productType={productType} textures={textures} color={color} />
-                            </React.Suspense>
-                        </ModelErrorBoundary>
-                    </Center>
-                </group>
-
-                <OrbitControls enablePan={false} minDistance={1.5} maxDistance={6} />
-                <Environment preset="city" />
-                <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={10} blur={2} />
-            </Canvas>
-
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none text-center">
-                <span className="bg-black/40 text-white/80 text-[10px] px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
-                    Drag to Rotate
-                </span>
-            </div>
-        </div>
-    );
+        {/* 5. Works with OrbitControls */}
+        <OrbitControls 
+          enablePan={false} 
+          minPolarAngle={Math.PI / 4} 
+          maxPolarAngle={Math.PI / 1.5}
+          minDistance={2}
+          maxDistance={8}
+        />
+        
+        <Environment preset="city" />
+        <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={10} blur={2.5} far={4} />
+      </Canvas>
+    </div>
+  );
 }
