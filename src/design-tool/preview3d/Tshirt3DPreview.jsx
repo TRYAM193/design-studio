@@ -8,7 +8,7 @@ import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 const CHECKERBOARD_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAVElEQVRo3u3RAQ0AAAgCoGv/ny6IBj5gAQ1OR8BqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagP0eO7w/iO8qAAAAABJRU5ErkJggg==";
 
 // Toggle this to TRUE to ignore your design and force the checkerboard
-const FORCE_DEBUG_TEXTURE = true;
+const FORCE_DEBUG_TEXTURE = false;
 
 // --- 1. SAFE TEXTURE HOOK ---
 function useTextureSafe(url, label) {
