@@ -1,88 +1,56 @@
-import React, { useState, useEffect, useMemo, Suspense, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import { Canvas, useLoader } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment, Center, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 
-/**
- * Enhanced texture loader that handles both external URLs and 
- * Fabric.js Base64 data strings correctly for 3D models.
- */
-function useProductTexture(url, label) {
-    const [texture, setTexture] = useState(null);
-
-    useEffect(() => {
-        if (!url) {
-            setTexture(null);
-            return;
+// Improved Texture Loader specifically for Blob/Data URLs
+function DesignTexture({ url }) {
+    // We use standard TextureLoader but immediately configure it for GLTF models
+    const texture = useLoader(THREE.TextureLoader, url);
+    
+    useMemo(() => {
+        if (texture) {
+            texture.flipY = false; // CRITICAL: GLTF models use inverted Y-axis
+            texture.colorSpace = THREE.SRGBColorSpace;
+            texture.needsUpdate = true;
         }
+    }, [texture]);
 
-        const loader = new THREE.TextureLoader();
-        loader.load(
-            url,
-            (tex) => {
-                // IMPORTANT for GLTF: Models use a different coordinate system than web images
-                tex.flipY = false; 
-                tex.colorSpace = THREE.SRGBColorSpace;
-                tex.needsUpdate = true;
-                setTexture(tex);
-                console.log(`[${label}] Texture applied successfully.`);
-            },
-            undefined,
-            (err) => console.error(`[${label}] Failed to load texture:`, err)
-        );
-    }, [url, label]);
-    console.log(texture)
     return texture;
 }
 
-function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
-    const designTexture = useProductTexture(textureUrl, label);
-
-    // Find the correct geometry in the GLTF tree
+function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
     const geometry = useMemo(() => {
-        if (!nodes) return null;
-        let node = nodes[meshName];
-        if (!node) {
-            // Fallback: search for partial matches if the registry name is slightly off
-            const matchKey = Object.keys(nodes).find(k => k.includes(meshName.split('_')[0]));
-            node = nodes[matchKey];
-        }
-        return node?.geometry || node?.children?.find(c => c.geometry)?.geometry || null;
+        const node = nodes[meshName] || Object.values(nodes).find(n => n.name.includes(meshName));
+        return node?.geometry || node?.children?.find(c => c.geometry)?.geometry;
     }, [nodes, meshName]);
 
     if (!geometry) return null;
 
     return (
         <group>
-            {/* BASE FABRIC LAYER */}
+            {/* 1. Base Shirt Layer */}
             <mesh geometry={geometry}>
-                <meshStandardMaterial 
-                    color={baseColor} 
-                    roughness={0.6} 
-                    metalness={0.1} 
-                />
+                <meshStandardMaterial color={baseColor} roughness={0.6} metalness={0.1} />
             </mesh>
 
-            {/* DESIGN OVERLAY LAYER (Fabric.js Design) */}
-            {designTexture && (
-                <mesh geometry={geometry}>
-                    <meshStandardMaterial
-                        transparent={true}
-                        map={designTexture}
-                        /* 
-                           POLYGON OFFSET: This "pulls" the design slightly toward 
-                           the camera to prevent flickering (Z-fighting) without 
-                           needing to scale the mesh.
-                        */
-                        polygonOffset={true}
-                        polygonOffsetFactor={-1}
-                        polygonOffsetUnits={-1}
-                        // Higher alphaTest prevents the "grey box" effect on edges
-                        alphaTest={0.5} 
-                        depthWrite={false}
-                    />
-                </mesh>
+            {/* 2. Design Overlay Layer */}
+            {textureUrl && (
+                <Suspense fallback={null}>
+                    <mesh geometry={geometry}>
+                        <meshStandardMaterial
+                            transparent={true}
+                            polygonOffset={true}
+                            polygonOffsetFactor={-1} // Forces this layer to render in front
+                            polygonOffsetUnits={-1}
+                            alphaTest={0.1} 
+                            depthWrite={false}
+                        >
+                            <DesignTexture url={textureUrl} />
+                        </meshStandardMaterial>
+                    </mesh>
+                </Suspense>
             )}
         </group>
     );
@@ -98,7 +66,6 @@ function ProductModel({ productId, textures, color }) {
             {Object.keys(config.meshes).map((key) => (
                 <MeshLayer
                     key={key}
-                    label={key}
                     nodes={nodes}
                     meshName={config.meshes[key]}
                     textureUrl={textures[key]}
@@ -111,33 +78,20 @@ function ProductModel({ productId, textures, color }) {
 
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
     return (
-        <div className="w-full h-full relative bg-zinc-900" style={{ height: '500px' }}>
-            <Canvas
-                shadows
-                gl={{ preserveDrawingBuffer: true, antialias: true }}
-                camera={{ position: [0, 0, 4], fov: 35 }}
-            >
-                <ambientLight intensity={0.7} />
-                <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1.5} />
+        <div className="w-full h-full min-h-[500px] bg-zinc-900">
+            <Canvas shadows camera={{ position: [0, 0, 4], fov: 35 }}>
+                <ambientLight intensity={0.8} />
+                <pointLight position={[10, 10, 10]} intensity={1} />
                 
                 <Suspense fallback={null}>
                     <Center top>
-                        <ProductModel
-                            productId={productId}
-                            textures={textures}
-                            color={color}
-                        />
+                        <ProductModel productId={productId} textures={textures} color={color} />
                     </Center>
                     <Environment preset="city" />
-                    <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={10} blur={2.5} far={4} />
+                    <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={10} blur={2} far={4} />
                 </Suspense>
 
-                <OrbitControls 
-                    makeDefault 
-                    minDistance={2} 
-                    maxDistance={7} 
-                    enablePan={false} 
-                />
+                <OrbitControls enablePan={false} minDistance={2} maxDistance={7} />
             </Canvas>
         </div>
     );
