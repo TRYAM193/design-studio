@@ -69,7 +69,7 @@ export default function EditorPanel() {
 
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
-    
+
     // Store textures as Blob URLs
     const [designTextures, setDesignTextures] = useState({
         front: null, back: null, leftSleeve: null, rightSleeve: null
@@ -137,52 +137,47 @@ export default function EditorPanel() {
     }, [location.state, fabricCanvas]);
 
     // --- ASYNC BLOB CAPTURE ---
-    const captureCurrentCanvas = async () => {
+    const captureCurrentCanvas = () => {
         if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
         fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
 
-        // High resolution but manageable for Blob
-        const originalWidth = fabricCanvas.getWidth();
-        const targetWidth = 2048; // Increased quality
-        const multiplier = originalWidth > 0 ? Math.min(1, targetWidth / originalWidth) : 1;
-
         try {
-            // Generate a detached canvas element (synchronous setup)
-            const tempCanvas = fabricCanvas.toCanvasElement({
-                multiplier: multiplier,
+            const originalWidth = fabricCanvas.getWidth();
+            const targetWidth = 2048;
+            const multiplier =
+                originalWidth > 0
+                    ? Math.min(1, targetWidth / originalWidth)
+                    : 1;
+
+            const base64 = fabricCanvas.toDataURL({
                 format: 'png',
-                enableRetinaScaling: true
+                multiplier,
+                enableRetinaScaling: true,
+                quality: 1
             });
 
-            // Convert to Blob (Async) - prevents UI freeze
-            const blob = await new Promise((resolve) => {
-                tempCanvas.toBlob((b) => resolve(b), 'image/png', 1.0);
-            });
-
-            if (!blob) throw new Error("Blob generation failed");
-            
-            // Create Object URL
-            const url = URL.createObjectURL(blob);
-            return url;
+            return base64;
 
         } catch (err) {
-            console.error("Failed to generate preview blob:", err);
+            console.error("Failed to generate preview base64:", err);
             return null;
+
         } finally {
             fabricCanvas.backgroundColor = originalBg;
             fabricCanvas.renderAll();
         }
     };
 
+
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
         // Capture current view asynchronously
         const currentSnapshot = await captureCurrentCanvas();
-        
+
         setDesignTextures(prev => {
             // Optional: Revoke old URL to save memory? 
             // For now we keep it to avoid flickering if user switches back.
@@ -209,7 +204,7 @@ export default function EditorPanel() {
 
         try {
             const currentSnapshot = await captureCurrentCanvas();
-            
+
             const updatedTextures = {
                 ...designTextures,
                 [currentView]: currentSnapshot
@@ -232,7 +227,7 @@ export default function EditorPanel() {
         setIsSaving(true);
         setTimeout(() => {
             setIsSaving(false);
-            navigation('/dashboard/templates'); 
+            navigation('/dashboard/templates');
         }, 1500);
     };
 
