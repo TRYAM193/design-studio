@@ -139,48 +139,56 @@ export default function EditorPanel() {
     // --- ASYNC BLOB CAPTURE ---
     // Inside design-tool/pages/Editor.jsx
 
-    const captureCurrentCanvas = async () => {
-        if (!fabricCanvas) return null;
+    // In Editor.jsx
 
-        // 1. Hide background for transparency
-        const originalBg = fabricCanvas.backgroundColor;
-        fabricCanvas.backgroundColor = null;
+const captureCurrentCanvas = async () => {
+    if (!fabricCanvas) return null;
+
+    // 1. Save the original background settings so we can restore them later
+    const originalBg = fabricCanvas.backgroundColor;
+    const originalBgImage = fabricCanvas.backgroundImage;
+
+    try {
+        // 2. AGGRESSIVELY REMOVE BACKGROUNDS
+        // We use .set() to ensure Fabric updates its internal state
+        fabricCanvas.set('backgroundColor', null);
+        fabricCanvas.set('backgroundImage', null);
+        
+        // Force a render to clear the canvas visually before capturing
+        fabricCanvas.renderAll(); 
+
+        // 3. Define settings
+        const TARGET_SIZE = 2048; 
+        const currentWidth = fabricCanvas.getWidth();
+        const multiplier = TARGET_SIZE / currentWidth;
+
+        // 4. Generate the Blob from the TRANSPARENT canvas
+        return new Promise((resolve) => {
+            fabricCanvas.toCanvasElement(multiplier, {
+                width: currentWidth * multiplier,
+                height: fabricCanvas.getHeight() * multiplier,
+                enableRetinaScaling: false // Keep false to prevent 4096px crash
+            }).toBlob((blob) => {
+                if (!blob || blob.size < 1000) {
+                    console.error("❌ Blob generation failed");
+                    resolve(null);
+                    return;
+                }
+                const blobUrl = URL.createObjectURL(blob);
+                resolve(blobUrl);
+            }, 'image/png'); // PNG is required for transparency
+        });
+
+    } catch (err) {
+        console.error("Error generating 3D texture:", err);
+        return null;
+    } finally {
+        // 5. RESTORE BACKGROUND (Crucial!)
+        // Put the user's color/image back immediately
+        fabricCanvas.set('backgroundColor', originalBg);
         fabricCanvas.renderAll();
-
-        try {
-            // 2. Calculate multiplier for high quality (e.g., 2048px)
-            const originalWidth = fabricCanvas.getWidth();
-            const targetWidth = 1024; // Good balance of quality vs performance
-            const multiplier = originalWidth > 0 ? targetWidth / originalWidth : 1;
-
-            // 3. Export to Blob (Async & Efficient)
-            // We wrap fabric's toDataURL in a promise to simulate async blob behavior 
-            // OR better yet, use toCanvasElement if available, but toDataURL is standard in older fabric.
-            // For true efficiency, we convert the base64 to a Blob immediately:
-
-            const dataUrl = fabricCanvas.toDataURL({
-                format: 'png',
-                multiplier: multiplier,
-                quality: 1,
-                enableRetinaScaling: false
-            });
-
-            // Convert Base64 -> Blob -> URL
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-
-            return blobUrl;
-
-        } catch (err) {
-            console.error("Failed to generate preview:", err);
-            return null;
-        } finally {
-            // 4. Restore background
-            fabricCanvas.backgroundColor = originalBg;
-            fabricCanvas.renderAll();
-        }
-    };
+    }
+};
 
 
     const handleSwitchView = async (newView) => {
