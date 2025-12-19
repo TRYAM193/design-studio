@@ -4,12 +4,21 @@ import { useGLTF, OrbitControls, Environment, Center, ContactShadows } from '@re
 import * as THREE from 'three';
 import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 
+// --- DEBUG: PINK/BLACK CHECKERBOARD (Standard "Missing Texture" Pattern) ---
+const CHECKERBOARD_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAVElEQVRo3u3RAQ0AAAgCoGv/ny6IBj5gAQ1OR8BqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagP0eO7w/iO8qAAAAABJRU5ErkJggg==";
+
+// Toggle this to TRUE to ignore your design and force the checkerboard
+const FORCE_DEBUG_TEXTURE = true; 
+
 // --- 1. SAFE TEXTURE HOOK ---
 function useTextureSafe(url, label) {
   const [texture, setTexture] = useState(null);
 
+  // Decide which URL to load
+  const targetUrl = FORCE_DEBUG_TEXTURE ? CHECKERBOARD_TEXTURE : url;
+
   useEffect(() => {
-    if (!url) {
+    if (!targetUrl) {
       setTexture(null);
       return;
     }
@@ -20,50 +29,54 @@ function useTextureSafe(url, label) {
     console.log(`[${label}] Loading texture...`);
 
     loader.load(
-      url,
+      targetUrl,
       (tex) => {
         if (!isActive) return;
-        console.log(`[${label}] ✅ Texture loaded successfully!`);
-        
-        // CRITICAL: Texture settings for GLTF models
+        console.log(`[${label}] ✅ Texture loaded!`);
+
+        // Texture Settings
         tex.flipY = false; 
         tex.colorSpace = THREE.SRGBColorSpace;
-        tex.anisotropy = 16;
+        tex.magFilter = THREE.NearestFilter; // Makes checkerboard crisp
+        tex.minFilter = THREE.NearestFilter;
         tex.needsUpdate = true;
         
         setTexture(tex);
       },
       undefined,
-      (err) => console.error(`[${label}] ❌ Texture failed:`, err)
+      (err) => console.error(`[${label}] ❌ Texture Failed:`, err)
     );
 
     return () => { isActive = false; };
-  }, [url, label]);
+  }, [targetUrl, label]);
 
   return texture;
 }
 
-// --- 2. SMART MESH LAYER ---
+// --- 2. MESH LAYER ---
 function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
   const texture = useTextureSafe(textureUrl, label);
 
-  // Smart Node Finder (Handles Groups & Naming Mismatches)
   const geometry = useMemo(() => {
     if (!nodes) return null;
     
     // 1. Try Exact Match
     let node = nodes[meshName];
     
-    // 2. Try Fuzzy Match (e.g. "Ribbing" matching "Ribbon")
+    // 2. Try Fuzzy Match
     if (!node) {
         const cleanName = meshName.split('_')[0];
         const matchKey = Object.keys(nodes).find(key => key.includes(cleanName));
         if (matchKey) node = nodes[matchKey];
     }
 
-    if (!node) return null;
+    if (!node) {
+        // Only warn if we aren't in force debug mode (to avoid spam)
+        if (!FORCE_DEBUG_TEXTURE) console.warn(`❌ Node not found: ${meshName}`);
+        return null;
+    }
 
-    // 3. Extract Geometry (Handle Groups)
+    // 3. Extract Geometry
     if (node.geometry) return node.geometry;
     if (node.children && node.children.length > 0) {
       const child = node.children.find(c => c.geometry);
@@ -74,32 +87,34 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
 
   if (!geometry) return null;
 
-  // Material for the Shirt Fabric
   const baseMaterial = useMemo(() => new THREE.MeshStandardMaterial({
     color: baseColor,
     roughness: 0.7,
-    metalness: 0.05,
+    metalness: 0.1,
   }), [baseColor]);
 
   return (
     <group>
-      {/* Base Layer (Shirt Color) */}
+      {/* Base Layer */}
       <mesh geometry={geometry} material={baseMaterial} castShadow receiveShadow />
 
-      {/* Design Layer (Only renders if texture exists) */}
+      {/* Design Layer */}
       {texture && (
         <mesh geometry={geometry}>
           <meshStandardMaterial
             map={texture}
             transparent={true}
             opacity={1}
-            roughness={0.5} // Slightly shinier to pop against fabric
             side={THREE.DoubleSide}
             
-            // FIX: Pulls the texture forward to prevent flickering
+            // Z-Fighting Fix
             polygonOffset={true}
-            polygonOffsetFactor={-2} // Adjusted from -4 to -2 for safety
+            polygonOffsetFactor={-2}
             depthWrite={false} 
+            
+            // Force bright white so checkerboard is visible
+            color="white" 
+            roughness={1}
           />
         </mesh>
       )}
@@ -115,11 +130,10 @@ function ProductModel({ productId, textures, color }) {
 
   return (
     <group dispose={null}>
-      {/* Loop through all meshes defined in registry */}
       {Object.keys(config.meshes).map((key) => (
         <MeshLayer
           key={key}
-          label={key} // e.g. "front", "back"
+          label={key}
           nodes={nodes}
           meshName={config.meshes[key]}
           textureUrl={textures[key]}
@@ -130,7 +144,7 @@ function ProductModel({ productId, textures, color }) {
   );
 }
 
-// --- 4. EXPORTED COMPONENT ---
+// --- 4. EXPORT ---
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
   return (
     <div className="w-full h-full relative bg-zinc-900">
@@ -139,12 +153,8 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         camera={{ position: [0, 0, 4.5], fov: 35 }}
       >
-        <ambientLight intensity={0.8} />
-        
-        {/* Main Light */}
+        <ambientLight intensity={1} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
-        
-        {/* Fill Light (Back) - ensures back isn't pitch black */}
         <spotLight position={[-10, 5, -10]} intensity={0.5} />
 
         <group position={[0, -0.4, 0]}>
