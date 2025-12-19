@@ -31,102 +31,83 @@ function DecalLayer({ geometry, textureUrl, opacity = 1, scale = 1.002 }) {
                 transparent={true} 
                 opacity={opacity}
                 side={THREE.DoubleSide}
-                depthWrite={false} // Prevents Z-fighting
-                toneMapped={false} // Keeps colors bright
+                depthWrite={false}
+                toneMapped={false}
             />
         </mesh>
     );
 }
 
-// --- COMPONENT: REAL GLB MODEL (Auto-Discovery) ---
+// --- COMPONENT: REAL GLB MODEL ---
 
 function ProductModel({ productType, textures, color }) {
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
-    const { nodes, scene } = useGLTF(config.path, true);
+    const { nodes } = useGLTF(config.path, true);
     
-    // --- 1. SMART NODE DISCOVERY ---
-    // Inspect all nodes to find the best matches if exact config names fail
-    const discoveredNodes = useMemo(() => {
-        const found = { ...config.meshes }; // Start with defaults
-        const allNodeNames = Object.keys(nodes);
+    // --- DEBUG: Uncomment if still having issues to see loaded node names ---
+    // console.log("Loaded Nodes:", Object.keys(nodes));
 
-        console.log("🔍 Scanning 3D Model Nodes:", allNodeNames);
-
-        // Helper to find a node by partial string
-        const findNode = (search) => allNodeNames.find(n => n.toLowerCase().includes(search.toLowerCase()) && nodes[n].isMesh);
-
-        // Fallback logic: If configured name doesn't exist, search for it
-        if (!nodes[found.front]) found.front = findNode("front") || findNode("body") || found.front;
-        if (!nodes[found.back]) found.back = findNode("back") || found.front; // Fallback to front mesh if back missing
-        if (!nodes[found.leftSleeve]) found.leftSleeve = findNode("sleeve_left") || findNode("sleeve") || found.front;
-        if (!nodes[found.rightSleeve]) found.rightSleeve = findNode("sleeve_right") || found.rightSleeve;
-        
-        return found;
-    }, [nodes, config]);
-
-    // --- 2. ROBUST MATERIAL (Fixes "Black Color") ---
-    // Uses MeshStandardMaterial but with 'emissive' to guarantee visibility
+    // Base Material with Emissive for guaranteed visibility
     const matBase = useMemo(() => new THREE.MeshStandardMaterial({ 
         color: color,
-        emissive: color,       // <--- KEY FIX: Makes it glow slightly with its own color
+        emissive: color,
         emissiveIntensity: 0.2, 
         roughness: 0.5,
         metalness: 0.1,
         side: THREE.DoubleSide
     }), [color]);
 
-    // --- 3. RENDER LOGIC ---
-    // If we found the "Front" mesh, we assume we can map textures.
-    // If not, we render the WHOLE SCENE as a backup.
-    
-    const primaryMesh = nodes[discoveredNodes.front];
-
-    if (!primaryMesh) {
-        console.warn("⚠️ No suitable meshes found. Rendering raw scene.");
-        return <primitive object={scene} scale={10} />; // Fallback to raw model
-    }
+    // Helper to safely get a node (handling potential naming mismatches)
+    const getMesh = (name) => nodes[name];
 
     return (
         <group dispose={null}>
-            {/* FRONT */}
-            {nodes[discoveredNodes.front] && (
+            {/* 1. FRONT */}
+            {getMesh(config.meshes.front) && (
                 <group>
-                    <mesh geometry={nodes[discoveredNodes.front].geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={nodes[discoveredNodes.front].geometry} textureUrl={textures.front} />
+                    <mesh geometry={getMesh(config.meshes.front).geometry} material={matBase} castShadow />
+                    <DecalLayer geometry={getMesh(config.meshes.front).geometry} textureUrl={textures.front} />
                 </group>
             )}
 
-            {/* BACK */}
-            {nodes[discoveredNodes.back] && (
+            {/* 2. BACK */}
+            {getMesh(config.meshes.back) && (
                 <group>
-                    <mesh geometry={nodes[discoveredNodes.back].geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={nodes[discoveredNodes.back].geometry} textureUrl={textures.back} />
+                    <mesh geometry={getMesh(config.meshes.back).geometry} material={matBase} castShadow />
+                    <DecalLayer geometry={getMesh(config.meshes.back).geometry} textureUrl={textures.back} />
                 </group>
             )}
 
-            {/* SLEEVES */}
-            {nodes[discoveredNodes.leftSleeve] && (
+            {/* 3. LEFT SLEEVE */}
+            {getMesh(config.meshes.leftSleeve) && (
                 <group>
-                    <mesh geometry={nodes[discoveredNodes.leftSleeve].geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={nodes[discoveredNodes.leftSleeve].geometry} textureUrl={textures.leftSleeve} />
-                </group>
-            )}
-            {nodes[discoveredNodes.rightSleeve] && (
-                <group>
-                    <mesh geometry={nodes[discoveredNodes.rightSleeve].geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={nodes[discoveredNodes.rightSleeve].geometry} textureUrl={textures.rightSleeve} />
+                    <mesh geometry={getMesh(config.meshes.leftSleeve).geometry} material={matBase} castShadow />
+                    <DecalLayer geometry={getMesh(config.meshes.leftSleeve).geometry} textureUrl={textures.leftSleeve} />
                 </group>
             )}
 
-            {/* COLLAR (If found) */}
-            {nodes[discoveredNodes.collar] && (
-                <mesh geometry={nodes[discoveredNodes.collar].geometry} material={matBase} />
+            {/* 4. RIGHT SLEEVE */}
+            {getMesh(config.meshes.rightSleeve) && (
+                <group>
+                    <mesh geometry={getMesh(config.meshes.rightSleeve).geometry} material={matBase} castShadow />
+                    <DecalLayer geometry={getMesh(config.meshes.rightSleeve).geometry} textureUrl={textures.rightSleeve} />
+                </group>
+            )}
+
+            {/* 5. FRONT COLLAR */}
+            {getMesh(config.meshes.fcollar) && (
+                <mesh geometry={getMesh(config.meshes.fcollar).geometry} material={matBase} />
+            )}
+
+            {/* 6. BACK COLLAR */}
+            {getMesh(config.meshes.bcollar) && (
+                <mesh geometry={getMesh(config.meshes.bcollar).geometry} material={matBase} />
             )}
         </group>
     );
 }
 
-// --- FALLBACK COMPONENT ---
+// --- FALLBACK COMPONENT (Used if GLB fails) ---
 function FallbackTshirt({ textures, color }) {
     const matBase = useMemo(() => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.1 }), [color]);
     return (
@@ -158,11 +139,11 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
                 gl={{ preserveDrawingBuffer: true }} 
                 camera={{ position: [0, 0, 2.5], fov: 45 }}
             >
-                {/* 💡 SUPER BRIGHT LIGHTING SETUP */}
+                {/* Lighting Setup */}
                 <ambientLight intensity={2} />
                 <directionalLight position={[5, 5, 5]} intensity={1.5} />
                 <directionalLight position={[-5, 5, 5]} intensity={1.5} />
-                <directionalLight position={[0, 0, 5]} intensity={1} /> {/* Front Fill */}
+                <directionalLight position={[0, 0, 5]} intensity={1} />
 
                 <group position={[0, -0.2, 0]}>
                     <Center>
@@ -181,7 +162,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
             
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none text-center">
                  <span className="bg-black/40 text-white/80 text-[10px] px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
-                    Drag to Rotate • Auto-Discovery Mode
+                    Drag to Rotate
                  </span>
             </div>
         </div>
