@@ -53,7 +53,7 @@ function useTextureSafe(url, label) {
                 // Explicitly upload now to catch errors early (optional but helpful)
                 // tex.needsUpdate = true; // This is handled by React Three Fiber usually
 
-                setTexture(tex);
+                setTexture(url);
             },
             undefined,
             (err) => console.error(`[${label}] ❌ Texture Failed:`, err)
