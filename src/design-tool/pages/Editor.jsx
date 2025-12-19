@@ -142,38 +142,43 @@ export default function EditorPanel() {
     const captureCurrentCanvas = async () => {
         if (!fabricCanvas) return null;
 
-        // 1. Hide background for transparency
+        // 1. Temporarily remove background for transparency
         const originalBg = fabricCanvas.backgroundColor;
         fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
 
         try {
-            // 2. Calculate multiplier for high quality (e.g., 2048px)
             const originalWidth = fabricCanvas.getWidth();
-            const targetWidth = 2048; // Good balance of quality vs performance
+            const targetWidth = 2048; // High res for 3D
             const multiplier = originalWidth > 0 ? targetWidth / originalWidth : 1;
 
-            // 3. Export to Blob (Async & Efficient)
-            // We wrap fabric's toDataURL in a promise to simulate async blob behavior 
-            // OR better yet, use toCanvasElement if available, but toDataURL is standard in older fabric.
-            // For true efficiency, we convert the base64 to a Blob immediately:
-
-            const dataUrl = fabricCanvas.toDataURL({
-                format: 'png',
-                multiplier: multiplier,
-                quality: 1,
+            // 2. Create a temporary HTMLCanvasElement (High-Res)
+            // This avoids creating a massive Base64 string
+            const tempCanvas = fabricCanvas.toCanvasElement(multiplier, {
+                width: originalWidth * multiplier,
+                height: fabricCanvas.getHeight() * multiplier,
                 enableRetinaScaling: true
             });
 
-            // Convert Base64 -> Blob -> URL
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
+            // 3. Convert directly to Blob (Async & Memory Efficient)
+            return new Promise((resolve) => {
+                tempCanvas.toBlob((blob) => {
+                    // Safety Check: Did we get valid data?
+                    if (!blob || blob.size === 0) {
+                        console.error("Failed to create blob: Size is 0");
+                        resolve(null);
+                        return;
+                    }
 
-            return blobUrl;
+                    console.log(`Texture Generated: ${(blob.size / 1024 / 1024).toFixed(2)} MB`); // Expect ~1-4MB
+
+                    const blobUrl = URL.createObjectURL(blob);
+                    resolve(blobUrl);
+                }, 'image/png');
+            });
 
         } catch (err) {
-            console.error("Failed to generate preview:", err);
+            console.error("Error generating 3D texture:", err);
             return null;
         } finally {
             // 4. Restore background
