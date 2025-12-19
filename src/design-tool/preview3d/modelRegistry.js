@@ -5,7 +5,7 @@ export const MODEL_REGISTRY = {
         meshes: {
             front: "Body_Front_Node",
             back: "Body_Back_Node",
-            leftSleeve: "Sleeve_Left",
+            leftSleeve: "Sleeves_Left",
             rightSleeve: "Sleeve_Right",
             collar: "Collar"
         }
