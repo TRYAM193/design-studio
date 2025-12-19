@@ -11,15 +11,23 @@ const CHECKERBOARD_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAA
 const FORCE_DEBUG_TEXTURE = false;
 
 // --- 1. SAFE TEXTURE HOOK ---
+import { useState, useEffect } from 'react';
+import * as THREE from 'three';
+
 function useTextureSafe(url, label) {
-    console.log(url)
     const [texture, setTexture] = useState(null);
 
-    // Decide which URL to load
-    const targetUrl = FORCE_DEBUG_TEXTURE ? CHECKERBOARD_TEXTURE : url;
+    // 1. Force debug texture if flag is on, otherwise use the passed url
+    // (Make sure FORCE_DEBUG_TEXTURE and CHECKERBOARD_TEXTURE are defined or imported)
+    const targetUrl = (typeof FORCE_DEBUG_TEXTURE !== 'undefined' && FORCE_DEBUG_TEXTURE) 
+        ? CHECKERBOARD_TEXTURE 
+        : url;
 
     useEffect(() => {
+        // 2. STOP if no URL is provided. 
+        // This is why you currently see null - the upstream data is missing!
         if (!targetUrl) {
+            console.warn(`[${label}] Skipping load: URL is undefined`);
             setTexture(null);
             return;
         }
@@ -27,40 +35,39 @@ function useTextureSafe(url, label) {
         let isActive = true;
         const loader = new THREE.TextureLoader();
 
-        console.log(`[${label}] Loading texture...`);
-        console.log("Texture URL being used:", url);
+        console.log(`[${label}] Loading texture from:`, targetUrl);
 
-        // ... inside useTextureSafe ...
-
-        loader.loadAsync(
+        // 3. CORRECTED SYNTAX: Changed 'loadAsync' to 'load'
+        loader.load(
             targetUrl,
             (tex) => {
                 if (!isActive) return;
 
-                // 🛑 STOP if image is invalid (prevents WebGL crash)
-                if (!tex.image || tex.image.width === 0 || tex.image.height === 0) {
+                // Safety Check: Image dimensions
+                if (!tex.image || tex.image.width === 0) {
                     console.error(`[${label}] ❌ Texture loaded but has 0 dimensions!`);
                     return;
                 }
 
-                console.log(`[${label}] ✅ Texture loaded successfully (${tex.image.width}x${tex.image.height})`);
+                console.log(`[${label}] ✅ Texture loaded (${tex.image.width}x${tex.image.height})`);
 
-                // Texture settings
+                // Texture Settings
                 tex.flipY = false;
                 tex.colorSpace = THREE.SRGBColorSpace;
                 tex.anisotropy = 16;
-
-                // Explicitly upload now to catch errors early (optional but helpful)
-                // tex.needsUpdate = true; // This is handled by React Three Fiber usually
+                tex.needsUpdate = true; // Often helps with initial render
 
                 setTexture(tex);
             },
-            undefined,
-            (err) => console.error(`[${label}] ❌ Texture Failed:`, err)
+            undefined, // onProgress (optional)
+            (err) => {
+                if (isActive) console.error(`[${label}] ❌ Texture Failed:`, err);
+            }
         );
+
         return () => { isActive = false; };
     }, [targetUrl, label]);
-    console.log(texture)
+
     return texture;
 }
 
