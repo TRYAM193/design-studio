@@ -9,7 +9,7 @@ const CHECKERBOARD_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAA
 
 // Toggle this to TRUE to ignore your design and force the checkerboard
 const FORCE_DEBUG_TEXTURE = false;
-const material
+const materialRef = useRe
 
 function useTextureSafe(url, label) {
     const [texture, setTexture] = useState(null);
