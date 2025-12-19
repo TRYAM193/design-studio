@@ -3,7 +3,7 @@ export const MODEL_REGISTRY = {
         // Using a placeholder path; in a real app this would be the actual GLB file
         path: "/assets/t-shirt.glb",
         meshes: {
-            front: "Tshirt_Front",
+            front: "Body_",
             back: "Tshirt_Back",
             leftSleeve: "Sleeve_Left",
             rightSleeve: "Sleeve_Right",
