@@ -7,7 +7,7 @@ import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 // --- UTILS ---
 const EMPTY_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
-// --- COMPONENT: TEXTURE LAYER (THE DESIGN) ---
+// --- COMPONENT: TEXTURE LAYER ---
 function DecalLayer({ geometry, textureUrl, opacity = 1, scale = 1.002 }) {
     const texture = useMemo(() => {
         if (!textureUrl || textureUrl === EMPTY_TEXTURE) return null;
@@ -43,11 +43,44 @@ function DecalLayer({ geometry, textureUrl, opacity = 1, scale = 1.002 }) {
 function ProductModel({ productType, textures, color }) {
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
     const { nodes } = useGLTF(config.path, true);
-    
-    // --- DEBUG: Uncomment if still having issues to see loaded node names ---
-    // console.log("Loaded Nodes:", Object.keys(nodes));
 
-    // Base Material with Emissive for guaranteed visibility
+    // --- 1. SMART TEXTURE MAPPING (Fixes "Design Not Applying") ---
+    // Maps common variations (snake_case, camelCase) to standard keys
+    const mappedTextures = useMemo(() => ({
+        front: textures.front || textures.Front,
+        back: textures.back || textures.Back,
+        leftSleeve: textures.leftSleeve || textures.left_sleeve || textures.Left_Sleeve || textures.left,
+        rightSleeve: textures.rightSleeve || textures.right_sleeve || textures.Right_Sleeve || textures.right,
+    }), [textures]);
+
+    // --- 2. ROBUST NODE FINDER (Fixes "Right Sleeve Not Loading") ---
+    // Finds a node even if the name was sanitized (e.g. "Node.001" -> "Node_001")
+    const getMesh = (name) => {
+        if (!name) return null;
+        if (nodes[name]) return nodes[name]; // Exact match
+
+        // Fuzzy match: Look for node that ends with the ID or similar
+        // e.g. "Sleeves_Node.001" might match "Sleeves_Node_001"
+        const cleanName = name.replace('.', '_'); 
+        if (nodes[cleanName]) return nodes[cleanName];
+
+        const keyMatch = Object.keys(nodes).find(key => 
+            key.toLowerCase() === name.toLowerCase() || 
+            key.replace('.', '_') === cleanName
+        );
+        
+        return nodes[keyMatch];
+    };
+
+    // --- DEBUG: Print found keys to console ---
+    useEffect(() => {
+        console.log("🔍 3D Model Loaded. Available Nodes:", Object.keys(nodes));
+        if (!getMesh(config.meshes.rightSleeve)) {
+            console.warn(`⚠️ Could not find Right Sleeve mesh: "${config.meshes.rightSleeve}"`);
+        }
+    }, [nodes, config]);
+
+    // Material with Emissive to ensure it's visible even in dark lighting
     const matBase = useMemo(() => new THREE.MeshStandardMaterial({ 
         color: color,
         emissive: color,
@@ -57,16 +90,13 @@ function ProductModel({ productType, textures, color }) {
         side: THREE.DoubleSide
     }), [color]);
 
-    // Helper to safely get a node (handling potential naming mismatches)
-    const getMesh = (name) => nodes[name];
-
     return (
         <group dispose={null}>
             {/* 1. FRONT */}
             {getMesh(config.meshes.front) && (
                 <group>
                     <mesh geometry={getMesh(config.meshes.front).geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={getMesh(config.meshes.front).geometry} textureUrl={textures.front} />
+                    <DecalLayer geometry={getMesh(config.meshes.front).geometry} textureUrl={mappedTextures.front} />
                 </group>
             )}
 
@@ -74,7 +104,7 @@ function ProductModel({ productType, textures, color }) {
             {getMesh(config.meshes.back) && (
                 <group>
                     <mesh geometry={getMesh(config.meshes.back).geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={getMesh(config.meshes.back).geometry} textureUrl={textures.back} />
+                    <DecalLayer geometry={getMesh(config.meshes.back).geometry} textureUrl={mappedTextures.back} />
                 </group>
             )}
 
@@ -82,7 +112,7 @@ function ProductModel({ productType, textures, color }) {
             {getMesh(config.meshes.leftSleeve) && (
                 <group>
                     <mesh geometry={getMesh(config.meshes.leftSleeve).geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={getMesh(config.meshes.leftSleeve).geometry} textureUrl={textures.leftSleeve} />
+                    <DecalLayer geometry={getMesh(config.meshes.leftSleeve).geometry} textureUrl={mappedTextures.leftSleeve} />
                 </group>
             )}
 
@@ -90,16 +120,14 @@ function ProductModel({ productType, textures, color }) {
             {getMesh(config.meshes.rightSleeve) && (
                 <group>
                     <mesh geometry={getMesh(config.meshes.rightSleeve).geometry} material={matBase} castShadow />
-                    <DecalLayer geometry={getMesh(config.meshes.rightSleeve).geometry} textureUrl={textures.rightSleeve} />
+                    <DecalLayer geometry={getMesh(config.meshes.rightSleeve).geometry} textureUrl={mappedTextures.rightSleeve} />
                 </group>
             )}
 
-            {/* 5. FRONT COLLAR */}
+            {/* 5. COLLARS */}
             {getMesh(config.meshes.fcollar) && (
                 <mesh geometry={getMesh(config.meshes.fcollar).geometry} material={matBase} />
             )}
-
-            {/* 6. BACK COLLAR */}
             {getMesh(config.meshes.bcollar) && (
                 <mesh geometry={getMesh(config.meshes.bcollar).geometry} material={matBase} />
             )}
@@ -107,7 +135,7 @@ function ProductModel({ productType, textures, color }) {
     );
 }
 
-// --- FALLBACK COMPONENT (Used if GLB fails) ---
+// --- FALLBACK COMPONENT ---
 function FallbackTshirt({ textures, color }) {
     const matBase = useMemo(() => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.1 }), [color]);
     return (
@@ -139,7 +167,6 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
                 gl={{ preserveDrawingBuffer: true }} 
                 camera={{ position: [0, 0, 2.5], fov: 45 }}
             >
-                {/* Lighting Setup */}
                 <ambientLight intensity={2} />
                 <directionalLight position={[5, 5, 5]} intensity={1.5} />
                 <directionalLight position={[-5, 5, 5]} intensity={1.5} />
