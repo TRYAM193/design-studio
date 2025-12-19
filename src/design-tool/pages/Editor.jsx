@@ -21,87 +21,22 @@ import {
 } from 'react-icons/fi';
 
 const COLOR_MAP = {
-    // --- WHITES & CREAMS ---
-    "White": "#FFFFFF",
-    "Natural": "#F3E5AB",
-    "Soft Cream": "#F5F5DC",
-    "Sand": "#C2B280",
-    "Silver": "#C0C0C0",
-
-    // --- BLACKS & GREYS ---
-    "Black": "#000000",
-    "Solid Black Blend": "#1a1a1a",
-    "Black Heather": "#2D2D2D",
-    "Charcoal": "#36454F",
-    "Dark Grey": "#4A4A4A",
-    "Asphalt": "#505050",
-    "Dark Heather": "#4B5563",
-    "Dark Grey Heather": "#525252",
-    "Graphite Heather": "#374151",
-    "Deep Heather": "#606060",
-    "Sport Grey": "#9CA3AF",
-    "Athletic Heather": "#9E9E9E",
-    "Ash": "#D1D5DB",
-
-    // --- BLUES ---
-    "Navy": "#000080",
-    "Heather Navy": "#34495E",
-    "Royal": "#2563EB",
-    "True Royal": "#1C39BB",
-    "Heather True Royal": "#4169E1",
-    "Steel Blue": "#4682B4",
-    "Carolina Blue": "#7BAFD4",
-    "Heather Columbia Blue": "#7897BB",
-    "Light Blue": "#ADD8E6",
-    "Baby Blue": "#89CFF0",
-    "Heather Ice Blue": "#A4D3EE",
-    "Turquoise": "#40E0D0",
-    "Aqua": "#00FFFF",
-    "Heather Aqua": "#66CDAA",
-
-    // --- REDS & PINKS ---
-    "Red": "#EF4444",
-    "Heather Red": "#CD5C5C",
-    "Cardinal": "#C41E3A",
-    "Maroon": "#800000",
-    "Heliconia": "#DB2763",
-    "Berry": "#C32148",
-    "Pink": "#FFC0CB",
-    "Light Pink": "#FFB6C1",
-    "Soft Pink": "#FDE9EA",
-    "Charity Pink": "#FF69B4",
-    "Heather Mauve": "#C18995",
-
-    // --- PURPLES ---
-    "Purple": "#6A0DAD",
-    "Team Purple": "#4B0082",
-    "Heather Team Purple": "#663399",
-
-    // --- GREENS ---
-    "Forest Green": "#228B22",
-    "Forest": "#0B6623",
-    "Military Green": "#4B5320",
-    "Army": "#454B1B",
-    "Olive": "#808000",
-    "Heather Olive": "#556B2F",
-    "Irish Green": "#009E60",
-    "Kelly": "#4CBB17",
-    "Heather Kelly": "#3CB371",
-    "Heather Green": "#608060",
-    "Leaf": "#76904A",
-    "Heather Mint": "#98FF98",
-
-    // --- YELLOWS & ORANGES & BROWNS ---
-    "Gold": "#FFD700",
-    "Yellow": "#FFFF00",
-    "Orange": "#FFA500",
-    "Autumn": "#D2691E",
-    "Brown": "#8B4513",
-    "Heather Clay": "#B66A50",
-    "Heather Peach": "#FFCBA4"
+    "White": "#FFFFFF", "Natural": "#F3E5AB", "Soft Cream": "#F5F5DC", "Sand": "#C2B280", "Silver": "#C0C0C0",
+    "Black": "#000000", "Solid Black Blend": "#1a1a1a", "Black Heather": "#2D2D2D", "Charcoal": "#36454F",
+    "Dark Grey": "#4A4A4A", "Asphalt": "#505050", "Dark Heather": "#4B5563", "Dark Grey Heather": "#525252",
+    "Graphite Heather": "#374151", "Deep Heather": "#606060", "Sport Grey": "#9CA3AF", "Athletic Heather": "#9E9E9E",
+    "Ash": "#D1D5DB", "Navy": "#000080", "Heather Navy": "#34495E", "Royal": "#2563EB", "True Royal": "#1C39BB",
+    "Heather True Royal": "#4169E1", "Steel Blue": "#4682B4", "Carolina Blue": "#7BAFD4", "Heather Columbia Blue": "#7897BB",
+    "Light Blue": "#ADD8E6", "Baby Blue": "#89CFF0", "Heather Ice Blue": "#A4D3EE", "Turquoise": "#40E0D0",
+    "Aqua": "#00FFFF", "Heather Aqua": "#66CDAA", "Red": "#EF4444", "Heather Red": "#CD5C5C", "Cardinal": "#C41E3A",
+    "Maroon": "#800000", "Heliconia": "#DB2763", "Berry": "#C32148", "Pink": "#FFC0CB", "Light Pink": "#FFB6C1",
+    "Soft Pink": "#FDE9EA", "Charity Pink": "#FF69B4", "Heather Mauve": "#C18995", "Purple": "#6A0DAD",
+    "Team Purple": "#4B0082", "Heather Team Purple": "#663399", "Forest Green": "#228B22", "Forest": "#0B6623",
+    "Military Green": "#4B5320", "Army": "#454B1B", "Olive": "#808000", "Heather Olive": "#556B2F",
+    "Irish Green": "#009E60", "Kelly": "#4CBB17", "Heather Kelly": "#3CB371", "Heather Green": "#608060",
+    "Leaf": "#76904A", "Heather Mint": "#98FF98", "Gold": "#FFD700", "Yellow": "#FFFF00", "Orange": "#FFA500",
+    "Autumn": "#D2691E", "Brown": "#8B4513", "Heather Clay": "#B66A50", "Heather Peach": "#FFCBA4"
 };
-
-// ... (Keep existing COLOR_MAP constant exactly as is) 
 
 export default function EditorPanel() {
     const dispatch = useDispatch();
@@ -111,7 +46,6 @@ export default function EditorPanel() {
     const { user } = useAuth();
     const userId = user?.uid;
 
-    // --- CANVAS STATE ---
     const [fabricCanvas, setFabricCanvas] = useState(null);
     const [activeTool, setActiveTool] = useState('');
     const [selectedId, setSelectedId] = useState(null);
@@ -123,7 +57,6 @@ export default function EditorPanel() {
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
 
-    // --- PRODUCT & VIEW STATE ---
     const productId = searchParams.get('product');
     const urlColor = searchParams.get('color');
 
@@ -136,27 +69,22 @@ export default function EditorPanel() {
 
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
-
-    // NEW: Store textures for all views
+    
+    // Store textures as Blob URLs
     const [designTextures, setDesignTextures] = useState({
-        front: null,
-        back: null,
-        leftSleeve: null,
-        rightSleeve: null
+        front: null, back: null, leftSleeve: null, rightSleeve: null
     });
 
-    // --- SCALING STATE ---
     const containerRef = useRef(null);
     const [scaleFactor, setScaleFactor] = useState(0.2);
 
-    // --- PREVIEW STATE ---
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false); // New loading state
 
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
 
-    // 1. INITIAL LOAD
     useEffect(() => {
         async function initEditor() {
             if (!productId) return;
@@ -180,7 +108,6 @@ export default function EditorPanel() {
         initEditor();
     }, [productId]);
 
-    // 2. AUTO-SCALE LOGIC
     useEffect(() => {
         function calculateScale() {
             if (!containerRef.current) return;
@@ -197,7 +124,6 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
-    // 3. LOAD EXISTING DESIGN
     useEffect(() => {
         if (location.state?.designToLoad && fabricCanvas) {
             const { designToLoad } = location.state;
@@ -210,41 +136,62 @@ export default function EditorPanel() {
         }
     }, [location.state, fabricCanvas]);
 
-    // --- CAPTURE TEXTURES HELPER ---
-    const captureCurrentCanvas = () => {
+    // --- ASYNC BLOB CAPTURE ---
+    const captureCurrentCanvas = async () => {
         if (!fabricCanvas) return null;
 
-        // DYNAMIC MULTIPLIER: Keeps texture size safe (~1200px)
-        const originalWidth = fabricCanvas.getWidth();
-        const targetWidth = 1200; 
-        const previewMultiplier = originalWidth > 0 ? Math.min(1, targetWidth / originalWidth) : 0.5;
-
         const originalBg = fabricCanvas.backgroundColor;
-        fabricCanvas.backgroundColor = null; 
-        fabricCanvas.renderAll();
-        
-        const dataUrl = fabricCanvas.toDataURL({
-            format: 'png',
-            quality: 0.8,
-            multiplier: previewMultiplier // <--- THIS IS CRITICAL
-        });
-
-        fabricCanvas.backgroundColor = originalBg;
+        fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
 
-        return dataUrl;
+        // High resolution but manageable for Blob
+        const originalWidth = fabricCanvas.getWidth();
+        const targetWidth = 2048; // Increased quality
+        const multiplier = originalWidth > 0 ? Math.min(1, targetWidth / originalWidth) : 1;
+
+        try {
+            // Generate a detached canvas element (synchronous setup)
+            const tempCanvas = fabricCanvas.toCanvasElement({
+                multiplier: multiplier,
+                format: 'png',
+                enableRetinaScaling: true
+            });
+
+            // Convert to Blob (Async) - prevents UI freeze
+            const blob = await new Promise((resolve) => {
+                tempCanvas.toBlob((b) => resolve(b), 'image/png', 1.0);
+            });
+
+            if (!blob) throw new Error("Blob generation failed");
+            
+            // Create Object URL
+            const url = URL.createObjectURL(blob);
+            return url;
+
+        } catch (err) {
+            console.error("Failed to generate preview blob:", err);
+            return null;
+        } finally {
+            fabricCanvas.backgroundColor = originalBg;
+            fabricCanvas.renderAll();
+        }
     };
 
-    const handleSwitchView = (newView) => {
+    const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
-        // Snapshot current view before leaving
-        const currentSnapshot = captureCurrentCanvas();
-        setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
+        // Capture current view asynchronously
+        const currentSnapshot = await captureCurrentCanvas();
+        
+        setDesignTextures(prev => {
+            // Optional: Revoke old URL to save memory? 
+            // For now we keep it to avoid flickering if user switches back.
+            return { ...prev, [currentView]: currentSnapshot };
+        });
 
         setCurrentView(newView);
+        // In real app, load new view JSON here
         fabricCanvas.requestRenderAll();
-        // Note: Logic to load 'newView' JSON state would go here in full implementation
     };
 
     const handleColorChange = (colorName) => {
@@ -255,24 +202,29 @@ export default function EditorPanel() {
         fabricCanvas.renderAll();
     };
 
-    const handleGeneratePreview = () => {
+    const handleGeneratePreview = async () => {
         if (!fabricCanvas) return;
         fabricCanvas.discardActiveObject();
+        setIsGeneratingPreview(true);
 
-        const currentSnapshot = captureCurrentCanvas();
-        
-        // Update state with freshest current view
-        const updatedTextures = {
-            ...designTextures,
-            [currentView]: currentSnapshot
-        };
-        setDesignTextures(updatedTextures);
+        try {
+            const currentSnapshot = await captureCurrentCanvas();
+            
+            const updatedTextures = {
+                ...designTextures,
+                [currentView]: currentSnapshot
+            };
+            setDesignTextures(updatedTextures);
 
-        if (productId) {
-            setIsPreviewOpen(true);
-        } else {
-            console.log("🎨 Blank Canvas: Saving directly...");
-            handleAddToCartDirectly(currentSnapshot);
+            if (productId) {
+                setIsPreviewOpen(true);
+            } else {
+                handleAddToCartDirectly(currentSnapshot);
+            }
+        } catch (error) {
+            console.error("Preview generation error:", error);
+        } finally {
+            setIsGeneratingPreview(false);
         }
     };
 
@@ -333,7 +285,6 @@ export default function EditorPanel() {
 
                 <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
 
-                    {/* View Switcher */}
                     {productId && productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
                             {Object.keys(productData.print_areas).map(view => (
@@ -348,31 +299,19 @@ export default function EditorPanel() {
                         </div>
                     )}
 
-                    {/* Top Toolbar */}
                     <div className="top-bar consolidated-bar">
                         <div className="control-group">
-                            <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={past.length === 0} style={{ opacity: past.length === 0 ? 0.25 : 1 }}>
-                                <FiRotateCcw size={18} />
-                            </button>
-                            <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={future.length === 0} style={{ opacity: future.length === 0 ? 0.25 : 1 }}>
-                                <FiRotateCw size={18} />
-                            </button>
+                            <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={past.length === 0} style={{ opacity: past.length === 0 ? 0.25 : 1 }}><FiRotateCcw size={18} /></button>
+                            <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={future.length === 0} style={{ opacity: future.length === 0 ? 0.25 : 1 }}><FiRotateCw size={18} /></button>
                         </div>
-
                         <div className="control-group divider">
-                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{ opacity: !selectedId ? 0.25 : 1 }}>
-                                <FiTrash2 size={18} />
-                            </button>
+                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{ opacity: !selectedId ? 0.25 : 1 }}><FiTrash2 size={18} /></button>
                         </div>
-
                         {selectedId && !showProperties && (
                             <div className="control-group phone-only">
-                                <button className="top-bar-button accent" onClick={() => setShowProperties(true)}>
-                                    <FiSettings size={18} /> <span>Edit</span>
-                                </button>
+                                <button className="top-bar-button accent" onClick={() => setShowProperties(true)}><FiSettings size={18} /> <span>Edit</span></button>
                             </div>
                         )}
-
                         <div className="control-group">
                             {fabricCanvas && (
                                 <SaveDesignButton
@@ -385,10 +324,11 @@ export default function EditorPanel() {
                             )}
                             <button
                                 onClick={handleGeneratePreview}
+                                disabled={isGeneratingPreview}
                                 className="bg-black text-white px-6 py-2.5 rounded-full font-bold shadow-lg hover:bg-gray-800 transition-all flex items-center gap-2"
                             >
-                                <FiCheckCircle size={18} />
-                                <span>{productId ? "3D Preview" : "Save Template"}</span>
+                                {isGeneratingPreview ? <FiRotateCw className="animate-spin" size={18} /> : <FiCheckCircle size={18} />}
+                                <span>{isGeneratingPreview ? "Processing..." : (productId ? "3D Preview" : "Save Template")}</span>
                             </button>
                         </div>
                     </div>
@@ -438,9 +378,7 @@ export default function EditorPanel() {
                                                 <button
                                                     key={color}
                                                     onClick={() => handleColorChange(color)}
-                                                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group
-                                                        ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}
-                                                    `}
+                                                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}`}
                                                     style={{ backgroundColor: hex }}
                                                     title={color}
                                                 >
@@ -449,14 +387,10 @@ export default function EditorPanel() {
                                             );
                                         })}
                                     </div>
-                                    <p className="text-xs text-slate-400 mt-4 leading-relaxed">
-                                        Visualize your design on different fabric colors.
-                                    </p>
+                                    <p className="text-xs text-slate-400 mt-4 leading-relaxed">Visualize your design on different fabric colors.</p>
                                 </>
                             ) : (
-                                <div className="text-center text-slate-400 py-10">
-                                    <p>Select an element to edit properties.</p>
-                                </div>
+                                <div className="text-center text-slate-400 py-10">Select an element to edit properties.</div>
                             )}
                         </div>
                     )}
