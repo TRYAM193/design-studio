@@ -136,46 +136,39 @@ export default function EditorPanel() {
         }
     }, [location.state, fabricCanvas]);
 
-    // --- ASYNC BLOB CAPTURE ---
-    // Inside design-tool/pages/Editor.jsx
-
-    // In Editor.jsx
-
     const captureCurrentCanvas = () => {
-    if (!fabricCanvas) return null;
+        if (!fabricCanvas) return null;
 
-    const originalBg = fabricCanvas.backgroundColor;
-    fabricCanvas.backgroundColor = null;
-    fabricCanvas.renderAll();
-
-    try {
-        const originalWidth = fabricCanvas.getWidth();
-        const targetWidth = 2048; // preview-safe
-        const multiplier =
-            originalWidth > 0
-                ? Math.min(1, targetWidth / originalWidth)
-                : 1;
-
-        const base64 = fabricCanvas.toDataURL({
-            format: "png",
-            multiplier,
-            enableRetinaScaling: true,
-            quality: 1
-        });
-
-        return base64;
-
-    } catch (err) {
-        console.error("Failed to generate preview base64:", err);
-        return null;
-
-    } finally {
-        fabricCanvas.backgroundColor = originalBg;
+        const originalBg = fabricCanvas.backgroundColor;
+        fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
-    }
-};
 
+        try {
+            const originalWidth = fabricCanvas.getWidth();
+            const targetWidth = 2048; // preview-safe
+            const multiplier =
+                originalWidth > 0
+                    ? Math.min(1, targetWidth / originalWidth)
+                    : 1;
 
+            const base64 = fabricCanvas.toDataURL({
+                format: "png",
+                multiplier,
+                enableRetinaScaling: true,
+                quality: 1
+            });
+
+            return base64;
+
+        } catch (err) {
+            console.error("Failed to generate preview base64:", err);
+            return null;
+
+        } finally {
+            fabricCanvas.backgroundColor = originalBg;
+            fabricCanvas.renderAll();
+        }
+    };
 
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
