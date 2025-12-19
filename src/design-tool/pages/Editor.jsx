@@ -283,6 +283,8 @@ export default function EditorPanel() {
         </div>
     );
 
+    console.log(designTextures)
+
     return (
         <div className="main-app-container">
             <div className="main full-height-main">
