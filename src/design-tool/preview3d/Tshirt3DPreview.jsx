@@ -9,36 +9,56 @@ const EMPTY_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQ
 
 // --- COMPONENT: DECAL LAYER (THE DESIGN) ---
 function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
-    const texture = useMemo(() => {
-        if (!textureUrl || textureUrl === EMPTY_TEXTURE) return null;
-        const loader = new THREE.TextureLoader();
-        const tex = await loader.loadAsync(textureUrl);
-        tex.flipY = false; 
-        tex.colorSpace = THREE.SRGBColorSpace;
-        return tex;
-    }, [textureUrl]);
+    const [texture, setTexture] = React.useState(null);
 
     useEffect(() => {
-        return () => { if (texture) texture.dispose(); };
-    }, [texture]);
+        let isMounted = true;
+        let tex;
+
+        if (!textureUrl) {
+            setTexture(null);
+            return;
+        }
+
+        const loader = new THREE.TextureLoader();
+
+        (async () => {
+            try {
+                tex = await loader.loadAsync(textureUrl);
+                tex.flipY = false;
+                tex.colorSpace = THREE.SRGBColorSpace;
+
+                if (isMounted) {
+                    setTexture(tex);
+                }
+            } catch (err) {
+                console.error("Texture load failed:", err);
+            }
+        })();
+
+        return () => {
+            isMounted = false;
+            if (tex) tex.dispose();
+        };
+    }, [textureUrl]);
 
     if (!texture) return null;
 
     return (
         <mesh geometry={geometry}>
-            <meshStandardMaterial 
-                map={texture} 
-                transparent={true} 
+            <meshStandardMaterial
+                map={texture}
+                transparent
                 opacity={opacity}
                 side={THREE.DoubleSide}
-                depthWrite={true} 
-                polygonOffset={true}
-                polygonOffsetFactor={-4} // Force on top
+                polygonOffset
+                polygonOffsetFactor={-4}
                 roughness={0.8}
             />
         </mesh>
     );
 }
+
 
 // --- COMPONENT: REAL GLB MODEL ---
 
