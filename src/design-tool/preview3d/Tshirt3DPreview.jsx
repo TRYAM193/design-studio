@@ -77,6 +77,9 @@ function ProductModel({ productType, textures, color }) {
             {nodes[config.meshes.collar] && (
                 <mesh geometry={nodes[config.meshes.collar].geometry} material={matBase} />
             )}
+            {nodes[config.meshes.collar] && (
+                <mesh geometry={nodes[config.meshes.collar].geometry} material={matBase} />
+            )}
         </group>
     );
 }
