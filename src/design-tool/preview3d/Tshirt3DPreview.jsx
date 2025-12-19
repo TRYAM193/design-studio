@@ -68,30 +68,41 @@ function useTextureSafe(url, label) {
 }
 
 // --- 2. MESH LAYER ---
+// --- 2. MESH LAYER (FIXED) ---
 function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
-    // console.log(typeof textureUrl, label)
+    // 1. Create a reference to the material so we can modify it directly
+    const designMaterialRef = React.useRef(null);
+    
+    // 2. Load the texture
     const texture = useTextureSafe(textureUrl, label);
+
+    // 3. Update material settings whenever the texture loads
+    useEffect(() => {
+        if (designMaterialRef.current && texture) {
+            const mat = designMaterialRef.current;
+            
+            mat.map = texture;
+            mat.transparent = true;
+            mat.opacity = 1;
+            
+            // ⭐️ THE MAGIC FIX: alphaTest
+            // This cuts out the "grey box" by discarding semi-transparent pixels
+            mat.alphaTest = 0.1; 
+            
+            mat.side = THREE.DoubleSide;
+            mat.needsUpdate = true;
+        }
+    }, [texture]);
 
     const geometry = useMemo(() => {
         if (!nodes) return null;
-
-        // 1. Try Exact Match
         let node = nodes[meshName];
-
-        // 2. Try Fuzzy Match
         if (!node) {
             const cleanName = meshName.split('_')[0];
             const matchKey = Object.keys(nodes).find(key => key.includes(cleanName));
             if (matchKey) node = nodes[matchKey];
         }
-
-        if (!node) {
-            // Only warn if we aren't in force debug mode (to avoid spam)
-            if (!FORCE_DEBUG_TEXTURE) console.warn(`❌ Node not found: ${meshName}`);
-            return null;
-        }
-
-        // 3. Extract Geometry
+        if (!node) return null;
         if (node.geometry) return node.geometry;
         if (node.children && node.children.length > 0) {
             const child = node.children.find(c => c.geometry);
@@ -99,7 +110,6 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
         }
         return null;
     }, [nodes, meshName]);
-    console.log(geometry)
 
     if (!geometry) return null;
 
@@ -108,29 +118,27 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
         roughness: 0.7,
         metalness: 0.1,
     }), [baseColor]);
-    console.log(baseMaterial)
 
     return (
         <group>
-            {/* Base Layer */}
+            {/* Base Layer (The Shirt Fabric) */}
             <mesh geometry={geometry} material={baseMaterial} castShadow receiveShadow />
 
-            {/* Design Layer */}
+            {/* Design Layer (The Print) */}
             {texture && (
                 <mesh geometry={geometry}>
+                    {/* 👇 ATTACH THE REF HERE */}
                     <meshStandardMaterial
-                        map={texture}
+                        ref={designMaterialRef}
                         transparent={true}
-                        opacity={1}
-                        side={THREE.DoubleSide}
-
-                        // Z-Fighting Fix
+                        
+                        // Z-Fighting Fix (Prevents flickering)
                         polygonOffset={true}
-                        polygonOffsetFactor={-2}
-                        depthWrite={false}
-
-                        // Force bright white so checkerboard is visible
-                        color="white"
+                        polygonOffsetFactor={-1} 
+                        depthWrite={false} 
+                        
+                        // Force white base so colors pop correctly
+                        color="#ffffff"
                         roughness={1}
                     />
                 </mesh>
