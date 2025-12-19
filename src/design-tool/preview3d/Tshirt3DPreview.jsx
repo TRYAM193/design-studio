@@ -60,14 +60,28 @@ function useTextureSafe(url) {
 function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
   const texture = useTextureSafe(textureUrl);
   
-  // Find node safely
-  const meshNode = useMemo(() => {
+  // 1. Find the node
+  const node = useMemo(() => {
     if (!nodes || !meshName) return null;
-    // Try exact match or cleaned match
     return nodes[meshName] || nodes[meshName.replace(/\./g, '_')]; 
   }, [nodes, meshName]);
 
-  if (!meshNode) return null;
+  // 2. SAFETY CHECK: Extract geometry even if node is a Group
+  const geometry = useMemo(() => {
+    if (!node) return null;
+    if (node.geometry) return node.geometry; // It's a Mesh
+    if (node.children && node.children.length > 0) {
+        // It's a Group, find the first mesh child
+        const childMesh = node.children.find(child => child.geometry);
+        return childMesh ? childMesh.geometry : null;
+    }
+    return null;
+  }, [node]);
+
+  if (!geometry) {
+      if (meshName) console.warn(`⚠️ Mesh "${meshName}" found but has no geometry.`);
+      return null;
+  }
 
   // Material for the shirt fabric
   const baseMaterial = useMemo(() => new THREE.MeshStandardMaterial({
@@ -78,27 +92,25 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
 
   return (
     <group>
-      {/* 1. Base Shirt Layer */}
+      {/* Base Layer */}
       <mesh 
-        geometry={meshNode.geometry} 
+        geometry={geometry} 
         material={baseMaterial} 
         castShadow 
         receiveShadow 
       />
 
-      {/* 2. Design Overlay Layer (Only if texture exists) */}
+      {/* Design Overlay Layer */}
       {texture && (
-        <mesh geometry={meshNode.geometry}>
+        <mesh geometry={geometry}>
           <meshStandardMaterial
             map={texture}
-            transparent={true} // Allows PNG transparency
+            transparent={true}
             opacity={1}
             roughness={0.8}
             side={THREE.DoubleSide}
-            
-            // PREVENT Z-FIGHTING:
             polygonOffset={true}
-            polygonOffsetFactor={-4} // Pushes pixels slightly towards camera
+            polygonOffsetFactor={-4}
             depthWrite={false} 
           />
         </mesh>
