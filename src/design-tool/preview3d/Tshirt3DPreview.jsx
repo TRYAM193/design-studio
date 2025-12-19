@@ -108,6 +108,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
         roughness: 0.7,
         metalness: 0.1,
     }), [baseColor]);
+    console.log(baseMaterial)
 
     return (
         <group>
