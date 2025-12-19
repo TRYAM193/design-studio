@@ -135,7 +135,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
 
 // --- 3. MAIN MODEL ---
 function ProductModel({ productId, textures, color }) {
-    console.log(text)
+    console.log(textures)
     const productType = resolveProductType(productId);
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
     const { nodes } = useGLTF(config.path);
