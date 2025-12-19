@@ -4,21 +4,27 @@ import { useGLTF, OrbitControls, Environment, Center, ContactShadows } from '@re
 import * as THREE from 'three';
 import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 
-// --- DEBUG: PINK/BLACK CHECKERBOARD ---
-const CHECKERBOARD_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAVElEQVRo3u3RAQ0AAAgCoGv/ny6IBj5gAQ1OR8BqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagP0eO7w/iO8qAAAAABJRU5ErkJggg==";
+// --- DEBUG: PINK/BLACK CHECKERBOARD (Standard "Missing Texture" Pattern) ---
+const CHECKERBOARD_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAVElEQVRo3u3RAQ0AAAgCoGv/ny6IBj5gAQ1OR8BqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagP0eO7w/iO8qAAAAABJRU5ErkJggg==";
 
+// Toggle this to TRUE to ignore your design and force the checkerboard
 const FORCE_DEBUG_TEXTURE = false;
+const materialRef = useRef()
 
-// 1. REVISED HOOK: Returns the texture object safely
 function useTextureSafe(url, label) {
     const [texture, setTexture] = useState(null);
 
+    // 1. Force debug texture if flag is on, otherwise use the passed url
+    // (Make sure FORCE_DEBUG_TEXTURE and CHECKERBOARD_TEXTURE are defined or imported)
     const targetUrl = (typeof FORCE_DEBUG_TEXTURE !== 'undefined' && FORCE_DEBUG_TEXTURE)
         ? CHECKERBOARD_TEXTURE
         : url;
 
     useEffect(() => {
+        // 2. STOP if no URL is provided. 
+        // This is why you currently see null - the upstream data is missing!
         if (!targetUrl) {
+            console.warn(`[${label}] Skipping load: URL is undefined`);
             setTexture(null);
             return;
         }
@@ -28,11 +34,13 @@ function useTextureSafe(url, label) {
 
         console.log(`[${label}] Loading texture from:`, targetUrl);
 
+        // 3. CORRECTED SYNTAX: Changed 'loadAsync' to 'load'
         loader.load(
             targetUrl,
             (tex) => {
                 if (!isActive) return;
 
+                // Safety Check: Image dimensions
                 if (!tex.image || tex.image.width === 0) {
                     console.error(`[${label}] ❌ Texture loaded but has 0 dimensions!`);
                     return;
@@ -40,15 +48,30 @@ function useTextureSafe(url, label) {
 
                 console.log(`[${label}] ✅ Texture loaded (${tex.image.width}x${tex.image.height})`);
 
-                // Basic Texture Setup
+                // Texture Settings
                 tex.flipY = false;
                 tex.colorSpace = THREE.SRGBColorSpace;
                 tex.anisotropy = 16;
-                tex.needsUpdate = true;
+                tex.needsUpdate = true; // Often helps with initial render
+                tex.flipY = false; // Try toggling this to 'true' if the text is upside down
+
+                // 2. APPLY TO MATERIAL
+                if (materialRef.current) {
+                    materialRef.current.map = tex;
+
+                    // 🛑 CRITICAL FIX FOR TRANSPARENCY
+                    materialRef.current.transparent = true;  // Enable alpha channel
+                    materialRef.current.side = THREE.DoubleSide; // Fixes visibility issues
+
+                    // Optional: Helps remove "white outlines" on transparent edges
+                    materialRef.current.alphaTest = 0.1;
+
+                    materialRef.current.needsUpdate = true;
+                }
 
                 setTexture(tex);
             },
-            undefined,
+            undefined, // onProgress (optional)
             (err) => {
                 if (isActive) console.error(`[${label}] ❌ Texture Failed:`, err);
             }
@@ -56,44 +79,35 @@ function useTextureSafe(url, label) {
 
         return () => { isActive = false; };
     }, [targetUrl, label]);
-
+    console.log(texture)
     return texture;
 }
 
-// --- 2. MESH LAYER (FIXED) ---
+// --- 2. MESH LAYER ---
 function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
-    // A. Create the ref INSIDE the component
-    const designMaterialRef = useRef(null);
-
-    // Get texture from hook
+    // console.log(typeof textureUrl, label)
     const texture = useTextureSafe(textureUrl, label);
-
-    // B. Handle Material Updates when texture changes
-    useEffect(() => {
-        if (designMaterialRef.current && texture) {
-            // Assign map
-            designMaterialRef.current.map = texture;
-            
-            // 🛑 CRITICAL FIX FOR TRANSPARENCY
-            designMaterialRef.current.transparent = true;
-            designMaterialRef.current.alphaTest = 0.05; // Removes jagged white edges
-            designMaterialRef.current.depthWrite = false; // Prevents "transparency sorting" glitches
-            designMaterialRef.current.side = THREE.DoubleSide;
-            
-            designMaterialRef.current.needsUpdate = true;
-        }
-    }, [texture]); // Runs whenever texture loads
 
     const geometry = useMemo(() => {
         if (!nodes) return null;
+
+        // 1. Try Exact Match
         let node = nodes[meshName];
+
+        // 2. Try Fuzzy Match
         if (!node) {
             const cleanName = meshName.split('_')[0];
             const matchKey = Object.keys(nodes).find(key => key.includes(cleanName));
             if (matchKey) node = nodes[matchKey];
         }
-        if (!node) return null;
 
+        if (!node) {
+            // Only warn if we aren't in force debug mode (to avoid spam)
+            if (!FORCE_DEBUG_TEXTURE) console.warn(`❌ Node not found: ${meshName}`);
+            return null;
+        }
+
+        // 3. Extract Geometry
         if (node.geometry) return node.geometry;
         if (node.children && node.children.length > 0) {
             const child = node.children.find(c => c.geometry);
@@ -101,37 +115,38 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
         }
         return null;
     }, [nodes, meshName]);
+    console.log(geometry)
 
     if (!geometry) return null;
 
-    // Base shirt material
     const baseMaterial = useMemo(() => new THREE.MeshStandardMaterial({
         color: baseColor,
         roughness: 0.7,
         metalness: 0.1,
     }), [baseColor]);
+    console.log(baseMaterial)
 
     return (
         <group>
-            {/* Base Layer (The Shirt Color) */}
+            {/* Base Layer */}
             <mesh geometry={geometry} material={baseMaterial} castShadow receiveShadow />
 
-            {/* Design Layer (The Print) */}
+            {/* Design Layer */}
             {texture && (
                 <mesh geometry={geometry}>
-                    {/* 👇 ATTACH THE REF HERE 👇 */}
                     <meshStandardMaterial
-                        ref={designMaterialRef} 
                         map={texture}
                         transparent={true}
-                        
-                        // Z-Fighting Fix (Prevents flickering)
+                        opacity={1}
+                        side={THREE.DoubleSide}
+
+                        // Z-Fighting Fix
                         polygonOffset={true}
                         polygonOffsetFactor={-2}
-                        depthWrite={false} // Important for overlays
-                        
-                        // Force white base so colors pop correctly
-                        color="#ffffff" 
+                        depthWrite={false}
+
+                        // Force bright white so checkerboard is visible
+                        color="white"
                         roughness={1}
                     />
                 </mesh>
@@ -142,6 +157,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
 
 // --- 3. MAIN MODEL ---
 function ProductModel({ productId, textures, color }) {
+    // console.log(textures)
     const productType = resolveProductType(productId);
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
     const { nodes } = useGLTF(config.path);
