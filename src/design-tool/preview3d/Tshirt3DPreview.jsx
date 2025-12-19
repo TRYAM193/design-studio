@@ -27,6 +27,7 @@ function useTextureSafe(url, label) {
         const loader = new THREE.TextureLoader();
 
         console.log(`[${label}] Loading texture...`);
+        console.log("Texture URL being used:", url);
 
         // ... inside useTextureSafe ...
 
