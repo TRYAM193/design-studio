@@ -67,12 +67,12 @@ function useTextureSafe(url, label) {
     return texture;
 }
 
-// --- 2. MESH LAYER (FIXED LAYERING) ---
+// --- 2. MESH LAYER (THE "PHYSICAL SHELL" FIX) ---
 function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
     const designMaterialRef = React.useRef(null);
     const texture = useTextureSafe(textureUrl, label);
 
-    // Update material settings when texture loads
+    // Update material settings
     useEffect(() => {
         if (designMaterialRef.current && texture) {
             const mat = designMaterialRef.current;
@@ -80,10 +80,12 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
             mat.transparent = true;
             mat.opacity = 1;
             
-            // Transparency Fix
-            mat.alphaTest = 0.1; 
+            // Allow seeing it from both sides (Inside & Outside)
+            mat.side = THREE.DoubleSide; 
             
-            mat.side = THREE.DoubleSide;
+            // Fix "Grey Box" (removes invisible pixels)
+            mat.alphaTest = 0.05; 
+
             mat.needsUpdate = true;
         }
     }, [texture]);
@@ -98,6 +100,8 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
         }
         if (!node) return null;
         if (node.geometry) return node.geometry;
+        
+        // Handle nested children
         if (node.children && node.children.length > 0) {
             const child = node.children.find(c => c.geometry);
             if (child) return child.geometry;
@@ -116,39 +120,35 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
     return (
         <group>
             {/* 1. Base Layer (The Shirt Fabric) */}
-            {/* Render Order 0 = Draws first (background) */}
             <mesh 
                 geometry={geometry} 
                 material={baseMaterial} 
-                renderOrder={0} 
-                castShadow 
-                receiveShadow 
+                renderOrder={0} // Draw First
             />
 
             {/* 2. Design Layer (The Print) */}
             {texture && (
                 <mesh 
                     geometry={geometry} 
-                    renderOrder={1} // 🟢 FORCE DRAW ON TOP
+                    renderOrder={1} // Draw Second (On Top)
+                    
+                    // ⭐️ THE FIX: Physically scale it up slightly
+                    // This creates a "shell" around the shirt so it CANNOT be hidden
+                    scale={1.002} 
                 >
                     <meshStandardMaterial
                         ref={designMaterialRef}
                         transparent={true}
                         
-                        // 🟢 LAYERING MAGIC:
-                        // polygonOffset moves the pixels "closer" to the camera
-                        // without moving the actual 3D object.
-                        polygonOffset={true}
-                        polygonOffsetFactor={-4} // Stronger "pull" towards camera
-                        polygonOffsetUnits={-4}
-                        
-                        // Ensure it doesn't mess up the depth buffer for other objects
+                        // Disable Z-fighting depth writes since we are using scale
                         depthWrite={false} 
-                        depthTest={true} 
-
-                        // Visuals
+                        
+                        // Force brightness
                         color="#ffffff"
                         roughness={1}
+                        
+                        // Ensure backface visibility (fixes "visible from inside only")
+                        side={THREE.DoubleSide}
                     />
                 </mesh>
             )}
