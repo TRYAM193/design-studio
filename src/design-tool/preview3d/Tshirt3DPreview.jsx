@@ -5,19 +5,43 @@ import { OrbitControls, useGLTF, useTexture, Decal } from "@react-three/drei";
 import { MODEL_REGISTRY, resolveProductType } from "./modelRegistry";
 
 function useDesignTexture(base64) {
-    const hasTexture = typeof base64 === "string" && base64.startsWith("data:");
-
-    const texture = useTexture(hasTexture ? base64 : undefined);
+    const [texture, setTexture] = React.useState(null);
 
     React.useEffect(() => {
-        if (!texture) return;
-        texture.flipY = false;
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.needsUpdate = true;
-    }, [texture]);
+        if (!base64 || typeof base64 !== "string") {
+            setTexture(null);
+            return;
+        }
 
-    return hasTexture ? texture : null;
+        let cancelled = false;
+        const loader = new THREE.TextureLoader();
+
+        loader.load(
+            base64,
+            (tex) => {
+                if (cancelled) return;
+
+                tex.flipY = false;
+                tex.colorSpace = THREE.SRGBColorSpace;
+                tex.needsUpdate = true;
+
+                setTexture(tex);
+            },
+            undefined,
+            (err) => {
+                console.error("Texture load failed", err);
+                setTexture(null);
+            }
+        );
+
+        return () => {
+            cancelled = true;
+        };
+    }, [base64]);
+
+    return texture;
 }
+
 
 
 function TshirtModel({ productId, textures, color }) {
