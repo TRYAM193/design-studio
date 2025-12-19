@@ -137,35 +137,46 @@ export default function EditorPanel() {
     }, [location.state, fabricCanvas]);
 
     // --- ASYNC BLOB CAPTURE ---
-    const captureCurrentCanvas = () => {
+    // Inside design-tool/pages/Editor.jsx
+
+    const captureCurrentCanvas = async () => {
         if (!fabricCanvas) return null;
 
+        // 1. Hide background for transparency
         const originalBg = fabricCanvas.backgroundColor;
         fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
 
         try {
+            // 2. Calculate multiplier for high quality (e.g., 2048px)
             const originalWidth = fabricCanvas.getWidth();
-            const targetWidth = 2048;
-            const multiplier =
-                originalWidth > 0
-                    ? Math.min(1, targetWidth / originalWidth)
-                    : 1;
+            const targetWidth = 2048; // Good balance of quality vs performance
+            const multiplier = originalWidth > 0 ? targetWidth / originalWidth : 1;
 
-            const base64 = fabricCanvas.toDataURL({
+            // 3. Export to Blob (Async & Efficient)
+            // We wrap fabric's toDataURL in a promise to simulate async blob behavior 
+            // OR better yet, use toCanvasElement if available, but toDataURL is standard in older fabric.
+            // For true efficiency, we convert the base64 to a Blob immediately:
+
+            const dataUrl = fabricCanvas.toDataURL({
                 format: 'png',
-                multiplier,
-                enableRetinaScaling: true,
-                quality: 1
+                multiplier: multiplier,
+                quality: 1,
+                enableRetinaScaling: true
             });
 
-            return base64;
+            // Convert Base64 -> Blob -> URL
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+
+            return blobUrl;
 
         } catch (err) {
-            console.error("Failed to generate preview base64:", err);
+            console.error("Failed to generate preview:", err);
             return null;
-
         } finally {
+            // 4. Restore background
             fabricCanvas.backgroundColor = originalBg;
             fabricCanvas.renderAll();
         }
