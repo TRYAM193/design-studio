@@ -22,6 +22,8 @@ function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
             return;
         }
 
+        console.log('Loading texture:', textureUrl ? textureUrl.substring(0, 50) + '...' : 'null');
+
         const loader = new THREE.TextureLoader();
 
         (async () => {
@@ -33,6 +35,7 @@ function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
                 if (isMounted) {
                     setTexture(tex);
                     setError(false);
+                    console.log('Texture loaded successfully');
                 }
             } catch (err) {
                 console.error("Texture load failed:", err);
