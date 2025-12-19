@@ -80,7 +80,7 @@ export default function EditorPanel() {
 
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false); // New loading state
 
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
@@ -136,7 +136,7 @@ export default function EditorPanel() {
         }
     }, [location.state, fabricCanvas]);
 
-    // --- ROBUST ASYNC BLOB CAPTURE ---
+    // --- ASYNC BLOB CAPTURE ---
     const captureCurrentCanvas = async () => {
         if (!fabricCanvas) return null;
 
@@ -144,49 +144,32 @@ export default function EditorPanel() {
         fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
 
-        try {
-            // 1. Calculate Safer Multiplier (Max 1200px)
-            const width = fabricCanvas.getWidth();
-            const height = fabricCanvas.getHeight();
-            const maxDim = Math.max(width, height);
-            const targetDim = 1200; // Reduced from 2048 to prevent crashes
-            const multiplier = maxDim > targetDim ? (targetDim / maxDim) : 1;
+        // High resolution but manageable for Blob
+        const originalWidth = fabricCanvas.getWidth();
+        const targetWidth = 2048; // Increased quality
+        const multiplier = originalWidth > 0 ? Math.min(1, targetWidth / originalWidth) : 1;
 
-            // 2. Create Temp Canvas
+        try {
+            // Generate a detached canvas element (synchronous setup)
             const tempCanvas = fabricCanvas.toCanvasElement({
                 multiplier: multiplier,
                 format: 'png',
-                enableRetinaScaling: false // CRITICAL: Disabling this saves 4x memory
+                enableRetinaScaling: true
             });
 
-            // 3. Convert to Blob
-            let blob = await new Promise((resolve) => {
-                tempCanvas.toBlob((b) => resolve(b), 'image/png', 0.8);
+            // Convert to Blob (Async) - prevents UI freeze
+            const blob = await new Promise((resolve) => {
+                tempCanvas.toBlob((b) => resolve(b), 'image/png', 1.0);
             });
 
-            // 4. Fallback: If toBlob fails, try toDataURL -> Blob
-            if (!blob) {
-                console.warn("⚠️ Standard Blob generation failed. Attempting fallback...");
-                const dataUrl = fabricCanvas.toDataURL({
-                    format: 'png',
-                    quality: 0.8,
-                    multiplier: multiplier,
-                    enableRetinaScaling: false
-                });
-                const res = await fetch(dataUrl);
-                blob = await res.blob();
-            }
-
-            if (!blob) throw new Error("Final blob generation failed");
+            if (!blob) throw new Error("Blob generation failed");
             
-            return URL.createObjectURL(blob);
+            // Create Object URL
+            const url = URL.createObjectURL(blob);
+            return url;
 
         } catch (err) {
-            console.error("❌ Capture failed:", err);
-            // Alert user if it's likely a CORS issue (Tainted Canvas)
-            if (err.name === 'SecurityError' || err.message.includes("Tainted")) {
-                alert("Cannot preview: Some images in your design are blocked by browser security (CORS).");
-            }
+            console.error("Failed to generate preview blob:", err);
             return null;
         } finally {
             fabricCanvas.backgroundColor = originalBg;
@@ -200,9 +183,14 @@ export default function EditorPanel() {
         // Capture current view asynchronously
         const currentSnapshot = await captureCurrentCanvas();
         
-        setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
+        setDesignTextures(prev => {
+            // Optional: Revoke old URL to save memory? 
+            // For now we keep it to avoid flickering if user switches back.
+            return { ...prev, [currentView]: currentSnapshot };
+        });
 
         setCurrentView(newView);
+        // In real app, load new view JSON here
         fabricCanvas.requestRenderAll();
     };
 
@@ -220,15 +208,8 @@ export default function EditorPanel() {
         setIsGeneratingPreview(true);
 
         try {
-            // Wait for blob generation
             const currentSnapshot = await captureCurrentCanvas();
             
-            if (!currentSnapshot && productId) {
-                // If capture failed but we need it for preview, stop here
-                setIsGeneratingPreview(false);
-                return; 
-            }
-
             const updatedTextures = {
                 ...designTextures,
                 [currentView]: currentSnapshot
@@ -428,15 +409,4 @@ export default function EditorPanel() {
             </div>
         </div>
     );
-} Standard Blob generation failed. Attempting fallback...
-captureCurrentCanvas @ Editor.jsx:169
-await in captureCurrentCanvas
-handleGeneratePreview @ Editor.jsx:224
-executeDispatch @ chunk-P7R3MQQ5.js?v=990b6515:13622
-runWithFiberInDEV @ chunk-P7R3MQQ5.js?v=990b6515:997
-processDispatchQueue @ chunk-P7R3MQQ5.js?v=990b6515:13658
-(anonymous) @ chunk-P7R3MQQ5.js?v=990b6515:14071
-batchedUpdates$1 @ chunk-P7R3MQQ5.js?v=990b6515:2626
-dispatchEventForPluginEventSystem @ chunk-P7R3MQQ5.js?v=990b6515:13763
-dispatchEvent @ chunk-P7R3MQQ5.js?v=990b6515:16784
-dispatchDiscreteEvent @ chunk-P7R3MQQ5.js?v=990b6515:16765Understand this warning
+}
