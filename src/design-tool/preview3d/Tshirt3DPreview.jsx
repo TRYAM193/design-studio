@@ -12,7 +12,7 @@ const FORCE_DEBUG_TEXTURE = false;
 
 // --- 1. SAFE TEXTURE HOOK ---
 function useTextureSafe(url, label) {
-    console.o
+    console.log(url)
     const [texture, setTexture] = useState(null);
 
     // Decide which URL to load
@@ -66,7 +66,7 @@ function useTextureSafe(url, label) {
 
 // --- 2. MESH LAYER ---
 function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
-    console.log(typeof textureUrl, label)
+    // console.log(typeof textureUrl, label)
     const texture = useTextureSafe(textureUrl, label);
 
     const geometry = useMemo(() => {
@@ -136,7 +136,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
 
 // --- 3. MAIN MODEL ---
 function ProductModel({ productId, textures, color }) {
-    console.log(textures)
+    // console.log(textures)
     const productType = resolveProductType(productId);
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
     const { nodes } = useGLTF(config.path);
