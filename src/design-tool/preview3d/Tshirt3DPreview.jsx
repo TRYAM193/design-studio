@@ -10,10 +10,6 @@ const CHECKERBOARD_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAA
 // Toggle this to TRUE to ignore your design and force the checkerboard
 const FORCE_DEBUG_TEXTURE = false;
 
-// --- 1. SAFE TEXTURE HOOK ---
-import { useState, useEffect } from 'react';
-import * as THREE from 'three';
-
 function useTextureSafe(url, label) {
     const [texture, setTexture] = useState(null);
 
