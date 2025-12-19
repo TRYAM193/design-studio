@@ -226,31 +226,42 @@ export default function EditorPanel() {
         fabricCanvas.renderAll();
     };
 
-    const handleGeneratePreview = async () => {
-        if (!fabricCanvas) return;
-        fabricCanvas.discardActiveObject();
-        setIsGeneratingPreview(true);
+    // Find this function around line 236
+const handleGeneratePreview = async () => {
+    if (!fabricCanvas) return;
+    fabricCanvas.discardActiveObject();
+    setIsGeneratingPreview(true);
 
-        try {
-            const currentSnapshot = await captureCurrentCanvas();
+    try {
+        const currentSnapshot = await captureCurrentCanvas();
+        
+        // --- FIX STARTS HERE ---
+        // 1. Log to debug exactly what key is being used
+        console.log("Saving texture for view:", currentView);
 
-            const updatedTextures = {
-                ...designTextures,
-                [currentView]: currentSnapshot
-            };
-            setDesignTextures(updatedTextures);
+        // 2. Normalize the key if necessary (ensure it matches what Tshirt3DPreview expects)
+        // If your database uses "Front", force it to "front"
+        const normalizedView = currentView.toLowerCase(); 
 
-            if (productId) {
-                setIsPreviewOpen(true);
-            } else {
-                handleAddToCartDirectly(currentSnapshot);
-            }
-        } catch (error) {
-            console.error("Preview generation error:", error);
-        } finally {
-            setIsGeneratingPreview(false);
+        const updatedTextures = {
+            ...designTextures,
+            [normalizedView]: currentSnapshot // Use the normalized key
+        };
+        // --- FIX ENDS HERE ---
+
+        setDesignTextures(updatedTextures);
+
+        if (productId) {
+            setIsPreviewOpen(true);
+        } else {
+            handleAddToCartDirectly(currentSnapshot);
         }
-    };
+    } catch (error) {
+        console.error("Preview generation error:", error);
+    } finally {
+        setIsGeneratingPreview(false);
+    }
+};
 
     const handleAddToCartDirectly = (designData) => {
         setIsSaving(true);
