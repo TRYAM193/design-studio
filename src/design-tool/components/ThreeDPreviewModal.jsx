@@ -1,80 +1,164 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Loader2, ShoppingBag, X } from "lucide-react";
-import Tshirt3DPreview from '../preview3d/Tshirt3DPreview';
+import React, { useMemo, useEffect } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { useGLTF, OrbitControls, Environment, ContactShadows, Center } from '@react-three/drei';
+import * as THREE from 'three';
+import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 
-export function ThreeDPreviewModal({ 
-    isOpen, 
-    onClose, 
-    textures,
-    onAddToCart, 
-    isSaving,
-    productId,
-    productCategory = "Apparel",
-    selectedColor = "#FFFFFF"
-}) {
-    const isApparel = productCategory === "Apparel" || !productCategory; 
+// --- UTILS ---
+const EMPTY_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
+// --- COMPONENT: DECAL LAYER (THE DESIGN) ---
+function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
+    const texture = useMemo(() => {
+        if (!textureUrl || textureUrl === EMPTY_TEXTURE) return null;
+        const loader = new THREE.TextureLoader();
+        const tex = loader.load(textureUrl); // Works with Blob URLs automatically
+        tex.flipY = false; 
+        tex.colorSpace = THREE.SRGBColorSpace;
+        return tex;
+    }, [textureUrl]);
+
+    useEffect(() => {
+        return () => { if (texture) texture.dispose(); };
+    }, [texture]);
+
+    if (!texture) return null;
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 gap-0 bg-zinc-950 border-zinc-800 flex overflow-hidden rounded-xl shadow-2xl">
-                 <DialogTitle className="sr-only">3D Preview</DialogTitle>
-                 {/* Added Description to fix accessibility warning */}
-                 <DialogDescription className="sr-only">
-                    A rotatable 3D preview of your custom design on the selected product.
-                 </DialogDescription>
-                
-                {/* --- FULL SCREEN 3D STAGE --- */}
-                <div className="flex-1 relative w-full h-full bg-zinc-900">
-                    
-                    {/* Close Button (Floating) */}
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={onClose} 
-                        className="absolute right-4 top-4 z-50 rounded-full bg-black/20 hover:bg-black/40 text-white border border-white/10"
-                    >
-                        <X size={20} />
-                    </Button>
+        <mesh geometry={geometry}>
+            <meshStandardMaterial 
+                map={texture} 
+                transparent={true} 
+                opacity={opacity}
+                side={THREE.DoubleSide}
+                depthWrite={true} 
+                polygonOffset={true}
+                polygonOffsetFactor={-4} // Force on top
+                roughness={0.8}
+            />
+        </mesh>
+    );
+}
 
-                    {/* 3D Content */}
-                    {isApparel ? (
-                        <Tshirt3DPreview 
-                            productId={productId}
-                            textures={textures}
-                            color={selectedColor}
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-zinc-500">
-                            3D Preview not available for this item.
-                        </div>
-                    )}
+// --- COMPONENT: REAL GLB MODEL ---
 
-                    {/* Action Bar (Floating Bottom) */}
-                    <div className="absolute bottom-8 left-0 right-0 z-50 flex justify-center gap-4 px-4 pointer-events-none">
-                        <div className="pointer-events-auto flex gap-3 p-2 bg-black/60 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl">
-                             <Button 
-                                variant="ghost" 
-                                onClick={onClose}
-                                className="text-white hover:bg-white/10 h-12 px-6 rounded-xl"
-                            >
-                                Continue Editing
-                            </Button>
+function ProductModel({ productType, textures, color }) {
+    const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
+    const { nodes } = useGLTF(config.path, true);
 
-                            <Button 
-                                className="h-12 px-8 text-base font-bold bg-white text-black hover:bg-zinc-200 transition-all rounded-xl gap-2"
-                                onClick={onAddToCart}
-                                disabled={isSaving}
-                            >
-                                {isSaving ? <Loader2 className="animate-spin" size={18} /> : <ShoppingBag size={18} />}
-                                {isSaving ? "Processing..." : "Add to Cart"}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+    const mappedTextures = useMemo(() => ({
+        front: textures.front || textures.Front,
+        back: textures.back || textures.Back,
+        leftSleeve: textures.leftSleeve || textures.left_sleeve || textures.Left_Sleeve || textures.left,
+        rightSleeve: textures.rightSleeve || textures.right_sleeve || textures.Right_Sleeve || textures.right,
+    }), [textures]);
 
-            </DialogContent>
-        </Dialog>
+    // Robust Mesh Finder
+    const getMesh = (name) => {
+        if (!name) return null;
+        if (nodes[name]) return nodes[name];
+        const noDots = name.replace(/\./g, '');
+        const underscore = name.replace(/\./g, '_');
+        return nodes[noDots] || nodes[underscore];
+    };
+
+    const matBase = useMemo(() => new THREE.MeshStandardMaterial({ 
+        color: color,
+        roughness: 0.6,
+        metalness: 0.1,
+        side: THREE.DoubleSide
+    }), [color]);
+
+    return (
+        <group dispose={null}>
+            {getMesh(config.meshes.front) && (
+                <group>
+                    <mesh geometry={getMesh(config.meshes.front).geometry} material={matBase} castShadow />
+                    <DecalLayer geometry={getMesh(config.meshes.front).geometry} textureUrl={mappedTextures.front} />
+                </group>
+            )}
+            {getMesh(config.meshes.back) && (
+                <group>
+                    <mesh geometry={getMesh(config.meshes.back).geometry} material={matBase} castShadow />
+                    <DecalLayer geometry={getMesh(config.meshes.back).geometry} textureUrl={mappedTextures.back} />
+                </group>
+            )}
+            {getMesh(config.meshes.leftSleeve) && (
+                <group>
+                    <mesh geometry={getMesh(config.meshes.leftSleeve).geometry} material={matBase} castShadow />
+                    <DecalLayer geometry={getMesh(config.meshes.leftSleeve).geometry} textureUrl={mappedTextures.leftSleeve} />
+                </group>
+            )}
+            {getMesh(config.meshes.rightSleeve) && (
+                <group>
+                    <mesh geometry={getMesh(config.meshes.rightSleeve).geometry} material={matBase} castShadow />
+                    <DecalLayer geometry={getMesh(config.meshes.rightSleeve).geometry} textureUrl={mappedTextures.rightSleeve} />
+                </group>
+            )}
+            {getMesh(config.meshes.fcollar) && (
+                <mesh geometry={getMesh(config.meshes.fcollar).geometry} material={matBase} />
+            )}
+            {getMesh(config.meshes.bcollar) && (
+                <mesh geometry={getMesh(config.meshes.bcollar).geometry} material={matBase} />
+            )}
+        </group>
+    );
+}
+
+function FallbackTshirt({ textures, color }) {
+    const matBase = useMemo(() => new THREE.MeshStandardMaterial({ color }), [color]);
+    return (
+        <group scale={1.2}>
+            <mesh position={[0, 0, 0]} material={matBase}><boxGeometry args={[1, 1.4, 0.25]} /></mesh>
+            <mesh position={[0, 0.72, 0]} material={matBase}><cylinderGeometry args={[0.18, 0.18, 0.08, 32]} /></mesh>
+            <mesh position={[-0.65, 0.45, 0]} material={matBase}><boxGeometry args={[0.4, 0.5, 0.25]} /></mesh>
+            <mesh position={[0.65, 0.45, 0]} material={matBase}><boxGeometry args={[0.4, 0.5, 0.25]} /></mesh>
+        </group>
+    );
+}
+
+class ModelErrorBoundary extends React.Component {
+    state = { hasError: false };
+    static getDerivedStateFromError() { return { hasError: true }; }
+    componentDidCatch(error) { console.error("3D Error:", error); }
+    render() { return this.state.hasError ? this.props.fallback : this.props.children; }
+}
+
+export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
+    const productType = resolveProductType(productId);
+
+    return (
+        <div className="w-full h-full relative bg-zinc-900">
+            <Canvas 
+                shadows 
+                gl={{ preserveDrawingBuffer: true, antialias: true }} 
+                camera={{ position: [0, 0, 2.5], fov: 45 }}
+            >
+                <ambientLight intensity={1.2} />
+                <directionalLight position={[5, 10, 7]} intensity={1.5} castShadow />
+                <directionalLight position={[-5, 5, 5]} intensity={1} />
+                <directionalLight position={[0, 0, 5]} intensity={0.5} />
+
+                <group position={[0, -0.2, 0]}>
+                    <Center>
+                        <ModelErrorBoundary fallback={<FallbackTshirt textures={textures} color={color} />}>
+                            <React.Suspense fallback={<FallbackTshirt textures={textures} color={color} />}>
+                                 <ProductModel productType={productType} textures={textures} color={color} />
+                            </React.Suspense>
+                        </ModelErrorBoundary>
+                    </Center>
+                </group>
+
+                <OrbitControls enablePan={false} minDistance={1.5} maxDistance={6} />
+                <Environment preset="city" />
+                <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={10} blur={2} />
+            </Canvas>
+            
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none text-center">
+                 <span className="bg-black/40 text-white/80 text-[10px] px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
+                    Drag to Rotate
+                 </span>
+            </div>
+        </div>
     );
 }
