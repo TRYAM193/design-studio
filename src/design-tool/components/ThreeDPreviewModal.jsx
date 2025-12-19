@@ -1,5 +1,5 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2, ShoppingBag, X } from "lucide-react";
 import Tshirt3DPreview from '../preview3d/Tshirt3DPreview';
@@ -20,6 +20,10 @@ export function ThreeDPreviewModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-[95vw] w-full h-[90vh] p-0 gap-0 bg-zinc-950 border-zinc-800 flex overflow-hidden rounded-xl shadow-2xl">
                  <DialogTitle className="sr-only">3D Preview</DialogTitle>
+                 {/* Added Description to fix accessibility warning */}
+                 <DialogDescription className="sr-only">
+                    A rotatable 3D preview of your custom design on the selected product.
+                 </DialogDescription>
                 
                 {/* --- FULL SCREEN 3D STAGE --- */}
                 <div className="flex-1 relative w-full h-full bg-zinc-900">
