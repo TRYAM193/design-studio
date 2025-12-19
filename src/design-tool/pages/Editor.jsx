@@ -146,7 +146,6 @@ const captureCurrentCanvas = async () => {
 
     // 1. Save the original background settings so we can restore them later
     const originalBg = fabricCanvas.backgroundColor;
-    const originalBgImage = fabricCanvas.backgroundImage;
 
     try {
         // 2. AGGRESSIVELY REMOVE BACKGROUNDS
