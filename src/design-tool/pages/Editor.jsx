@@ -214,24 +214,24 @@ export default function EditorPanel() {
     const captureCurrentCanvas = () => {
         if (!fabricCanvas) return null;
 
-        // Calculate a safe multiplier for the preview (target ~1200px width)
-        // If canvas is 4500px, multiplier should be ~0.26
-        const originalWidth = fabricCanvas.getWidth(); // e.g., 4500
+        // DYNAMIC MULTIPLIER: Keeps texture size safe (~1200px)
+        const originalWidth = fabricCanvas.getWidth();
         const targetWidth = 1200; 
-        const previewMultiplier = Math.min(1, targetWidth / originalWidth);
+        const previewMultiplier = originalWidth > 0 ? Math.min(1, targetWidth / originalWidth) : 0.5;
 
         const originalBg = fabricCanvas.backgroundColor;
-        fabricCanvas.backgroundColor = null; // Transparent capture
+        fabricCanvas.backgroundColor = null; 
         fabricCanvas.renderAll();
         
         const dataUrl = fabricCanvas.toDataURL({
             format: 'png',
             quality: 0.8,
-            multiplier: previewMultiplier // <--- CHANGED FROM 2
+            multiplier: previewMultiplier // <--- THIS IS CRITICAL
         });
 
         fabricCanvas.backgroundColor = originalBg;
         fabricCanvas.renderAll();
+
         return dataUrl;
     };
 
