@@ -93,14 +93,16 @@ function ProductModel({ productType, textures, color }) {
         side: THREE.DoubleSide
     }), [color]);
 
+    // Map texture keys to mesh names
+    const texturedMeshes = {
+        front: config.meshes.front,
+        back: config.meshes.back,
+        leftSleeve: config.meshes.leftSleeve,
+        rightSleeve: config.meshes.rightSleeve,
+    };
+
     // Collect all meshes that should have base material
     const allMeshes = new Set();
-    Object.keys(textures || {}).forEach(meshName => {
-        const mesh = getMesh(meshName);
-        if (mesh) allMeshes.add(meshName);
-        console.log('Mesh for texture:', meshName, !!mesh);
-    });
-    // Add config meshes if not already included
     Object.values(config.meshes || {}).forEach(meshName => {
         if (meshName) allMeshes.add(meshName);
     });
@@ -116,11 +118,14 @@ function ProductModel({ productType, textures, color }) {
                 );
             })}
             {/* Render decals for textured meshes */}
-            {Object.entries(textures || {}).map(([meshName, textureUrl]) => {
+            {Object.entries(texturedMeshes).map(([textureKey, meshName]) => {
+                const textureUrl = textures[textureKey];
+                if (!textureUrl || !meshName) return null;
                 const mesh = getMesh(meshName);
                 if (!mesh) return null;
+                console.log('Applying texture to mesh:', textureKey, meshName, !!mesh);
                 return (
-                    <DecalLayer key={`decal-${meshName}`} geometry={mesh.geometry} textureUrl={textureUrl} />
+                    <DecalLayer key={`decal-${textureKey}`} geometry={mesh.geometry} textureUrl={textureUrl} />
                 );
             })}
         </group>
