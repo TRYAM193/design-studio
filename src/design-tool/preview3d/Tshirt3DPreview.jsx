@@ -74,6 +74,9 @@ function ProductModel({ productType, textures, color }) {
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
     const { nodes } = useGLTF(config.path, true);
 
+    console.log('Available nodes:', Object.keys(nodes));
+    console.log('Textures:', textures);
+
     // Robust Mesh Finder
     const getMesh = (name) => {
         if (!name || !nodes) return null;
@@ -95,6 +98,7 @@ function ProductModel({ productType, textures, color }) {
     Object.keys(textures || {}).forEach(meshName => {
         const mesh = getMesh(meshName);
         if (mesh) allMeshes.add(meshName);
+        console.log('Mesh for texture:', meshName, !!mesh);
     });
     // Add config meshes if not already included
     Object.values(config.meshes || {}).forEach(meshName => {
