@@ -150,7 +150,7 @@ export default function EditorPanel() {
         try {
             // 2. Calculate multiplier for high quality (e.g., 2048px)
             const originalWidth = fabricCanvas.getWidth();
-            const targetWidth = 2048; // Good balance of quality vs performance
+            const targetWidth = 1024; // Good balance of quality vs performance
             const multiplier = originalWidth > 0 ? targetWidth / originalWidth : 1;
 
             // 3. Export to Blob (Async & Efficient)
