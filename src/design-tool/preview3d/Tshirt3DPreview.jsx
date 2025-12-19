@@ -108,7 +108,7 @@ function TshirtModel({ productId, textures, color }) {
 }
 
 export default function Tshirt3DPreview({ productId, textures, color }) {
-    console
+    console.log(textures)
     return (
         <Canvas camera={{ position: [0, 1.4, 3], fov: 45 }}>
             <ambientLight intensity={0.6} />
