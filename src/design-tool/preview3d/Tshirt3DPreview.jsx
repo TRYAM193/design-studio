@@ -52,6 +52,21 @@ function useTextureSafe(url, label) {
                 tex.colorSpace = THREE.SRGBColorSpace;
                 tex.anisotropy = 16;
                 tex.needsUpdate = true; // Often helps with initial render
+                tex.flipY = false; // Try toggling this to 'true' if the text is upside down
+        
+        // 2. APPLY TO MATERIAL
+        if (materialRef.current) {
+            materialRef.current.map = tex;
+            
+            // 🛑 CRITICAL FIX FOR TRANSPARENCY
+            materialRef.current.transparent = true;  // Enable alpha channel
+            materialRef.current.side = THREE.DoubleSide; // Fixes visibility issues
+            
+            // Optional: Helps remove "white outlines" on transparent edges
+            materialRef.current.alphaTest = 0.1; 
+            
+            materialRef.current.needsUpdate = true;
+        }
 
                 setTexture(tex);
             },
