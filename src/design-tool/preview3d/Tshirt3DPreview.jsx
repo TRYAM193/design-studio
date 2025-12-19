@@ -8,6 +8,7 @@ import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 try {
     if (MODEL_REGISTRY.TSHIRT && MODEL_REGISTRY.TSHIRT.path) {
         useGLTF.preload(MODEL_REGISTRY.TSHIRT.path);
+        console.log('Model loaded')
     }
 } catch (err) {
     console.warn("Failed to preload 3D model:", err);
