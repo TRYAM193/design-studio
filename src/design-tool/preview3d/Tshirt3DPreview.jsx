@@ -5,9 +5,18 @@ import * as THREE from 'three';
 import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 
 // --- UTILS ---
-
+try {
+    if (MODEL_REGISTRY.TSHIRT && MODEL_REGISTRY.TSHIRT.path) {
+        useGLTF.preload(MODEL_REGISTRY.TSHIRT.path);
+        console.log('Model loaded')
+    }
+} catch (err) {
+    console.warn("Failed to preload 3D model:", err);
+}
+// 1x1 Transparent Pixel
 const EMPTY_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
+// Helper to create a material that blends color + texture safely
 function useTextureMaterial(textureUrl, baseColor, isTransparent = true) {
     const texture = useMemo(() => {
         if (!textureUrl) return null;
@@ -18,6 +27,7 @@ function useTextureMaterial(textureUrl, baseColor, isTransparent = true) {
         return tex;
     }, [textureUrl]);
 
+    // Memory cleanup
     useEffect(() => {
         return () => {
             if (texture) texture.dispose();
@@ -29,7 +39,7 @@ function useTextureMaterial(textureUrl, baseColor, isTransparent = true) {
             color: baseColor,
             map: texture,
             transparent: isTransparent,
-            roughness: 0.6, // Lower roughness for better visibility
+            roughness: 0.8,
             metalness: 0.1,
             side: THREE.DoubleSide
         });
@@ -42,8 +52,9 @@ function useTextureMaterial(textureUrl, baseColor, isTransparent = true) {
 
 function ProductModel({ productType, textures, color }) {
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
-    const { nodes } = useGLTF(config.path, true); 
+    const { nodes } = useGLTF(config.path, true); // This will throw if file missing -> Caught by ErrorBoundary
     
+    // Safety check if nodes don't match expectation
     if (!nodes) throw new Error("Model nodes missing");
 
     const matFront = useTextureMaterial(textures.front || EMPTY_TEXTURE, color);
@@ -73,22 +84,24 @@ function ProductModel({ productType, textures, color }) {
     );
 }
 
-// --- COMPONENT: FALLBACK GEOMETRIC MODEL ---
+// --- COMPONENT: FALLBACK GEOMETRIC MODEL (No File Required) ---
 
 function FallbackTshirt({ textures, color }) {
+    // Generate materials
     const matFront = useTextureMaterial(textures.front || EMPTY_TEXTURE, color, false);
     const matBack = useTextureMaterial(textures.back || EMPTY_TEXTURE, color, false);
     const matLeft = useTextureMaterial(textures.leftSleeve || EMPTY_TEXTURE, color, false);
     const matRight = useTextureMaterial(textures.rightSleeve || EMPTY_TEXTURE, color, false);
     const matBase = useMemo(() => new THREE.MeshStandardMaterial({ color }), [color]);
 
+    // Construct arrays of materials for BoxGeometry
+    // Indices: 0:px 1:nx 2:py 3:ny 4:pz(Front) 5:nz(Back)
     const torsoMaterials = [matBase, matBase, matBase, matBase, matFront, matBack];
     const leftSleeveMaterials = [matBase, matBase, matBase, matBase, matLeft, matBase];
     const rightSleeveMaterials = [matBase, matBase, matBase, matBase, matRight, matBase];
 
     return (
-        // SCALE UP FALLBACK MODEL FOR BETTER VISIBILITY
-        <group scale={1.2}> 
+        <group>
             {/* TORSO */}
             <mesh position={[0, 0, 0]} material={torsoMaterials} castShadow>
                 <boxGeometry args={[1, 1.4, 0.25]} />
@@ -113,15 +126,31 @@ function FallbackTshirt({ textures, color }) {
     );
 }
 
+// --- ERROR BOUNDARY CLASS ---
+
 class ModelErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
         this.state = { hasError: false };
     }
-    static getDerivedStateFromError(error) { return { hasError: true }; }
-    componentDidCatch(error) { console.warn("3D Model Error:", error); }
-    render() { return this.state.hasError ? this.props.fallback : this.props.children; }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.warn("3D Model load failed, switching to fallback:", error);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return this.props.fallback;
+        }
+        return this.props.children;
+    }
 }
+
+// --- MAIN EXPORT ---
 
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
     const productType = resolveProductType(productId);
@@ -131,19 +160,20 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
             <Canvas 
                 shadows 
                 gl={{ preserveDrawingBuffer: true, powerPreference: 'high-performance' }} 
-                // CAMERA ADJUSTED: Closer (2.2) and slightly wider FOV (45) for a "Big & Clean" look
-                camera={{ position: [0, 0, 2.2], fov: 45 }}
+                camera={{ position: [0, 0, 3.0], fov: 40 }}
             >
-                {/* Brighter Lights */}
-                <ambientLight intensity={0.9} />
+                {/* Lighting Setup */}
+                <ambientLight intensity={0.7} />
                 <spotLight 
                     position={[5, 10, 7]} 
                     angle={0.4} 
                     penumbra={1} 
-                    intensity={1.5} 
+                    intensity={1.2} 
                     castShadow 
+                    shadow-bias={-0.0001}
                 />
-                <pointLight position={[-5, 2, -5]} intensity={0.8} color="white" />
+                {/* FIX: Removed invalid "#white", changed to "white" */}
+                <pointLight position={[-5, 0, -5]} intensity={0.5} color="white" />
 
                 <Center>
                     <ModelErrorBoundary 
@@ -163,14 +193,14 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
                     enablePan={false} 
                     minPolarAngle={0.2} 
                     maxPolarAngle={Math.PI - 0.2}
-                    minDistance={1.5}
-                    maxDistance={5}
+                    minDistance={2}
+                    maxDistance={6}
                 />
                 
                 <Environment preset="city" blur={0.8} />
                 
                 <ContactShadows 
-                    position={[0, -0.85, 0]} 
+                    position={[1, -0.85, 0]} 
                     opacity={0.5} 
                     scale={10} 
                     blur={2} 
