@@ -1,10 +1,3 @@
-import React, { useMemo, useEffect, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { useGLTF, OrbitControls, Center, Environment, ContactShadows } from '@react-three/drei';
-import * as THREE from 'three';
-import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
-
-// --- UTILS ---
 try {
     if (MODEL_REGISTRY.TSHIRT && MODEL_REGISTRY.TSHIRT.path) {
         useGLTF.preload(MODEL_REGISTRY.TSHIRT.path);
@@ -13,6 +6,13 @@ try {
 } catch (err) {
     console.warn("Failed to preload 3D model:", err);
 }
+import React, { useMemo, useEffect, useState } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { useGLTF, OrbitControls, Center, Environment, ContactShadows } from '@react-three/drei';
+import * as THREE from 'three';
+import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
+
+// --- UTILS ---
 // 1x1 Transparent Pixel
 const EMPTY_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
