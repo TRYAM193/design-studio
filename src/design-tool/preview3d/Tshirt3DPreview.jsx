@@ -40,7 +40,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
                 <mesh geometry={geometry}>
                     <meshStandardMaterial
                         transparent={true}
-                        map={t} // ✅ CORRECT: Pass as a prop, not a child
+                        map={textureUrl} // ✅ CORRECT: Pass as a prop, not a child
                         polygonOffset={true}
                         polygonOffsetFactor={-1}
                         alphaTest={0.5}
