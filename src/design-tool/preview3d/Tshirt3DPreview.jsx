@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment, ContactShadows, Center } from '@react-three/drei';
 import * as THREE from 'three';
@@ -7,13 +7,14 @@ import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 // --- UTILS ---
 const EMPTY_TEXTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
-// --- COMPONENT: TEXTURE LAYER ---
-function DecalLayer({ geometry, textureUrl, opacity = 1, scale = 1.002 }) {
+// --- COMPONENT: DECAL LAYER (THE DESIGN) ---
+// Uses polygonOffset to force the design to render ON TOP of the base mesh
+function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
     const texture = useMemo(() => {
         if (!textureUrl || textureUrl === EMPTY_TEXTURE) return null;
         const loader = new THREE.TextureLoader();
         const tex = loader.load(textureUrl);
-        tex.flipY = false;
+        tex.flipY = false; 
         tex.colorSpace = THREE.SRGBColorSpace;
         return tex;
     }, [textureUrl]);
@@ -25,14 +26,17 @@ function DecalLayer({ geometry, textureUrl, opacity = 1, scale = 1.002 }) {
     if (!texture) return null;
 
     return (
-        <mesh geometry={geometry} scale={scale}>
-            <meshBasicMaterial 
+        <mesh geometry={geometry}>
+            {/* Using MeshStandardMaterial so it reacts to light naturally */}
+            <meshStandardMaterial 
                 map={texture} 
                 transparent={true} 
                 opacity={opacity}
                 side={THREE.DoubleSide}
-                depthWrite={false}
-                toneMapped={false}
+                depthWrite={true} 
+                polygonOffset={true}
+                polygonOffsetFactor={-4} // Moves the pixels "towards" the camera
+                roughness={0.8}
             />
         </mesh>
     );
@@ -44,8 +48,7 @@ function ProductModel({ productType, textures, color }) {
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
     const { nodes } = useGLTF(config.path, true);
 
-    // --- 1. SMART TEXTURE MAPPING (Fixes "Design Not Applying") ---
-    // Maps common variations (snake_case, camelCase) to standard keys
+    // --- 1. MAPPED TEXTURES ---
     const mappedTextures = useMemo(() => ({
         front: textures.front || textures.Front,
         back: textures.back || textures.Back,
@@ -53,46 +56,36 @@ function ProductModel({ productType, textures, color }) {
         rightSleeve: textures.rightSleeve || textures.right_sleeve || textures.Right_Sleeve || textures.right,
     }), [textures]);
 
-    // --- 2. ROBUST NODE FINDER (Fixes "Right Sleeve Not Loading") ---
-    // Finds a node even if the name was sanitized (e.g. "Node.001" -> "Node_001")
+    // --- 2. ROBUST MESH FINDER ---
+    // Finds nodes even if Three.js sanitized the names (e.g., "Node.001" -> "Node001")
     const getMesh = (name) => {
         if (!name) return null;
-        if (nodes[name]) return nodes[name]; // Exact match
+        if (nodes[name]) return nodes[name];
 
-        // Fuzzy match: Look for node that ends with the ID or similar
-        // e.g. "Sleeves_Node.001" might match "Sleeves_Node_001"
-        const cleanName = name.replace('.', '_'); 
-        if (nodes[cleanName]) return nodes[cleanName];
-
-        const keyMatch = Object.keys(nodes).find(key => 
-            key.toLowerCase() === name.toLowerCase() || 
-            key.replace('.', '_') === cleanName
-        );
+        // Try variations often caused by GLTF loaders
+        const noDots = name.replace(/\./g, '');       // Sleeves_Node.001 -> Sleeves_Node001
+        const underscore = name.replace(/\./g, '_');  // Sleeves_Node.001 -> Sleeves_Node_001
         
-        return nodes[keyMatch];
+        return nodes[noDots] || nodes[underscore];
     };
 
-    // --- DEBUG: Print found keys to console ---
+    // Debug Logs to help you verify what is loading
     useEffect(() => {
-        console.log("🔍 3D Model Loaded. Available Nodes:", Object.keys(nodes));
-        if (!getMesh(config.meshes.rightSleeve)) {
-            console.warn(`⚠️ Could not find Right Sleeve mesh: "${config.meshes.rightSleeve}"`);
-        }
-    }, [nodes, config]);
+        console.log("🎨 Texture Data Received:", mappedTextures);
+        console.log("📦 3D Mesh Nodes Available:", Object.keys(nodes));
+    }, [nodes, mappedTextures]);
 
-    // Material with Emissive to ensure it's visible even in dark lighting
+    // Base Material (The Fabric Color)
     const matBase = useMemo(() => new THREE.MeshStandardMaterial({ 
         color: color,
-        emissive: color,
-        emissiveIntensity: 0.2, 
-        roughness: 0.5,
+        roughness: 0.6,
         metalness: 0.1,
         side: THREE.DoubleSide
     }), [color]);
 
     return (
         <group dispose={null}>
-            {/* 1. FRONT */}
+            {/* FRONT */}
             {getMesh(config.meshes.front) && (
                 <group>
                     <mesh geometry={getMesh(config.meshes.front).geometry} material={matBase} castShadow />
@@ -100,7 +93,7 @@ function ProductModel({ productType, textures, color }) {
                 </group>
             )}
 
-            {/* 2. BACK */}
+            {/* BACK */}
             {getMesh(config.meshes.back) && (
                 <group>
                     <mesh geometry={getMesh(config.meshes.back).geometry} material={matBase} castShadow />
@@ -108,7 +101,7 @@ function ProductModel({ productType, textures, color }) {
                 </group>
             )}
 
-            {/* 3. LEFT SLEEVE */}
+            {/* LEFT SLEEVE */}
             {getMesh(config.meshes.leftSleeve) && (
                 <group>
                     <mesh geometry={getMesh(config.meshes.leftSleeve).geometry} material={matBase} castShadow />
@@ -116,7 +109,7 @@ function ProductModel({ productType, textures, color }) {
                 </group>
             )}
 
-            {/* 4. RIGHT SLEEVE */}
+            {/* RIGHT SLEEVE */}
             {getMesh(config.meshes.rightSleeve) && (
                 <group>
                     <mesh geometry={getMesh(config.meshes.rightSleeve).geometry} material={matBase} castShadow />
@@ -124,7 +117,7 @@ function ProductModel({ productType, textures, color }) {
                 </group>
             )}
 
-            {/* 5. COLLARS */}
+            {/* COLLARS */}
             {getMesh(config.meshes.fcollar) && (
                 <mesh geometry={getMesh(config.meshes.fcollar).geometry} material={matBase} />
             )}
@@ -137,7 +130,7 @@ function ProductModel({ productType, textures, color }) {
 
 // --- FALLBACK COMPONENT ---
 function FallbackTshirt({ textures, color }) {
-    const matBase = useMemo(() => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.1 }), [color]);
+    const matBase = useMemo(() => new THREE.MeshStandardMaterial({ color }), [color]);
     return (
         <group scale={1.2}>
             <mesh position={[0, 0, 0]} material={matBase}><boxGeometry args={[1, 1.4, 0.25]} /></mesh>
@@ -164,13 +157,13 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
         <div className="w-full h-full relative bg-zinc-900">
             <Canvas 
                 shadows 
-                gl={{ preserveDrawingBuffer: true }} 
+                gl={{ preserveDrawingBuffer: true, antialias: true }} 
                 camera={{ position: [0, 0, 2.5], fov: 45 }}
             >
-                <ambientLight intensity={2} />
-                <directionalLight position={[5, 5, 5]} intensity={1.5} />
-                <directionalLight position={[-5, 5, 5]} intensity={1.5} />
-                <directionalLight position={[0, 0, 5]} intensity={1} />
+                <ambientLight intensity={1.2} />
+                <directionalLight position={[5, 10, 7]} intensity={1.5} castShadow />
+                <directionalLight position={[-5, 5, 5]} intensity={1} />
+                <directionalLight position={[0, 0, 5]} intensity={0.5} />
 
                 <group position={[0, -0.2, 0]}>
                     <Center>
