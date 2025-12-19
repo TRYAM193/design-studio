@@ -74,10 +74,10 @@ function ProductModel({ productType, textures, color }) {
             {nodes[config.meshes.rightSleeve] && (
                 <mesh geometry={nodes[config.meshes.rightSleeve].geometry} material={matRight} castShadow />
             )}
-            {nodes[config.meshes.collar] && (
+            {nodes[config.meshes.fcollar] && (
                 <mesh geometry={nodes[config.meshes.collar].geometry} material={matBase} />
             )}
-            {nodes[config.meshes.collar] && (
+            {nodes[config.meshes.bcollar] && (
                 <mesh geometry={nodes[config.meshes.collar].geometry} material={matBase} />
             )}
         </group>
