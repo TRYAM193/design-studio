@@ -12,6 +12,7 @@ const FORCE_DEBUG_TEXTURE = false;
 
 // --- 1. SAFE TEXTURE HOOK ---
 function useTextureSafe(url, label) {
+    console.o
     const [texture, setTexture] = useState(null);
 
     // Decide which URL to load
