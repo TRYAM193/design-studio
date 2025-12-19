@@ -164,8 +164,8 @@ const captureCurrentCanvas = async () => {
         // 4. Generate the Blob from the TRANSPARENT canvas
         return new Promise((resolve) => {
             fabricCanvas.toCanvasElement(multiplier, {
-                width: currentWidth * multiplier,
-                height: fabricCanvas.getHeight() * multiplier,
+                width: 1024,
+                height: 1024,
                 enableRetinaScaling: false // Keep false to prevent 4096px crash
             }).toBlob((blob) => {
                 if (!blob || blob.size < 1000) {
