@@ -152,44 +152,44 @@ export default function EditorPanel() {
             const targetWidth = 2048; // High res for 3D
             const multiplier = originalWidth > 0 ? targetWidth / originalWidth : 1;
 
-            const tempCanvas = fabricCanvas.toCanvasElement(multiplier, {
-                width: originalWidth * multiplier,
-                height: fabricCanvas.getHeight() * multiplier,
-                enableRetinaScaling: true
-            });
+           const tempCanvas = fabricCanvas.toCanvasElement(multiplier, {
+    width: originalWidth * multiplier,
+    height: fabricCanvas.getHeight() * multiplier,
+    enableRetinaScaling: true
+});
 
-            // 3. Convert to Blob with a safety check
-            return new Promise((resolve) => {
-                tempCanvas.toBlob((blob) => {
-                    // SAFETY CHECK 1: Size
-                    if (!blob || blob.size < 1000) { // If < 1KB, it's likely corrupt/empty
-                        console.error("❌ Blob generation failed: File too small/empty");
-                        resolve(null);
-                        return;
-                    }
+// 3. Convert to Blob with a safety check
+return new Promise((resolve) => {
+    tempCanvas.toBlob((blob) => {
+        // SAFETY CHECK 1: Size
+        if (!blob || blob.size < 1000) { // If < 1KB, it's likely corrupt/empty
+            console.error("❌ Blob generation failed: File too small/empty");
+            resolve(null);
+            return;
+        }
 
-                    const blobUrl = URL.createObjectURL(blob);
+        const blobUrl = URL.createObjectURL(blob);
 
-                    // SAFETY CHECK 2: Pre-load the image to ensure it's valid
-                    const img = new Image();
-                    img.onload = () => {
-                        // Only resolve if the image actually has dimensions
-                        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-                            console.log(`✅ Valid Texture Generated: ${img.naturalWidth}x${img.naturalHeight} (${(blob.size / 1024 / 1024).toFixed(2)} MB)`);
-                            resolve(blobUrl);
-                        } else {
-                            console.error("❌ Blob created but image has 0 dimensions");
-                            resolve(null);
-                        }
-                    };
-                    img.onerror = () => {
-                        console.error("❌ Blob created but image failed to load");
-                        resolve(null);
-                    };
-                    img.src = blobUrl;
+        // SAFETY CHECK 2: Pre-load the image to ensure it's valid
+        const img = new Image();
+        img.onload = () => {
+             // Only resolve if the image actually has dimensions
+            if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+                console.log(`✅ Valid Texture Generated: ${img.naturalWidth}x${img.naturalHeight} (${(blob.size / 1024 / 1024).toFixed(2)} MB)`);
+                resolve(blobUrl);
+            } else {
+                console.error("❌ Blob created but image has 0 dimensions");
+                resolve(null);
+            }
+        };
+        img.onerror = () => {
+            console.error("❌ Blob created but image failed to load");
+            resolve(null);
+        };
+        img.src = blobUrl;
 
-                }, 'image/png');
-            });
+    }, 'image/png');
+});
         } catch (err) {
             console.error("Error generating 3D texture:", err);
             return null;
@@ -282,8 +282,6 @@ export default function EditorPanel() {
             <h1>TRYAM</h1>
         </div>
     );
-
-    console.log(designTextures)
 
     return (
         <div className="main-app-container">
