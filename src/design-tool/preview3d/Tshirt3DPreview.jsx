@@ -12,7 +12,7 @@ function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
     const texture = useMemo(() => {
         if (!textureUrl || textureUrl === EMPTY_TEXTURE) return null;
         const loader = new THREE.TextureLoader();
-        const tex = loader.load(textureUrl); // Works with Blob URLs automatically
+        const tex = await loader.loadAsync(textureUrl);
         tex.flipY = false; 
         tex.colorSpace = THREE.SRGBColorSpace;
         return tex;
