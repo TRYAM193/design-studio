@@ -142,56 +142,38 @@ export default function EditorPanel() {
     const captureCurrentCanvas = async () => {
         if (!fabricCanvas) return null;
 
-        // 1. Temporarily remove background for transparency
+        // 1. Hide background for transparency
         const originalBg = fabricCanvas.backgroundColor;
         fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
 
         try {
+            // 2. Calculate multiplier for high quality (e.g., 2048px)
             const originalWidth = fabricCanvas.getWidth();
-            const targetWidth = 2048; // High res for 3D
+            const targetWidth = 2048; // Good balance of quality vs performance
             const multiplier = originalWidth > 0 ? targetWidth / originalWidth : 1;
 
-           const tempCanvas = fabricCanvas.toCanvasElement(multiplier, {
-    width: originalWidth * multiplier,
-    height: fabricCanvas.getHeight() * multiplier,
-    enableRetinaScaling: true
-});
+            // 3. Export to Blob (Async & Efficient)
+            // We wrap fabric's toDataURL in a promise to simulate async blob behavior 
+            // OR better yet, use toCanvasElement if available, but toDataURL is standard in older fabric.
+            // For true efficiency, we convert the base64 to a Blob immediately:
 
-// 3. Convert to Blob with a safety check
-return new Promise((resolve) => {
-    tempCanvas.toBlob((blob) => {
-        // SAFETY CHECK 1: Size
-        if (!blob || blob.size < 1000) { // If < 1KB, it's likely corrupt/empty
-            console.error("❌ Blob generation failed: File too small/empty");
-            resolve(null);
-            return;
-        }
+            const dataUrl = fabricCanvas.toDataURL({
+                format: 'png',
+                multiplier: multiplier,
+                quality: 1,
+                enableRetinaScaling: true
+            });
 
-        const blobUrl = URL.createObjectURL(blob);
+            // Convert Base64 -> Blob -> URL
+            const res = await fetch(dataUrl);
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
 
-        // SAFETY CHECK 2: Pre-load the image to ensure it's valid
-        const img = new Image();
-        img.onload = () => {
-             // Only resolve if the image actually has dimensions
-            if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-                console.log(`✅ Valid Texture Generated: ${img.naturalWidth}x${img.naturalHeight} (${(blob.size / 1024 / 1024).toFixed(2)} MB)`);
-                resolve(blobUrl);
-            } else {
-                console.error("❌ Blob created but image has 0 dimensions");
-                resolve(null);
-            }
-        };
-        img.onerror = () => {
-            console.error("❌ Blob created but image failed to load");
-            resolve(null);
-        };
-        img.src = blobUrl;
+            return blobUrl;
 
-    }, 'image/png');
-});
         } catch (err) {
-            console.error("Error generating 3D texture:", err);
+            console.error("Failed to generate preview:", err);
             return null;
         } finally {
             // 4. Restore background
