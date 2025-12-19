@@ -15,8 +15,8 @@ function useTextureSafe(url, label) {
 
     // 1. Force debug texture if flag is on, otherwise use the passed url
     // (Make sure FORCE_DEBUG_TEXTURE and CHECKERBOARD_TEXTURE are defined or imported)
-    const targetUrl = (typeof FORCE_DEBUG_TEXTURE !== 'undefined' && FORCE_DEBUG_TEXTURE) 
-        ? CHECKERBOARD_TEXTURE 
+    const targetUrl = (typeof FORCE_DEBUG_TEXTURE !== 'undefined' && FORCE_DEBUG_TEXTURE)
+        ? CHECKERBOARD_TEXTURE
         : url;
 
     useEffect(() => {
@@ -79,12 +79,12 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
             mat.map = texture;
             mat.transparent = true;
             mat.opacity = 1;
-            
+
             // Allow seeing it from both sides (Inside & Outside)
-            mat.side = THREE.DoubleSide; 
-            
+            mat.side = THREE.DoubleSide;
+
             // Fix "Grey Box" (removes invisible pixels)
-            mat.alphaTest = 0.05; 
+            mat.alphaTest = 0.05;
 
             mat.needsUpdate = true;
         }
@@ -100,7 +100,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
         }
         if (!node) return null;
         if (node.geometry) return node.geometry;
-        
+
         // Handle nested children
         if (node.children && node.children.length > 0) {
             const child = node.children.find(c => c.geometry);
@@ -117,7 +117,8 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
         metalness: 0.1,
     }), [baseColor]);
 
-    <group>
+    return (
+        <group>
             {/* Base Layer */}
             <mesh geometry={geometry}>
                 <meshStandardMaterial color={baseColor} roughness={0.6} />
@@ -136,6 +137,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
                 </mesh>
             )}
         </group>
+    );
 }
 
 // --- 3. MAIN MODEL ---
