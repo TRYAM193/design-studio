@@ -139,7 +139,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
                     <meshStandardMaterial
                         ref={designMaterialRef}
                         transparent={true}
-                        opacity={}
+                        opacity={1}
                         // Disable Z-fighting depth writes since we are using scale
                         depthWrite={false} 
                         
