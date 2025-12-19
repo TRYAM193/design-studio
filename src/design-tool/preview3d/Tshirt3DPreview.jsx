@@ -30,27 +30,22 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
 
     return (
         <group>
-            {/* 1. Base Shirt Layer */}
+            {/* Base Layer */}
             <mesh geometry={geometry}>
-                <meshStandardMaterial color={baseColor} roughness={0.6} metalness={0.1} />
+                <meshStandardMaterial color={baseColor} roughness={0.6} />
             </mesh>
 
-            {/* 2. Design Overlay Layer */}
-            {textureUrl && (
-                <Suspense fallback={null}>
-                    <mesh geometry={geometry}>
-                        <meshStandardMaterial
-                            transparent={true}
-                            polygonOffset={true}
-                            polygonOffsetFactor={-1} // Forces this layer to render in front
-                            polygonOffsetUnits={-1}
-                            alphaTest={0.1} 
-                            depthWrite={false}
-                        >
-                            <DesignTexture url={textureUrl} />
-                        </meshStandardMaterial>
-                    </mesh>
-                </Suspense>
+            {/* Design Layer */}
+            {designTexture && (
+                <mesh geometry={geometry}>
+                    <meshStandardMaterial
+                        transparent={true}
+                        map={designTexture} // ✅ CORRECT: Pass as a prop, not a child
+                        polygonOffset={true}
+                        polygonOffsetFactor={-1}
+                        alphaTest={0.5}
+                    />
+                </mesh>
             )}
         </group>
     );
