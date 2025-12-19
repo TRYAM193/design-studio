@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 
 // --- 1. SAFE TEXTURE HOOK ---
-function useTextureSafe(url) {
+function useTextureSafe(url, label) {
   const [texture, setTexture] = useState(null);
 
   useEffect(() => {
@@ -17,64 +17,64 @@ function useTextureSafe(url) {
     let isActive = true;
     const loader = new THREE.TextureLoader();
 
+    console.log(`[${label}] Loading texture...`);
+
     loader.load(
       url,
       (tex) => {
         if (!isActive) return;
-        // Textures on GLB models must be flipped false
-        tex.flipY = false;
+        console.log(`[${label}] ✅ Texture loaded successfully!`);
+        
+        // CRITICAL: Texture settings for GLTF models
+        tex.flipY = false; 
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = 16;
         tex.needsUpdate = true;
+        
         setTexture(tex);
       },
       undefined,
-      (err) => console.error("Texture Error:", err)
+      (err) => console.error(`[${label}] ❌ Texture failed:`, err)
     );
 
     return () => { isActive = false; };
-  }, [url]);
+  }, [url, label]);
 
   return texture;
 }
 
-// --- 2. SMART MESH COMPONENT ---
-function MeshLayer({ nodes, meshName, textureUrl, baseColor, debug = false }) {
-  const texture = useTextureSafe(textureUrl);
+// --- 2. SMART MESH LAYER ---
+function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
+  const texture = useTextureSafe(textureUrl, label);
 
-  // SMART FINDER: Handles naming mismatches and Groups vs Meshes
+  // Smart Node Finder (Handles Groups & Naming Mismatches)
   const geometry = useMemo(() => {
     if (!nodes) return null;
-
-    // A. Try exact name
+    
+    // 1. Try Exact Match
     let node = nodes[meshName];
-
-    // B. Try Fuzzy Matching (e.g. find "Ribbing" if looking for "Ribbon")
+    
+    // 2. Try Fuzzy Match (e.g. "Ribbing" matching "Ribbon")
     if (!node) {
-      const cleanName = meshName.split('_')[0]; // "Ribbon"
-      const match = Object.keys(nodes).find(n => n.includes(cleanName));
-      if (match) node = nodes[match];
+        const cleanName = meshName.split('_')[0];
+        const matchKey = Object.keys(nodes).find(key => key.includes(cleanName));
+        if (matchKey) node = nodes[matchKey];
     }
 
-    if (!node) {
-      console.warn(`❌ Node not found: ${meshName}`);
-      return null;
-    }
+    if (!node) return null;
 
-    // C. Extract Geometry (Handle Groups)
+    // 3. Extract Geometry (Handle Groups)
     if (node.geometry) return node.geometry;
     if (node.children && node.children.length > 0) {
-      // Find first child with geometry
       const child = node.children.find(c => c.geometry);
       if (child) return child.geometry;
     }
-
-    console.warn(`⚠️ Node ${meshName} found but has no geometry.`);
     return null;
   }, [nodes, meshName]);
 
   if (!geometry) return null;
 
+  // Material for the Shirt Fabric
   const baseMaterial = useMemo(() => new THREE.MeshStandardMaterial({
     color: baseColor,
     roughness: 0.7,
@@ -83,23 +83,23 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, debug = false }) {
 
   return (
     <group>
-      {/* 1. Base Shirt Layer */}
+      {/* Base Layer (Shirt Color) */}
       <mesh geometry={geometry} material={baseMaterial} castShadow receiveShadow />
 
-      {/* 2. Decal Layer (The Design) */}
-      {(texture || debug) && (
+      {/* Design Layer (Only renders if texture exists) */}
+      {texture && (
         <mesh geometry={geometry}>
           <meshStandardMaterial
             map={texture}
-            color={debug ? "red" : "white"} // Debug: Show bright red if no texture
             transparent={true}
             opacity={1}
-            roughness={0.8}
+            roughness={0.5} // Slightly shinier to pop against fabric
             side={THREE.DoubleSide}
-            // Z-Fighting Fix: Pushes decal slightly towards camera
+            
+            // FIX: Pulls the texture forward to prevent flickering
             polygonOffset={true}
-            polygonOffsetFactor={-4}
-            depthWrite={false}
+            polygonOffsetFactor={-2} // Adjusted from -4 to -2 for safety
+            depthWrite={false} 
           />
         </mesh>
       )}
@@ -107,44 +107,45 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, debug = false }) {
   );
 }
 
-// --- 3. MODEL COMPONENT ---
-function ProductModel({ productId, textures, color, debug }) {
+// --- 3. MAIN MODEL ---
+function ProductModel({ productId, textures, color }) {
   const productType = resolveProductType(productId);
   const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
   const { nodes } = useGLTF(config.path);
 
   return (
     <group dispose={null}>
+      {/* Loop through all meshes defined in registry */}
       {Object.keys(config.meshes).map((key) => (
         <MeshLayer
           key={key}
+          label={key} // e.g. "front", "back"
           nodes={nodes}
           meshName={config.meshes[key]}
           textureUrl={textures[key]}
           baseColor={color}
-          debug={debug}
         />
       ))}
     </group>
   );
 }
 
-// --- 4. MAIN EXPORT ---
+// --- 4. EXPORTED COMPONENT ---
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
-  // Toggle this to TRUE if you still don't see anything. 
-  // It will make the design layer bright RED to prove the mesh exists.
-  const DEBUG_MODE = true; 
-
   return (
     <div className="w-full h-full relative bg-zinc-900">
       <Canvas
         shadows
         gl={{ preserveDrawingBuffer: true, antialias: true }}
-        camera={{ position: [0, 0, 4.5], fov: 35 }} // Adjusted camera
+        camera={{ position: [0, 0, 4.5], fov: 35 }}
       >
         <ambientLight intensity={0.8} />
+        
+        {/* Main Light */}
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} />
+        
+        {/* Fill Light (Back) - ensures back isn't pitch black */}
+        <spotLight position={[-10, 5, -10]} intensity={0.5} />
 
         <group position={[0, -0.4, 0]}>
           <Center>
@@ -153,7 +154,6 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
                 productId={productId} 
                 textures={textures} 
                 color={color} 
-                debug={DEBUG_MODE}
               />
             </Suspense>
           </Center>
