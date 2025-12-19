@@ -117,43 +117,25 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
         metalness: 0.1,
     }), [baseColor]);
 
-    return (
-        <group>
-            {/* 1. Base Layer (The Shirt Fabric) */}
-            <mesh 
-                geometry={geometry} 
-                material={baseMaterial} 
-                renderOrder={0} // Draw First
-            />
+    <group>
+            {/* Base Layer */}
+            <mesh geometry={geometry}>
+                <meshStandardMaterial color={baseColor} roughness={0.6} />
+            </mesh>
 
-            {/* 2. Design Layer (The Print) */}
-            {texture && (
-                <mesh 
-                    geometry={geometry} 
-                    renderOrder={1} // Draw Second (On Top)
-                    
-                    // ⭐️ THE FIX: Physically scale it up slightly
-                    // This creates a "shell" around the shirt so it CANNOT be hidden
-                    scale={1.002} 
-                >
+            {/* Design Layer */}
+            {designTexture && (
+                <mesh geometry={geometry}>
                     <meshStandardMaterial
-                        ref={designMaterialRef}
                         transparent={true}
-                        opacity={1}
-                        // Disable Z-fighting depth writes since we are using scale
-                        depthWrite={false} 
-                        
-                        // Force brightness
-                        color="#ffffff"
-                        roughness={1}
-                        
-                        // Ensure backface visibility (fixes "visible from inside only")
-                        side={THREE.DoubleSide}
+                        map={designTexture} // ✅ CORRECT: Pass as a prop, not a child
+                        polygonOffset={true}
+                        polygonOffsetFactor={-1}
+                        alphaTest={0.5}
                     />
                 </mesh>
             )}
         </group>
-    );
 }
 
 // --- 3. MAIN MODEL ---
