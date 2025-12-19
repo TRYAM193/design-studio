@@ -36,7 +36,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
             </mesh>
 
             {/* Design Layer */}
-            {designTexture && (
+            {textureUrl && (
                 <mesh geometry={geometry}>
                     <meshStandardMaterial
                         transparent={true}
