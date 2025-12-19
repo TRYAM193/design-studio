@@ -29,7 +29,7 @@ function DecalLayer({ geometry, textureUrl, opacity = 1 }) {
         (async () => {
             try {
                 tex = await loader.loadAsync(textureUrl);
-                tex.flipY = false;
+                tex.flipY = true;
                 tex.colorSpace = THREE.SRGBColorSpace;
 
                 if (isMounted) {
