@@ -1,154 +1,86 @@
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment, Center, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 
-// --- DEBUG: PINK/BLACK CHECKERBOARD (Standard "Missing Texture" Pattern) ---
-const CHECKERBOARD_TEXTURE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAVElEQVRo3u3RAQ0AAAgCoGv/ny6IBj5gAQ1OR8BqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagWsVsBqBaxWwGoFrFbAagP0eO7w/iO8qAAAAABJRU5ErkJggg==";
-
-// Toggle this to TRUE to ignore your design and force the checkerboard
-const FORCE_DEBUG_TEXTURE = false;
-
-function useTextureSafe(url, label) {
+/**
+ * Enhanced texture loader that handles both external URLs and 
+ * Fabric.js Base64 data strings correctly for 3D models.
+ */
+function useProductTexture(url, label) {
     const [texture, setTexture] = useState(null);
 
-    // 1. Force debug texture if flag is on, otherwise use the passed url
-    // (Make sure FORCE_DEBUG_TEXTURE and CHECKERBOARD_TEXTURE are defined or imported)
-    const targetUrl = (typeof FORCE_DEBUG_TEXTURE !== 'undefined' && FORCE_DEBUG_TEXTURE) 
-        ? CHECKERBOARD_TEXTURE 
-        : url;
-
     useEffect(() => {
-        // 2. STOP if no URL is provided. 
-        // This is why you currently see null - the upstream data is missing!
-        if (!targetUrl) {
-            console.warn(`[${label}] Skipping load: URL is undefined`);
+        if (!url) {
             setTexture(null);
             return;
         }
 
-        let isActive = true;
         const loader = new THREE.TextureLoader();
-
-        console.log(`[${label}] Loading texture from:`, targetUrl);
-
-        // 3. CORRECTED SYNTAX: Changed 'loadAsync' to 'load'
         loader.load(
-            targetUrl,
+            url,
             (tex) => {
-                if (!isActive) return;
-
-                // Safety Check: Image dimensions
-                if (!tex.image || tex.image.width === 0) {
-                    console.error(`[${label}] ❌ Texture loaded but has 0 dimensions!`);
-                    return;
-                }
-
-                console.log(`[${label}] ✅ Texture loaded (${tex.image.width}x${tex.image.height})`);
-
-                // Texture Settings
-                tex.flipY = false;
+                // IMPORTANT for GLTF: Models use a different coordinate system than web images
+                tex.flipY = false; 
                 tex.colorSpace = THREE.SRGBColorSpace;
-                tex.anisotropy = 16;
-                tex.needsUpdate = true; // Often helps with initial render
-
+                tex.needsUpdate = true;
                 setTexture(tex);
+                console.log(`[${label}] Texture applied successfully.`);
             },
-            undefined, // onProgress (optional)
-            (err) => {
-                if (isActive) console.error(`[${label}] ❌ Texture Failed:`, err);
-            }
+            undefined,
+            (err) => console.error(`[${label}] Failed to load texture:`, err)
         );
+    }, [url, label]);
 
-        return () => { isActive = false; };
-    }, [targetUrl, label]);
-    console.log(texture)
     return texture;
 }
 
-// --- 2. MESH LAYER (THE "PHYSICAL SHELL" FIX) ---
 function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
-    const designMaterialRef = React.useRef(null);
-    const texture = useTextureSafe(textureUrl, label);
+    const designTexture = useProductTexture(textureUrl, label);
 
-    // Update material settings
-    useEffect(() => {
-        if (designMaterialRef.current && texture) {
-            const mat = designMaterialRef.current;
-            mat.map = texture;
-            mat.transparent = true;
-            mat.opacity = 1;
-            
-            // Allow seeing it from both sides (Inside & Outside)
-            mat.side = THREE.DoubleSide; 
-            
-            // Fix "Grey Box" (removes invisible pixels)
-            mat.alphaTest = 0.05; 
-
-            mat.needsUpdate = true;
-        }
-    }, [texture]);
-
+    // Find the correct geometry in the GLTF tree
     const geometry = useMemo(() => {
         if (!nodes) return null;
         let node = nodes[meshName];
         if (!node) {
-            const cleanName = meshName.split('_')[0];
-            const matchKey = Object.keys(nodes).find(key => key.includes(cleanName));
-            if (matchKey) node = nodes[matchKey];
+            // Fallback: search for partial matches if the registry name is slightly off
+            const matchKey = Object.keys(nodes).find(k => k.includes(meshName.split('_')[0]));
+            node = nodes[matchKey];
         }
-        if (!node) return null;
-        if (node.geometry) return node.geometry;
-        
-        // Handle nested children
-        if (node.children && node.children.length > 0) {
-            const child = node.children.find(c => c.geometry);
-            if (child) return child.geometry;
-        }
-        return null;
+        return node?.geometry || node?.children?.find(c => c.geometry)?.geometry || null;
     }, [nodes, meshName]);
 
     if (!geometry) return null;
 
-    const baseMaterial = useMemo(() => new THREE.MeshStandardMaterial({
-        color: baseColor,
-        roughness: 0.7,
-        metalness: 0.1,
-    }), [baseColor]);
-
     return (
         <group>
-            {/* 1. Base Layer (The Shirt Fabric) */}
-            <mesh 
-                geometry={geometry} 
-                material={baseMaterial} 
-                renderOrder={0} // Draw First
-            />
+            {/* BASE FABRIC LAYER */}
+            <mesh geometry={geometry}>
+                <meshStandardMaterial 
+                    color={baseColor} 
+                    roughness={0.6} 
+                    metalness={0.1} 
+                />
+            </mesh>
 
-            {/* 2. Design Layer (The Print) */}
-            {texture && (
-                <mesh 
-                    geometry={geometry} 
-                    renderOrder={1} // Draw Second (On Top)
-                    
-                    // ⭐️ THE FIX: Physically scale it up slightly
-                    // This creates a "shell" around the shirt so it CANNOT be hidden
-                    scale={1.002} 
-                >
+            {/* DESIGN OVERLAY LAYER (Fabric.js Design) */}
+            {designTexture && (
+                <mesh geometry={geometry}>
                     <meshStandardMaterial
-                        ref={designMaterialRef}
                         transparent={true}
-                        opacity={1}
-                        // Disable Z-fighting depth writes since we are using scale
-                        depthWrite={false} 
-                        
-                        // Force brightness
-                        color="#ffffff"
-                        roughness={1}
-                        
-                        // Ensure backface visibility (fixes "visible from inside only")
-                        side={THREE.DoubleSide}
+                        map={designTexture}
+                        /* 
+                           POLYGON OFFSET: This "pulls" the design slightly toward 
+                           the camera to prevent flickering (Z-fighting) without 
+                           needing to scale the mesh.
+                        */
+                        polygonOffset={true}
+                        polygonOffsetFactor={-1}
+                        polygonOffsetUnits={-1}
+                        // Higher alphaTest prevents the "grey box" effect on edges
+                        alphaTest={0.5} 
+                        depthWrite={false}
                     />
                 </mesh>
             )}
@@ -156,9 +88,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
     );
 }
 
-// --- 3. MAIN MODEL ---
 function ProductModel({ productId, textures, color }) {
-    // console.log(textures)
     const productType = resolveProductType(productId);
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
     const { nodes } = useGLTF(config.path);
@@ -179,34 +109,35 @@ function ProductModel({ productId, textures, color }) {
     );
 }
 
-// --- 4. EXPORT ---
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
     return (
-        <div className="w-full h-full relative bg-zinc-900">
+        <div className="w-full h-full relative bg-zinc-900" style={{ height: '500px' }}>
             <Canvas
                 shadows
                 gl={{ preserveDrawingBuffer: true, antialias: true }}
-                camera={{ position: [0, 0, 4.5], fov: 35 }}
+                camera={{ position: [0, 0, 4], fov: 35 }}
             >
-                <ambientLight intensity={1} />
-                <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
-                <spotLight position={[-10, 5, -10]} intensity={0.5} />
-
-                <group position={[0, -0.4, 0]}>
-                    <Center>
-                        <Suspense fallback={null}>
-                            <ProductModel
-                                productId={productId}
-                                textures={textures}
-                                color={color}
-                            />
-                        </Suspense>
+                <ambientLight intensity={0.7} />
+                <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1.5} />
+                
+                <Suspense fallback={null}>
+                    <Center top>
+                        <ProductModel
+                            productId={productId}
+                            textures={textures}
+                            color={color}
+                        />
                     </Center>
-                </group>
+                    <Environment preset="city" />
+                    <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={10} blur={2.5} far={4} />
+                </Suspense>
 
-                <OrbitControls minDistance={2} maxDistance={8} />
-                <Environment preset="city" />
-                <ContactShadows position={[0, -1, 0]} opacity={0.4} scale={10} blur={2.5} far={4} />
+                <OrbitControls 
+                    makeDefault 
+                    minDistance={2} 
+                    maxDistance={7} 
+                    enablePan={false} 
+                />
             </Canvas>
         </div>
     );
