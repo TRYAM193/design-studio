@@ -66,8 +66,8 @@ function ProductModel({ productType, textures, color }) {
     const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
     const { nodes } = useGLTF(config.path, true);
 
+    console.log()
 
-    
     const mappedTextures = useMemo(() => ({
         front: textures.front || textures.Front,
         back: textures.back || textures.Back,
