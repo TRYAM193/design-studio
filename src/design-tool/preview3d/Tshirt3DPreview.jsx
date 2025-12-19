@@ -110,10 +110,20 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
 /**
  * Main Product Model
  */
+// Inside design-tool/preview3d/Tshirt3DPreview.jsx
+
 function ProductModel({ productId, textures, color }) {
   const productType = resolveProductType(productId);
   const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
   const { nodes } = useGLTF(config.path);
+
+  // 🔍 DEBUG: Log all available mesh names to the console
+  React.useEffect(() => {
+    console.group("🔍 3D Model Debug Info");
+    console.log("Loaded GLB Nodes:", Object.keys(nodes));
+    console.log("Targeting Meshes:", config.meshes);
+    console.groupEnd();
+  }, [nodes, config]);
 
   const meshKeys = Object.keys(config.meshes);
 
@@ -123,7 +133,7 @@ function ProductModel({ productId, textures, color }) {
         <MeshLayer
           key={key}
           nodes={nodes}
-          meshName={config.meshes[key]}
+          meshName={config.meshes[key]} // This name MUST match one in "Loaded GLB Nodes"
           textureUrl={textures[key]}
           baseColor={color}
         />
