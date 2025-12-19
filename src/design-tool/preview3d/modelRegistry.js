@@ -6,8 +6,8 @@ export const MODEL_REGISTRY = {
             front: "Body_Front_Node",
             back: "Body_Back_Node",
             leftSleeve: "Sleeves_Node",
-            rightSleeve: "Sleeves_Node.001",
-            fcollar: "Ribbon_Node.001",
+            rightSleeve: "Sleeves_Node001",
+            fcollar: "Ribbon_Node001",
             bcollar: "Ribbon_Node"
         }
     }
