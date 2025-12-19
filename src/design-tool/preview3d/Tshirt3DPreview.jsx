@@ -133,7 +133,7 @@ function ProductModel({ productId, textures, color, debug }) {
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
   // Toggle this to TRUE if you still don't see anything. 
   // It will make the design layer bright RED to prove the mesh exists.
-  const DEBUG_MODE = false; 
+  const DEBUG_MODE = true; 
 
   return (
     <div className="w-full h-full relative bg-zinc-900">
