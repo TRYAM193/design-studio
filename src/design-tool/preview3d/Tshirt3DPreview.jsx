@@ -5,10 +5,8 @@ import * as THREE from 'three';
 import { MODEL_REGISTRY, resolveProductType } from './modelRegistry';
 
 /**
- * Custom Hook: Loads a texture safely from a URL (or base64)
- * - Prevents race conditions (cancels previous load if url changes)
- * - Enforces correct encoding and flip settings
- * - Disposes of old textures to prevent memory leaks
+ * Custom Hook: Loads a texture safely
+ * Handles Blob URLs and prevents race conditions.
  */
 function useTextureSafe(url) {
   const [texture, setTexture] = useState(null);
@@ -18,6 +16,8 @@ function useTextureSafe(url) {
       setTexture(null);
       return;
     }
+
+    console.log("Loading Texture URL:", url); // Debugging
 
     let isActive = true;
     const loader = new THREE.TextureLoader();
@@ -30,21 +30,21 @@ function useTextureSafe(url) {
           return;
         }
 
-        // 3. Texture Configuration
-        loadedTex.flipY = false; // As requested
+        // TEXTURE SETTINGS
+        loadedTex.flipY = false; // CRITICAL for GLB models
         loadedTex.colorSpace = THREE.SRGBColorSpace;
+        loadedTex.anisotropy = 16; // Makes texture sharp at angles
         loadedTex.needsUpdate = true;
         
         setTexture(loadedTex);
       },
-      undefined, // onProgress
+      undefined,
       (err) => {
-        console.error("Failed to load 3D texture:", err);
+        console.error("Texture Load Error:", err);
         if (isActive) setTexture(null);
       }
     );
 
-    // Cleanup: Prevent race conditions and memory leaks
     return () => {
       isActive = false;
     };
@@ -54,21 +54,22 @@ function useTextureSafe(url) {
 }
 
 /**
- * Sub-component: Applies the design texture to a specific mesh geometry
- * Uses Polygon Offset to prevent z-fighting with the base shirt color
+ * Layer Component
+ * Renders the shirt color + the design overlaid on top
  */
 function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
   const texture = useTextureSafe(textureUrl);
   
-  // Robustly find the mesh node by name (handling potential naming quirks)
+  // Find node safely
   const meshNode = useMemo(() => {
     if (!nodes || !meshName) return null;
+    // Try exact match or cleaned match
     return nodes[meshName] || nodes[meshName.replace(/\./g, '_')]; 
   }, [nodes, meshName]);
 
   if (!meshNode) return null;
 
-  // Base Material (Fabric Color)
+  // Material for the shirt fabric
   const baseMaterial = useMemo(() => new THREE.MeshStandardMaterial({
     color: baseColor,
     roughness: 0.7,
@@ -77,7 +78,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
 
   return (
     <group>
-      {/* 1. Base Layer: The Shirt Color */}
+      {/* 1. Base Shirt Layer */}
       <mesh 
         geometry={meshNode.geometry} 
         material={baseMaterial} 
@@ -85,19 +86,19 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
         receiveShadow 
       />
 
-      {/* 2. Design Layer: The Texture (Only if texture exists) */}
+      {/* 2. Design Overlay Layer (Only if texture exists) */}
       {texture && (
         <mesh geometry={meshNode.geometry}>
           <meshStandardMaterial
             map={texture}
-            transparent={true}
+            transparent={true} // Allows PNG transparency
             opacity={1}
             roughness={0.8}
             side={THREE.DoubleSide}
             
-            // Critical for overlaying on the exact same geometry
+            // PREVENT Z-FIGHTING:
             polygonOffset={true}
-            polygonOffsetFactor={-4} 
+            polygonOffsetFactor={-4} // Pushes pixels slightly towards camera
             depthWrite={false} 
           />
         </mesh>
@@ -107,42 +108,30 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor }) {
 }
 
 /**
- * Main Model Component
- * Loads the GLTF and maps textures to specific meshes defined in MODEL_REGISTRY
+ * Main Product Model
  */
 function ProductModel({ productId, textures, color }) {
   const productType = resolveProductType(productId);
   const config = MODEL_REGISTRY[productType] || MODEL_REGISTRY["TSHIRT"];
-  
-  // Load GLTF Model
   const { nodes } = useGLTF(config.path);
 
-  // Identify all mesh keys defined in the registry (front, back, sleeves, etc.)
   const meshKeys = Object.keys(config.meshes);
 
   return (
     <group dispose={null}>
-      {meshKeys.map((key) => {
-        const meshName = config.meshes[key];
-        const textureUrl = textures[key]; // e.g. textures.front, textures.back
-
-        return (
-          <MeshLayer
-            key={key}
-            nodes={nodes}
-            meshName={meshName}
-            textureUrl={textureUrl}
-            baseColor={color}
-          />
-        );
-      })}
+      {meshKeys.map((key) => (
+        <MeshLayer
+          key={key}
+          nodes={nodes}
+          meshName={config.meshes[key]}
+          textureUrl={textures[key]}
+          baseColor={color}
+        />
+      ))}
     </group>
   );
 }
 
-/**
- * Loading Fallback
- */
 function Loader() {
   return (
     <mesh>
@@ -152,28 +141,17 @@ function Loader() {
   );
 }
 
-/**
- * Main Exported Component
- */
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
   return (
     <div className="w-full h-full relative bg-zinc-900">
       <Canvas
         shadows
-        dpr={[1, 2]} // Optimization for high DPI screens
+        dpr={[1, 2]}
         gl={{ preserveDrawingBuffer: true, antialias: true }}
         camera={{ position: [0, 0, 3.5], fov: 40 }}
       >
         <ambientLight intensity={0.7} />
-        <spotLight 
-          position={[10, 10, 10]} 
-          angle={0.15} 
-          penumbra={1} 
-          intensity={1} 
-          castShadow 
-        />
-        
-        {/* Fill lights for better product visibility */}
+        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} castShadow />
         <pointLight position={[-10, -10, -10]} intensity={0.5} />
         
         <group position={[0, -0.2, 0]}>
@@ -188,7 +166,6 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
           </Center>
         </group>
 
-        {/* 5. Works with OrbitControls */}
         <OrbitControls 
           enablePan={false} 
           minPolarAngle={Math.PI / 4} 
