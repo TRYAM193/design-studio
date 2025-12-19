@@ -15,8 +15,8 @@ function useTextureSafe(url, label) {
 
     // 1. Force debug texture if flag is on, otherwise use the passed url
     // (Make sure FORCE_DEBUG_TEXTURE and CHECKERBOARD_TEXTURE are defined or imported)
-    const targetUrl = (typeof FORCE_DEBUG_TEXTURE !== 'undefined' && FORCE_DEBUG_TEXTURE)
-        ? CHECKERBOARD_TEXTURE
+    const targetUrl = (typeof FORCE_DEBUG_TEXTURE !== 'undefined' && FORCE_DEBUG_TEXTURE) 
+        ? CHECKERBOARD_TEXTURE 
         : url;
 
     useEffect(() => {
@@ -79,12 +79,12 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
             mat.map = texture;
             mat.transparent = true;
             mat.opacity = 1;
-
+            
             // Allow seeing it from both sides (Inside & Outside)
-            mat.side = THREE.DoubleSide;
-
+            mat.side = THREE.DoubleSide; 
+            
             // Fix "Grey Box" (removes invisible pixels)
-            mat.alphaTest = 0.05;
+            mat.alphaTest = 0.05; 
 
             mat.needsUpdate = true;
         }
@@ -100,7 +100,7 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
         }
         if (!node) return null;
         if (node.geometry) return node.geometry;
-
+        
         // Handle nested children
         if (node.children && node.children.length > 0) {
             const child = node.children.find(c => c.geometry);
@@ -119,20 +119,36 @@ function MeshLayer({ nodes, meshName, textureUrl, baseColor, label }) {
 
     return (
         <group>
-            {/* Base Layer */}
-            <mesh geometry={geometry}>
-                <meshStandardMaterial color={baseColor} roughness={0.6} />
-            </mesh>
+            {/* 1. Base Layer (The Shirt Fabric) */}
+            <mesh 
+                geometry={geometry} 
+                material={baseMaterial} 
+                renderOrder={0} // Draw First
+            />
 
-            {/* Design Layer */}
-            {designTexture && (
-                <mesh geometry={geometry}>
+            {/* 2. Design Layer (The Print) */}
+            {texture && (
+                <mesh 
+                    geometry={geometry} 
+                    renderOrder={1} // Draw Second (On Top)
+                    
+                    // ⭐️ THE FIX: Physically scale it up slightly
+                    // This creates a "shell" around the shirt so it CANNOT be hidden
+                    scale={1.002} 
+                >
                     <meshStandardMaterial
+                        ref={designMaterialRef}
                         transparent={true}
-                        map={designTexture} // ✅ CORRECT: Pass as a prop, not a child
-                        polygonOffset={true}
-                        polygonOffsetFactor={-1}
-                        alphaTest={0.5}
+                        opacity={1}
+                        // Disable Z-fighting depth writes since we are using scale
+                        depthWrite={false} 
+                        
+                        // Force brightness
+                        color="#ffffff"
+                        roughness={1}
+                        
+                        // Ensure backface visibility (fixes "visible from inside only")
+                        side={THREE.DoubleSide}
                     />
                 </mesh>
             )}
