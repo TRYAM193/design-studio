@@ -101,7 +101,7 @@ function TshirtModel({ productId, textures, color }) {
 
     useEffect(() => {
         console.log("Front texture:", frontTex);
-        console.log("Texture data:", textures.front?.substring(0, 50));
+        console.log("Texture data:", textures.front);
     }, [frontTex, textures.front]);
 
     return (
