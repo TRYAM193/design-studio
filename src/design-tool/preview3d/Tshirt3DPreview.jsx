@@ -92,7 +92,7 @@ function TshirtModel({ productId, textures, color }) {
 
     return (
         <group
-            position={[0, -0.5, 0]}  // Move model down if too high
+            position={[0, -1, 0]}  // Move model down if too high
             scale={0.8}              // Scale down if too large
         >
             {/* FRONT */}
