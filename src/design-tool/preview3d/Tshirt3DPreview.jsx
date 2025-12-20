@@ -100,9 +100,9 @@ function TshirtModel({ productId, textures, color }) {
                 mesh={nodes[m.front]}
                 color={color}
                 texture={frontTex}
-                 decalPosition={[0, 0, 0.15]}      // Closer to surface
-        decalRotation={[0, 0, 0]}
-        decalScale={[0.8, 1.0, 0.8]}
+                decalPosition={[0, 0, 0.15]}      // Closer to surface
+                decalRotation={[0, 0, 0]}
+                decalScale={[0.8, 1.0, 0.8]}
             />
 
             {/* BACK */}
