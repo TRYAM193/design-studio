@@ -170,7 +170,7 @@ const captureCurrentCanvas = () => {
         if (!fabricCanvas || newView === currentView) return;
 
         // Capture current view asynchronously
-        const currentSnapshot = await captureCurrentCanvas();
+        const currentSnapshot = await captureCurrentCanvas()
 
         setDesignTextures(prev => {
             // Optional: Revoke old URL to save memory? 
