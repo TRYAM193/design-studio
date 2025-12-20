@@ -55,7 +55,6 @@ export default function EditorPanel() {
     const [currentDesign, setCurrentDesign] = useState(null);
     const [editingDesignId, setEditingDesignId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
-    const isApparel =
 
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
@@ -431,21 +430,17 @@ export default function EditorPanel() {
                         </div>
                     )}
                 </aside>
-                {isApparel ? (
-                    <Tshirt3DPreview
-                        productId={productId}
-                        textures={{
-                            front: textures.front?.url,
-                            back: textures.back?.url,
-                            leftSleeve: textures.leftSleeve?.url,
-                            rightSleeve: textures.rightSleeve?.url
-                        }}
-                        color={selectedColor}
-                    />
-                ) : (
-                    <div>3D Preview not available for this item.</div>
-                )}
 
+                <ThreeDPreviewModal
+                    isOpen={isPreviewOpen}
+                    onClose={() => setIsPreviewOpen(false)}
+                    textures={designTextures}
+                    onAddToCart={handleAddToCart}
+                    isSaving={isSaving}
+                    productId={productId}
+                    productCategory={productId ? productData.category : undefined}
+                    color={canvasBg}
+                />
             </div>
         </div>
     );
