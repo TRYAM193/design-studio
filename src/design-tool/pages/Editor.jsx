@@ -136,41 +136,46 @@ export default function EditorPanel() {
         }
     }, [location.state, fabricCanvas]);
 
-    // In Editor.jsx - modify captureCurrentCanvas
-const captureCurrentCanvas = () => {
-  if (!fabricCanvas) return null;
+    const captureCurrentCanvas = () => {
+        if (!fabricCanvas) return null;
 
-  const originalBg = fabricCanvas.backgroundColor;
-  fabricCanvas.backgroundColor = null;
-  fabricCanvas.renderAll();
+        const originalBg = fabricCanvas.backgroundColor;
+        fabricCanvas.backgroundColor = null;
+        fabricCanvas.renderAll();
 
-  try {
-    // Convert to Blob instead of base64
-    return new Promise((resolve) => {
-      fabricCanvas.toBlob((blob) => {
-        if (blob) {
-          const blobUrl = URL.createObjectURL(blob);
-          resolve(blobUrl);
-        } else {
-          resolve(null);
+        try {
+            const originalWidth = fabricCanvas.getWidth();
+            const targetWidth = 2048; // preview-safe
+            const multiplier =
+                originalWidth > 0
+                    ? Math.min(1, targetWidth / originalWidth)
+                    : 1;
+
+            const base64 = fabricCanvas.toDataURL({
+                format: "png",
+                multiplier,
+                enableRetinaScaling: false,
+                quality: 1
+            });
+            console.log(base64)
+
+            return base64;
+
+        } catch (err) {
+            console.error("Failed to generate preview base64:", err);
+            return null;
+
+        } finally {
+            fabricCanvas.backgroundColor = originalBg;
+            fabricCanvas.renderAll();
         }
-      }, 'image/png', 1);
-    });
-  } catch (err) {
-    console.error("Failed to generate preview:", err);
-    return null;
-  } finally {
-    fabricCanvas.backgroundColor = originalBg;
-    fabricCanvas.renderAll();
-  }
-};
-
+    };
 
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
         // Capture current view asynchronously
-        const currentSnapshot = await captureCurrentCanvas()
+        const currentSnapshot = await captureCurrentCanvas();
 
         setDesignTextures(prev => {
             // Optional: Revoke old URL to save memory? 
