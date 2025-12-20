@@ -62,6 +62,19 @@ function ShirtPart({ geometry, color, decalTex, decalPosition, decalRotation, de
     );
 }
 
+function DebugPlane({ url }) {
+  const tex = useDesignTexture(url);
+  if (!tex) return null;
+
+  return (
+    <mesh position={[0, 0, 0]} >
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial map={tex} transparent />
+    </mesh>
+  );
+}
+
+
 function TshirtModel({ productId, textures, color }) {
     const productType = resolveProductType(productId);
     const config = MODEL_REGISTRY[productType];
