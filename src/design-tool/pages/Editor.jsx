@@ -192,30 +192,33 @@ const captureCurrentCanvas = () => {
     };
 
     const handleGeneratePreview = async () => {
-        if (!fabricCanvas) return;
-        fabricCanvas.discardActiveObject();
-        setIsGeneratingPreview(true);
+  if (!fabricCanvas) return;
 
-        try {
-            const currentSnapshot = await captureCurrentCanvas();
+  fabricCanvas.discardActiveObject();
+  setIsGeneratingPreview(true);
 
-            const updatedTextures = {
-                ...designTextures,
-                [currentView]: currentSnapshot
-            };
-            setDesignTextures(updatedTextures);
-
-            if (productId) {
-                setIsPreviewOpen(true);
-            } else {
-                handleAddToCartDirectly(currentSnapshot);
-            }
-        } catch (error) {
-            console.error("Preview generation error:", error);
-        } finally {
-            setIsGeneratingPreview(false);
-        }
+  try {
+    const currentSnapshot = await captureCurrentCanvas();
+    
+    const updatedTextures = {
+      ...designTextures,
+      [currentView]: currentSnapshot
     };
+
+    setDesignTextures(updatedTextures);
+
+    if (productId) {
+      setIsPreviewOpen(true);
+    } else {
+      handleAddToCartDirectly(currentSnapshot);
+    }
+  } catch (error) {
+    console.error("Preview generation error:", error);
+  } finally {
+    setIsGeneratingPreview(false);
+  }
+};
+
 
     const handleAddToCartDirectly = (designData) => {
         setIsSaving(true);
