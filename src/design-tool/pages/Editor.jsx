@@ -157,7 +157,7 @@ export default function EditorPanel() {
                 enableRetinaScaling: false,
                 quality: 1
             });
-            c
+            console.log(base64)
 
             return base64;
 
