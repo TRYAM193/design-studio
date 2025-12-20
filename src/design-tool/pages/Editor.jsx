@@ -17,28 +17,74 @@ import { doc, getDoc } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-
-
-import {
-    FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX
-} from 'react-icons/fi';
+import { FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX } from 'react-icons/fi';
 
 const COLOR_MAP = {
-    "White": "#FFFFFF", "Natural": "#F3E5AB", "Soft Cream": "#F5F5DC", "Sand": "#C2B280", "Silver": "#C0C0C0",
-    "Black": "#000000", "Solid Black Blend": "#1a1a1a", "Black Heather": "#2D2D2D", "Charcoal": "#36454F",
-    "Dark Grey": "#4A4A4A", "Asphalt": "#505050", "Dark Heather": "#4B5563", "Dark Grey Heather": "#525252",
-    "Graphite Heather": "#374151", "Deep Heather": "#606060", "Sport Grey": "#9CA3AF", "Athletic Heather": "#9E9E9E",
-    "Ash": "#D1D5DB", "Navy": "#000080", "Heather Navy": "#34495E", "Royal": "#2563EB", "True Royal": "#1C39BB",
-    "Heather True Royal": "#4169E1", "Steel Blue": "#4682B4", "Carolina Blue": "#7BAFD4", "Heather Columbia Blue": "#7897BB",
-    "Light Blue": "#ADD8E6", "Baby Blue": "#89CFF0", "Heather Ice Blue": "#A4D3EE", "Turquoise": "#40E0D0",
-    "Aqua": "#00FFFF", "Heather Aqua": "#66CDAA", "Red": "#EF4444", "Heather Red": "#CD5C5C", "Cardinal": "#C41E3A",
-    "Maroon": "#800000", "Heliconia": "#DB2763", "Berry": "#C32148", "Pink": "#FFC0CB", "Light Pink": "#FFB6C1",
-    "Soft Pink": "#FDE9EA", "Charity Pink": "#FF69B4", "Heather Mauve": "#C18995", "Purple": "#6A0DAD",
-    "Team Purple": "#4B0082", "Heather Team Purple": "#663399", "Forest Green": "#228B22", "Forest": "#0B6623",
-    "Military Green": "#4B5320", "Army": "#454B1B", "Olive": "#808000", "Heather Olive": "#556B2F",
-    "Irish Green": "#009E60", "Kelly": "#4CBB17", "Heather Kelly": "#3CB371", "Heather Green": "#608060",
-    "Leaf": "#76904A", "Heather Mint": "#98FF98", "Gold": "#FFD700", "Yellow": "#FFFF00", "Orange": "#FFA500",
-    "Autumn": "#D2691E", "Brown": "#8B4513", "Heather Clay": "#B66A50", "Heather Peach": "#FFCBA4"
+    "White": "#FFFFFF",
+    "Natural": "#F3E5AB",
+    "Soft Cream": "#F5F5DC",
+    "Sand": "#C2B280",
+    "Silver": "#C0C0C0",
+    "Black": "#000000",
+    "Solid Black Blend": "#1a1a1a",
+    "Black Heather": "#2D2D2D",
+    "Charcoal": "#36454F",
+    "Dark Grey": "#4A4A4A",
+    "Asphalt": "#505050",
+    "Dark Heather": "#4B5563",
+    "Dark Grey Heather": "#525252",
+    "Graphite Heather": "#374151",
+    "Deep Heather": "#606060",
+    "Sport Grey": "#9CA3AF",
+    "Athletic Heather": "#9E9E9E",
+    "Ash": "#D1D5DB",
+    "Navy": "#000080",
+    "Heather Navy": "#34495E",
+    "Royal": "#2563EB",
+    "True Royal": "#1C39BB",
+    "Heather True Royal": "#4169E1",
+    "Steel Blue": "#4682B4",
+    "Carolina Blue": "#7BAFD4",
+    "Heather Columbia Blue": "#7897BB",
+    "Light Blue": "#ADD8E6",
+    "Baby Blue": "#89CFF0",
+    "Heather Ice Blue": "#A4D3EE",
+    "Turquoise": "#40E0D0",
+    "Aqua": "#00FFFF",
+    "Heather Aqua": "#66CDAA",
+    "Red": "#EF4444",
+    "Heather Red": "#CD5C5C",
+    "Cardinal": "#C41E3A",
+    "Maroon": "#800000",
+    "Heliconia": "#DB2763",
+    "Berry": "#C32148",
+    "Pink": "#FFC0CB",
+    "Light Pink": "#FFB6C1",
+    "Soft Pink": "#FDE9EA",
+    "Charity Pink": "#FF69B4",
+    "Heather Mauve": "#C18995",
+    "Purple": "#6A0DAD",
+    "Team Purple": "#4B0082",
+    "Heather Team Purple": "#663399",
+    "Forest Green": "#228B22",
+    "Forest": "#0B6623",
+    "Military Green": "#4B5320",
+    "Army": "#454B1B",
+    "Olive": "#808000",
+    "Heather Olive": "#556B2F",
+    "Irish Green": "#009E60",
+    "Kelly": "#4CBB17",
+    "Heather Kelly": "#3CB371",
+    "Heather Green": "#608060",
+    "Leaf": "#76904A",
+    "Heather Mint": "#98FF98",
+    "Gold": "#FFD700",
+    "Yellow": "#FFFF00",
+    "Orange": "#FFA500",
+    "Autumn": "#D2691E",
+    "Brown": "#8B4513",
+    "Heather Clay": "#B66A50",
+    "Heather Peach": "#FFCBA4"
 };
 
 export default function EditorPanel() {
@@ -73,8 +119,6 @@ export default function EditorPanel() {
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
 
-    // Store textures as Blob URLs
-    // Update state structure in Editor.jsx
     const [designTextures, setDesignTextures] = useState({
         front: { blob: null, url: null },
         back: { blob: null, url: null },
@@ -82,17 +126,16 @@ export default function EditorPanel() {
         rightSleeve: { blob: null, url: null }
     });
 
-
     const containerRef = useRef(null);
     const [scaleFactor, setScaleFactor] = useState(0.2);
-
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false); // New loading state
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
 
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
 
+    // Initialize product data
     useEffect(() => {
         async function initEditor() {
             if (!productId) return;
@@ -114,8 +157,9 @@ export default function EditorPanel() {
             }
         }
         initEditor();
-    }, [productId]);
+    }, [productId, urlColor]);
 
+    // Calculate scale factor
     useEffect(() => {
         function calculateScale() {
             if (!containerRef.current) return;
@@ -132,6 +176,7 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
+    // Load design from location state
     useEffect(() => {
         if (location.state?.designToLoad && fabricCanvas) {
             const { designToLoad } = location.state;
@@ -144,7 +189,18 @@ export default function EditorPanel() {
         }
     }, [location.state, fabricCanvas]);
 
-    // Add this helper function in Editor.jsx
+    // Cleanup blob URLs on unmount
+    useEffect(() => {
+        return () => {
+            Object.values(designTextures).forEach(texture => {
+                if (texture?.url && texture.url.startsWith('blob:')) {
+                    URL.revokeObjectURL(texture.url);
+                }
+            });
+        };
+    }, []);
+
+    // Helper function to convert dataURL to Blob
     const dataURLtoBlob = (dataURL) => {
         const arr = dataURL.split(',');
         const mime = arr[0].match(/:(.*?);/)[1];
@@ -157,8 +213,7 @@ export default function EditorPanel() {
         return new Blob([u8arr], { type: mime });
     };
 
-
-    // In Editor.jsx - modify captureCurrentCanvas
+    // Capture current canvas as blob URL
     const captureCurrentCanvas = () => {
         if (!fabricCanvas) return null;
 
@@ -176,14 +231,13 @@ export default function EditorPanel() {
                 enableRetinaScaling: false
             });
 
-            console.log("DataURL captured");
+            console.log("DataURL captured, length:", dataUrl.length);
 
             const blob = dataURLtoBlob(dataUrl);
             const blobUrl = URL.createObjectURL(blob);
 
             console.log("Blob URL created:", blobUrl);
 
-            // Return both blob and url
             return { blob, url: blobUrl };
 
         } catch (err) {
@@ -195,24 +249,22 @@ export default function EditorPanel() {
         }
     };
 
-
-    const handleSwitchView = async (newView) => {
+    // Switch between different views (front, back, sleeves)
+    const handleSwitchView = (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
-        // Capture current view asynchronously
-        const currentSnapshot = await captureCurrentCanvas();
+        const currentSnapshot = captureCurrentCanvas();
 
-        setDesignTextures(prev => {
-            // Optional: Revoke old URL to save memory? 
-            // For now we keep it to avoid flickering if user switches back.
-            return { ...prev, [currentView]: currentSnapshot };
-        });
+        setDesignTextures(prev => ({
+            ...prev,
+            [currentView]: currentSnapshot
+        }));
 
         setCurrentView(newView);
-        // In real app, load new view JSON here
         fabricCanvas.requestRenderAll();
     };
 
+    // Handle color change
     const handleColorChange = (colorName) => {
         if (!fabricCanvas) return;
         const hex = COLOR_MAP[colorName] || colorName;
@@ -221,6 +273,7 @@ export default function EditorPanel() {
         fabricCanvas.renderAll();
     };
 
+    // Generate 3D preview
     const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
 
@@ -238,7 +291,7 @@ export default function EditorPanel() {
 
             const updatedTextures = {
                 ...designTextures,
-                [currentView]: currentSnapshot  // Store { blob, url }
+                [currentView]: currentSnapshot
             };
 
             setDesignTextures(updatedTextures);
@@ -255,8 +308,7 @@ export default function EditorPanel() {
         }
     };
 
-
-
+    // Add to cart directly without product
     const handleAddToCartDirectly = (designData) => {
         setIsSaving(true);
         setTimeout(() => {
@@ -265,6 +317,7 @@ export default function EditorPanel() {
         }, 1500);
     };
 
+    // Handle add to cart from 3D preview
     const handleAddToCart = async () => {
         setIsSaving(true);
         console.log("Saving Order:", {
@@ -279,173 +332,113 @@ export default function EditorPanel() {
         }, 1500);
     };
 
-    const BrandDisplay = (
-        <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
-            <div className="logo-circle">
-                <img src="/assets/LOGO.png" alt="TRYAM" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-            </div>
-            <h1>TRYAM</h1>
-        </div>
-    );
-
     return (
-        <div className="main-app-container">
-            <div className="main full-height-main">
+        <div className="editor-container">
+            {/* Top Toolbar */}
+            <MainToolbar
+                productData={productData}
+                canvasBg={canvasBg}
+                onColorChange={handleColorChange}
+                currentView={currentView}
+                onViewChange={handleSwitchView}
+            />
 
-                <MainToolbar
-                    activePanel={activePanel}
-                    onSelectTool={(tool) => setActivePanel(prev => prev === tool ? null : tool)}
-                    setSelectedId={setSelectedId}
+            {/* Main Content Area */}
+            <div className="editor-content">
+                {/* Left Sidebar */}
+                <ContextualSidebar
+                    activeTool={activeTool}
                     setActiveTool={setActiveTool}
-                    navigation={navigation}
-                    brandDisplay={BrandDisplay}
                     fabricCanvas={fabricCanvas}
+                    addText={addText}
+                    addHeading={addHeading}
+                    addSubheading={addSubheading}
+                    activePanel={activePanel}
+                    setActivePanel={setActivePanel}
                 />
 
-                {activePanel && (
-                    <ContextualSidebar
-                        activePanel={activePanel}
-                        setActivePanel={setActivePanel}
-                        addText={addText}
-                        addHeading={addHeading}
-                        addSubheading={addSubheading}
-                    />
-                )}
-
-                <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
-
-                    {productId && productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
-                        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
-                            {Object.keys(productData.print_areas).map(view => (
-                                <button
-                                    key={view}
-                                    onClick={() => handleSwitchView(view)}
-                                    className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${currentView === view ? "bg-black text-white" : "text-slate-600 hover:bg-slate-100"}`}
-                                >
-                                    {view.replace('_', ' ')}
-                                </button>
-                            ))}
-                        </div>
-                    )}
-
-                    <div className="top-bar consolidated-bar">
-                        <div className="control-group">
-                            <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={past.length === 0} style={{ opacity: past.length === 0 ? 0.25 : 1 }}><FiRotateCcw size={18} /></button>
-                            <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={future.length === 0} style={{ opacity: future.length === 0 ? 0.25 : 1 }}><FiRotateCw size={18} /></button>
-                        </div>
-                        <div className="control-group divider">
-                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{ opacity: !selectedId ? 0.25 : 1 }}><FiTrash2 size={18} /></button>
-                        </div>
-                        {selectedId && !showProperties && (
-                            <div className="control-group phone-only">
-                                <button className="top-bar-button accent" onClick={() => setShowProperties(true)}><FiSettings size={18} /> <span>Edit</span></button>
-                            </div>
-                        )}
-                        <div className="control-group">
-                            {fabricCanvas && (
-                                <SaveDesignButton
-                                    canvas={fabricCanvas}
-                                    userId={userId}
-                                    currentDesign={currentDesign}
-                                    editingDesignId={editingDesignId}
-                                    className="top-bar-button"
-                                />
-                            )}
-                            <Button
-                                onClick={handleGeneratePreview}
-                                disabled={isGeneratingPreview || !fabricCanvas}
-                            >
-                                {isGeneratingPreview ? (
-                                    <>
-                                        <Loader2 className="animate-spin" />
-                                        Generating Preview...
-                                    </>
-                                ) : (
-                                    <>Preview in 3D</>
-                                )}
-                            </Button>
-
-                        </div>
-                    </div>
-
+                {/* Canvas Area */}
+                <div className="canvas-container" ref={containerRef}>
                     <CanvasEditor
-                        setFabricCanvas={setFabricCanvas}
                         canvasObjects={canvasObjects}
-                        selectedId={selectedId}
-                        setActiveTool={setActiveTool}
+                        setFabricCanvas={setFabricCanvas}
                         setSelectedId={setSelectedId}
-                        fabricCanvas={fabricCanvas}
-                        setCurrentDesign={setCurrentDesign}
-                        setEditingDesignId={setEditingDesignId}
-                        past={past}
+                        scaleFactor={scaleFactor}
+                        printAreaWidth={productData.print_areas?.[currentView]?.width || 4500}
+                        printAreaHeight={productData.print_areas?.[currentView]?.height || 5400}
+                        canvasBg={canvasBg}
                     />
 
-                </main>
+                    {/* Action Buttons */}
+                    <div className="canvas-actions">
+                        <Button
+                            onClick={() => dispatch(undo())}
+                            disabled={past.length === 0}
+                            variant="outline"
+                            size="icon"
+                        >
+                            <FiRotateCcw />
+                        </Button>
 
-                <aside className={`right-panel ${showProperties || !selectedId ? 'active' : ''}`}>
-                    {selectedId ? (
-                        <>
-                            <div className="mobile-panel-header">
-                                <span className="mobile-panel-title">Edit Properties</span>
-                                <button onClick={() => setShowProperties(false)} className="mobile-close-btn"><FiX size={20} /></button>
-                            </div>
-                            <RightSidebarTabs
-                                id={selectedId}
-                                type={activeTool}
-                                object={canvasObjects.find((obj) => obj.id === selectedId)}
-                                updateObject={updateObject}
-                                removeObject={removeObject}
-                                addText={addText}
-                                fabricCanvas={fabricCanvas}
-                                setSelectedId={setSelectedId}
-                            />
-                        </>
-                    ) : (
-                        <div className="p-5">
-                            {productId && productData.options?.colors?.length > 0 ? (
+                        <Button
+                            onClick={() => dispatch(redo())}
+                            disabled={future.length === 0}
+                            variant="outline"
+                            size="icon"
+                        >
+                            <FiRotateCw />
+                        </Button>
+
+                        <Button
+                            onClick={() => selectedId && removeObject(fabricCanvas, selectedId, setSelectedId)}
+                            disabled={!selectedId}
+                            variant="outline"
+                            size="icon"
+                        >
+                            <FiTrash2 />
+                        </Button>
+
+                        <Button
+                            onClick={handleGeneratePreview}
+                            disabled={isGeneratingPreview || !fabricCanvas}
+                        >
+                            {isGeneratingPreview ? (
                                 <>
-                                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
-                                    <div className="grid grid-cols-4 gap-3">
-                                        {productData.options.colors.map((color) => {
-                                            const hex = COLOR_MAP[color] || "#ccc";
-                                            const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
-                                            return (
-                                                <button
-                                                    key={color}
-                                                    onClick={() => handleColorChange(color)}
-                                                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}`}
-                                                    style={{ backgroundColor: hex }}
-                                                    title={color}
-                                                >
-                                                    {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} /></span>}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <p className="text-xs text-slate-400 mt-4 leading-relaxed">Visualize your design on different fabric colors.</p>
+                                    <Loader2 className="animate-spin mr-2" />
+                                    Generating...
                                 </>
                             ) : (
-                                <div className="text-center text-slate-400 py-10">Select an element to edit properties.</div>
+                                <>Preview in 3D</>
                             )}
-                        </div>
-                    )}
-                </aside>
-                {isApparel ? (
-                    <Tshirt3DPreview
-                        productId={productId}
-                        textures={{
-                            front: textures.front?.url,
-                            back: textures.back?.url,
-                            leftSleeve: textures.leftSleeve?.url,
-                            rightSleeve: textures.rightSleeve?.url
-                        }}
-                        color={selectedColor}
-                    />
-                ) : (
-                    <div>3D Preview not available for this item.</div>
-                )}
+                        </Button>
+                    </div>
+                </div>
 
+                {/* Right Sidebar */}
+                <RightSidebarTabs
+                    fabricCanvas={fabricCanvas}
+                    selectedId={selectedId}
+                    showProperties={showProperties}
+                    setShowProperties={setShowProperties}
+                />
             </div>
+
+            {/* 3D Preview Modal */}
+            <ThreeDPreviewModal
+                isOpen={isPreviewOpen}
+                onClose={() => setIsPreviewOpen(false)}
+                textures={{
+                    front: designTextures.front?.url,
+                    back: designTextures.back?.url,
+                    leftSleeve: designTextures.leftSleeve?.url,
+                    rightSleeve: designTextures.rightSleeve?.url
+                }}
+                onAddToCart={handleAddToCart}
+                isSaving={isSaving}
+                productId={productId}
+                productCategory={productData.category}
+                selectedColor={canvasBg}
+            />
         </div>
     );
 }
