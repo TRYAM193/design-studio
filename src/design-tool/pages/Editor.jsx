@@ -137,33 +137,38 @@ export default function EditorPanel() {
     }, [location.state, fabricCanvas]);
 
     // In Editor.jsx - modify captureCurrentCanvas
-    const captureCurrentCanvas = async() => {
-        if (!fabricCanvas) return null;
+    const captureCurrentCanvas = () => {
+        if (!fabricCanvas) return Promise.resolve(null);
 
         const originalBg = fabricCanvas.backgroundColor;
         fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
 
-        try {
-            // Convert to Blob instead of base64
-            return new Promise((resolve) => {
+        return new Promise((resolve) => {
+            try {
                 fabricCanvas.toBlob((blob) => {
+                    // Restore background before resolving
+                    fabricCanvas.backgroundColor = originalBg;
+                    fabricCanvas.renderAll();
+
                     if (blob) {
                         const blobUrl = URL.createObjectURL(blob);
+                        console.log("Blob URL created:", blobUrl); // Debug
                         resolve(blobUrl);
                     } else {
+                        console.error("Blob creation failed");
                         resolve(null);
                     }
                 }, 'image/png', 1);
-            });
-        } catch (err) {
-            console.error("Failed to generate preview:", err);
-            return null;
-        } finally {
-            fabricCanvas.backgroundColor = originalBg;
-            fabricCanvas.renderAll();
-        }
+            } catch (err) {
+                console.error("Failed to generate preview:", err);
+                fabricCanvas.backgroundColor = originalBg;
+                fabricCanvas.renderAll();
+                resolve(null);
+            }
+        });
     };
+
 
 
     const handleSwitchView = async (newView) => {
