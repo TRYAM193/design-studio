@@ -7,11 +7,11 @@ import { MODEL_REGISTRY, resolveProductType } from "./modelRegistry";
 /* ===========================
    SAFE BASE64 TEXTURE LOADER
    =========================== */
-function useDesignTexture(base64) {
+function useDesignTexture(url) {
     const [texture, setTexture] = useState(null);
 
     useEffect(() => {
-        if (!base64 || typeof base64 !== "string") {
+        if (!url || typeof url !== "string") {
             setTexture(null);
             return;
         }
@@ -19,28 +19,37 @@ function useDesignTexture(base64) {
         let cancelled = false;
         const loader = new THREE.TextureLoader();
 
+        console.log("Loading texture from:", url.substring(0, 100)); // Debug
+
         loader.load(
-            base64,
+            url,
             (tex) => {
                 if (cancelled) return;
-
+                console.log("Texture loaded successfully"); // Debug
                 tex.flipY = false;
                 tex.colorSpace = THREE.SRGBColorSpace;
                 tex.needsUpdate = true;
-
                 setTexture(tex);
             },
             undefined,
-            () => setTexture(null)
+            (error) => {
+                console.error("Texture load error:", error);
+                setTexture(null);
+            }
         );
 
         return () => {
             cancelled = true;
+            // Clean up blob URLs to prevent memory leaks
+            if (url.startsWith('blob:')) {
+                URL.revokeObjectURL(url);
+            }
         };
-    }, [base64]);
+    }, [url]);
 
     return texture;
 }
+
 
 /* ===========================
    SHIRT PART + DECAL
@@ -94,7 +103,7 @@ function TshirtModel({ productId, textures, color }) {
         console.log("Front texture:", frontTex);
         console.log("Texture data:", textures.front?.substring(0, 50));
     }, [frontTex, textures.front]);
-    
+
     return (
         <group
             position={[0, -0.85, 0]}  // Move model down if too high
