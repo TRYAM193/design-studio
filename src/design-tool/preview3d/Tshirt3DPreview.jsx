@@ -140,6 +140,8 @@ function TshirtModel({ productId, textures, color }) {
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
     return (
         <Canvas camera={{ position: [0, 0.1, 1.7], fov: 40 }}>
+            <DebugPlane url={textures?.front} />
+
             <ambientLight intensity={0.7} />
             <directionalLight position={[3, 5, 4]} intensity={0.8} />
             <TshirtModel productId={productId} textures={textures} color={color} />
