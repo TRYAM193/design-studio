@@ -91,9 +91,10 @@ function TshirtModel({ productId, textures, color }) {
     const m = config.meshes;
 
     useEffect(() => {
-    console.log("Front texture:", frontTex);
-    console.log("Texture data:", textures.front?.substring(0, 50));
-  }, [frontTex, textures.front]);
+        console.log("Front texture:", frontTex);
+        console.log("Texture data:", textures.front?.substring(0, 50));
+    }, [frontTex, textures.front]);
+    
     return (
         <group
             position={[0, -0.85, 0]}  // Move model down if too high
