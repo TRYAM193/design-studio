@@ -154,9 +154,10 @@ export default function EditorPanel() {
             const base64 = fabricCanvas.toDataURL({
                 format: "png",
                 multiplier,
-                enableRetinaScaling: true,
+                enableRetinaScaling: false,
                 quality: 1
             });
+            c
 
             return base64;
 
