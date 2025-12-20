@@ -338,7 +338,7 @@ export default function EditorPanel() {
                                 ) : (
                                     <>Preview in 3D</>
                                 )}
-                            </button>
+                            </Button>
 
                         </div>
                     </div>
