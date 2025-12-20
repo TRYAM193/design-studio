@@ -143,4 +143,4 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
 }
 
 // Optional: preload
-// useGLTF.preload("/assets/t-shirt.glb");
+useGLTF.preload("/assets/t-shirt.glb");
