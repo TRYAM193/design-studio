@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Decal } from "@react-three/drei";
@@ -27,7 +27,7 @@ function useDesignTexture(url) {
       },
       undefined,
       (err) => {
-        console.error("Texture load failed:", err);
+        console.error("Texture load error:", err);
         setTexture(null);
       }
     );
@@ -40,28 +40,23 @@ function useDesignTexture(url) {
   return texture;
 }
 
-function ShirtPart({
-  geometry,
-  color,
-  decalTex,
-  decalPosition,
-  decalRotation,
-  decalScale,
-}) {
+function ShirtPart({ geometry, color, decalTex, decalPosition, decalRotation, decalScale }) {
   if (!geometry) return null;
 
   return (
     <mesh geometry={geometry}>
-      <meshStandardMaterial color={color} roughness={0.8} metalness={0.05} />
+      <meshStandardMaterial color={color} roughness={0.85} metalness={0.05} />
       {decalTex && (
-        <Decal
-          map={decalTex}
-          position={decalPosition}
-          rotation={decalRotation}
-          scale={decalScale}
-          polygonOffset
-          polygonOffsetFactor={-4}
-        />
+        <Decal position={decalPosition} rotation={decalRotation} scale={decalScale}>
+          <meshBasicMaterial
+            map={decalTex}
+            transparent
+            polygonOffset
+            polygonOffsetFactor={-10}
+            depthTest
+            depthWrite={false}
+          />
+        </Decal>
       )}
     </mesh>
   );
@@ -70,11 +65,11 @@ function ShirtPart({
 function TshirtModel({ productId, textures, color }) {
   const productType = resolveProductType(productId);
   const config = MODEL_REGISTRY[productType];
-
   const { nodes } = useGLTF(config.path);
 
-  // Debug: confirm you are receiving URLs
+  // TEMP DEBUG (keep for now)
   // console.log("textures:", textures);
+  // console.log("nodes:", Object.keys(nodes));
 
   const frontTex = useDesignTexture(textures?.front);
   const backTex = useDesignTexture(textures?.back);
@@ -83,33 +78,27 @@ function TshirtModel({ productId, textures, color }) {
 
   const m = config.meshes;
 
-  // Debug: check node names from GLB (should contain m.front, m.back, etc.)
-  // console.log("GLB nodes:", Object.keys(nodes));
-
   return (
     <group position={[0, -0.85, 0]}  // Move model down if too high
-            scale={0.8}  >
-      {/* FRONT */}
+            scale={0.8}>
       <ShirtPart
         geometry={nodes?.[m.front]?.geometry}
         color={color}
         decalTex={frontTex}
         decalPosition={[0, 0.08, 0.18]}
         decalRotation={[0, 0, 0]}
-        decalScale={[0.55, 0.65, 0.55]}
+        decalScale={[0.6, 0.7, 0.6]}
       />
 
-      {/* BACK */}
       <ShirtPart
         geometry={nodes?.[m.back]?.geometry}
         color={color}
         decalTex={backTex}
         decalPosition={[0, 0.08, -0.18]}
         decalRotation={[0, Math.PI, 0]}
-        decalScale={[0.55, 0.65, 0.55]}
+        decalScale={[0.6, 0.7, 0.6]}
       />
 
-      {/* LEFT SLEEVE */}
       <ShirtPart
         geometry={nodes?.[m.leftSleeve]?.geometry}
         color={color}
@@ -119,7 +108,6 @@ function TshirtModel({ productId, textures, color }) {
         decalScale={[0.22, 0.22, 0.22]}
       />
 
-      {/* RIGHT SLEEVE */}
       <ShirtPart
         geometry={nodes?.[m.rightSleeve]?.geometry}
         color={color}
@@ -142,6 +130,3 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
     </Canvas>
   );
 }
-
-// Optional: preload
-useGLTF.preload("/assets/t-shirt.glb");
