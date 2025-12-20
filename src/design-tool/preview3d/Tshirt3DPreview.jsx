@@ -23,6 +23,8 @@ function useDesignTexture(url) {
                 tex.flipY = false;
                 tex.colorSpace = THREE.SRGBColorSpace;
                 tex.needsUpdate = true;
+                <DebugPlane url={textures?.front} />
+
                 setTexture(tex);
             },
             undefined,
