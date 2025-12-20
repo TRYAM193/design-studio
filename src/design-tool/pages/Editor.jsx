@@ -140,58 +140,58 @@ export default function EditorPanel() {
     }, [location.state, fabricCanvas]);
 
     // Add this helper function in Editor.jsx
-const dataURLtoBlob = (dataURL) => {
-  const arr = dataURL.split(',');
-  const mime = arr[0].match(/:(.*?);/)[1];
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
-  }
-  return new Blob([u8arr], { type: mime });
-};
+    const dataURLtoBlob = (dataURL) => {
+        const arr = dataURL.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new Blob([u8arr], { type: mime });
+    };
 
 
     // In Editor.jsx - modify captureCurrentCanvas
     const captureCurrentCanvas = () => {
-  if (!fabricCanvas) return null;
+        if (!fabricCanvas) return null;
 
-  console.log("Capturing canvas...");
-  
-  const originalBg = fabricCanvas.backgroundColor;
-  fabricCanvas.backgroundColor = null;
-  fabricCanvas.renderAll();
+        console.log("Capturing canvas...");
 
-  try {
-    // Step 1: Get data URL from canvas
-    const dataUrl = fabricCanvas.toDataURL({
-      format: 'png',
-      quality: 1,
-      multiplier: 1,
-      enableRetinaScaling: false
-    });
-    
-    console.log("DataURL captured, length:", dataUrl.length);
-    
-    // Step 2: Convert to Blob
-    const blob = dataURLtoBlob(dataUrl);
-    console.log("Blob created, size:", blob.size);
-    
-    // Step 3: Create Blob URL
-    const blobUrl = URL.createObjectURL(blob);
-    console.log("Blob URL created:", blobUrl);
-    
-    return blobUrl;
-    
-  } catch (err) {
-    console.error("Failed to capture canvas:", err);
-    return null;
-  } finally {
-    fabricCanvas.backgroundColor = originalBg;
-    fabricCanvas.renderAll();
-  }
-};
+        const originalBg = fabricCanvas.backgroundColor;
+        fabricCanvas.backgroundColor = null;
+        fabricCanvas.renderAll();
+
+        try {
+            // Step 1: Get data URL from canvas
+            const dataUrl = fabricCanvas.toDataURL({
+                format: 'png',
+                quality: 1,
+                multiplier: 1,
+                enableRetinaScaling: false
+            });
+
+            console.log("DataURL captured, length:", dataUrl.length);
+
+            // Step 2: Convert to Blob
+            const blob = dataURLtoBlob(dataUrl);
+            console.log("Blob created, size:", blob.size);
+
+            // Step 3: Create Blob URL
+            const blobUrl = URL.createObjectURL(blob);
+            console.log("Blob URL created:", blobUrl);
+
+            return blobUrl;
+
+        } catch (err) {
+            console.error("Failed to capture canvas:", err);
+            return null;
+        } finally {
+            fabricCanvas.backgroundColor = originalBg;
+            fabricCanvas.renderAll();
+        }
+    };
 
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
@@ -218,17 +218,22 @@ const dataURLtoBlob = (dataURL) => {
         fabricCanvas.renderAll();
     };
 
-    const handleGeneratePreview = async () => {
+    const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
 
         fabricCanvas.discardActiveObject();
         setIsGeneratingPreview(true);
 
         try {
-            // ✅ Add await here since captureCurrentCanvas now returns a Promise
-            const currentSnapshot = await captureCurrentCanvas();
+            const currentSnapshot = captureCurrentCanvas();
 
-            console.log("Snapshot generated:", currentSnapshot); // Debug
+            console.log("Snapshot result:", currentSnapshot);
+
+            if (!currentSnapshot) {
+                console.error("Failed to generate snapshot");
+                setIsGeneratingPreview(false);
+                return;
+            }
 
             const updatedTextures = {
                 ...designTextures,
@@ -237,9 +242,6 @@ const dataURLtoBlob = (dataURL) => {
 
             setDesignTextures(updatedTextures);
 
-            // ✅ Set loading to false BEFORE opening modal
-            setIsGeneratingPreview(false);
-
             if (productId) {
                 setIsPreviewOpen(true);
             } else {
@@ -247,9 +249,11 @@ const dataURLtoBlob = (dataURL) => {
             }
         } catch (error) {
             console.error("Preview generation error:", error);
-            setIsGeneratingPreview(false); // ✅ Also set false on error
+        } finally {
+            setIsGeneratingPreview(false);
         }
     };
+
 
     const handleAddToCartDirectly = (designData) => {
         setIsSaving(true);
