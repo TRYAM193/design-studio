@@ -20,11 +20,10 @@ function useDesignTexture(url) {
             url,
             (tex) => {
                 if (cancelled) return;
-                tex.flipY = false;
+                tex.flipY = true;
                 tex.colorSpace = THREE.SRGBColorSpace;
                 tex.needsUpdate = true;
-                <DebugPlane url={textures?.front} />
-
+                
                 setTexture(tex);
             },
             undefined,
