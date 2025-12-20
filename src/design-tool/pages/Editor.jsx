@@ -230,8 +230,6 @@ export default function EditorPanel() {
         try {
             const currentSnapshot = captureCurrentCanvas();
 
-            console.log("Snapshot result:", currentSnapshot);
-
             if (!currentSnapshot) {
                 console.error("Failed to generate snapshot");
                 setIsGeneratingPreview(false);
@@ -240,7 +238,7 @@ export default function EditorPanel() {
 
             const updatedTextures = {
                 ...designTextures,
-                [currentView]: currentSnapshot
+                [currentView]: currentSnapshot  // Store { blob, url }
             };
 
             setDesignTextures(updatedTextures);
@@ -256,6 +254,7 @@ export default function EditorPanel() {
             setIsGeneratingPreview(false);
         }
     };
+
 
 
     const handleAddToCartDirectly = (designData) => {
