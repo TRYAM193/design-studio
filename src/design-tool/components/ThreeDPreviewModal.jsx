@@ -39,17 +39,22 @@ export function ThreeDPreviewModal({
                     </Button>
 
                     {/* 3D Content */}
-                    {isApparel ? (
-                        <Tshirt3DPreview 
-                            productId={productId}
-                            textures={textures}
-                            color={selectedColor}
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-zinc-500">
-                            3D Preview not available for this item.
-                        </div>
-                    )}
+                    // In ThreeDPreviewModal.jsx
+{isApparel ? (
+  <Tshirt3DPreview
+    productId={productId}
+    textures={{
+      front: textures.front?.url,
+      back: textures.back?.url,
+      leftSleeve: textures.leftSleeve?.url,
+      rightSleeve: textures.rightSleeve?.url
+    }}
+    color={selectedColor}
+  />
+) : (
+  <div>3D Preview not available for this item.</div>
+)}
+
 
                     {/* Action Bar (Floating Bottom) */}
                     <div className="absolute bottom-8 left-0 right-0 z-50 flex justify-center gap-4 px-4 pointer-events-none">
