@@ -1,146 +1,184 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Decal } from "@react-three/drei";
 import { MODEL_REGISTRY, resolveProductType } from "./modelRegistry";
 
+/* ===========================
+   SAFE BASE64 TEXTURE LOADER
+   =========================== */
 function useDesignTexture(url) {
-  const [texture, setTexture] = useState(null);
+    const [texture, setTexture] = useState(null);
 
-  useEffect(() => {
-    if (!url || typeof url !== "string") {
-      setTexture(null);
-      return;
-    }
+    useEffect(() => {
+        if (!url || typeof url !== "string") {
+            setTexture(null);
+            return;
+        }
 
-    let cancelled = false;
-    const loader = new THREE.TextureLoader();
+        let cancelled = false;
+        const loader = new THREE.TextureLoader();
 
-    loader.load(
-      url,
-      (tex) => {
-        if (cancelled) return;
-        tex.flipY = false;
-        tex.colorSpace = THREE.SRGBColorSpace;
-        tex.needsUpdate = true;
-        setTexture(tex);
-      },
-      undefined,
-      (err) => {
-        console.error("Texture load failed:", err);
-        setTexture(null);
-      }
-    );
+        console.log("Loading texture from:", url.substring(0, 100)); // Debug
 
-    return () => {
-      cancelled = true;
-    };
-  }, [url]);
+        loader.load(
+            url,
+            (tex) => {
+                if (cancelled) return;
+                console.log("Texture loaded successfully"); // Debug
+                tex.flipY = false;
+                tex.colorSpace = THREE.SRGBColorSpace;
+                tex.needsUpdate = true;
+                setTexture(tex);
+            },
+            undefined,
+            (error) => {
+                console.error("Texture load error:", error);
+                setTexture(null);
+            }
+        );
 
-  return texture;
+        return () => {
+            cancelled = true;
+            // Clean up blob URLs to prevent memory leaks
+            if (url.startsWith('blob:')) {
+                URL.revokeObjectURL(url);
+            }
+        };
+    }, [url]);
+
+    return texture;
 }
 
+
+/* ===========================
+   SHIRT PART + DECAL
+   =========================== */
 function ShirtPart({
-  geometry,
-  color,
-  decalTex,
-  decalPosition,
-  decalRotation,
-  decalScale,
+    mesh,
+    color,
+    texture,
+    decalPosition,
+    decalRotation,
+    decalScale,
 }) {
-  if (!geometry) return null;
+    if (!mesh) return null;
 
-  return (
-    <mesh geometry={geometry}>
-      <meshStandardMaterial color={color} roughness={0.8} metalness={0.05} />
-      {decalTex && (
-        <Decal
-          map={decalTex}
-          position={decalPosition}
-          rotation={decalRotation}
-          scale={decalScale}
-          polygonOffset
-          polygonOffsetFactor={-4}
-        />
-      )}
-    </mesh>
-  );
+    return (
+        <mesh geometry={mesh.geometry}>
+            <meshStandardMaterial
+                color={color}
+                roughness={0.6}
+                metalness={0.1}
+            />
+            {texture && (
+                <Decal
+                    map={texture}
+                    position={decalPosition}
+                    rotation={decalRotation}
+                    scale={decalScale}
+                />
+            )}
+        </mesh>
+    );
 }
 
+
+/* ===========================
+   TSHIRT MODEL
+   =========================== */
 function TshirtModel({ productId, textures, color }) {
-  const productType = resolveProductType(productId);
-  const config = MODEL_REGISTRY[productType];
+    const productType = resolveProductType(productId);
+    const config = MODEL_REGISTRY[productType];
+    const { nodes } = useGLTF(config.path);
 
-  const { nodes } = useGLTF(config.path);
+    const frontTex = useDesignTexture(textures.front);
+    const backTex = useDesignTexture(textures.back);
+    const leftTex = useDesignTexture(textures.leftSleeve);
+    const rightTex = useDesignTexture(textures.rightSleeve);
 
-  // Debug: confirm you are receiving URLs
-  // console.log("textures:", textures);
+    const m = config.meshes;
 
-  const frontTex = useDesignTexture(textures?.front);
-  const backTex = useDesignTexture(textures?.back);
-  const leftTex = useDesignTexture(textures?.leftSleeve);
-  const rightTex = useDesignTexture(textures?.rightSleeve);
+    useEffect(() => {
+        console.log("Front texture:", frontTex);
+        console.log("Texture data:", textures.front);
+    }, [frontTex, textures.front]);
 
-  const m = config.meshes;
+    return (
+        <group
+            position={[0, -0.85, 0]}  // Move model down if too high
+            scale={0.8}              // Scale down if too large
+        >
+            {/* FRONT */}
+            <ShirtPart
+                mesh={nodes[m.front]}
+                color={color}
+                texture={frontTex}
+                decalPosition={[0, 0, 0.15]}      // Closer to surface
+                decalRotation={[0, 0, 0]}
+                decalScale={[0.8, 1.0, 0.8]}
+            />
 
-  // Debug: check node names from GLB (should contain m.front, m.back, etc.)
-  // console.log("GLB nodes:", Object.keys(nodes));
+            {/* BACK */}
+            <ShirtPart
+                mesh={nodes[m.back]}
+                color={color}
+                texture={backTex}
+                decalPosition={[0, 0, -0.15]}
+                decalRotation={[0, Math.PI, 0]}
+                decalScale={[0.8, 1.0, 0.8]}
+            />
 
-  return (
-    <group>
-      {/* FRONT */}
-      <ShirtPart
-        geometry={nodes?.[m.front]?.geometry}
-        color={color}
-        decalTex={frontTex}
-        decalPosition={[0, 0.08, 0.18]}
-        decalRotation={[0, 0, 0]}
-        decalScale={[0.55, 0.65, 0.55]}
-      />
+            {/* LEFT SLEEVE */}
+            <ShirtPart
+                mesh={nodes[m.leftSleeve]}
+                color={color}
+                texture={leftTex}
+                decalPosition={[-0.3, 0.15, 0]}
+                decalRotation={[0, Math.PI / 2, 0]}
+                decalScale={[0.2, 0.2, 0.2]}
+            />
 
-      {/* BACK */}
-      <ShirtPart
-        geometry={nodes?.[m.back]?.geometry}
-        color={color}
-        decalTex={backTex}
-        decalPosition={[0, 0.08, -0.18]}
-        decalRotation={[0, Math.PI, 0]}
-        decalScale={[0.55, 0.65, 0.55]}
-      />
-
-      {/* LEFT SLEEVE */}
-      <ShirtPart
-        geometry={nodes?.[m.leftSleeve]?.geometry}
-        color={color}
-        decalTex={leftTex}
-        decalPosition={[-0.32, 0.12, 0.02]}
-        decalRotation={[0, Math.PI / 2, 0]}
-        decalScale={[0.22, 0.22, 0.22]}
-      />
-
-      {/* RIGHT SLEEVE */}
-      <ShirtPart
-        geometry={nodes?.[m.rightSleeve]?.geometry}
-        color={color}
-        decalTex={rightTex}
-        decalPosition={[0.32, 0.12, 0.02]}
-        decalRotation={[0, -Math.PI / 2, 0]}
-        decalScale={[0.22, 0.22, 0.22]}
-      />
-    </group>
-  );
+            {/* RIGHT SLEEVE */}
+            <ShirtPart
+                mesh={nodes[m.rightSleeve]}
+                color={color}
+                texture={rightTex}
+                decalPosition={[0.3, 0.15, 0]}
+                decalRotation={[0, -Math.PI / 2, 0]}
+                decalScale={[0.2, 0.2, 0.2]}
+            />
+        </group>
+    );
 }
 
-export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
-  return (
-    <Canvas camera={{ position: [0, 0.1, 1.7], fov: 40 }}>
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[3, 5, 4]} intensity={0.8} />
-      <TshirtModel productId={productId} textures={textures} color={color} />
-      <OrbitControls enablePan={false} />
-    </Canvas>
-  );
+
+/* ===========================
+   MAIN PREVIEW CANVAS
+   =========================== */
+export default function Tshirt3DPreview({
+    productId,
+    textures,
+    color = "#ffffff",
+}) {
+    return (
+        <Canvas
+            camera={{
+                position: [0, -0.5, 2],  // Move camera closer (was [0, 0.5, 1.5])
+                fov: 50              // Wider field of view (was 35)
+            }}
+            gl={{ preserveDrawingBuffer: true }}
+        >
+            <ambientLight intensity={0.6} />
+            <directionalLight position={[3, 5, 5]} intensity={0.8} />
+            <TshirtModel productId={productId} textures={textures} color={color} />
+            <OrbitControls
+                enablePan={false}
+                target={[0, 0, 0]}  // Look at origin
+                minDistance={1}      // Prevent zooming too close
+                maxDistance={5}      // Prevent zooming too far
+            />
+        </Canvas>
+    );
 }
 
-// Optional: preload
-useGLTF.preload("/assets/t-shirt.glb");
