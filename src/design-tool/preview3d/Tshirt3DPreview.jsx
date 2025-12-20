@@ -46,32 +46,32 @@ function useDesignTexture(base64) {
    SHIRT PART + DECAL
    =========================== */
 function ShirtPart({
-  mesh,
-  color,
-  texture,
-  decalPosition,
-  decalRotation,
-  decalScale,
+    mesh,
+    color,
+    texture,
+    decalPosition,
+    decalRotation,
+    decalScale,
 }) {
-  if (!mesh) return null;
+    if (!mesh) return null;
 
-  return (
-    <mesh geometry={mesh.geometry}>
-      <meshStandardMaterial
-        color={color}
-        roughness={0.6}
-        metalness={0.1}
-      />
-      {texture && (
-        <Decal
-          map={texture}
-          position={decalPosition}
-          rotation={decalRotation}
-          scale={decalScale}
-        />
-      )}
-    </mesh>
-  );
+    return (
+        <mesh geometry={mesh.geometry}>
+            <meshStandardMaterial
+                color={color}
+                roughness={0.6}
+                metalness={0.1}
+            />
+            {texture && (
+                <Decal
+                    map={texture}
+                    position={decalPosition}
+                    rotation={decalRotation}
+                    scale={decalScale}
+                />
+            )}
+        </mesh>
+    );
 }
 
 
@@ -79,60 +79,63 @@ function ShirtPart({
    TSHIRT MODEL
    =========================== */
 function TshirtModel({ productId, textures, color }) {
-  const productType = resolveProductType(productId);
-  const config = MODEL_REGISTRY[productType];
-  const { nodes } = useGLTF(config.path);
+    const productType = resolveProductType(productId);
+    const config = MODEL_REGISTRY[productType];
+    const { nodes } = useGLTF(config.path);
 
-  const frontTex = useDesignTexture(textures.front);
-  const backTex = useDesignTexture(textures.back);
-  const leftTex = useDesignTexture(textures.leftSleeve);
-  const rightTex = useDesignTexture(textures.rightSleeve);
+    const frontTex = useDesignTexture(textures.front);
+    const backTex = useDesignTexture(textures.back);
+    const leftTex = useDesignTexture(textures.leftSleeve);
+    const rightTex = useDesignTexture(textures.rightSleeve);
 
-  const m = config.meshes;
+    const m = config.meshes;
 
-  return (
-    <group>
-      {/* FRONT */}
-      <ShirtPart
-        mesh={nodes[m.front]}
-        color={color}
-        texture={frontTex}
-        decalPosition={[0, 0.1, 0.2]}   // tune these
-        decalRotation={[0, 0, 0]}
-        decalScale={[0.4, 0.5, 0.4]}
-      />
+    return (
+        <group
+            position={[0, -0.5, 0]}  // Move model down if too high
+            scale={0.8}              // Scale down if too large
+        >
+            {/* FRONT */}
+            <ShirtPart
+                mesh={nodes[m.front]}
+                color={color}
+                texture={frontTex}
+                decalPosition={[0, 0.1, 0.2]}   // tune these
+                decalRotation={[0, 0, 0]}
+                decalScale={[0.4, 0.5, 0.4]}
+            />
 
-      {/* BACK */}
-      <ShirtPart
-        mesh={nodes[m.back]}
-        color={color}
-        texture={backTex}
-        decalPosition={[0, 0.1, -0.2]}
-        decalRotation={[0, Math.PI, 0]}
-        decalScale={[0.4, 0.5, 0.4]}
-      />
+            {/* BACK */}
+            <ShirtPart
+                mesh={nodes[m.back]}
+                color={color}
+                texture={backTex}
+                decalPosition={[0, 0.1, -0.2]}
+                decalRotation={[0, Math.PI, 0]}
+                decalScale={[0.4, 0.5, 0.4]}
+            />
 
-      {/* LEFT SLEEVE */}
-      <ShirtPart
-        mesh={nodes[m.leftSleeve]}
-        color={color}
-        texture={leftTex}
-        decalPosition={[-0.3, 0.15, 0]}
-        decalRotation={[0, Math.PI / 2, 0]}
-        decalScale={[0.2, 0.2, 0.2]}
-      />
+            {/* LEFT SLEEVE */}
+            <ShirtPart
+                mesh={nodes[m.leftSleeve]}
+                color={color}
+                texture={leftTex}
+                decalPosition={[-0.3, 0.15, 0]}
+                decalRotation={[0, Math.PI / 2, 0]}
+                decalScale={[0.2, 0.2, 0.2]}
+            />
 
-      {/* RIGHT SLEEVE */}
-      <ShirtPart
-        mesh={nodes[m.rightSleeve]}
-        color={color}
-        texture={rightTex}
-        decalPosition={[0.3, 0.15, 0]}
-        decalRotation={[0, -Math.PI / 2, 0]}
-        decalScale={[0.2, 0.2, 0.2]}
-      />
-    </group>
-  );
+            {/* RIGHT SLEEVE */}
+            <ShirtPart
+                mesh={nodes[m.rightSleeve]}
+                color={color}
+                texture={rightTex}
+                decalPosition={[0.3, 0.15, 0]}
+                decalRotation={[0, -Math.PI / 2, 0]}
+                decalScale={[0.2, 0.2, 0.2]}
+            />
+        </group>
+    );
 }
 
 
@@ -140,28 +143,28 @@ function TshirtModel({ productId, textures, color }) {
    MAIN PREVIEW CANVAS
    =========================== */
 export default function Tshirt3DPreview({
-  productId,
-  textures,
-  color = "#ffffff",
+    productId,
+    textures,
+    color = "#ffffff",
 }) {
-  return (
-    <Canvas
-      camera={{ 
-        position: [0, -0.5, 2],  // Move camera closer (was [0, 0.5, 1.5])
-        fov: 50              // Wider field of view (was 35)
-      }}
-      gl={{ preserveDrawingBuffer: true }}
-    >
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[3, 5, 5]} intensity={0.8} />
-      <TshirtModel productId={productId} textures={textures} color={color} />
-      <OrbitControls 
-        enablePan={false}
-        target={[0, 0, 0]}  // Look at origin
-        minDistance={1}      // Prevent zooming too close
-        maxDistance={5}      // Prevent zooming too far
-      />
-    </Canvas>
-  );
+    return (
+        <Canvas
+            camera={{
+                position: [0, -0.5, 2],  // Move camera closer (was [0, 0.5, 1.5])
+                fov: 50              // Wider field of view (was 35)
+            }}
+            gl={{ preserveDrawingBuffer: true }}
+        >
+            <ambientLight intensity={0.6} />
+            <directionalLight position={[3, 5, 5]} intensity={0.8} />
+            <TshirtModel productId={productId} textures={textures} color={color} />
+            <OrbitControls
+                enablePan={false}
+                target={[0, 0, 0]}  // Look at origin
+                minDistance={1}      // Prevent zooming too close
+                maxDistance={5}      // Prevent zooming too far
+            />
+        </Canvas>
+    );
 }
 
