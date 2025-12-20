@@ -110,9 +110,9 @@ function TshirtModel({ productId, textures, color }) {
                 mesh={nodes[m.back]}
                 color={color}
                 texture={backTex}
-                decalPosition={[0, 0.1, -0.2]}
+                decalPosition={[0, 0, -0.15]}
                 decalRotation={[0, Math.PI, 0]}
-                decalScale={[0.4, 0.5, 0.4]}
+                decalScale={[0.8, 1.0, 0.8]}
             />
 
             {/* LEFT SLEEVE */}
