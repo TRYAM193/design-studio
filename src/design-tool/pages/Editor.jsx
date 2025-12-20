@@ -326,7 +326,7 @@ export default function EditorPanel() {
                                     className="top-bar-button"
                                 />
                             )}
-                            <button
+                            <Button
                                 onClick={handleGeneratePreview}
                                 disabled={isGeneratingPreview || !fabricCanvas}
                             >
