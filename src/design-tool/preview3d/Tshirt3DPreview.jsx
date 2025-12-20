@@ -146,13 +146,22 @@ export default function Tshirt3DPreview({
 }) {
   return (
     <Canvas
-      camera={{ position: [0, 0.5, 1.5], fov: 35 }}
+      camera={{ 
+        position: [0, 0, 2],  // Move camera closer (was [0, 0.5, 1.5])
+        fov: 50              // Wider field of view (was 35)
+      }}
       gl={{ preserveDrawingBuffer: true }}
     >
       <ambientLight intensity={0.6} />
       <directionalLight position={[3, 5, 5]} intensity={0.8} />
       <TshirtModel productId={productId} textures={textures} color={color} />
-      <OrbitControls enablePan={false} />
+      <OrbitControls 
+        enablePan={false}
+        target={[0, 0, 0]}  // Look at origin
+        minDistance={1}      // Prevent zooming too close
+        maxDistance={5}      // Prevent zooming too far
+      />
     </Canvas>
   );
 }
+
