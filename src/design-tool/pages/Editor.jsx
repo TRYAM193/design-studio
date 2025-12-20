@@ -137,7 +137,7 @@ export default function EditorPanel() {
     }, [location.state, fabricCanvas]);
 
     // In Editor.jsx - modify captureCurrentCanvas
-    const captureCurrentCanvas = () => {
+    const captureCurrentCanvas = async() => {
         if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
