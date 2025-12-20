@@ -147,7 +147,7 @@ export default function Tshirt3DPreview({
   return (
     <Canvas
       camera={{ 
-        position: [0, 0, 2],  // Move camera closer (was [0, 0.5, 1.5])
+        position: [0, -0.5, 2],  // Move camera closer (was [0, 0.5, 1.5])
         fov: 50              // Wider field of view (was 35)
       }}
       gl={{ preserveDrawingBuffer: true }}
