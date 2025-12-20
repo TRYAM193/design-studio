@@ -15,6 +15,9 @@ import ContextualSidebar from '../components/ContextualSidebar';
 import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+
 
 import {
     FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX
