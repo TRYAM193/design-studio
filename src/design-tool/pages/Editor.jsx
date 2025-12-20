@@ -323,14 +323,20 @@ export default function EditorPanel() {
                                     className="top-bar-button"
                                 />
                             )}
-                            <button
+                            <Button
                                 onClick={handleGeneratePreview}
-                                disabled={isGeneratingPreview}
-                                className="bg-black text-white px-6 py-2.5 rounded-full font-bold shadow-lg hover:bg-gray-800 transition-all flex items-center gap-2"
+                                disabled={isGeneratingPreview || !fabricCanvas}
                             >
-                                {isGeneratingPreview ? <FiRotateCw className="animate-spin" size={18} /> : <FiCheckCircle size={18} />}
-                                <span>{isGeneratingPreview ? "Processing..." : (productId ? "3D Preview" : "Save Template")}</span>
-                            </button>
+                                {isGeneratingPreview ? (
+                                    <>
+                                        <Loader2 className="animate-spin" />
+                                        Generating Preview...
+                                    </>
+                                ) : (
+                                    <>Preview in 3D</>
+                                )}
+                            </Button>
+
                         </div>
                     </div>
 
