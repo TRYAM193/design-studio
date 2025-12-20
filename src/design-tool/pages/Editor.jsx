@@ -74,9 +74,14 @@ export default function EditorPanel() {
     const [currentView, setCurrentView] = useState("front");
 
     // Store textures as Blob URLs
+    // Update state structure in Editor.jsx
     const [designTextures, setDesignTextures] = useState({
-        front: null, back: null, leftSleeve: null, rightSleeve: null
+        front: { blob: null, url: null },
+        back: { blob: null, url: null },
+        leftSleeve: { blob: null, url: null },
+        rightSleeve: { blob: null, url: null }
     });
+
 
     const containerRef = useRef(null);
     const [scaleFactor, setScaleFactor] = useState(0.2);
