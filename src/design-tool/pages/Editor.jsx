@@ -141,38 +141,43 @@ export default function EditorPanel() {
 
     // In Editor.jsx - modify captureCurrentCanvas
     const captureCurrentCanvas = () => {
-        if (!fabricCanvas) return Promise.resolve(null);
+  if (!fabricCanvas) return null;
 
-        const originalBg = fabricCanvas.backgroundColor;
-        fabricCanvas.backgroundColor = null;
-        fabricCanvas.renderAll();
+  console.log("Capturing canvas...");
+  
+  const originalBg = fabricCanvas.backgroundColor;
+  fabricCanvas.backgroundColor = null;
+  fabricCanvas.renderAll();
 
-        return new Promise((resolve) => {
-            try {
-                fabricCanvas.toBlob((blob) => {
-                    // Restore background before resolving
-                    fabricCanvas.backgroundColor = originalBg;
-                    fabricCanvas.renderAll();
-
-                    if (blob) {
-                        const blobUrl = URL.createObjectURL(blob);
-                        console.log("Blob URL created:", blobUrl); // Debug
-                        resolve(blobUrl);
-                    } else {
-                        console.error("Blob creation failed");
-                        resolve(null);
-                    }
-                }, 'image/png', 1);
-            } catch (err) {
-                console.error("Failed to generate preview:", err);
-                fabricCanvas.backgroundColor = originalBg;
-                fabricCanvas.renderAll();
-                resolve(null);
-            }
-        });
-    };
-
-
+  try {
+    // Step 1: Get data URL from canvas
+    const dataUrl = fabricCanvas.toDataURL({
+      format: 'png',
+      quality: 1,
+      multiplier: 1,
+      enableRetinaScaling: false
+    });
+    
+    console.log("DataURL captured, length:", dataUrl.length);
+    
+    // Step 2: Convert to Blob
+    const blob = dataURLtoBlob(dataUrl);
+    console.log("Blob created, size:", blob.size);
+    
+    // Step 3: Create Blob URL
+    const blobUrl = URL.createObjectURL(blob);
+    console.log("Blob URL created:", blobUrl);
+    
+    return blobUrl;
+    
+  } catch (err) {
+    console.error("Failed to capture canvas:", err);
+    return null;
+  } finally {
+    fabricCanvas.backgroundColor = originalBg;
+    fabricCanvas.renderAll();
+  }
+};
 
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
