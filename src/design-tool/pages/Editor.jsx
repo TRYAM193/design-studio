@@ -169,7 +169,6 @@ export default function EditorPanel() {
         fabricCanvas.renderAll();
 
         try {
-            // Step 1: Get data URL from canvas
             const dataUrl = fabricCanvas.toDataURL({
                 format: 'png',
                 quality: 1,
@@ -177,17 +176,15 @@ export default function EditorPanel() {
                 enableRetinaScaling: false
             });
 
-            console.log("DataURL captured, length:", dataUrl.length);
+            console.log("DataURL captured");
 
-            // Step 2: Convert to Blob
             const blob = dataURLtoBlob(dataUrl);
-            console.log("Blob created, size:", blob.size);
-
-            // Step 3: Create Blob URL
             const blobUrl = URL.createObjectURL(blob);
+
             console.log("Blob URL created:", blobUrl);
 
-            return blobUrl;
+            // Return both blob and url
+            return { blob, url: blobUrl };
 
         } catch (err) {
             console.error("Failed to capture canvas:", err);
@@ -197,6 +194,7 @@ export default function EditorPanel() {
             fabricCanvas.renderAll();
         }
     };
+
 
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
