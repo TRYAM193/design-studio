@@ -197,37 +197,37 @@ export default function EditorPanel() {
     };
 
     const handleGeneratePreview = async () => {
-  if (!fabricCanvas) return;
+        if (!fabricCanvas) return;
 
-  fabricCanvas.discardActiveObject();
-  setIsGeneratingPreview(true);
+        fabricCanvas.discardActiveObject();
+        setIsGeneratingPreview(true);
 
-  try {
-    // ✅ Add await here since captureCurrentCanvas now returns a Promise
-    const currentSnapshot = await captureCurrentCanvas();
-    
-    console.log("Snapshot generated:", currentSnapshot); // Debug
-    
-    const updatedTextures = {
-      ...designTextures,
-      [currentView]: currentSnapshot
+        try {
+            // ✅ Add await here since captureCurrentCanvas now returns a Promise
+            const currentSnapshot = await captureCurrentCanvas();
+
+            console.log("Snapshot generated:", currentSnapshot); // Debug
+
+            const updatedTextures = {
+                ...designTextures,
+                [currentView]: currentSnapshot
+            };
+
+            setDesignTextures(updatedTextures);
+
+            // ✅ Set loading to false BEFORE opening modal
+            setIsGeneratingPreview(false);
+
+            if (productId) {
+                setIsPreviewOpen(true);
+            } else {
+                handleAddToCartDirectly(currentSnapshot);
+            }
+        } catch (error) {
+            console.error("Preview generation error:", error);
+            setIsGeneratingPreview(false); // ✅ Also set false on error
+        }
     };
-
-    setDesignTextures(updatedTextures);
-
-    // ✅ Set loading to false BEFORE opening modal
-    setIsGeneratingPreview(false);
-
-    if (productId) {
-      setIsPreviewOpen(true);
-    } else {
-      handleAddToCartDirectly(currentSnapshot);
-    }
-  } catch (error) {
-    console.error("Preview generation error:", error);
-    setIsGeneratingPreview(false); // ✅ Also set false on error
-  }
-};
 
     const handleAddToCartDirectly = (designData) => {
         setIsSaving(true);
