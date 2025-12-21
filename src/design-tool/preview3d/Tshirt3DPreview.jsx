@@ -21,25 +21,21 @@ function useDesignTexture(url) {
   return texture;
 }
 
-// --- 2. Calibration Decal (Controlled by Sliders) ---
-function CalibrationDecal({ texture, controls }) {
+// --- 2. Calibration Decal (Refactored for Flexibility) ---
+function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
   if (!texture) return null;
 
   return (
     <Decal
-      // We use the slider values here directly
-      position={[controls.x, controls.y, controls.z]} 
-      rotation={[0, 0, 0]} 
-      // Scale is also controlled so you can make it bigger/smaller
-      scale={[controls.scale, controls.scale, 1.5]} 
-      
-      // Keep DEBUG on so you can see the box moving
-      debug={true} 
+      position={[x, y, z]} 
+      rotation={rotation} 
+      scale={[scale, scale, 1.5]} 
+      debug={true} // Red box visible for debugging
     >
       <meshBasicMaterial
         map={texture}
         transparent
-        depthTest={false} // Always visible for calibration
+        depthTest={false}
         depthWrite={false}
         polygonOffset
         polygonOffsetFactor={-4}
@@ -53,26 +49,47 @@ function TshirtModel({ productId, textures, color, controls }) {
   const config = MODEL_REGISTRY[productType];
   const { nodes } = useGLTF(config.path);
   const m = config.meshes;
+  
   const frontTex = useDesignTexture(textures?.front);
+  const backTex = useDesignTexture(textures?.back);
 
   return (
     <group position={[0, -0.85, 0]} scale={0.8}>
+      {/* --- FRONT MESH --- */}
       <mesh geometry={nodes?.[m.front]?.geometry}>
         <meshStandardMaterial color={color} roughness={0.7} />
         
-        {/* Only calibrating FRONT for now */}
+        {/* Fixed Front Decal (Using your calibrated values) */}
         {frontTex && (
           <CalibrationDecal 
             texture={frontTex} 
-            controls={controls} 
+            x={0} 
+            y={1.25} 
+            z={-0.5} 
+            scale={0.5}
+            rotation={[0, 0, 0]}
           />
         )}
       </mesh>
       
-      {/* Render other parts normally without decals for now */}
+      {/* --- BACK MESH --- */}
       <mesh geometry={nodes?.[m.back]?.geometry}>
         <meshStandardMaterial color={color} />
+
+        {/* Debugging Back Decal (Controlled by Sliders) */}
+        {backTex && (
+          <CalibrationDecal 
+            texture={backTex} 
+            x={controls.x} 
+            y={controls.y} 
+            z={controls.z} 
+            scale={controls.scale}
+            rotation={[0, Math.PI, 0]} // Rotate 180 deg to face back
+          />
+        )}
       </mesh>
+
+      {/* --- SLEEVES --- */}
       <mesh geometry={nodes?.[m.leftSleeve]?.geometry}>
         <meshStandardMaterial color={color} />
       </mesh>
@@ -85,11 +102,11 @@ function TshirtModel({ productId, textures, color, controls }) {
 
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
   // --- SLIDER STATE ---
-  // UPDATED: New default positions based on user calibration
+  // Defaulting Z to positive 0.2 to start on the back side
   const [controls, setControls] = useState({
     x: 0,
     y: 1.25, 
-    z: -0.5,
+    z: 0.2, 
     scale: 0.5
   });
 
@@ -104,6 +121,10 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
       <Canvas camera={{ position: [0, 0, 2], fov: 45 }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 10, 7]} intensity={1} />
+        
+        {/* Added Back Light to see the back clearly */}
+        <directionalLight position={[0, 5, -10]} intensity={0.8} /> 
+
         <TshirtModel 
             productId={productId} 
             textures={textures} 
@@ -113,17 +134,26 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
         <OrbitControls enablePan={false} />
       </Canvas>
 
-      --- CONTROL PANEL OVERLAY ---
-      {/* <div style={{
+      {/* --- CONTROL PANEL OVERLAY --- */}
+      <div style={{
         position: "absolute", top: "10px", right: "10px", 
         background: "rgba(0,0,0,0.8)", padding: "15px", 
         color: "white", borderRadius: "8px", width: "250px",
         fontFamily: "sans-serif", fontSize: "12px"
       }}>
-        <h3 style={{ margin: "0 0 10px 0" }}>Calibration Tools</h3>
+        <h3 style={{ margin: "0 0 10px 0" }}>Back Calibration</h3>
         
-        {/* Y (Up/Down) */}
-        {/* <div style={{ marginBottom: "10px" }}>
+        <div style={{ marginBottom: "10px" }}>
+          <label>X (Left/Right): {controls.x.toFixed(2)}</label>
+          <input 
+            type="range" min="-0.5" max="0.5" step="0.01" 
+            value={controls.x} 
+            onChange={(e) => updateControl("x", e.target.value)}
+            style={{ width: "100%" }}
+          />
+        </div>
+
+        <div style={{ marginBottom: "10px" }}>
           <label>Y (Up/Down): {controls.y.toFixed(2)}</label>
           <input 
             type="range" min="-1" max="2" step="0.01" 
@@ -131,22 +161,20 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
             onChange={(e) => updateControl("y", e.target.value)}
             style={{ width: "100%" }}
           />
-        </div> */}
+        </div>
 
-        {/* Z (In/Out) */}
-        {/* <div style={{ marginBottom: "10px" }}>
+        <div style={{ marginBottom: "10px" }}>
           <label>Z (In/Out): {controls.z.toFixed(2)}</label>
           <input 
             type="range" min="-1" max="1" step="0.01" 
             value={controls.z} 
             onChange={(e) => updateControl("z", e.target.value)}
             style={{ width: "100%" }}
-          /> */}
-        {/* </div> */}
+          />
+        </div>
 
-        {/* Scale
         <div style={{ marginBottom: "10px" }}>
-          <label>Scale (Size): {controls.scale.toFixed(2)}</label>
+          <label>Scale: {controls.scale.toFixed(2)}</label>
           <input 
             type="range" min="0.1" max="2" step="0.01" 
             value={controls.scale} 
@@ -156,9 +184,9 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
         </div>
 
         <p style={{ color: "#aaa", fontStyle: "italic" }}>
-          *Move Y slider right until box moves up to chest.
-        </p> */ }
-      {/* </div> */}
+          *Adjust sliders to place the decal on the <strong>Back</strong>.
+        </p>
+      </div>
 
     </div>
   );
