@@ -114,13 +114,13 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
       </Canvas>
 
       --- CONTROL PANEL OVERLAY ---
-      <div style={{
+      {/* <div style={{
         position: "absolute", top: "10px", right: "10px", 
         background: "rgba(0,0,0,0.8)", padding: "15px", 
         color: "white", borderRadius: "8px", width: "250px",
         fontFamily: "sans-serif", fontSize: "12px"
       }}>
-        {/* <h3 style={{ margin: "0 0 10px 0" }}>Calibration Tools</h3>
+        <h3 style={{ margin: "0 0 10px 0" }}>Calibration Tools</h3>
         
         {/* Y (Up/Down) */}
         <div style={{ marginBottom: "10px" }}>
