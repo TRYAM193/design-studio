@@ -118,7 +118,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
         <div style={{ position: "relative", width: "100%", height: "100%" }}>
 
             {/* --- CANVAS --- */}
-            <Canvas camera={{ position: [0, 0, 2], fov: 45 }}>
+            <Canvas camera={{ position: [0, 0, 2], fov: 44 }}>
                 <ambientLight intensity={0.7} />
                 <directionalLight position={[5, 10, 7]} intensity={1} />
 
