@@ -26,22 +26,28 @@ function useDesignTexture(url) {
 
 // 2. DECAL COMPONENT WITH VISUAL DEBUGGER
 function SafeDecal({ texture, position, rotation, scale }) {
-  if (!texture) return null;
+  // If texture is missing, we STILL render to test position (Green Box)
+  // If texture is present, we render it normally
+  
+  const debugColor = texture ? "white" : "red"; // Red = Missing Texture
 
   return (
     <Decal
       position={position}
       rotation={rotation}
-      // Increased depth (3rd number) to 1.5 to ensure it hits the shirt
-      scale={[scale[0], scale[1], 1.5]} 
+      scale={[scale[0], scale[1], 1.5]} // Deep projection
+      debug={!texture} // Shows a wireframe box if texture is missing!
     >
       <meshBasicMaterial
-        map={texture}
+        map={texture || null}
+        color={debugColor} // Red if no texture, White if texture exists
         transparent
         polygonOffset
-        polygonOffsetFactor={-4} // Pulls it forward
+        polygonOffsetFactor={-4}
         depthTest={true}
         depthWrite={false}
+        // If texture is missing, make it semi-transparent red to spot it easily
+        opacity={texture ? 1 : 0.5} 
       />
     </Decal>
   );
