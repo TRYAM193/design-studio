@@ -66,7 +66,7 @@ function ShirtPart({ geometry, color, decalTex, decalPosition, decalRotation, de
             depthWrite={false}
             // polygonOffset pulls the pixels forward visually without moving the mesh
             polygonOffset
-            polygonOffsetFactor={-4} // A factor of -4 usually clears z-fighting on curved surfaces
+            polygonOffsetFactor={4} // A factor of -4 usually clears z-fighting on curved surfaces
           />
         </Decal>
       )}
