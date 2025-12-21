@@ -21,7 +21,7 @@ function useDesignTexture(url) {
   return texture;
 }
 
-// --- 2. Calibration Decal (Refactored for Flexibility) ---
+// --- 2. Calibration Decal (Fixed Visibility) ---
 function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
   if (!texture) return null;
 
@@ -30,12 +30,12 @@ function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
       position={[x, y, z]} 
       rotation={rotation} 
       scale={[scale, scale, 1.5]} 
-      debug={true} // Red box visible for debugging
+      // debug={true} // Uncomment to see the red bounding box
     >
       <meshBasicMaterial
         map={texture}
         transparent
-        depthTest={false}
+        depthTest={true}   // ✅ FIX: Enable depth test so shirt hides the decal from behind
         depthWrite={false}
         polygonOffset
         polygonOffsetFactor={-4}
@@ -102,11 +102,11 @@ function TshirtModel({ productId, textures, color, controls }) {
 
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
   // --- SLIDER STATE ---
-  // Defaulting Z to positive 0.2 to start on the back side
+  // Defaulting Z to positive 0.5 (Symmetric to Front's -0.5)
   const [controls, setControls] = useState({
     x: 0,
     y: 1.25, 
-    z: 0.2, 
+    z: 0.5, // ✅ FIX: Applied symmetric value for Back
     scale: 0.5
   });
 
@@ -184,7 +184,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
         </div>
 
         <p style={{ color: "#aaa", fontStyle: "italic" }}>
-          *Adjust sliders to place the decal on the <strong>Back</strong>.
+          *Adjust sliders to fine-tune the <strong>Back</strong> position.
         </p>
       </div>
 
