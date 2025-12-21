@@ -157,9 +157,9 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
 
         <p style={{ color: "#aaa", fontStyle: "italic" }}>
           *Move Y slider right until box moves up to chest.
-        </p> */ 
+        </p> */ }
       {/* </div> */}
 
-    </div>
+    // </div>
   );
 }
