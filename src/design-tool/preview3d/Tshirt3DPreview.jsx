@@ -113,7 +113,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
         <OrbitControls enablePan={false} />
       </Canvas>
 
-      {/* --- CONTROL PANEL OVERLAY --- */}
+      --- CONTROL PANEL OVERLAY ---
       <div style={{
         position: "absolute", top: "10px", right: "10px", 
         background: "rgba(0,0,0,0.8)", padding: "15px", 
