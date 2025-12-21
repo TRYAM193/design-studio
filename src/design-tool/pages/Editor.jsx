@@ -439,7 +439,7 @@ export default function EditorPanel() {
                     isSaving={isSaving}
                     productId={productId}
                     productCategory={productId ? productData.category : undefined}
-                    color={canvasBg}
+                    selectedColor={canvasBg}
                 />
             </div>
         </div>
