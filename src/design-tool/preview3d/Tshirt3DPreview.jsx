@@ -160,6 +160,6 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
         </p> */ }
       {/* </div> */}
 
-    // </div>
+    </div>
   );
 }
