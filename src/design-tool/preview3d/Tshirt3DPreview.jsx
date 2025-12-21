@@ -81,7 +81,7 @@ function TshirtModel({ productId, textures, color }) {
       {/* FRONT: Z is roughly 0.3 to be in front of chest */}
       <FloatingDesign
         texture={frontTex}
-        position={[0, 0.3, 0.35]} 
+        position={[0, 1.9, 0.35]} 
         rotation={[0, 0, 0]}
         scale={[0.3, 0.3, 1]} // Adjust size here (Width, Height, Depth)
       />
