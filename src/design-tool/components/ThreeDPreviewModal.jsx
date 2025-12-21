@@ -39,7 +39,6 @@ export function ThreeDPreviewModal({
                     </Button>
 
                     {/* 3D Content */}
-                    // In ThreeDPreviewModal.jsx
                     {isApparel ? (
                         <Tshirt3DPreview
                             productId={productId}
