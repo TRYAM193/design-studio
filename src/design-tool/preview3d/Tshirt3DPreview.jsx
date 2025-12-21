@@ -110,9 +110,6 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
     scale: 0.5
   });
 
-  const updateControl = (key, value) => {
-    setControls(prev => ({ ...prev, [key]: parseFloat(value) }));
-  };
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
@@ -137,60 +134,6 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
           maxPolarAngle={Math.PI / 2} 
         />
       </Canvas>
-
-      {/* --- CONTROL PANEL OVERLAY --- */}
-      {/* <div style={{
-        position: "absolute", top: "10px", right: "10px", 
-        background: "rgba(0,0,0,0.8)", padding: "15px", 
-        color: "white", borderRadius: "8px", width: "250px",
-        fontFamily: "sans-serif", fontSize: "12px"
-      }}>
-        <h3 style={{ margin: "0 0 10px 0" }}>Back Calibration</h3>
-        
-        <div style={{ marginBottom: "10px" }}>
-          <label>X (Left/Right): {controls.x.toFixed(2)}</label>
-          <input 
-            type="range" min="-0.5" max="0.5" step="0.01" 
-            value={controls.x} 
-            onChange={(e) => updateControl("x", e.target.value)}
-            style={{ width: "100%" }}
-          />
-        </div>
-
-        <div style={{ marginBottom: "10px" }}>
-          <label>Y (Up/Down): {controls.y.toFixed(2)}</label>
-          <input 
-            type="range" min="-1" max="2" step="0.01" 
-            value={controls.y} 
-            onChange={(e) => updateControl("y", e.target.value)}
-            style={{ width: "100%" }}
-          />
-        </div>
-
-        <div style={{ marginBottom: "10px" }}>
-          <label>Z (In/Out): {controls.z.toFixed(2)}</label>
-          <input 
-            type="range" min="-1" max="1" step="0.01" 
-            value={controls.z} 
-            onChange={(e) => updateControl("z", e.target.value)}
-            style={{ width: "100%" }}
-          />
-        </div>
-
-        <div style={{ marginBottom: "10px" }}>
-          <label>Scale: {controls.scale.toFixed(2)}</label>
-          <input 
-            type="range" min="0.1" max="2" step="0.01" 
-            value={controls.scale} 
-            onChange={(e) => updateControl("scale", e.target.value)}
-            style={{ width: "100%" }}
-          />
-        </div>
-
-        <p style={{ color: "#aaa", fontStyle: "italic" }}>
-          *Adjust sliders to fine-tune the <strong>Back</strong> position.
-        </p>
-      </div> */}
 
     </div>
   );
