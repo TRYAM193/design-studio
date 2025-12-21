@@ -135,7 +135,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
       </Canvas>
 
       {/* --- CONTROL PANEL OVERLAY --- */}
-      <div style={{
+      {/* <div style={{
         position: "absolute", top: "10px", right: "10px", 
         background: "rgba(0,0,0,0.8)", padding: "15px", 
         color: "white", borderRadius: "8px", width: "250px",
@@ -186,7 +186,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
         <p style={{ color: "#aaa", fontStyle: "italic" }}>
           *Adjust sliders to fine-tune the <strong>Back</strong> position.
         </p>
-      </div>
+      </div> */}
 
     </div>
   );
