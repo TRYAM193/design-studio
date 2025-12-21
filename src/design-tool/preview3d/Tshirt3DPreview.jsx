@@ -42,57 +42,36 @@ function useDesignTexture(url) {
 }
 
 function ShirtPart({ geometry, color, decalTex, decalPosition, decalRotation, decalScale }) {
+  if (!geometry) return null;
 
-    // 1. Calculate the position slightly "outside" the shirt based on rotation
-    const adjustedPosition = useMemo(() => {
-        const pos = new THREE.Vector3(...decalPosition);
-        const rot = new THREE.Euler(...decalRotation);
+  return (
+    <mesh geometry={geometry}>
+      <meshStandardMaterial color={color} roughness={0.85} metalness={0.05} />
 
-        // Create a vector pointing "forward" (0, 0, 1) relative to the decal
-        const offset = new THREE.Vector3(0, 0, 0.015); // Move 1.5cm out
-
-        // Rotate this offset to match the decal's rotation (so Back moves -Z, Right moves +X, etc.)
-        offset.applyEuler(rot);
-
-        // Add to original position
-        pos.add(offset);
-
-        return [pos.x, pos.y, pos.z];
-    }, [decalPosition, decalRotation]);
-
-    if (!geometry) return null;
-
-    return (
-        <mesh geometry={geometry}>
-            <meshStandardMaterial color={color} roughness={0.85} metalness={0.05} />
-
-            {decalTex && (
-                <Decal
-                    position={adjustedPosition}
-                    rotation={decalRotation}
-                    scale={decalScale}
-                >
-                    <meshBasicMaterial
-                        map={decalTex}
-                        transparent
-                        opacity={1}
-
-                        // KEY FIXES BELOW:
-                        // 1. PolygonOffset pulls the pixels towards the camera
-                        polygonOffset
-                        polygonOffsetFactor={-4}
-
-                        // 2. DepthTest=true ensures it wraps around the shirt (doesn't show through body)
-                        depthTest={true}
-                        depthWrite={false}
-
-                    // 3. RenderOrder=1 forces this to draw AFTER the shirt mesh
-                    // (Standard meshes are usually order 0)
-                    />
-                </Decal>
-            )}
-        </mesh>
-    );
+      {decalTex && (
+        <Decal 
+          position={decalPosition} 
+          rotation={decalRotation} 
+          // We override the Z scale here (the 3rd value) to be 2. 
+          // This makes the projection box VERY deep, ensuring it hits the surface.
+          scale={[decalScale[0], decalScale[1], 2]}
+        >
+          <meshBasicMaterial
+            map={decalTex}
+            transparent
+            
+            // This pulls the decal to the front visually
+            polygonOffset
+            polygonOffsetFactor={-10} 
+            
+            // Standard depth settings
+            depthTest={true}
+            depthWrite={false}
+          />
+        </Decal>
+      )}
+    </mesh>
+  );
 }
 
 function DebugPlane({ url }) {
