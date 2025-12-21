@@ -42,48 +42,69 @@ function useDesignTexture(url) {
 }
 
 function ShirtPart({ geometry, color, decalTex, decalPosition, decalRotation, decalScale }) {
-  // We remove the manual "pushOut" math because adding Z only works for the front.
-  // Instead, we use polygonOffset to tell the GPU to draw the decal "closer" to the camera.
 
-  if (!geometry) return null;
+    // 1. Calculate the position slightly "outside" the shirt based on rotation
+    const adjustedPosition = useMemo(() => {
+        const pos = new THREE.Vector3(...decalPosition);
+        const rot = new THREE.Euler(...decalRotation);
 
-  return (
-    <mesh geometry={geometry}>
-      <meshStandardMaterial color={color} roughness={0.85} metalness={0.05} />
+        // Create a vector pointing "forward" (0, 0, 1) relative to the decal
+        const offset = new THREE.Vector3(0, 0, 0.015); // Move 1.5cm out
 
-      {decalTex && (
-        <Decal 
-          // Use the original position directly. The Decal projection box handles the depth.
-          position={decalPosition} 
-          rotation={decalRotation} 
-          scale={decalScale}
-        >
-          <meshBasicMaterial
-            map={decalTex}
-            transparent
-            // depthTest must be TRUE so it doesn't show through the back of the shirt
-            depthTest={true} 
-            depthWrite={false}
-            // polygonOffset pulls the pixels forward visually without moving the mesh
-            polygonOffset
-            polygonOffsetFactor={-3} // A factor of -4 usually clears z-fighting on curved surfaces
-          />
-        </Decal>
-      )}
-    </mesh>
-  );
+        // Rotate this offset to match the decal's rotation (so Back moves -Z, Right moves +X, etc.)
+        offset.applyEuler(rot);
+
+        // Add to original position
+        pos.add(offset);
+
+        return [pos.x, pos.y, pos.z];
+    }, [decalPosition, decalRotation]);
+
+    if (!geometry) return null;
+
+    return (
+        <mesh geometry={geometry}>
+            <meshStandardMaterial color={color} roughness={0.85} metalness={0.05} />
+
+            {decalTex && (
+                <Decal
+                    position={adjustedPosition}
+                    rotation={decalRotation}
+                    scale={decalScale}
+                >
+                    <meshBasicMaterial
+                        map={decalTex}
+                        transparent
+                        opacity={1}
+
+                        // KEY FIXES BELOW:
+                        // 1. PolygonOffset pulls the pixels towards the camera
+                        polygonOffset
+                        polygonOffsetFactor={-4}
+
+                        // 2. DepthTest=true ensures it wraps around the shirt (doesn't show through body)
+                        depthTest={true}
+                        depthWrite={false}
+
+                    // 3. RenderOrder=1 forces this to draw AFTER the shirt mesh
+                    // (Standard meshes are usually order 0)
+                    />
+                </Decal>
+            )}
+        </mesh>
+    );
 }
 
 function DebugPlane({ url }) {
-  const tex = useDesignTexture(url);
-  if (!tex) return null;
+    const tex = useDesignTexture(url);
+    if (!tex) return null;
 
-  return (
-    <mesh position={[0, 0, 0]} >
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial map={tex} transparent />
-    </mesh>
-  );
+    return (
+        <mesh position={[0, 0, 0]} >
+            <planeGeometry args={[1, 1]} />
+            <meshBasicMaterial map={tex} transparent />
+        </mesh>
+    );
 }
 
 
