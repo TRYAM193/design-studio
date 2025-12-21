@@ -1,3 +1,4 @@
+// src/preview3d/Tshirt3DPreview.jsx
 import React, { useEffect, useState } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
@@ -84,11 +85,12 @@ function TshirtModel({ productId, textures, color, controls }) {
 
 export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
   // --- SLIDER STATE ---
+  // UPDATED: New default positions based on user calibration
   const [controls, setControls] = useState({
     x: 0,
-    y: 0.25, // Start where we were
-    z: 0.15,
-    scale: 0.35
+    y: 1.25, 
+    z: -0.5,
+    scale: 0.5
   });
 
   const updateControl = (key, value) => {
