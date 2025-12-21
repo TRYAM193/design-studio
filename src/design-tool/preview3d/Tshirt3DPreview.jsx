@@ -7,20 +7,36 @@ import { MODEL_REGISTRY, resolveProductType } from "./modelRegistry";
 // 1. ROBUST TEXTURE LOADER
 function useDesignTexture(url) {
   const [texture, setTexture] = useState(null);
+
   useEffect(() => {
     if (!url) {
-      setTexture(null);
-      return;
+        console.log("❌ No URL provided");
+        setTexture(null);
+        return;
     }
+
+    console.log("🔄 Starting load for:", url);
     const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin("anonymous"); // Fixes CORS issues
-    loader.load(url, (tex) => {
-      tex.anisotropy = 16;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.needsUpdate = true;
-      setTexture(tex);
-    });
+    
+    // IMPORTANT: specific settings to help with some CORS cases
+    loader.setCrossOrigin('anonymous'); 
+
+    loader.load(
+      url,
+      (tex) => {
+        console.log("✅ Texture Loaded Successfully!", tex);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.needsUpdate = true;
+        setTexture(tex);
+      },
+      undefined,
+      (err) => {
+        console.error("🚨 Texture Load Error:", err);
+        console.error("This is likely a CORS issue if the URL works in a tab.");
+      }
+    );
   }, [url]);
+
   return texture;
 }
 
