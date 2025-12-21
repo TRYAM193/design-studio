@@ -124,7 +124,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
             productId={productId} 
             textures={textures} 
             color={color} 
-            controls={controls} 
+            // controls={controls} 
         />
         
         {/* ✅ FIX: Locked Top/Bottom Rotation (Side-to-Side only) */}
