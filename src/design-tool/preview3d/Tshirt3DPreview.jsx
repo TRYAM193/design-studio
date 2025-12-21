@@ -42,28 +42,29 @@ function useDesignTexture(url) {
 
 // 2. DECAL COMPONENT WITH VISUAL DEBUGGER
 function SafeDecal({ texture, position, rotation, scale }) {
-  // If texture is missing, we STILL render to test position (Green Box)
-  // If texture is present, we render it normally
-  
-  const debugColor = texture ? "white" : "red"; // Red = Missing Texture
+  if (!texture) return null;
 
   return (
     <Decal
       position={position}
       rotation={rotation}
-      scale={[scale[0], scale[1], 1.5]} // Deep projection
-      debug={!texture} // Shows a wireframe box if texture is missing!
+      // 1. Make the projection box HUGE (Z=5) so it definitely hits the shirt
+      scale={[scale[0], scale[1], 5]} 
+      // 2. Enable Debug Mode: This draws a wireframe box showing exactly where the decal is
+      debug={true} 
     >
       <meshBasicMaterial
-        map={texture || null}
-        color={debugColor} // Red if no texture, White if texture exists
+        map={texture}
         transparent
-        polygonOffset
-        polygonOffsetFactor={-4}
-        depthTest={true}
+        // --- FORCE VISIBILITY SETTINGS ---
+        
+        // This tells the GPU: "Draw this on top of everything, even walls"
+        depthTest={false} 
         depthWrite={false}
-        // If texture is missing, make it semi-transparent red to spot it easily
-        opacity={texture ? 1 : 0.5} 
+        
+        // This forces it to draw LAST (on top of the shirt)
+        // Standard meshes are 0. We set this to 999.
+        side={THREE.DoubleSide} 
       />
     </Decal>
   );
