@@ -60,7 +60,7 @@ function TshirtModel({ productId, textures, color, controls }) {
     <group 
       position={[0, -0.85, 0]} 
       scale={0.8} 
-      rotation={[0, 0, 0]} 
+      rotation={[0.1, 0, 0]} 
     >
       {/* --- FRONT MESH --- */}
       <mesh geometry={nodes?.[m.front]?.geometry}>
