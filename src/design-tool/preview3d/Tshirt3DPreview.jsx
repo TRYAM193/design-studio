@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Decal } from "@react-three/drei";
@@ -23,7 +23,7 @@ function useDesignTexture(url) {
                 tex.flipY = true;
                 tex.colorSpace = THREE.SRGBColorSpace;
                 tex.needsUpdate = true;
-                
+                tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
                 setTexture(tex);
             },
             undefined,
@@ -42,25 +42,36 @@ function useDesignTexture(url) {
 }
 
 function ShirtPart({ geometry, color, decalTex, decalPosition, decalRotation, decalScale }) {
-    if (!geometry) return null;
+  // We remove the manual "pushOut" math because adding Z only works for the front.
+  // Instead, we use polygonOffset to tell the GPU to draw the decal "closer" to the camera.
 
-    return (
-        <mesh geometry={geometry}>
-            <meshStandardMaterial color={color} roughness={0.85} metalness={0.05} />
-            {decalTex && (
-                <Decal position={decalPosition} rotation={decalRotation} scale={decalScale}>
-                    <meshBasicMaterial
-                        map={decalTex}
-                        transparent
-                        polygonOffset
-                        polygonOffsetFactor={-10}
-                        depthTest
-                        depthWrite={false}
-                    />
-                </Decal>
-            )}
-        </mesh>
-    );
+  if (!geometry) return null;
+
+  return (
+    <mesh geometry={geometry}>
+      <meshStandardMaterial color={color} roughness={0.85} metalness={0.05} />
+
+      {decalTex && (
+        <Decal 
+          // Use the original position directly. The Decal projection box handles the depth.
+          position={decalPosition} 
+          rotation={decalRotation} 
+          scale={decalScale}
+        >
+          <meshBasicMaterial
+            map={decalTex}
+            transparent
+            // depthTest must be TRUE so it doesn't show through the back of the shirt
+            depthTest={true} 
+            depthWrite={false}
+            // polygonOffset pulls the pixels forward visually without moving the mesh
+            polygonOffset
+            polygonOffsetFactor={-4} // A factor of -4 usually clears z-fighting on curved surfaces
+          />
+        </Decal>
+      )}
+    </mesh>
+  );
 }
 
 function DebugPlane({ url }) {
@@ -103,7 +114,7 @@ function TshirtModel({ productId, textures, color }) {
                 geometry={nodes?.[m.front]?.geometry}
                 color={color}
                 decalTex={frontTex}
-                decalPosition={[0, 0.08, 0.18]}
+                decalPosition={[0, 0.08, 0.28]}
                 decalRotation={[0, 0, 0]}
                 decalScale={[0.6, 0.7, 0.6]}
             />
