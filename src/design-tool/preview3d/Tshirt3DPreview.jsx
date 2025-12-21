@@ -131,7 +131,11 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
             color={color} 
             controls={controls} 
         />
-        <OrbitControls enablePan={false} />
+        <OrbitControls 
+        enablePan={false}
+        minPolarAngle={Math.PI / 2} 
+    maxPolarAngle={Math.PI / 2}
+         />
       </Canvas>
 
       {/* --- CONTROL PANEL OVERLAY --- */}
