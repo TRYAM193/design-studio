@@ -142,9 +142,9 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
             onChange={(e) => updateControl("z", e.target.value)}
             style={{ width: "100%" }}
           /> */}
-        </div>
+        {/* </div> */}
 
-        {/* Scale */}
+        {/* Scale
         <div style={{ marginBottom: "10px" }}>
           <label>Scale (Size): {controls.scale.toFixed(2)}</label>
           <input 
@@ -157,7 +157,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
 
         <p style={{ color: "#aaa", fontStyle: "italic" }}>
           *Move Y slider right until box moves up to chest.
-        </p> */
+        </p> */ 
       {/* </div> */}
 
     </div>
