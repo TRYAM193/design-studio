@@ -123,7 +123,7 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
         <h3 style={{ margin: "0 0 10px 0" }}>Calibration Tools</h3>
         
         {/* Y (Up/Down) */}
-        <div style={{ marginBottom: "10px" }}>
+        {/* <div style={{ marginBottom: "10px" }}>
           <label>Y (Up/Down): {controls.y.toFixed(2)}</label>
           <input 
             type="range" min="-1" max="2" step="0.01" 
@@ -131,17 +131,17 @@ export default function Tshirt3DPreview({ productId, textures, color = "#ffffff"
             onChange={(e) => updateControl("y", e.target.value)}
             style={{ width: "100%" }}
           />
-        </div>
+        </div> */}
 
         {/* Z (In/Out) */}
-        <div style={{ marginBottom: "10px" }}>
+        {/* <div style={{ marginBottom: "10px" }}>
           <label>Z (In/Out): {controls.z.toFixed(2)}</label>
           <input 
             type="range" min="-1" max="1" step="0.01" 
             value={controls.z} 
             onChange={(e) => updateControl("z", e.target.value)}
             style={{ width: "100%" }}
-          />
+          /> */}
         </div>
 
         {/* Scale */}
