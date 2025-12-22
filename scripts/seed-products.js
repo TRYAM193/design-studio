@@ -4,9 +4,6 @@ import { doc, setDoc, writeBatch, collection } from "firebase/firestore";
 
 // --- 1. THE MASTER CATALOG DATA ---
 export const CATALOG_DATA = [
-  // =========================================
-  // 👕 MEN'S COLLECTION
-  // =========================================
   {
     id: "men-classic-tee",
     title: "Men's Classic Premium Tee",
