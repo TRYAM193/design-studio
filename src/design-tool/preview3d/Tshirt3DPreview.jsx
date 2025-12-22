@@ -81,8 +81,8 @@ function TshirtModel({ productId, textures, color, controls }) {
         {backTex && (
           <CalibrationDecal 
             texture={backTex} 
-            x={controls.x} 
-            y={controls.y} 
+            x={0} 
+            y={-1} 
             z={controls.z} 
             scale={controls.scale}
             rotation={[0, Math.PI, 0]}
