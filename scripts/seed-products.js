@@ -1,121 +1,209 @@
-import admin from "firebase-admin";
-import axios from "axios";
-import { createRequire } from "module";
+// scripts/seed-products.js
+import { db } from "../src/firebase"; // Ensure this points to your firebase config
+import { doc, setDoc, writeBatch, collection } from "firebase/firestore";
 
-const require = createRequire(import.meta.url);
-const serviceAccount = require("./service-account.json");
+// --- 1. THE MASTER CATALOG DATA ---
+export const CATALOG_DATA = [
+  // =========================================
+  // 👕 MEN'S COLLECTION
+  // =========================================
+  {
+    id: "men-classic-tee",
+    title: "Men's Classic Premium Tee",
+    category: "Men",
+    price: 24.99,
+    image: "/assets/catalog/men-tee-preview.jpg", // You need to add this image
+    model3d: "/assets/t-shirt.glb", // Generic Unisex Model for 3D preview
+    description: "A timeless classic. Soft cotton, reliable fit, perfect for everyday wear.",
+    
+    // 🎨 Print Areas (Canvas Size)
+    print_areas: { 
+      front: { width: 4500, height: 5400, offset: {x: 0, y: -200} },
+      back: { width: 4500, height: 5400, offset: {x: 0, y: -200} }
+    },
+    
+    options: {
+      colors: ["White", "Black", "Navy", "Dark Heather", "Royal"],
+      sizes: ["S", "M", "L", "XL", "2XL", "3XL"]
+    },
 
-// 🛑 YOUR PRINTIFY TOKEN 
-const PRINTIFY_API_TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIzN2Q0YmQzMDM1ZmUxMWU5YTgwM2FiN2VlYjNjY2M5NyIsImp0aSI6ImUxY2EzOGEzMmM2NGM5M2YxNGQ3MTM3MmI1ZmQwZWY1N2ZlOWMzZTVkMDI0YmRlMWE3ODBkNDM4NmZlNDQyOTVmODIzZDA2NmE5YWQxMjE4IiwiaWF0IjoxNzY1OTA3NjA4LjM5MTAxNSwibmJmIjoxNzY1OTA3NjA4LjM5MTAxNywiZXhwIjoxNzk3NDQzNjA4LjM4MjYyMSwic3ViIjoiMjU3MDI3MjEiLCJzY29wZXMiOlsic2hvcHMubWFuYWdlIiwic2hvcHMucmVhZCIsImNhdGFsb2cucmVhZCIsIm9yZGVycy5yZWFkIiwib3JkZXJzLndyaXRlIiwicHJvZHVjdHMucmVhZCIsInByb2R1Y3RzLndyaXRlIiwid2ViaG9va3MucmVhZCIsIndlYmhvb2tzLndyaXRlIiwidXBsb2Fkcy5yZWFkIiwidXBsb2Fkcy53cml0ZSIsInByaW50X3Byb3ZpZGVycy5yZWFkIiwidXNlci5pbmZvIl19.cwmW9eDrWz6Urfizuz-u7JYfYLEH_Q8_oAUsK4fINEfwlVRLaXX-HuNvygiuFBkCPOkK6cQ2nlunOMHzdWVVNdYTHnuo5DRuO0Va5GC3MH9zBwiiMnaYQjtB9upRbKvAF8PkdWfLLzCuqasoVhJswDX3KPpcmESEki7wA0Q-J3AQjyY2OZplGgQzDwJq3ck4AyWgeLrr5Ntd3Pb5OtXQfJoJ5n1W0TfAwYyhVrOnfhjcQd7rZsD29gBHRUNrCJYhoCF44Kv9p9vzfu_fc7AwkKPfl0XTId4x3wYa0GM-cSZ3ATt5Ndc2VSeQkx5FfzJqwkLDWlrnG58dMVNbWuG9EF4NpfJj9wsiWFXzLjLDcBNcD1JbTQMGQDNDbogdNhULVFHBHhX8LEj7F3aF3JjsqO5e3Ivf3hfL68culz4XGkp9LKLypZ1o5c5Csq-9KNOxV08KBYBa76ewenMdCQMXbiMjcZTvTK9cn2twp6cC3Av7mifkFWfy-e1XfJ7x6wjIr5wxzGDYrdQ6SOBPHtiK_J_Az2hwiIaNN7cfnmXt02WFZL8Mvkd58YxPtlwrr9eVJQdc3nSz0sqXv6Zg1_si3gr3JH_MxFZYj7yEO39CPuv-2_6foI6EpGoio6C5JIOqt9rxL9AraAhcdIPRdn6OAw79YIsIbmUQZs7NHYowQEQ";
+    // 🔗 VENDOR MAPPING (The Brains)
+    vendor_maps: {
+      // US: Bella+Canvas 3001 (Unisex/Men's Standard)
+      printify: { blueprint_id: 12, print_provider_id: 29, variant_map: "standard" },
+      // India: Standard Men's Round Neck
+      qikink: { product_id: "men_round_neck" },
+      // Global: Gelato Standard Unisex
+      gelato: { product_uid: "apparel_classic_tee_unisex" }
+    }
+  },
 
-const PRODUCT_MAP = {
-  "mens_cotton_tee": { blueprint_id: 12, category: "Apparel" },
-  "unisex_hoodie":   { blueprint_id: 77, category: "Apparel" },
-  "oversized_tee":   { blueprint_id: 49, category: "Apparel" },
-  "womens_crop_top": { blueprint_id: 1058, category: "Apparel" },
-  "ceramic_mug":     { blueprint_id: 68, category: "Home & Living" }
-};
+  {
+    id: "men-oversized-tee",
+    title: "Men's Streetwear Oversized Tee",
+    category: "Men",
+    price: 32.00,
+    image: "/assets/catalog/men-oversized-preview.jpg",
+    model3d: "/assets/oversized.glb", // If you have a boxy 3D model
+    description: "Heavyweight cotton with a boxy, dropped-shoulder fit.",
+    
+    print_areas: { front: { width: 4500, height: 5400 } },
+    options: { colors: ["White", "Black", "Beige"], sizes: ["S", "M", "L", "XL"] },
 
-if (!admin.apps.length) {
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-}
-const db = admin.firestore();
+    vendor_maps: {
+      // US: Shaka Wear or Lane Seven
+      printify: { blueprint_id: 1096, print_provider_id: 29 }, 
+      // India: Oversized Tee
+      qikink: { product_id: "men_oversized" },
+      gelato: { product_uid: "apparel_heavyweight_tee" }
+    }
+  },
 
-async function seedProducts() {
-  const batch = db.batch();
-  console.log("🌏 Starting Universal Sync...");
+  {
+    id: "men-hoodie",
+    title: "Men's Essential Hoodie",
+    category: "Men",
+    price: 45.00,
+    image: "/assets/catalog/men-hoodie-preview.jpg",
+    model3d: "/assets/hoodie.glb",
+    description: "Cozy, durable, and perfect for layering.",
+    
+    print_areas: { front: { width: 4000, height: 4000 } },
+    options: { colors: ["Black", "Sport Grey", "Navy"], sizes: ["S", "M", "L", "XL", "2XL"] },
+
+    vendor_maps: {
+      // US: Gildan 18500 (Industry Standard Unisex)
+      printify: { blueprint_id: 77, print_provider_id: 29 },
+      // India: Unisex Hoodie
+      qikink: { product_id: "unisex_hoodie" },
+      gelato: { product_uid: "apparel_hoodie_classic" }
+    }
+  },
+
+  // =========================================
+  // 👚 WOMEN'S COLLECTION
+  // =========================================
+  {
+    id: "women-classic-tee",
+    title: "Women's Fitted Premium Tee",
+    category: "Women",
+    price: 24.99,
+    image: "/assets/catalog/women-tee-preview.jpg", 
+    model3d: "/assets/t-shirt.glb", 
+    description: "A feminine cut with shorter sleeves and a subtle waist curve.",
+    
+    print_areas: { front: { width: 4500, height: 5400 } },
+    options: { colors: ["White", "Black", "Pink", "Heather Mauve"], sizes: ["S", "M", "L", "XL"] },
+
+    vendor_maps: {
+      // US: Bella+Canvas 6004 (Ladies Slim Fit) - DIFFERENT from Men's
+      printify: { blueprint_id: 36, print_provider_id: 29, variant_map: "ladies" },
+      // India: Women's Round Neck
+      qikink: { product_id: "women_round_neck" },
+      // Global: Gelato Ladies Tee
+      gelato: { product_uid: "apparel_ladies_tee" }
+    }
+  },
+
+  {
+    id: "women-oversized-tee",
+    title: "Women's Boyfriend Oversized Tee",
+    category: "Women",
+    price: 32.00,
+    image: "/assets/catalog/women-oversized-preview.jpg",
+    model3d: "/assets/oversized.glb", 
+    description: "Relaxed boyfriend fit. Style it tucked in or loose.",
+    
+    print_areas: { front: { width: 4500, height: 5400 } },
+    options: { colors: ["White", "Black", "Sand"], sizes: ["S", "M", "L", "XL"] },
+
+    vendor_maps: {
+      // US: Using the SAME Unisex ID as Men's, but sold as 'Boyfriend Fit'
+      printify: { blueprint_id: 1096, print_provider_id: 29 },
+      // India: Might use same Oversized ID
+      qikink: { product_id: "men_oversized" }, 
+      gelato: { product_uid: "apparel_heavyweight_tee" }
+    }
+  },
+
+  {
+    id: "women-hoodie",
+    title: "Women's Cozy Hoodie",
+    category: "Women",
+    price: 45.00,
+    image: "/assets/catalog/women-hoodie-preview.jpg",
+    model3d: "/assets/hoodie.glb",
+    description: "Soft fleece fabric, kangaroo pocket, standard fit.",
+    
+    print_areas: { front: { width: 4000, height: 4000 } },
+    options: { colors: ["White", "Black", "Pink", "Dark Heather"], sizes: ["S", "M", "L", "XL"] },
+
+    vendor_maps: {
+      // US: Gildan 18500 (Same as Men's)
+      printify: { blueprint_id: 77, print_provider_id: 29 },
+      qikink: { product_id: "unisex_hoodie" },
+      gelato: { product_uid: "apparel_hoodie_classic" }
+    }
+  },
+
+  // =========================================
+  // 🎒 ACCESSORIES (UNISEX)
+  // =========================================
+  {
+    id: "mug-ceramic-11oz",
+    title: "Classic Ceramic Mug (11oz)",
+    category: "Accessories",
+    price: 14.00,
+    image: "/assets/catalog/mug-preview.jpg",
+    model3d: "/assets/mug.glb",
+    description: "Durable ceramic mug with high-quality printing.",
+    
+    print_areas: { front: { width: 2475, height: 1155 } }, // Specific wrap dimensions
+    options: { colors: ["White", "Black Handle"], sizes: ["11oz"] },
+
+    vendor_maps: {
+      printify: { blueprint_id: 68, print_provider_id: 9 },
+      qikink: { product_id: "coffee_mug" },
+      gelato: { product_uid: "mug_11oz_ceramic" }
+    }
+  },
+
+  {
+    id: "tote-bag-canvas",
+    title: "Eco Canvas Tote Bag",
+    category: "Accessories",
+    price: 19.00,
+    image: "/assets/catalog/tote-preview.jpg",
+    model3d: "/assets/tote.glb",
+    description: "Heavy duty canvas tote for daily use.",
+    
+    print_areas: { front: { width: 3000, height: 3000 } },
+    options: { colors: ["Natural", "Black"], sizes: ["One Size"] },
+
+    vendor_maps: {
+      printify: { blueprint_id: 472, print_provider_id: 2 },
+      qikink: { product_id: "tote_bag" },
+      gelato: { product_uid: "tote_bag_canvas" }
+    }
+  }
+];
+
+// --- 2. UPLOAD FUNCTION ---
+export const seedProducts = async () => {
+  console.log("🚀 Starting Product Seed...");
+  const batch = writeBatch(db);
+
+  CATALOG_DATA.forEach((product) => {
+    const docRef = doc(db, "base_products", product.id);
+    batch.set(docRef, product);
+  });
 
   try {
-    for (const [internalId, config] of Object.entries(PRODUCT_MAP)) {
-      console.log(`\n🔍 Syncing: ${internalId} (Blueprint: ${config.blueprint_id})...`);
-
-      try {
-        // STEP 1: Find a valid provider for this blueprint automatically
-        const providersRes = await axios.get(
-          `https://api.printify.com/v1/catalog/blueprints/${config.blueprint_id}/print_providers.json`,
-          { headers: { "Authorization": `Bearer ${PRINTIFY_API_TOKEN}` } }
-        );
-        
-        const availableProviders = providersRes.data || [];
-        if (availableProviders.length === 0) throw new Error("No providers found");
-
-        // Prefer Provider 29 (Monster Digital), otherwise take the first available
-        const selectedProvider = availableProviders.find(p => p.id === 29) || availableProviders[0];
-        console.log(`   ✅ Using Provider: ${selectedProvider.title} (ID: ${selectedProvider.id})`);
-
-        // STEP 2: Fetch variants for this blueprint + provider
-        const url = `https://api.printify.com/v1/catalog/blueprints/${config.blueprint_id}/print_providers/${selectedProvider.id}/variants.json`;
-        const res = await axios.get(url, { headers: { "Authorization": `Bearer ${PRINTIFY_API_TOKEN}` } });
-        
-        const variants = res.data.variants || [];
-        const uniqueColors = new Set();
-        const uniqueSizes = new Set();
-        const variantMap = {};
-        const printAreas = {};
-
-        // STEP 3: Parse variants using your provided JSON structure
-        variants.forEach(v => {
-          // In your sample, color and size are strings inside v.options
-          const color = v.options?.color;
-          const size = v.options?.size;
-
-          if (color) uniqueColors.add(color);
-          if (size) uniqueSizes.add(size);
-          
-          if (color && size) {
-            variantMap[`${color}_${size}`] = v.id;
-          } else if (size) {
-            variantMap[size] = v.id; // Fallback for mugs
-          }
-
-          // Capture print areas
-          v.placeholders?.forEach(p => {
-            if (!printAreas[p.position]) {
-              printAreas[p.position] = { width: p.width, height: p.height };
-            }
-          });
-        });
-
-        console.log(`   🎨 Found ${uniqueColors.size} colors and ${uniqueSizes.size} sizes.`);
-
-        // STEP 4: Get Blueprint metadata
-        const blueprintRes = await axios.get(`https://api.printify.com/v1/catalog/blueprints/${config.blueprint_id}.json`, {
-          headers: { "Authorization": `Bearer ${PRINTIFY_API_TOKEN}` }
-        });
-
-        // STEP 5: Update Firestore
-        const docRef = db.collection("base_products").doc(internalId);
-        batch.set(docRef, {
-          id: internalId,
-          title: blueprintRes.data.title,
-          description: blueprintRes.data.description,
-          category: config.category,
-          image: blueprintRes.data.images[0],
-          gallery: blueprintRes.data.images,
-          options: {
-            colors: Array.from(uniqueColors),
-            sizes: Array.from(uniqueSizes)
-          },
-          variant_map: variantMap,
-          print_areas: printAreas,
-          provider_config: {
-            provider_id: selectedProvider.id,
-            blueprint_id: config.blueprint_id
-          },
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
-      } catch (err) {
-        console.error(`   ❌ Failed: ${err.message}`);
-      }
-    }
-
     await batch.commit();
-    console.log("\n🎉 Database Fully Synced! All 404s and color mapping issues resolved.");
-
+    console.log("✅ Successfully seeded 8 products with Vendor Maps!");
+    alert("Database Updated Successfully!");
   } catch (error) {
-    console.error("Critical Error:", error.message);
+    console.error("❌ Error seeding products:", error);
+    alert("Error Updating Database");
   }
-}
-
-seedProducts();
+};
