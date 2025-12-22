@@ -1,3 +1,4 @@
+// src/design-tool/pages/Editor.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
 import CanvasEditor from '../components/CanvasEditor';
@@ -6,7 +7,9 @@ import updateObject from '../functions/update';
 import removeObject from '../functions/remove';
 import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
-import { undo, redo } from '../redux/canvasSlice';
+// ✅ IMPORT setHistory and store
+import { undo, redo, setCanvasObjects, setHistory } from '../redux/canvasSlice';
+import { store } from '../redux/store'; 
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
@@ -73,8 +76,10 @@ export default function EditorPanel() {
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
 
+    // ✅ Store FULL History (past, present, future) per view
+    const [viewStates, setViewStates] = useState({});
+
     // Store textures as Blob URLs
-    // Update state structure in Editor.jsx
     const [designTextures, setDesignTextures] = useState({
         front: { blob: null, url: null },
         back: { blob: null, url: null },
@@ -88,7 +93,7 @@ export default function EditorPanel() {
 
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false); // New loading state
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false); 
 
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
@@ -144,7 +149,6 @@ export default function EditorPanel() {
         }
     }, [location.state, fabricCanvas]);
 
-    // Add this helper function in Editor.jsx
     const dataURLtoBlob = (dataURL) => {
         const arr = dataURL.split(',');
         const mime = arr[0].match(/:(.*?);/)[1];
@@ -157,12 +161,8 @@ export default function EditorPanel() {
         return new Blob([u8arr], { type: mime });
     };
 
-
-    // In Editor.jsx - modify captureCurrentCanvas
     const captureCurrentCanvas = () => {
         if (!fabricCanvas) return null;
-
-        console.log("Capturing canvas...");
 
         const originalBg = fabricCanvas.backgroundColor;
         fabricCanvas.backgroundColor = null;
@@ -175,15 +175,8 @@ export default function EditorPanel() {
                 multiplier: 1,
                 enableRetinaScaling: false
             });
-
-            console.log("DataURL captured");
-
             const blob = dataURLtoBlob(dataUrl);
             const blobUrl = URL.createObjectURL(blob);
-
-            console.log("Blob URL created:", blobUrl);
-
-            // Return both blob and url
             return { blob, url: blobUrl };
 
         } catch (err) {
@@ -199,18 +192,30 @@ export default function EditorPanel() {
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
-        // Capture current view asynchronously
+        // 1. Capture 3D Texture Snapshot
         const currentSnapshot = await captureCurrentCanvas();
+        setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
 
-        setDesignTextures(prev => {
-            // Optional: Revoke old URL to save memory? 
-            // For now we keep it to avoid flickering if user switches back.
-            return { ...prev, [currentView]: currentSnapshot };
-        });
+        // 2. SAVE Current History: Get full Redux State (Past + Present + Future)
+        // Using store.getState() ensures we get the exact latest Redux state
+        const currentCanvasState = store.getState().canvas; 
 
+        setViewStates(prev => ({
+            ...prev,
+            [currentView]: currentCanvasState // Save everything!
+        }));
+
+        // 3. Switch Index
         setCurrentView(newView);
-        // In real app, load new view JSON here
-        fabricCanvas.requestRenderAll();
+
+        // 4. LOAD New History
+        // Retrieve the full history stack for the new view (or default to empty)
+        const nextHistory = viewStates[newView] || { past: [], present: [], future: [] };
+        
+        // 5. Replace Redux State
+        dispatch(setHistory(nextHistory));
+        
+        // Note: CanvasEditor will automatically re-render because it listens to Redux 'present'
     };
 
     const handleColorChange = (colorName) => {
@@ -238,7 +243,7 @@ export default function EditorPanel() {
 
             const updatedTextures = {
                 ...designTextures,
-                [currentView]: currentSnapshot  // Store { blob, url }
+                [currentView]: currentSnapshot 
             };
 
             setDesignTextures(updatedTextures);
@@ -254,8 +259,6 @@ export default function EditorPanel() {
             setIsGeneratingPreview(false);
         }
     };
-
-
 
     const handleAddToCartDirectly = (designData) => {
         setIsSaving(true);
