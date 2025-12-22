@@ -64,7 +64,7 @@ createRoot(document.getElementById("root")!).render(
 
           <Route path="/design/*" element={<DesignEditorPage />} />
           <Route path="/generator" element={<ThumbnailGenerator />} />
-          <Route></Route>
+          <Route path="/admin"></Route>
           
           {/* Dashboard Routes */}
           <Route path="/dashboard" element={<DashboardLayout />}>
