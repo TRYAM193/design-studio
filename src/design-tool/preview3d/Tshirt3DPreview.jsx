@@ -84,7 +84,7 @@ function TshirtModel({ productId, textures, color, controls }) {
             x={0} 
             y={1.25} 
             z={0.5} 
-            scale={controls.scale}
+            scale={0.5}
             rotation={[0, Math.PI, 0]}
           />
         )}
