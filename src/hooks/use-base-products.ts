@@ -1,24 +1,25 @@
+// src/hooks/use-base-products.ts
 import { useState, useEffect } from 'react';
 import { db } from '@/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 
 export interface BaseProduct {
   id: string;
   title: string;
   description: string;
-  image: string;
-  gallery: string[]; // Array of images from Printify
+  image: string | null;     // The main catalog image (uploaded via Admin)
   category: string;
-  price_inr: number; // The display selling price
-  stock_status: 'in_stock' | 'out_of_stock';
-  options: {
+  price: number;            // Direct price from DB
+  
+  // New fields from our schema
+  mockups?: {
+    front?: string;
+    back?: string;
+    [key: string]: string | undefined;
+  };
+  options?: {
     colors: string[];
     sizes: string[];
-  };
-  // We keep the raw provider info accessible for advanced logic
-  providers: {
-    india_qikink?: { base_cost: number; active: boolean };
-    global_printify?: { base_cost: number; active: boolean };
   };
 }
 
@@ -29,42 +30,28 @@ export function useBaseProducts() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        const q = query(collection(db, "base_products"), where("active", "==", true));
-        const querySnapshot = await getDocs(q);
+        // Fetch ALL products (removed 'active' filter to ensure seeded items appear)
+        const querySnapshot = await getDocs(collection(db, "base_products"));
         
         const fetched: BaseProduct[] = [];
         
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           
-          // 1. Determine Base Cost (Prioritize India/Qikink)
-          const qikinkCost = data.providers?.india_qikink?.base_cost;
-          const printifyCost = data.providers?.global_printify?.base_cost;
-          
-          // Default to Qikink cost, fallback to Printify, or 0
-          const baseCost = qikinkCost || printifyCost || 0;
-          
-          // 2. Calculate Display Price (Base + Profit Margin)
-          // Example: ₹200 cost + ₹299 margin = ₹499
-          const displayPrice = baseCost + 299;
-
           fetched.push({
             id: doc.id,
             title: data.title || "Untitled Product",
-            description: data.description || "No description available.",
-            image: data.image || "/assets/t_shirt.glb", // Main image
-            gallery: data.gallery || [data.image], // Fallback to main image if gallery missing
-            category: data.category || "Apparel",
+            description: data.description || "",
+            // Use the uploaded image, fallback to the front mockup, then to placeholder
+            image: data.image || data.mockups?.front || null, 
+            category: data.category || "Uncategorized",
+            price: data.price || 0,
             
-            price_inr: displayPrice,
-            stock_status: data.stock_status || 'in_stock',
-            
+            mockups: data.mockups || {},
             options: {
               colors: data.options?.colors || [],
               sizes: data.options?.sizes || []
-            },
-
-            providers: data.providers || {}
+            }
           });
         });
         
