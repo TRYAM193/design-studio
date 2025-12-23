@@ -9,7 +9,7 @@ import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
 // ✅ IMPORT setHistory and store
 import { undo, redo, setCanvasObjects, setHistory } from '../redux/canvasSlice';
-import { store } from '../redux/store'; 
+import { store } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
@@ -93,7 +93,7 @@ export default function EditorPanel() {
 
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false); 
+    const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
 
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
@@ -198,7 +198,7 @@ export default function EditorPanel() {
 
         // 2. SAVE Current History: Get full Redux State (Past + Present + Future)
         // Using store.getState() ensures we get the exact latest Redux state
-        const currentCanvasState = store.getState().canvas; 
+        const currentCanvasState = store.getState().canvas;
 
         setViewStates(prev => ({
             ...prev,
@@ -211,10 +211,10 @@ export default function EditorPanel() {
         // 4. LOAD New History
         // Retrieve the full history stack for the new view (or default to empty)
         const nextHistory = viewStates[newView] || { past: [], present: [], future: [] };
-        
+
         // 5. Replace Redux State
         dispatch(setHistory(nextHistory));
-        
+
         // Note: CanvasEditor will automatically re-render because it listens to Redux 'present'
     };
 
@@ -243,7 +243,7 @@ export default function EditorPanel() {
 
             const updatedTextures = {
                 ...designTextures,
-                [currentView]: currentSnapshot 
+                [currentView]: currentSnapshot
             };
 
             setDesignTextures(updatedTextures);
@@ -434,6 +434,21 @@ export default function EditorPanel() {
                     )}
                 </aside>
 
+                <Button
+                    onClick={handleGeneratePreview}
+                    disabled={isGeneratingPreview || !fabricCanvas}
+                >
+                    {isGeneratingPreview ? (
+                        <>
+                            <Loader2 className="animate-spin" />
+                            Generating...
+                        </>
+                    ) : (
+                        <>Preview</>  {/* ✅ Changed from "Preview in 3D" */}
+    )}
+                </Button>
+
+// ... at the bottom ...
                 <ThreeDPreviewModal
                     isOpen={isPreviewOpen}
                     onClose={() => setIsPreviewOpen(false)}
@@ -441,6 +456,7 @@ export default function EditorPanel() {
                     onAddToCart={handleAddToCart}
                     isSaving={isSaving}
                     productId={productId}
+                    productData={productData} // ✅ Added this prop
                     productCategory={productId ? productData.category : undefined}
                     selectedColor={canvasBg}
                 />
