@@ -121,7 +121,7 @@ export default function AdminProductManager() {
           Sync Data Definitions
         </Button>
         <Button>
-          
+          Sync Product Details
         </Button>
       </div>
 
