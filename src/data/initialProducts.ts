@@ -130,7 +130,7 @@ export const INITIAL_PRODUCTS = [
     title: "Women's Fitted Premium Tee",
     category: "Women",
     price: 24.99,
-    image: null,
+    image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-classic-tee?alt=media&token=ec5f29b8-03fc-4879-80f9-608b99adf197',
     model3d: "/assets/t-shirt.glb",
     description: "A feminine cut with shorter sleeves and a subtle waist curve.",
     
