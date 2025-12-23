@@ -141,7 +141,7 @@ export const INITIAL_PRODUCTS = [
 
     mockups: {
       front: "/assets/mockups/women-classic-tee-front.jpg",
-      back: "/assets/mockups/women-hoodie-back.jpg"
+      back: "/assets/mockups/women-classic-tee-back.jpg"
     },
 
     vendor_maps: {
