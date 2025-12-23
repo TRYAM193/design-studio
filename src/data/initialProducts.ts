@@ -64,6 +64,12 @@ export const INITIAL_PRODUCTS = [
       sizes: ["S", "M", "L", "XL"]
     },
 
+    mockups: {
+      front: "/assets/mockups/mug-front.jpg",
+      left: "/assets/mockups/mug-left.jpg",
+      right: "/assets/mockups/mug-right.jpg"
+    },
+
     vendor_maps: {
       printify: { 
         blueprint_id: "1096", 
