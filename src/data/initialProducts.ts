@@ -55,7 +55,7 @@ export const INITIAL_PRODUCTS = [
     title: "Men's Streetwear Oversized Tee",
     category: "Men",
     price: 32.00,
-    image: null,
+    image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-oversized-tee?alt=media&token=3dcae3b1-042e-417b-8557-90fd177123ae',
     model3d: "/assets/oversized.glb", 
     description: "Heavyweight cotton with a boxy, dropped-shoulder fit.",
     
