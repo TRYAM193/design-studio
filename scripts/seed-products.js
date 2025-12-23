@@ -204,3 +204,4 @@ export const seedProducts = async () => {
     alert("Error Updating Database");
   }
 };
+
