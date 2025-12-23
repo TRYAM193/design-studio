@@ -288,6 +288,11 @@ export const INITIAL_PRODUCTS = [
       sizes: ["One Size"]
     },
 
+    mockups: {
+      front: "/assets/mockups/tote-bag-front.jpg",
+      back: "/assets/mockups/men-hoodie-back.jpg"
+    },
+
     vendor_maps: {
       printify: { 
         blueprint_id: "472", 
