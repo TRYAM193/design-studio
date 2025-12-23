@@ -66,7 +66,7 @@ export const INITIAL_PRODUCTS = [
 
    mockups: {
       front: "/assets/mockups/men-oversized-front.jpg",
-      back: "/assets/mockups/men-hoodie-back.jpg"
+      back: "/assets/mockups/men-oversized-back.jpg"
     },
 
     vendor_maps: {
