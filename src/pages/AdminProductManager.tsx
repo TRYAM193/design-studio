@@ -121,7 +121,7 @@ export default function AdminProductManager() {
         <Button onClick={handleSeedData}>
           Sync Data Definitions
         </Button>
-        <Button onClick={}>
+        <Button onClick={seedProducts}>
           Sync Product Details
         </Button>
       </div>
