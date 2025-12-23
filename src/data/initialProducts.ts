@@ -212,6 +212,11 @@ export const INITIAL_PRODUCTS = [
       sizes: ["S", "M", "L", "XL"]
     },
 
+    mockups: {
+      front: "/assets/mockups/men-hoodie-front.jpg",
+      back: "/assets/mockups/men-hoodie-back.jpg"
+    },
+
     vendor_maps: {
       printify: { 
         blueprint_id: "77", 
