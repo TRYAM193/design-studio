@@ -445,7 +445,7 @@ export default function EditorPanel() {
                         </>
                     ) : (
                         <>Preview</>  {/* ✅ Changed from "Preview in 3D" */}
-    )}
+                    )}
                 </Button>
 
 // ... at the bottom ...
