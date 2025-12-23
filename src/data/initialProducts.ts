@@ -290,7 +290,7 @@ export const INITIAL_PRODUCTS = [
 
     mockups: {
       front: "/assets/mockups/tote-bag-front.jpg",
-      back: "/assets/mockups/men-hoodie-back.jpg"
+      back: "/assets/mockups/tote-bag-back.jpg"
     },
 
     vendor_maps: {
