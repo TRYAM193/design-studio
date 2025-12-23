@@ -279,7 +279,7 @@ export const INITIAL_PRODUCTS = [
     title: "Eco Canvas Tote Bag",
     category: "Accessories",
     price: 19.00,
-    image: null,
+    image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Ftote-bag-canvas?alt=media&token=bd508609-096a-443c-a6a1-196390ceefdc',
     model3d: "/assets/tote.glb",
     description: "Heavy duty canvas tote for daily use.",
     
