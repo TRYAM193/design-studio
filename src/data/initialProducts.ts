@@ -260,7 +260,9 @@ export const INITIAL_PRODUCTS = [
     
     print_areas: {
       front: { width: 4000, height: 4000 },
-      back:  { width: 4500, height: 5400 }
+      back:  { width: 4500, height: 5400 },
+      leftSleeve: { width: 1100, height: 3500 },
+      rightSleeve: { width: 1100, height: 3500 }
     },
 
     mockups: {
