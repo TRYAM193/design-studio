@@ -1,6 +1,7 @@
 // scripts/seed-products.js
 import { db } from "../src/firebase"; // Ensure this points to your firebase config
 import { doc, setDoc, writeBatch, collection } from "firebase/firestore";
+import 
 
 // --- 1. THE MASTER CATALOG DATA ---
 export const CATALOG_DATA = [
