@@ -17,9 +17,7 @@ export const INITIAL_PRODUCTS = [
     // 🖨️ PRINT AREAS (Canvas Size in Pixels)
     print_areas: {
       front: { width: 4500, height: 5400 }, 
-      back:  { width: 4500, height: 5400 },
-      leftSleeve: { width: 1200, height: 1200 },
-      rightSleeve: { width: 1200, height: 1200 }
+      back:  { width: 4500, height: 5400 }
     },
 
     // 🖼️ MOCKUPS (Must be Transparent PNGs for color blending)
