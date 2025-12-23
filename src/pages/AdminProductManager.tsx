@@ -120,6 +120,9 @@ export default function AdminProductManager() {
         <Button onClick={handleSeedData}>
           Sync Data Definitions
         </Button>
+        <Button>
+          
+        </Button>
       </div>
 
       <div className="grid gap-6">
