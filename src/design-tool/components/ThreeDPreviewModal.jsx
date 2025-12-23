@@ -12,19 +12,16 @@ export function ThreeDPreviewModal({
     onAddToCart,
     isSaving,
     productId,
-    productData = {}, // ✅ Now receiving full product data
-    selectedColor = "#FFFFFF"
+    productData = {},
+    selectedColor = "#FFFFFF" // ✅ This color comes from the Editor
 }) {
-    // 1. Determine Capabilities
     const has3D = !!productData.model3d;
     const mockups = productData.mockups || {};
     const mockupKeys = Object.keys(mockups);
     
-    // 2. State
-    const [viewMode, setViewMode] = useState('2d'); // '2d' or '3d'
+    const [viewMode, setViewMode] = useState('2d');
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
 
-    // Reset state when opening
     useEffect(() => {
         if (isOpen) {
             setViewMode('2d');
@@ -32,10 +29,7 @@ export function ThreeDPreviewModal({
         }
     }, [isOpen, productId]);
 
-    // 3. Helper to get texture for the current side
     const getCurrentTexture = () => {
-        // Simple mapping: 'front' -> textures.front
-        // For mugs, 'left'/'right' usually use the 'front' (wrap) texture in simple editors
         if (activeSide === 'left' || activeSide === 'right') return textures.front?.url; 
         return textures[activeSide]?.url;
     };
@@ -49,7 +43,7 @@ export function ThreeDPreviewModal({
                 <DialogTitle className="sr-only">Preview Design</DialogTitle>
                 <DialogDescription className="sr-only">Preview your design in 2D or 3D</DialogDescription>
 
-                {/* --- HEADER / TABS --- */}
+                {/* --- HEADER --- */}
                 <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-zinc-900 z-10">
                     <div className="flex gap-2 p-1 bg-black/40 rounded-lg border border-white/5">
                         <button
@@ -76,38 +70,47 @@ export function ThreeDPreviewModal({
                     </Button>
                 </div>
 
-                {/* --- MAIN CONTENT STAGE --- */}
+                {/* --- MAIN STAGE --- */}
                 <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex items-center justify-center">
                     
                     {/* === 2D VIEW === */}
                     {viewMode === '2d' && (
                         <div className="relative w-full h-full flex flex-col">
-                            {/* Main Preview Area */}
                             <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8">
-                                <div className="relative max-h-full aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-white">
-                                    {/* 1. Base Mockup Image */}
+                                
+                                {/* 🖼️ MOCKUP CONTAINER */}
+                                <div className="relative w-full max-w-[500px] aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-white">
+                                    
+                                    {/* LAYER 1: The Selected Color (Base) */}
+                                    <div 
+                                        className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
+                                        style={{ backgroundColor: selectedColor }}
+                                    />
+
+                                    {/* LAYER 2: The Mockup Image (Shadows/Highlights) */}
                                     {mockups[activeSide] ? (
                                         <img 
                                             src={mockups[activeSide]} 
                                             alt={`${activeSide} view`} 
-                                            className="w-full h-full object-contain"
+                                            className="absolute inset-0 w-full h-full object-contain z-10"
+                                            // ⭐️ MAGIC: This allows the color from Layer 1 to shine through the white shirt
+                                            style={{ mixBlendMode: 'multiply' }} 
                                         />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-zinc-300 bg-zinc-800">
+                                        <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
                                             No Mockup Available
                                         </div>
                                     )}
 
-                                    {/* 2. Design Overlay */}
+                                    {/* LAYER 3: The User's Design */}
                                     {currentTexture && (
                                         <div 
-                                            className="absolute"
+                                            className="absolute z-20"
                                             style={{
                                                 top: `${currentMockupConfig.top}%`,
                                                 left: `${currentMockupConfig.left}%`,
                                                 width: `${currentMockupConfig.width}%`,
-                                                // Optional: Use mix-blend-mode for realistic ink effect on fabric
-                                                mixBlendMode: 'multiply' 
+                                                mixBlendMode: 'multiply' // Makes design look printed ON the fabric
                                             }}
                                         >
                                             <img src={currentTexture} alt="design" className="w-full h-auto" />
@@ -116,7 +119,7 @@ export function ThreeDPreviewModal({
                                 </div>
                             </div>
 
-                            {/* Side Selector (Thumbnails) */}
+                            {/* Side Selector */}
                             {mockupKeys.length > 1 && (
                                 <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4">
                                     {mockupKeys.map(side => (
@@ -127,10 +130,14 @@ export function ThreeDPreviewModal({
                                                 activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
                                             }`}
                                         >
-                                            <img src={mockups[side]} alt={side} className="w-full h-full object-cover" />
-                                            <span className="absolute bottom-0 w-full bg-black/60 text-[8px] text-white text-center py-0.5 capitalize">
-                                                {side}
-                                            </span>
+                                            {/* Thumbnail also uses the tint logic! */}
+                                            <div className="absolute inset-0" style={{ backgroundColor: selectedColor }} />
+                                            <img 
+                                                src={mockups[side]} 
+                                                alt={side} 
+                                                className="absolute inset-0 w-full h-full object-cover" 
+                                                style={{ mixBlendMode: 'multiply' }}
+                                            />
                                         </button>
                                     ))}
                                 </div>
