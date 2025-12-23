@@ -364,7 +364,7 @@ export default function EditorPanel() {
                                         Generating...
                                     </>
                                 ) : (
-                                    <>Preview</>  {/* ✅ Changed from "Preview in 3D" */}
+                                    <>Preview</> 
                                 )}
                             </Button>
                         </div>
