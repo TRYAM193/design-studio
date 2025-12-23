@@ -1,6 +1,6 @@
+// src/components/ProductCard.tsx
 import { BaseProduct } from "@/hooks/use-base-products";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router";
 import { cn } from "@/lib/utils";
 
@@ -12,36 +12,47 @@ export function ProductCard({ product }: ProductCardProps) {
   const navigate = useNavigate();
   
   const handleViewDetails = () => {
-    navigate(`/product/${product.id}`);
+    // Navigate to editor with this product selected
+    // We pass the product ID as a query param
+    navigate(`/design?product=${product.id}`);
   };
 
-  const isOutOfStock = product.stock_status === 'out_of_stock';
-  
-  // Safe Fallback: If price is missing or 0, show a default starting price
-  const displayPrice = product.price_inr && product.price_inr > 0 ? product.price_inr : 499;
+  // Determine images
+  const mainImage = product.image || "https://placehold.co/400x500?text=No+Image";
+  const hoverImage = product.mockups?.back || product.mockups?.front || mainImage;
 
   return (
     <Card 
-      className={cn(
-        "group cursor-pointer overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300",
-        isOutOfStock && "opacity-75 grayscale"
-      )}
+      className="group cursor-pointer overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white"
       onClick={handleViewDetails}
     >
       <div className="relative aspect-[3/4] bg-gray-100 overflow-hidden">
+        {/* Main Image */}
         <img 
-          src={product.image || "https://placehold.co/400x500?text=Product"} 
+          src={mainImage} 
           alt={product.title}
-          className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
+          className={cn(
+            "object-cover w-full h-full transition-all duration-700",
+            // If we have a different hover image, fade this one out
+            hoverImage !== mainImage && "group-hover:opacity-0"
+          )}
         />
-        
-        {isOutOfStock && (
-          <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
-            <Badge variant="destructive" className="text-sm px-3 py-1 font-bold tracking-wide">
-              SOLD OUT
-            </Badge>
-          </div>
+
+        {/* Hover Image (Back View) - Positioned absolutely on top */}
+        {hoverImage !== mainImage && (
+          <img 
+            src={hoverImage}
+            alt={`${product.title} Back`}
+            className="absolute inset-0 object-cover w-full h-full transition-all duration-700 opacity-0 group-hover:opacity-100"
+          />
         )}
+        
+        {/* "Customize" Badge on Hover */}
+        <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center bg-gradient-to-t from-black/50 to-transparent">
+             <span className="bg-white text-black text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform">
+                Start Designing
+             </span>
+        </div>
       </div>
 
       <CardContent className="pt-4 px-4 pb-2">
@@ -49,16 +60,12 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.title}
         </h3>
         <p className="text-sm text-slate-500 mt-1 capitalize truncate">
-          {product.category || "Apparel"} • {product.options?.colors?.length || 0} Colors
+          {product.category} • {product.options?.colors?.length || 0} Colors
         </p>
       </CardContent>
 
       <CardFooter className="px-4 pb-4 pt-2 flex justify-between items-center">
-        <span className="font-bold text-lg text-slate-900">₹{displayPrice}</span>
-        
-        <span className="text-xs font-medium text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0 duration-300">
-          View Details →
-        </span>
+        <span className="font-bold text-lg text-slate-900">${product.price.toFixed(2)}</span>
       </CardFooter>
     </Card>
   );
