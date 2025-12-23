@@ -1,6 +1,7 @@
 // src/components/ProductCard.tsx
 import { BaseProduct } from "@/hooks/use-base-products";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router";
 import { cn } from "@/lib/utils";
 
@@ -12,14 +13,15 @@ export function ProductCard({ product }: ProductCardProps) {
   const navigate = useNavigate();
   
   const handleViewDetails = () => {
-    // Navigate to editor with this product selected
-    // We pass the product ID as a query param
-    navigate(`/design?product=${product.id}`);
+    // Navigate to Product Details Page
+    navigate(`/product/${product.id}`);
   };
 
-  // Determine images
-  const mainImage = product.image || "https://placehold.co/400x500?text=No+Image";
-  const hoverImage = product.mockups?.back || product.mockups?.front || mainImage;
+  // Safe Fallback for price
+  const displayPrice = product.price || 0;
+  
+  // Use uploaded image or first mockup
+  const displayImage = product.image || product.mockups?.front || "https://placehold.co/400x500?text=No+Image";
 
   return (
     <Card 
@@ -27,30 +29,16 @@ export function ProductCard({ product }: ProductCardProps) {
       onClick={handleViewDetails}
     >
       <div className="relative aspect-[3/4] bg-gray-100 overflow-hidden">
-        {/* Main Image */}
         <img 
-          src={mainImage} 
+          src={displayImage}
           alt={product.title}
-          className={cn(
-            "object-cover w-full h-full transition-all duration-700",
-            // If we have a different hover image, fade this one out
-            hoverImage !== mainImage && "group-hover:opacity-0"
-          )}
+          className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110"
         />
-
-        {/* Hover Image (Back View) - Positioned absolutely on top */}
-        {hoverImage !== mainImage && (
-          <img 
-            src={hoverImage}
-            alt={`${product.title} Back`}
-            className="absolute inset-0 object-cover w-full h-full transition-all duration-700 opacity-0 group-hover:opacity-100"
-          />
-        )}
         
-        {/* "Customize" Badge on Hover */}
+        {/* Hover Action */}
         <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center bg-gradient-to-t from-black/50 to-transparent">
              <span className="bg-white text-black text-xs font-bold px-4 py-2 rounded-full shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                Start Designing
+                View Details
              </span>
         </div>
       </div>
@@ -60,12 +48,12 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.title}
         </h3>
         <p className="text-sm text-slate-500 mt-1 capitalize truncate">
-          {product.category} • {product.options?.colors?.length || 0} Colors
+          {product.category || "Apparel"} • {product.options?.colors?.length || 0} Colors
         </p>
       </CardContent>
 
       <CardFooter className="px-4 pb-4 pt-2 flex justify-between items-center">
-        <span className="font-bold text-lg text-slate-900">${product.price.toFixed(2)}</span>
+        <span className="font-bold text-lg text-slate-900">${displayPrice.toFixed(2)}</span>
       </CardFooter>
     </Card>
   );

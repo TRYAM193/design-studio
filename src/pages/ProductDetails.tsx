@@ -1,3 +1,4 @@
+// src/pages/ProductDetails.tsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { doc, getDoc } from "firebase/firestore";
@@ -5,27 +6,29 @@ import { db } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Paintbrush, ArrowLeft, Truck, ShieldCheck, ChevronRight, Check } from "lucide-react";
+import { Loader2, Paintbrush, ChevronRight, Check, Truck, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-// ✅ FIX: Added 'category' to the interface
+// ✅ Interface matches our 'initialProducts.ts' structure
 interface ProductData {
     id: string;
     title: string;
     description: string;
-    image: string;
-    category: string; // <--- Added this
-    gallery?: string[];
+    image: string | null;
+    category: string;
+    price: number;
+    mockups?: {
+        front?: string;
+        back?: string;
+        left?: string;
+        right?: string;
+    };
     options: {
         colors: string[];
         sizes: string[];
     };
-    providers?: {
-        india_qikink?: { base_cost: number };
-        global_printify?: { base_cost: number };
-    };
-    stock_status: string;
+    // We don't need vendor_maps here, only in the backend/router
 }
 
 export default function ProductDetails() {
@@ -38,7 +41,7 @@ export default function ProductDetails() {
     // Selection States
     const [selectedColor, setSelectedColor] = useState<string>("");
     const [selectedSize, setSelectedSize] = useState<string>("");
-    const [mainImage, setMainImage] = useState<string>("");
+    const [activeImage, setActiveImage] = useState<string>("");
 
     useEffect(() => {
         async function fetchProduct() {
@@ -50,13 +53,18 @@ export default function ProductDetails() {
                 if (docSnap.exists()) {
                     const data = docSnap.data() as ProductData;
                     setProduct(data);
-                    setMainImage(data.image);
-                    // Auto-select first options if available
+                    
+                    // Set initial image (prioritize front mockup, then uploaded image)
+                    const initialImg = data.mockups?.front || data.image || "";
+                    setActiveImage(initialImg);
+
+                    // Auto-select first options
                     if (data.options?.colors?.length > 0) setSelectedColor(data.options.colors[0]);
                     if (data.options?.sizes?.length > 0) setSelectedSize(data.options.sizes[0]);
                 }
             } catch (error) {
                 console.error("Error loading product", error);
+                toast.error("Failed to load product details.");
             } finally {
                 setLoading(false);
             }
@@ -71,25 +79,33 @@ export default function ProductDetails() {
             return;
         }
 
-        // Navigate to Editor
-        navigate(`/design/new?product=${product.id}&color=${selectedColor}&size=${selectedSize}`);
+        // ✅ Navigate to Editor with selections
+        navigate(`/design?product=${product.id}&color=${selectedColor}&size=${selectedSize}`);
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" /></div>;
     if (!product) return <div className="h-screen flex items-center justify-center">Product not found</div>;
 
-    // Pricing Logic (Base + Margin)
-    const basePrice = product.providers?.india_qikink?.base_cost || 200;
-    const sellingPrice = basePrice + 299;
+    // Create a gallery array from mockups
+    const galleryImages = [
+        product.mockups?.front,
+        product.mockups?.back,
+        product.mockups?.left,
+        product.mockups?.right,
+        product.image
+    ].filter(Boolean) as string[];
+
+    // Deduplicate images
+    const uniqueGallery = [...new Set(galleryImages)];
 
     return (
         <div className="min-h-screen bg-white">
             {/* Navbar / Breadcrumb */}
             <div className="p-4 border-b sticky top-0 bg-white/80 backdrop-blur-md z-10">
                 <div className="max-w-6xl mx-auto flex items-center gap-2 text-sm text-slate-500">
-                    <span className="cursor-pointer hover:text-slate-900" onClick={() => navigate("/store")}>Store</span>
+                    <span className="cursor-pointer hover:text-slate-900" onClick={() => navigate("/")}>Store</span>
                     <ChevronRight className="w-4 h-4" />
-                    <span className="capitalize text-slate-900 font-medium">{product.category || "Product"}</span>
+                    <span className="capitalize text-slate-900 font-medium">{product.category}</span>
                 </div>
             </div>
 
@@ -98,19 +114,23 @@ export default function ProductDetails() {
 
                     {/* LEFT: Image Gallery */}
                     <div className="space-y-4">
-                        <div className="aspect-square bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 relative group">
-                            <img src={mainImage} alt={product.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                        <div className="aspect-[3/4] bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 relative">
+                            <img 
+                                src={activeImage || "https://placehold.co/600x800?text=No+Image"} 
+                                alt={product.title} 
+                                className="w-full h-full object-contain" 
+                            />
                         </div>
                         {/* Thumbnails */}
-                        {product.gallery && product.gallery.length > 1 && (
+                        {uniqueGallery.length > 1 && (
                             <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                                {product.gallery.map((img, idx) => (
+                                {uniqueGallery.map((img, idx) => (
                                     <button
                                         key={idx}
-                                        onClick={() => setMainImage(img)}
+                                        onClick={() => setActiveImage(img)}
                                         className={cn(
                                             "w-20 h-20 rounded-lg overflow-hidden border-2 flex-shrink-0 transition-all",
-                                            mainImage === img ? "border-indigo-600 ring-2 ring-indigo-100" : "border-transparent hover:border-slate-300"
+                                            activeImage === img ? "border-indigo-600 ring-2 ring-indigo-100" : "border-transparent hover:border-slate-300"
                                         )}
                                     >
                                         <img src={img} alt="" className="w-full h-full object-cover" />
@@ -125,31 +145,23 @@ export default function ProductDetails() {
                         <div>
                             <div className="flex items-center gap-2 mb-2">
                                 <Badge variant="outline" className="text-indigo-600 border-indigo-200 capitalize">
-                                    {product.category || "Apparel"}
+                                    {product.category}
                                 </Badge>
-                                {product.stock_status === 'in_stock' ? (
-                                    <span className="text-xs font-bold text-green-600 flex items-center gap-1"><Check size={12} /> In Stock</span>
-                                ) : (
-                                    <span className="text-xs font-bold text-red-600">Out of Stock</span>
-                                )}
+                                <span className="text-xs font-bold text-green-600 flex items-center gap-1">
+                                    <Check size={12} /> In Stock
+                                </span>
                             </div>
-                            {/* Replace the description section in your file with this */}
-                            <div>
-                                <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{product.title}</h1>
+                            
+                            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{product.title}</h1>
 
-                                {/* Safe HTML Rendering */}
-                                <div
-                                    className="text-slate-500 text-lg leading-relaxed [&>p]:mb-3 [&>ul]:list-disc [&>ul]:pl-5 [&>li]:mb-1"
-                                    dangerouslySetInnerHTML={{ __html: product.description }}
-                                />
-                            </div>
+                            <p className="text-slate-600 text-lg leading-relaxed">
+                                {product.description}
+                            </p>
                         </div>
 
-
                         <div className="flex items-baseline gap-3">
-                            <span className="text-4xl font-bold text-slate-900">₹{sellingPrice}</span>
-                            <span className="text-lg text-slate-400 line-through">₹{sellingPrice + 200}</span>
-                            <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded">20% OFF</span>
+                            <span className="text-4xl font-bold text-slate-900">${product.price.toFixed(2)}</span>
+                            <span className="text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded">Premium Quality</span>
                         </div>
 
                         <Separator />
@@ -207,15 +219,8 @@ export default function ProductDetails() {
                                 size="lg"
                                 className="w-full h-14 text-lg font-bold shadow-xl bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-[1.01]"
                                 onClick={handleStartDesigning}
-                                disabled={product.stock_status !== 'in_stock'}
                             >
-                                {product.stock_status === 'in_stock' ? (
-                                    <>
-                                        <Paintbrush className="w-5 h-5 mr-2" /> Start Designing
-                                    </>
-                                ) : (
-                                    "Currently Unavailable"
-                                )}
+                                <Paintbrush className="w-5 h-5 mr-2" /> Start Designing
                             </Button>
                         </div>
 
