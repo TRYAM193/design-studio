@@ -233,6 +233,12 @@ export const INITIAL_PRODUCTS = [
       sizes: ["11oz"]
     },
 
+     mockups: {
+      front: "/assets/mockups/mug-front.jpg",
+      left: "/assets/mockups/mug-left.jpg",
+      right: "/assets/mockups/mug-right.jpg"
+    },
+
     vendor_maps: {
       printify: { 
         blueprint_id: "68", 
