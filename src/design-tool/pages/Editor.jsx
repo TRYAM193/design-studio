@@ -440,6 +440,7 @@ export default function EditorPanel() {
                     onAddToCart={handleAddToCart}
                     isSaving={isSaving}
                     productId={productId}
+                    productData={productData}
                     productCategory={productId ? productData.category : undefined}
                     selectedColor={canvasBg}
                 />
