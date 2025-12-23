@@ -9,43 +9,49 @@ export const INITIAL_PRODUCTS = [
     title: "Men's Classic Premium Tee",
     category: "Men",
     price: 24.99,
+    // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-classic-tee?alt=media&token=102baeb0-9b35-4d94-a3fd-8d77735915e4',
     model3d: "/assets/t-shirt.glb",
     description: "A timeless classic. Soft cotton, reliable fit.",
     
-    // ✅ SAFE COLORS (Available in US, India, & EU)
+    // 🖨️ PRINT AREAS (Canvas Size in Pixels)
+    print_areas: {
+      front: { width: 4500, height: 5400 }, 
+      back:  { width: 4500, height: 5400 },
+      leftSleeve: { width: 1200, height: 1200 },
+      rightSleeve: { width: 1200, height: 1200 }
+    },
+
+    // 🖼️ MOCKUPS (Must be Transparent PNGs for color blending)
+    mockups: {
+      front: "/assets/mockups/men-classic-tee-front.png",
+      back:  "/assets/mockups/men-classic-tee-back.png"
+    },
+    
+    // 📐 2D POSITIONING (Top/Left/Width %)
+    print_area_2d: {
+      front: { top: 20, left: 30, width: 40 },
+      back:  { top: 20, left: 30, width: 40 }
+    },
+
     options: {
       colors: ["White", "Black", "Navy", "Red", "Royal", "Sport Grey"], 
       sizes: ["S", "M", "L", "XL", "2XL"]
-    },
-
-    mockups: {
-      front: "/assets/mockups/men-classic-tee-front.jpg",
-      back: "/assets/mockups/men-classic-tee-back.jpg"
     },
 
     vendor_maps: {
       printify: { 
         blueprint_id: "12", 
         print_provider_id: "29",
-        // Map: Display Name -> Printify Color ID
-        color_map: { 
-          "White": 101, "Black": 102, "Navy": 103, "Red": 104, "Royal": 105, "Sport Grey": 110 
-        } 
+        color_map: { "White": 101, "Black": 102, "Navy": 103, "Red": 104, "Royal": 105, "Sport Grey": 110 } 
       },
       qikink: { 
         product_id: "men_round_neck",
-        // Map: Display Name -> Qikink Color Name
-        color_map: { 
-          "White": "White", "Black": "Black", "Navy": "Navy Blue", "Red": "Red", "Royal": "Royal Blue", "Sport Grey": "Grey Melange" 
-        }
+        color_map: { "White": "White", "Black": "Black", "Navy": "Navy Blue", "Red": "Red", "Royal": "Royal Blue", "Sport Grey": "Grey Melange" }
       },
       gelato: { 
         product_uid: "apparel_classic_tee_unisex",
-        // Map: Display Name -> Gelato Color UID
-        color_map: { 
-          "White": "white", "Black": "black", "Navy": "navy_blue", "Red": "red", "Royal": "royal_blue", "Sport Grey": "grey_melange" 
-        }
+        color_map: { "White": "white", "Black": "black", "Navy": "navy_blue", "Red": "red", "Royal": "royal_blue", "Sport Grey": "grey_melange" } 
       }
     }
   },
@@ -55,18 +61,29 @@ export const INITIAL_PRODUCTS = [
     title: "Men's Streetwear Oversized Tee",
     category: "Men",
     price: 32.00,
+    // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-oversized-tee?alt=media&token=3dcae3b1-042e-417b-8557-90fd177123ae',
     model3d: "/assets/oversized.glb", 
     description: "Heavyweight cotton with a boxy, dropped-shoulder fit.",
     
+    print_areas: {
+      front: { width: 4500, height: 5400 },
+      back:  { width: 4500, height: 5400 }
+    },
+
+    mockups: {
+      front: "/assets/mockups/men-oversized-front.png",
+      back:  "/assets/mockups/men-oversized-back.png"
+    },
+    
+    print_area_2d: {
+      front: { top: 22, left: 28, width: 44 },
+      back:  { top: 22, left: 28, width: 44 }
+    },
+
     options: {
       colors: ["White", "Black", "Beige"], 
       sizes: ["S", "M", "L", "XL"]
-    },
-
-   mockups: {
-      front: "/assets/mockups/men-oversized-front.jpg",
-      back: "/assets/mockups/men-oversized-back.jpg"
     },
 
     vendor_maps: {
@@ -91,18 +108,31 @@ export const INITIAL_PRODUCTS = [
     title: "Men's Essential Hoodie",
     category: "Men",
     price: 45.00,
+    // ✅ RETAINED YOUR IMAGE URL
     image:'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-hoodie?alt=media&token=eb24627e-f16e-4c09-b2a4-417c86fb2139',
     model3d: "/assets/hoodie.glb",
     description: "Cozy, durable, and perfect for layering.",
     
-    options: {
-      colors: ["Black", "Sport Grey", "Navy"], 
-      sizes: ["S", "M", "L", "XL", "2XL"]
+    print_areas: {
+      front: { width: 4000, height: 4000 },
+      back:  { width: 4500, height: 5400 },
+      leftSleeve: { width: 1100, height: 3500 },
+      rightSleeve: { width: 1100, height: 3500 }
     },
 
     mockups: {
-      front: "/assets/mockups/men-hoodie-front.jpg",
-      back: "/assets/mockups/men-hoodie-back.jpg"
+      front: "/assets/mockups/men-hoodie-front.png",
+      back:  "/assets/mockups/men-hoodie-back.png"
+    },
+    
+    print_area_2d: {
+      front: { top: 25, left: 32, width: 36 },
+      back:  { top: 20, left: 30, width: 40 }
+    },
+
+    options: {
+      colors: ["Black", "Sport Grey", "Navy"], 
+      sizes: ["S", "M", "L", "XL", "2XL"]
     },
 
     vendor_maps: {
@@ -130,18 +160,29 @@ export const INITIAL_PRODUCTS = [
     title: "Women's Fitted Premium Tee",
     category: "Women",
     price: 24.99,
+    // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-classic-tee?alt=media&token=ec5f29b8-03fc-4879-80f9-608b99adf197',
     model3d: "/assets/t-shirt.glb",
     description: "A feminine cut with shorter sleeves and a subtle waist curve.",
     
-    options: {
-      colors: ["White", "Black", "Pink", "Heather Mauve"], 
-      sizes: ["S", "M", "L", "XL"]
+    print_areas: {
+      front: { width: 4000, height: 4800 },
+      back:  { width: 4000, height: 4800 }
     },
 
     mockups: {
-      front: "/assets/mockups/women-classic-tee-front.jpg",
-      back: "/assets/mockups/women-classic-tee-back.jpg"
+      front: "/assets/mockups/women-classic-tee-front.png",
+      back:  "/assets/mockups/women-classic-tee-back.png"
+    },
+    
+    print_area_2d: {
+      front: { top: 22, left: 32, width: 36 },
+      back:  { top: 22, left: 32, width: 36 }
+    },
+
+    options: {
+      colors: ["White", "Black", "Pink", "Heather Mauve"], 
+      sizes: ["S", "M", "L", "XL"]
     },
 
     vendor_maps: {
@@ -167,18 +208,29 @@ export const INITIAL_PRODUCTS = [
     title: "Women's Boyfriend Oversized Tee",
     category: "Women",
     price: 32.00,
+    // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-oversized-tee?alt=media&token=05ed8b7a-fbab-4394-a704-9f59ed435801',
     model3d: "/assets/oversized.glb",
     description: "Relaxed boyfriend fit. Style it tucked in or loose.",
     
-    options: {
-      colors: ["White", "Black", "Sand"], 
-      sizes: ["S", "M", "L", "XL"]
+    print_areas: {
+      front: { width: 4500, height: 5400 },
+      back:  { width: 4500, height: 5400 }
     },
 
     mockups: {
-      front: "/assets/mockups/women-oversized-front.jpg",
-      back: "/assets/mockups/women-oversized-back.jpg"
+      front: "/assets/mockups/women-oversized-front.png",
+      back:  "/assets/mockups/women-oversized-back.png"
+    },
+    
+    print_area_2d: {
+      front: { top: 22, left: 28, width: 44 },
+      back:  { top: 22, left: 28, width: 44 }
+    },
+
+    options: {
+      colors: ["White", "Black", "Sand"], 
+      sizes: ["S", "M", "L", "XL"]
     },
 
     vendor_maps: {
@@ -203,18 +255,29 @@ export const INITIAL_PRODUCTS = [
     title: "Women's Cozy Hoodie",
     category: "Women",
     price: 45.00,
+    // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-hoodie?alt=media&token=788e59c3-a0d8-489c-8603-c731023a2f10',
     model3d: "/assets/hoodie.glb",
     description: "Soft fleece fabric, kangaroo pocket, standard fit.",
     
-    options: {
-      colors: ["White", "Black", "Pink", "Dark Heather"], 
-      sizes: ["S", "M", "L", "XL"]
+    print_areas: {
+      front: { width: 4000, height: 4000 },
+      back:  { width: 4500, height: 5400 }
     },
 
     mockups: {
-      front: "/assets/mockups/men-hoodie-front.jpg",
-      back: "/assets/mockups/men-hoodie-back.jpg"
+      front: "/assets/mockups/women-hoodie-front.png",
+      back:  "/assets/mockups/women-hoodie-back.png"
+    },
+    
+    print_area_2d: {
+      front: { top: 25, left: 32, width: 36 },
+      back:  { top: 25, left: 32, width: 36 }
+    },
+
+    options: {
+      colors: ["White", "Black", "Pink", "Dark Heather"], 
+      sizes: ["S", "M", "L", "XL"]
     },
 
     vendor_maps: {
@@ -242,19 +305,32 @@ export const INITIAL_PRODUCTS = [
     title: "Classic Ceramic Mug (11oz)",
     category: "Accessories",
     price: 14.00,
+    // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmug-ceramic-11oz?alt=media&token=7a07c2c7-78d6-4610-8e09-aee10ceb5bd1',
     model3d: "/assets/mug.glb",
     description: "Durable ceramic mug with high-quality printing.",
     
+    print_areas: {
+      front: { width: 1100, height: 1100 },
+      left:  { width: 1100, height: 1100 }, 
+      right: { width: 1100, height: 1100 }  
+    },
+
+    mockups: {
+      front: "/assets/mockups/mug-front.png",
+      left:  "/assets/mockups/mug-left.png",
+      right: "/assets/mockups/mug-right.png"
+    },
+    
+    print_area_2d: {
+      front: { top: 15, left: 25, width: 50 },
+      left:  { top: 15, left: 25, width: 50 },
+      right: { top: 15, left: 25, width: 50 }
+    },
+    
     options: {
       colors: ["White", "Black Handle"], 
       sizes: ["11oz"]
-    },
-
-     mockups: {
-      front: "/assets/mockups/mug-front.jpg",
-      left: "/assets/mockups/mug-left.jpg",
-      right: "/assets/mockups/mug-right.jpg"
     },
 
     vendor_maps: {
@@ -279,18 +355,29 @@ export const INITIAL_PRODUCTS = [
     title: "Eco Canvas Tote Bag",
     category: "Accessories",
     price: 19.00,
+    // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Ftote-bag-canvas?alt=media&token=bd508609-096a-443c-a6a1-196390ceefdc',
     model3d: "/assets/tote.glb",
     description: "Heavy duty canvas tote for daily use.",
     
-    options: {
-      colors: ["Natural", "Black"], 
-      sizes: ["One Size"]
+    print_areas: {
+      front: { width: 3000, height: 3000 },
+      back:  { width: 3000, height: 3000 }
     },
 
     mockups: {
-      front: "/assets/mockups/tote-bag-front.jpg",
-      back: "/assets/mockups/tote-bag-back.jpg"
+      front: "/assets/mockups/tote-bag-front.png",
+      back:  "/assets/mockups/tote-bag-back.png"
+    },
+    
+    print_area_2d: {
+      front: { top: 30, left: 25, width: 50 },
+      back:  { top: 30, left: 25, width: 50 }
+    },
+
+    options: {
+      colors: ["Natural", "Black"], 
+      sizes: ["One Size"]
     },
 
     vendor_maps: {
