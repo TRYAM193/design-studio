@@ -191,7 +191,7 @@ export const seedProducts = async () => {
   console.log("🚀 Starting Product Seed...");
   const batch = writeBatch(db);
 
-  CATALOG_DATA.forEach((product) => {
+  INITIAL_PRODUCTS.forEach((product) => {
     const docRef = doc(db, "base_products", product.id);
     batch.set(docRef, product);
   });
