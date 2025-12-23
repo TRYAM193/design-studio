@@ -355,19 +355,18 @@ export default function EditorPanel() {
                                 />
                             )}
                             <Button
-                                onClick={handleGeneratePreview}
-                                disabled={isGeneratingPreview || !fabricCanvas}
-                            >
-                                {isGeneratingPreview ? (
-                                    <>
-                                        <Loader2 className="animate-spin" />
-                                        Generating Preview...
-                                    </>
-                                ) : (
-                                    <>Preview in 3D</>
-                                )}
-                            </Button>
-
+    onClick={handleGeneratePreview}
+    disabled={isGeneratingPreview || !fabricCanvas}
+>
+    {isGeneratingPreview ? (
+        <>
+            <Loader2 className="animate-spin" />
+            Generating...
+        </>
+    ) : (
+        <>Preview</>  {/* ✅ Changed from "Preview in 3D" */}
+    )}
+</Button>
                         </div>
                     </div>
 
