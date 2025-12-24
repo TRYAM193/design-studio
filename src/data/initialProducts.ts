@@ -208,7 +208,7 @@ export const INITIAL_PRODUCTS = [
     price: 32.00,
     // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-oversized-tee?alt=media&token=05ed8b7a-fbab-4394-a704-9f59ed435801',
-    model3d: "/assets/oversized.glb",
+    model3d: null,
     description: "Relaxed boyfriend fit. Style it tucked in or loose.",
     
     print_areas: {
