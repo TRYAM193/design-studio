@@ -39,7 +39,7 @@ const MODEL_CONFIGS = {
     }
   },
   "mug": {
-    scale: 0.009,
+    scale: 0.00t,
     position: [0, -1.5, 0],
     cameraZ: 0.5,
     meshes: {
