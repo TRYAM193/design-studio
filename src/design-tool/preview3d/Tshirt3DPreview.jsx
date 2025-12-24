@@ -43,7 +43,8 @@ const MODEL_CONFIGS = {
     position: [0, -1.2, 0],
     cameraZ: 0.5,
     meshes: {
-      body: "MUG",
+      front: "MUG",
+      handle: "Mug_Handle"
     }
   },
   "tote": {
@@ -125,8 +126,12 @@ function DynamicModel({ modelUrl, textures, color, controls, config }) {
   return (
     <group position={config.position} scale={config.scale} dispose={null}>
       <RenderPart meshName={m.front} tex={frontTex} decalProps={{ x: 0, y: 1.25, z: -0.5, scale: 0.5 }} />
-      <RenderPart meshName={m.back} tex={backTex} decalProps={{ x: 0, y: 1.25, z: 0.5, scale: 0.5, rotation: [0, Math.PI, 0] }} />
-      <RenderPart meshName={m.body} decalProps={{x : controls.x, y: controls.y, z: controls.z, scale: controls.scale}}/>
+      <RenderPart meshName={m.back} tex={backTex} decalProps={{ x: 0, y: 1.25, z: 0.5, scale: controls.scale, rotation: [0, Math.PI, 0] }} />
+      <RenderPart meshName={m.leftSleeve} tex={leftTex} />
+      <RenderPart meshName={m.rightSleeve} tex={rightTex} />
+      <RenderPart meshName={m.hood} />
+      <RenderPart meshName={m.handle} />
+      <RenderPart meshName={m.straps} />
       {(!m.front || !nodes[m.front]) && <primitive object={nodes.Scene || nodes.root} />}
     </group>
   );
@@ -134,7 +139,6 @@ function DynamicModel({ modelUrl, textures, color, controls, config }) {
 
 // --- 4. EXPORT ---
 export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" }) {
-  console.log(textures)
   // Initial config resolution
   const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
 
@@ -195,7 +199,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
           />
         </div>
 
-        {textures?.front && (
+        {textures?.back && (
           <>
             <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Back Decal Calibration</h3>
             {['x', 'y', 'z', 'scale'].map(axis => (
