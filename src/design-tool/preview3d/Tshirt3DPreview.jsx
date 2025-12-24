@@ -182,11 +182,6 @@ function DynamicModel({ modelUrl, textures, color }) {
 }
 
 export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" }) {
-  const [controls, setControls] = useState({ x: 0, y: 1.25, z: 0.5, scale: 0.5 });
-
-  const updateControl = (key, value) => {
-    setControls(prev => ({ ...prev, [key]: parseFloat(value) }));
-  };
 
   if (!modelUrl) return <div>No 3D Model URL provided</div>;
 
