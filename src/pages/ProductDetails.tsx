@@ -103,7 +103,7 @@ export default function ProductDetails() {
             {/* Navbar / Breadcrumb */}
             <div className="p-4 border-b sticky top-0 bg-white/80 backdrop-blur-md z-10">
                 <div className="max-w-6xl mx-auto flex items-center gap-2 text-sm text-slate-500">
-                    <span className="cursor-pointer hover:text-slate-900" onClick={() => navigate("/")}>Store</span>
+                    <span className="cursor-pointer hover:text-slate-900" onClick={() => navigate("/store")}>Store</span>
                     <ChevronRight className="w-4 h-4" />
                     <span className="capitalize text-slate-900 font-medium">{product.category}</span>
                 </div>
