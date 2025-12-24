@@ -126,12 +126,10 @@ function DynamicModel({ modelUrl, textures, color, controls, config }) {
   return (
     <group position={config.position} scale={config.scale} dispose={null}>
       <RenderPart meshName={m.front} tex={frontTex} decalProps={{ x: 0, y: 1.25, z: -0.5, scale: 0.5 }} />
-      <RenderPart meshName={m.back} tex={backTex} decalProps={{ x: 0, y: 1.25, z: 0.5, scale: controls.scale, rotation: [0, Math.PI, 0] }} />
+      <RenderPart meshName={m.back} tex={backTex} decalProps={{ x: 0, y: 1.25, z: 0.5, scale: 0.5, rotation: [0, Math.PI, 0] }} />
       <RenderPart meshName={m.leftSleeve} tex={leftTex} />
       <RenderPart meshName={m.rightSleeve} tex={rightTex} />
-      <RenderPart meshName={m.hood} />
-      <RenderPart meshName={m.handle} />
-      <RenderPart meshName={m.straps} />
+      <RenderPart meshName={m.body} decalProps={{x : controls.x, y: controls.y, z: controls.z, scale: controls.scale}}/>
       {(!m.front || !nodes[m.front]) && <primitive object={nodes.Scene || nodes.root} />}
     </group>
   );
