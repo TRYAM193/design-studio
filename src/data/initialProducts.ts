@@ -108,7 +108,7 @@ export const INITIAL_PRODUCTS = [
     price: 45.00,
     // ✅ RETAINED YOUR IMAGE URL
     image:'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-hoodie?alt=media&token=eb24627e-f16e-4c09-b2a4-417c86fb2139',
-    model3d: "/assets/hoodie.glb",
+    model3d: null,
     description: "Cozy, durable, and perfect for layering.",
     
     print_areas: {
