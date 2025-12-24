@@ -3,7 +3,6 @@ import React, { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Decal, Center, Environment } from "@react-three/drei";
-import { text } from "stream/consumers";
 
 // --- 1. CONFIGURATION ---
 const MODEL_CONFIGS = {
