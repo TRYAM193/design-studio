@@ -1,15 +1,80 @@
-// src/preview3d/Tshirt3DPreview.jsx
-import React, { useEffect, useState } from "react";
+// src/design-tool/preview3d/Tshirt3DPreview.jsx
+import React, { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, useGLTF, Decal } from "@react-three/drei";
-import { MODEL_REGISTRY, resolveProductType } from "./modelRegistry";
+import { OrbitControls, useGLTF, Decal, Center, Environment } from "@react-three/drei";
 
-// --- 1. Texture Loader ---
+// --- 1. MESH CONFIGURATION ---
+// ⚠️ IMPORTANT: You must ensure these "meshName" values match the actual node names in your .glb files.
+// Open your .glb in https://gltf.report/ to see the node names.
+const MODEL_CONFIGS = {
+  "t-shirt": {
+    scale: 0.8,
+    position: [0, -0.85, 0],
+    meshes: {
+      front: "T_Shirt_front", // Replace with actual name, e.g. "Tshirt" or "Pattern2D_29393"
+      back: "T_Shirt_back",
+      leftSleeve: "T_Shirt_left_sleeve",
+      rightSleeve: "T_Shirt_right_sleeve"
+    }
+  },
+  "oversized": {
+    scale: 0.8,
+    position: [0, -0.85, 0],
+    meshes: {
+      front: "Oversized_front", 
+      back: "Oversized_back",
+      // Oversized might not have separate sleeve meshes in some models
+    }
+  },
+  "hoodie": {
+    scale: 0.8,
+    position: [0, -0.85, 0],
+    meshes: {
+      front: "Hoodie_front", 
+      back: "Hoodie_back",
+      hood: "Hoodie_hood",
+      leftSleeve: "Hoodie_left_sleeve",
+      rightSleeve: "Hoodie_right_sleeve"
+    }
+  },
+  "mug": {
+    scale: 3, // Mugs are small, scale them up
+    position: [0, -1.5, 0],
+    meshes: {
+      front: "Mug_Body", // Usually mugs are one single mesh
+      handle: "Mug_Handle"
+    }
+  },
+  "tote": {
+    scale: 0.08, // Totes are often large in cm, scale down
+    position: [0, -1.5, 0],
+    meshes: {
+      front: "Bag_Front",
+      back: "Bag_Back",
+      straps: "Bag_Straps"
+    }
+  }
+};
+
+// Helper to determine which config to use based on URL
+const resolveConfig = (url) => {
+  if (!url) return MODEL_CONFIGS["t-shirt"]; // Default
+  if (url.includes("hoodie")) return MODEL_CONFIGS["hoodie"];
+  if (url.includes("oversized")) return MODEL_CONFIGS["oversized"];
+  if (url.includes("mug")) return MODEL_CONFIGS["mug"];
+  if (url.includes("tote")) return MODEL_CONFIGS["tote"];
+  return MODEL_CONFIGS["t-shirt"];
+};
+
+// --- 2. Texture Loader ---
 function useDesignTexture(url) {
   const [texture, setTexture] = useState(null);
   useEffect(() => {
-    if (!url) return;
+    if (!url) {
+      setTexture(null);
+      return;
+    }
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
     loader.load(url, (tex) => {
@@ -21,10 +86,9 @@ function useDesignTexture(url) {
   return texture;
 }
 
-// --- 2. Calibration Decal (Fixed Visibility) ---
+// --- 3. Calibration Decal (Same as before) ---
 function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
   if (!texture) return null;
-
   return (
     <Decal
       position={[x, y, z]} 
@@ -43,97 +107,130 @@ function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
   );
 }
 
-function TshirtModel({ productId, textures, color, controls }) {
-  const productType = resolveProductType(productId);
-  const config = MODEL_REGISTRY[productType];
-  const { nodes } = useGLTF(config.path);
-  const m = config.meshes;
+// --- 4. The Main Model Component ---
+function DynamicModel({ modelUrl, textures, color, controls }) {
+  // Load the GLTF
+  const { nodes, materials } = useGLTF(modelUrl);
   
+  // Get Configuration
+  const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
+  const m = config.meshes;
+
+  // Load Textures
   const frontTex = useDesignTexture(textures?.front);
   const backTex = useDesignTexture(textures?.back);
+  const leftTex = useDesignTexture(textures?.leftSleeve || textures?.left);
+  const rightTex = useDesignTexture(textures?.rightSleeve || textures?.right);
+
+  // Helper to render a mesh safely (if it exists in the GLB)
+  const RenderPart = ({ meshName, tex, decalProps, isSleeve }) => {
+    if (!nodes || !nodes[meshName]) return null;
+    
+    // If the GLB uses a specific material, we clone it to change color
+    // Otherwise we create a standard material
+    const MaterialToUse = (
+      <meshStandardMaterial 
+        color={color} 
+        roughness={0.7} 
+        map={materials?.[meshName]?.map || null} // Preserve original texture if exists
+      />
+    );
+
+    return (
+      <mesh geometry={nodes[meshName].geometry} material={nodes[meshName].material}>
+        {/* We override color manually */}
+        <meshStandardMaterial color={color} roughness={0.7} />
+
+        {tex && decalProps && (
+          <CalibrationDecal 
+             texture={tex}
+             {...decalProps}
+          />
+        )}
+      </mesh>
+    );
+  };
 
   return (
-    <group 
-      position={[0, -0.85, 0]} 
-      scale={0.8} 
-      rotation={[0.15, 0, 0]} 
-    >
-      {/* --- FRONT MESH --- */}
-      <mesh geometry={nodes?.[m.front]?.geometry}>
-        <meshStandardMaterial color={color} roughness={0.7} />
-        
-        {frontTex && (
-          <CalibrationDecal 
-            texture={frontTex} 
-            x={0} 
-            y={1.25} 
-            z={-0.5} 
-            scale={0.5}
-            rotation={[0, 0, 0]}
-          />
-        )}
-      </mesh>
+    <group position={config.position} scale={config.scale} dispose={null}>
       
-      {/* --- BACK MESH --- */}
-      <mesh geometry={nodes?.[m.back]?.geometry}>
-        <meshStandardMaterial color={color} />
+      {/* Front */}
+      <RenderPart 
+        meshName={m.front} 
+        tex={frontTex} 
+        decalProps={{ x: 0, y: 1.25, z: -0.5, scale: 0.5, rotation: [0, 0, 0] }} // Front Decal Values
+      />
 
-        {backTex && (
-          <CalibrationDecal 
-            texture={backTex} 
-            x={0} 
-            y={1.25} 
-            z={0.5} 
-            scale={0.5}
-            rotation={[0, Math.PI, 0]}
-          />
-        )}
-      </mesh>
+      {/* Back */}
+      <RenderPart 
+        meshName={m.back} 
+        tex={backTex} 
+        decalProps={{ x: 0, y: 1.25, z: 0.5, scale: 0.5, rotation: [0, Math.PI, 0] }} // Back Decal (Slider Controlled)
+      />
 
-      {/* --- SLEEVES --- */}
-      <mesh geometry={nodes?.[m.leftSleeve]?.geometry}>
-        <meshStandardMaterial color={color} />
-      </mesh>
-      <mesh geometry={nodes?.[m.rightSleeve]?.geometry}>
-        <meshStandardMaterial color={color} />
-      </mesh>
+      {/* Sleeves (Optional) */}
+      <RenderPart meshName={m.leftSleeve} tex={leftTex} />
+      <RenderPart meshName={m.rightSleeve} tex={rightTex} />
+      
+      {/* Extras (Hood, Handle, Straps) */}
+      <RenderPart meshName={m.hood} />
+      <RenderPart meshName={m.handle} />
+      <RenderPart meshName={m.straps} />
+
+      {/* Fallback: If no meshes matched config, render the whole scene to debug */}
+      {(!m.front || !nodes[m.front]) && (
+        <primitive object={nodes.Scene || nodes.root} />
+      )}
     </group>
   );
 }
 
-export default function Tshirt3DPreview({ productId, textures, color = "#ffffff" }) {
-  // --- SLIDER STATE ---
-  const [controls, setControls] = useState({
-    x: 0,
-    y: 1.25, 
-    z: 0.5,
-    scale: 0.5
-  });
+export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" }) {
+  const [controls, setControls] = useState({ x: 0, y: 1.25, z: 0.5, scale: 0.5 });
 
+  const updateControl = (key, value) => {
+    setControls(prev => ({ ...prev, [key]: parseFloat(value) }));
+  };
+
+  if (!modelUrl) return <div>No 3D Model URL provided</div>;
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      
-      {/* --- CANVAS --- */}
-      <Canvas camera={{ position: [0, 0, 2], fov: 45 }}>
+      <Canvas camera={{ position: [0, 0, 2.5], fov: 45 }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 10, 7]} intensity={1} />
-        <directionalLight position={[0, 5, -10]} intensity={0.8} /> 
+        <directionalLight position={[0, 5, -10]} intensity={0.8} />
+        <Environment preset="city" />
 
-        <TshirtModel 
-            productId={productId} 
+        <Center>
+          <DynamicModel 
+            modelUrl={modelUrl} 
             textures={textures} 
-            color={color} 
-        />
+            color={color}
+            controls={controls}
+          />
+        </Center>
         
-        {/* ✅ FIX: Locked Top/Bottom Rotation (Side-to-Side only) */}
-        <OrbitControls 
-          enablePan={false} 
-          // minPolarAngle={Math.PI / 2} 
-          // maxPolarAngle={Math.PI / 2} 
-        />
+        <OrbitControls enablePan={false} minPolarAngle={0} maxPolarAngle={Math.PI} />
       </Canvas>
-
+      
+      {/* Controls Overlay (Only show if Back texture exists to calibrate) */}
+      {textures?.back && (
+        <div className="absolute top-4 right-4 bg-black/80 text-white p-4 rounded text-xs w-64">
+           <h3>Back Calibration</h3>
+           {['x', 'y', 'z', 'scale'].map(axis => (
+             <div key={axis} className="mb-2">
+               <label className="capitalize">{axis}</label>
+               <input 
+                 type="range" min="-2" max="2" step="0.01" 
+                 value={controls[axis]} 
+                 onChange={(e) => updateControl(axis, e.target.value)}
+                 className="w-full"
+               />
+             </div>
+           ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -13,7 +13,7 @@ export function ThreeDPreviewModal({
     isSaving,
     productId,
     productData = {},
-    selectedColor = "#FFFFFF" // ✅ This color comes from the Editor
+    selectedColor = "#FFFFFF" 
 }) {
     const has3D = !!productData.model3d;
     const mockups = productData.mockups || {};
@@ -54,14 +54,17 @@ export function ThreeDPreviewModal({
                         >
                             <ImageIcon size={16} /> 2D Mockup
                         </button>
+                        
+                        {/* ✅ UPDATED BUTTON: Shows "3D Not Available" if missing */}
                         <button
                             onClick={() => has3D && setViewMode('3d')}
                             disabled={!has3D}
                             className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
                                 viewMode === '3d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
-                            } ${!has3D ? "opacity-30 cursor-not-allowed" : ""}`}
+                            } ${!has3D ? "opacity-40 cursor-not-allowed bg-transparent hover:text-zinc-400" : ""}`}
                         >
-                            <Box size={16} /> 3D View
+                            <Box size={16} /> 
+                            {has3D ? "3D View" : "3D Not Available"}
                         </button>
                     </div>
 
@@ -93,7 +96,6 @@ export function ThreeDPreviewModal({
                                             src={mockups[activeSide]} 
                                             alt={`${activeSide} view`} 
                                             className="absolute inset-0 w-full h-full object-contain z-10"
-                                            // ⭐️ MAGIC: This allows the color from Layer 1 to shine through the white shirt
                                             style={{ mixBlendMode: 'multiply' }} 
                                         />
                                     ) : (
@@ -110,7 +112,7 @@ export function ThreeDPreviewModal({
                                                 top: `${currentMockupConfig.top}%`,
                                                 left: `${currentMockupConfig.left}%`,
                                                 width: `${currentMockupConfig.width}%`,
-                                                mixBlendMode: 'multiply' // Makes design look printed ON the fabric
+                                                mixBlendMode: 'multiply' 
                                             }}
                                         >
                                             <img src={currentTexture} alt="design" className="w-full h-auto" />
@@ -130,7 +132,6 @@ export function ThreeDPreviewModal({
                                                 activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
                                             }`}
                                         >
-                                            {/* Thumbnail also uses the tint logic! */}
                                             <div className="absolute inset-0" style={{ backgroundColor: selectedColor }} />
                                             <img 
                                                 src={mockups[side]} 
@@ -149,7 +150,7 @@ export function ThreeDPreviewModal({
                     {viewMode === '3d' && has3D && (
                         <div className="w-full h-full">
                             <Tshirt3DPreview
-                                productId={productId}
+                                modelUrl={productData.model3d}
                                 textures={{
                                     front: textures.front?.url,
                                     back: textures.back?.url,
