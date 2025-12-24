@@ -4,9 +4,6 @@ import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Decal, Center, Environment } from "@react-three/drei";
 
-// --- 1. MESH CONFIGURATION ---
-// ⚠️ IMPORTANT: You must ensure these "meshName" values match the actual node names in your .glb files.
-// Open your .glb in https://gltf.report/ to see the node names.
 const MODEL_CONFIGS = {
   "t-shirt": {
     scale: 0.8,
