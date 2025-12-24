@@ -43,7 +43,7 @@ const MODEL_CONFIGS = {
     position: [0, -1.2, 0],
     cameraZ: 0.5,
     meshes: {
-      front: "MUG",
+      body: "MUG",
     }
   },
   "tote": {
@@ -130,7 +130,7 @@ function DynamicModel({ modelUrl, textures, color, controls, config }) {
       <RenderPart meshName={m.rightSleeve} tex={rightTex} />
       <RenderPart meshName={m.hood} />
       <RenderPart meshName={m.handle} />
-      <RenderPart meshName={m.straps} />
+      <RenderPart meshName={m.body} />
       {(!m.front || !nodes[m.front]) && <primitive object={nodes.Scene || nodes.root} />}
     </group>
   );
