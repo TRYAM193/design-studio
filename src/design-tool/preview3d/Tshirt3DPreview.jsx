@@ -43,7 +43,7 @@ const MODEL_CONFIGS = {
     position: [0, -1.5, 0],
     cameraZ: 7,
     meshes: {
-      front: "Mug_Body",
+      front: "MUG",
       handle: "Mug_Handle"
     }
   },
