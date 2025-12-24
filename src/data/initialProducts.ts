@@ -309,12 +309,6 @@ export const INITIAL_PRODUCTS = [
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmug-ceramic-11oz?alt=media&token=7a07c2c7-78d6-4610-8e09-aee10ceb5bd1',
     model3d: "/assets/mug.glb",
     description: "Durable ceramic mug with high-quality printing.",
-    
-    print_areas: {
-      front: { width: 1100, height: 1100 },
-      left:  { width: 1100, height: 1100 }, 
-      right: { width: 1100, height: 1100 }  
-    },
 
     mockups: {
       front: "/assets/mockups/mug-front.png",
