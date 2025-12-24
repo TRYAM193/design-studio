@@ -9,7 +9,7 @@ const MODEL_CONFIGS = {
   "t-shirt": {
     scale: 0.8,
     position: [0, -0.85, 0],
-    cameraZ: 2.0, // Default T-shirt Zoom
+    cameraZ: 0.6, // Default T-shirt Zoom
     meshes: {
       front: "Body_Front_Node",
       back: "Body_Back_Node",
