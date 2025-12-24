@@ -44,7 +44,6 @@ const MODEL_CONFIGS = {
     cameraZ: 0.5,
     meshes: {
       front: "MUG",
-      handle: "Mug_Handle"
     }
   },
   "tote": {
