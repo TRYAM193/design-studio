@@ -209,24 +209,6 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
 
         <OrbitControls enablePan={false} minPolarAngle={0} maxPolarAngle={Math.PI} />
       </Canvas>
-
-      {/* Controls Overlay (Only show if Back texture exists to calibrate) */}
-      {textures?.back && (
-        <div className="absolute top-4 right-4 bg-black/80 text-white p-4 rounded text-xs w-64">
-          <h3>Back Calibration</h3>
-          {['x', 'y', 'z', 'scale'].map(axis => (
-            <div key={axis} className="mb-2">
-              <label className="capitalize">{axis}</label>
-              <input
-                type="range" min="-2" max="2" step="0.01"
-                value={controls[axis]}
-                onChange={(e) => updateControl(axis, e.target.value)}
-                className="w-full"
-              />
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
