@@ -200,7 +200,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
           />
         </div>
 
-        {textures?.back && (
+        {textures?.front && (
           <>
             <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Back Decal Calibration</h3>
             {['x', 'y', 'z', 'scale'].map(axis => (
