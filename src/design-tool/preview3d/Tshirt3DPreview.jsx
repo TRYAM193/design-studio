@@ -41,7 +41,7 @@ const MODEL_CONFIGS = {
   "mug": {
     scale: 3,
     position: [0, -1.5, 0],
-    cameraZ: 4,
+    cameraZ: 7,
     meshes: {
       front: "Mug_Body",
       handle: "Mug_Handle"
