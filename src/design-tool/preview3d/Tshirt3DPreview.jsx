@@ -198,7 +198,6 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
             modelUrl={modelUrl}
             textures={textures}
             color={color}
-            controls={controls}
           />
         </Center>
 
