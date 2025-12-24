@@ -11,10 +11,10 @@ const MODEL_CONFIGS = {
     position: [0, -0.85, 0],
     cameraZ: 2.0, // Default T-shirt Zoom
     meshes: {
-      front: "T_Shirt_front",
-      back: "T_Shirt_back",
-      leftSleeve: "T_Shirt_left_sleeve",
-      rightSleeve: "T_Shirt_right_sleeve"
+      front: "Body_Front_Node",
+      back: "Body_Back_Node",
+      leftSleeve: "Sleeves_Node",
+      rightSleeve: "Sleeves_Node001",
     }
   },
   "oversized": {
