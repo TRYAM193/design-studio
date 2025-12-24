@@ -139,6 +139,7 @@ function DynamicModel({ modelUrl, textures, color, controls, config }) {
 
 // --- 4. EXPORT ---
 export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" }) {
+  console.log()
   // Initial config resolution
   const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
 
