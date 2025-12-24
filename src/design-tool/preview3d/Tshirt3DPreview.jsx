@@ -104,7 +104,7 @@ function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
 }
 
 // --- 4. The Main Model Component ---
-function DynamicModel({ modelUrl, textures, color, controls }) {
+function DynamicModel({ modelUrl, textures, color }) {
   // Load the GLTF
   const { nodes, materials } = useGLTF(modelUrl);
 
