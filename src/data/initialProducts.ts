@@ -255,7 +255,7 @@ export const INITIAL_PRODUCTS = [
     price: 45.00,
     // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-hoodie?alt=media&token=788e59c3-a0d8-489c-8603-c731023a2f10',
-    model3d: "/assets/hoodie.glb",
+    model3d: null,
     description: "Soft fleece fabric, kangaroo pocket, standard fit.",
     
     print_areas: {
