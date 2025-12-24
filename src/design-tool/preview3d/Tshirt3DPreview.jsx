@@ -50,7 +50,7 @@ const MODEL_CONFIGS = {
   "tote": {
     scale: 0.08,
     position: [0, -1.5, 0],
-    cameraZ: 0.,
+    cameraZ: 0.6,
     meshes: {
       front: "Bag_Front",
       back: "Bag_Back",
