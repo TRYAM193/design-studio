@@ -20,9 +20,9 @@ const MODEL_CONFIGS = {
   "oversized": {
     scale: 0.8,
     position: [0, -0.85, 0],
-    cameraZ: 2.2, 
+    cameraZ: 2.2,
     meshes: {
-      front: "Oversized_front", 
+      front: "Oversized_front",
       back: "Oversized_back"
     }
   },
@@ -31,7 +31,7 @@ const MODEL_CONFIGS = {
     position: [0, -0.85, 0],
     cameraZ: 2.2,
     meshes: {
-      front: "Hoodie_front", 
+      front: "Hoodie_front",
       back: "Hoodie_back",
       hood: "Hoodie_hood",
       leftSleeve: "Hoodie_left_sleeve",
@@ -39,16 +39,16 @@ const MODEL_CONFIGS = {
     }
   },
   "mug": {
-    scale: 3, 
+    scale: 3,
     position: [0, -1.5, 0],
-    cameraZ: 3.5, 
+    cameraZ: 3.5,
     meshes: {
-      front: "Mug_Body", 
+      front: "Mug_Body",
       handle: "Mug_Handle"
     }
   },
   "tote": {
-    scale: 0.08, 
+    scale: 0.08,
     position: [0, -1.5, 0],
     cameraZ: 1.5,
     meshes: {
@@ -143,8 +143,8 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
   const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
 
   // State now includes cameraZ
-  const [controls, setControls] = useState({ 
-    x: 0, y: 1.25, z: 0.5, scale: 0.5, 
+  const [controls, setControls] = useState({
+    x: 0, y: 1.25, z: 0.5, scale: 0.5,
     cameraZ: config.cameraZ || 2.5 // Initialize from config
   });
 
@@ -171,53 +171,53 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <CameraRig z={controls.cameraZ} />
 
         <Center>
-          <DynamicModel 
-            modelUrl={modelUrl} 
-            textures={textures} 
+          <DynamicModel
+            modelUrl={modelUrl}
+            textures={textures}
             color={color}
             controls={controls}
             config={config}
           />
         </Center>
-        
+
         <OrbitControls enablePan={false} minPolarAngle={0} maxPolarAngle={Math.PI} />
       </Canvas>
-      
+
       {/* 🛠 DEBUG CONTROLS */}
       <div className="absolute top-4 right-4 bg-black/80 text-white p-4 rounded text-xs w-64 z-50">
-           <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Camera Zoom</h3>
-           <div className="mb-4">
-             <div className="flex justify-between mb-1">
-               <label>Distance (Z)</label>
-               <span className="text-gray-400">{controls.cameraZ.toFixed(2)}</span>
-             </div>
-             <input 
-               type="range" min="0.5" max="8" step="0.1" 
-               value={controls.cameraZ} 
-               onChange={(e) => updateControl('cameraZ', e.target.value)}
-               className="w-full accent-indigo-500"
-             />
-           </div>
+        <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Camera Zoom</h3>
+        <div className="mb-4">
+          <div className="flex justify-between mb-1">
+            <label>Distance (Z)</label>
+            <span className="text-gray-400">{controls.cameraZ.toFixed(2)}</span>
+          </div>
+          <input
+            type="range" min="0.5" max="8" step="0.1"
+            value={controls.cameraZ}
+            onChange={(e) => updateControl('cameraZ', e.target.value)}
+            className="w-full accent-indigo-500"
+          />
+        </div>
 
-           {textures?.back && (
-             <>
-               <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Back Decal Calibration</h3>
-               {['x', 'y', 'z', 'scale'].map(axis => (
-                 <div key={axis} className="mb-2">
-                   <div className="flex justify-between mb-1">
-                     <label className="capitalize">{axis}</label>
-                     <span className="text-gray-400">{controls[axis].toFixed(2)}</span>
-                   </div>
-                   <input 
-                     type="range" min="-2" max="2" step="0.01" 
-                     value={controls[axis]} 
-                     onChange={(e) => updateControl(axis, e.target.value)}
-                     className="w-full accent-indigo-500"
-                   />
-                 </div>
-               ))}
-             </>
-           )}
+        {textures?.back && (
+          <>
+            <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Back Decal Calibration</h3>
+            {['x', 'y', 'z', 'scale'].map(axis => (
+              <div key={axis} className="mb-2">
+                <div className="flex justify-between mb-1">
+                  <label className="capitalize">{axis}</label>
+                  <span className="text-gray-400">{controls[axis].toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="-2" max="2" step="0.01"
+                  value={controls[axis]}
+                  onChange={(e) => updateControl(axis, e.target.value)}
+                  className="w-full accent-indigo-500"
+                />
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
