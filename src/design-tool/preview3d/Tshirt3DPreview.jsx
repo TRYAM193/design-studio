@@ -9,26 +9,25 @@ const MODEL_CONFIGS = {
     scale: 0.8,
     position: [0, -0.85, 0],
     meshes: {
-      front: "T_Shirt_front", // Replace with actual name, e.g. "Tshirt" or "Pattern2D_29393"
-      back: "T_Shirt_back",
-      leftSleeve: "T_Shirt_left_sleeve",
-      rightSleeve: "T_Shirt_right_sleeve"
+      front: "Body_Front_Node",
+      back: "Body_Back_Node",
+      leftSleeve: "Sleeves_Node",
+      rightSleeve: "Sleeves_Node001",
     }
   },
   "oversized": {
     scale: 0.8,
     position: [0, -0.85, 0],
     meshes: {
-      front: "Oversized_front", 
+      front: "Oversized_front",
       back: "Oversized_back",
-      // Oversized might not have separate sleeve meshes in some models
     }
   },
   "hoodie": {
     scale: 0.8,
     position: [0, -0.85, 0],
     meshes: {
-      front: "Hoodie_front", 
+      front: "Hoodie_front",
       back: "Hoodie_back",
       hood: "Hoodie_hood",
       leftSleeve: "Hoodie_left_sleeve",
@@ -88,14 +87,14 @@ function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
   if (!texture) return null;
   return (
     <Decal
-      position={[x, y, z]} 
-      rotation={rotation} 
-      scale={[scale, scale, 1.5]} 
+      position={[x, y, z]}
+      rotation={rotation}
+      scale={[scale, scale, 1.5]}
     >
       <meshBasicMaterial
         map={texture}
         transparent
-        depthTest={true}   
+        depthTest={true}
         depthWrite={false}
         polygonOffset
         polygonOffsetFactor={-4}
@@ -108,7 +107,7 @@ function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
 function DynamicModel({ modelUrl, textures, color, controls }) {
   // Load the GLTF
   const { nodes, materials } = useGLTF(modelUrl);
-  
+
   // Get Configuration
   const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
   const m = config.meshes;
@@ -122,13 +121,13 @@ function DynamicModel({ modelUrl, textures, color, controls }) {
   // Helper to render a mesh safely (if it exists in the GLB)
   const RenderPart = ({ meshName, tex, decalProps, isSleeve }) => {
     if (!nodes || !nodes[meshName]) return null;
-    
+
     // If the GLB uses a specific material, we clone it to change color
     // Otherwise we create a standard material
     const MaterialToUse = (
-      <meshStandardMaterial 
-        color={color} 
-        roughness={0.7} 
+      <meshStandardMaterial
+        color={color}
+        roughness={0.7}
         map={materials?.[meshName]?.map || null} // Preserve original texture if exists
       />
     );
@@ -139,9 +138,9 @@ function DynamicModel({ modelUrl, textures, color, controls }) {
         <meshStandardMaterial color={color} roughness={0.7} />
 
         {tex && decalProps && (
-          <CalibrationDecal 
-             texture={tex}
-             {...decalProps}
+          <CalibrationDecal
+            texture={tex}
+            {...decalProps}
           />
         )}
       </mesh>
@@ -150,25 +149,25 @@ function DynamicModel({ modelUrl, textures, color, controls }) {
 
   return (
     <group position={config.position} scale={config.scale} dispose={null}>
-      
+
       {/* Front */}
-      <RenderPart 
-        meshName={m.front} 
-        tex={frontTex} 
+      <RenderPart
+        meshName={m.front}
+        tex={frontTex}
         decalProps={{ x: 0, y: 1.25, z: -0.5, scale: 0.5, rotation: [0, 0, 0] }} // Front Decal Values
       />
 
       {/* Back */}
-      <RenderPart 
-        meshName={m.back} 
-        tex={backTex} 
+      <RenderPart
+        meshName={m.back}
+        tex={backTex}
         decalProps={{ x: 0, y: 1.25, z: 0.5, scale: 0.5, rotation: [0, Math.PI, 0] }} // Back Decal (Slider Controlled)
       />
 
       {/* Sleeves (Optional) */}
       <RenderPart meshName={m.leftSleeve} tex={leftTex} />
       <RenderPart meshName={m.rightSleeve} tex={rightTex} />
-      
+
       {/* Extras (Hood, Handle, Straps) */}
       <RenderPart meshName={m.hood} />
       <RenderPart meshName={m.handle} />
@@ -200,32 +199,32 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <Environment preset="city" />
 
         <Center>
-          <DynamicModel 
-            modelUrl={modelUrl} 
-            textures={textures} 
+          <DynamicModel
+            modelUrl={modelUrl}
+            textures={textures}
             color={color}
             controls={controls}
           />
         </Center>
-        
+
         <OrbitControls enablePan={false} minPolarAngle={0} maxPolarAngle={Math.PI} />
       </Canvas>
-      
+
       {/* Controls Overlay (Only show if Back texture exists to calibrate) */}
       {textures?.back && (
         <div className="absolute top-4 right-4 bg-black/80 text-white p-4 rounded text-xs w-64">
-           <h3>Back Calibration</h3>
-           {['x', 'y', 'z', 'scale'].map(axis => (
-             <div key={axis} className="mb-2">
-               <label className="capitalize">{axis}</label>
-               <input 
-                 type="range" min="-2" max="2" step="0.01" 
-                 value={controls[axis]} 
-                 onChange={(e) => updateControl(axis, e.target.value)}
-                 className="w-full"
-               />
-             </div>
-           ))}
+          <h3>Back Calibration</h3>
+          {['x', 'y', 'z', 'scale'].map(axis => (
+            <div key={axis} className="mb-2">
+              <label className="capitalize">{axis}</label>
+              <input
+                type="range" min="-2" max="2" step="0.01"
+                value={controls[axis]}
+                onChange={(e) => updateControl(axis, e.target.value)}
+                className="w-full"
+              />
+            </div>
+          ))}
         </div>
       )}
     </div>
