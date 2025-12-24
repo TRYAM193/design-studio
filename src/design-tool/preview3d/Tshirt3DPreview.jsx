@@ -199,7 +199,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
 
         {textures?.front && (
           <>
-            <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Back Decal Calibration</h3>
+            <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Front Decal Calibration</h3>
             {['x', 'y', 'z', 'scale'].map(axis => (
               <div key={axis} className="mb-2">
                 <div className="flex justify-between mb-1">
