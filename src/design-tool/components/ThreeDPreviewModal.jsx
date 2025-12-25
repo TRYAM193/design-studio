@@ -14,12 +14,12 @@ export function ThreeDPreviewModal({
     isSaving,
     productId,
     productData = {},
-    selectedColor = "#FFFFFF" 
+    selectedColor = "#FFFFFF"
 }) {
     const has3D = !!productData.model3d;
     const mockups = productData.mockups || {};
     const mockupKeys = Object.keys(mockups);
-    
+
     const [viewMode, setViewMode] = useState('2d');
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
 
@@ -31,7 +31,7 @@ export function ThreeDPreviewModal({
     }, [isOpen, productId]);
 
     const getCurrentTexture = () => {
-        if (activeSide === 'left' || activeSide === 'right') return textures.front?.url; 
+        if (activeSide === 'left' || activeSide === 'right') return textures.front?.url;
         return textures[activeSide]?.url;
     };
 
@@ -49,22 +49,20 @@ export function ThreeDPreviewModal({
                     <div className="flex gap-2 p-1 bg-black/40 rounded-lg border border-white/5">
                         <button
                             onClick={() => setViewMode('2d')}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                                viewMode === '2d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
-                            }`}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === '2d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
+                                }`}
                         >
                             <ImageIcon size={16} /> 2D Mockup
                         </button>
-                        
+
                         {/* ✅ UPDATED BUTTON: Shows "3D Not Available" if missing */}
                         <button
                             onClick={() => has3D && setViewMode('3d')}
                             disabled={!has3D}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                                viewMode === '3d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
-                            } ${!has3D ? "opacity-40 cursor-not-allowed bg-transparent hover:text-zinc-400" : ""}`}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === '3d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
+                                } ${!has3D ? "opacity-40 cursor-not-allowed bg-transparent hover:text-zinc-400" : ""}`}
                         >
-                            <Box size={16} /> 
+                            <Box size={16} />
                             {has3D ? "3D View" : "3D Not Available"}
                         </button>
                     </div>
@@ -76,31 +74,31 @@ export function ThreeDPreviewModal({
 
                 {/* --- MAIN STAGE --- */}
                 <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex items-center justify-center">
-                    
+
                     {/* === 2D VIEW === */}
                     {viewMode === '2d' && (
                         <div className="relative w-full h-full flex flex-col">
                             <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8">
-                                
+
                                 {/* 🖼️ MOCKUP CONTAINER */}
                                 <div className="relative w-full max-w-[500px] aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-white">
-                                    
+
                                     {/* LAYER 1: The Selected Color (Base) */}
-                                    <div 
+                                    <div
                                         className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
-                                        style={{ backgroundColor: selectedColor }}
+                                        style={{ backgroundColor: 'white' }}
                                     />
 
                                     {/* LAYER 2: The Mockup Image (Shadows/Highlights) */}
                                     {mockups[activeSide] ? (
                                         <div style={{ backgroundColor: selectedColor }}>
-                                        <img 
-                                            src={mockups[activeSide]} 
-                                            alt={`${activeSide} view`} 
-                                            className="absolute inset-0 w-full h-full object-contain z-10"
-                                            style={{ mixBlendMode: 'multiply' }} 
+                                            <img
+                                                src={mockups[activeSide]}
+                                                alt={`${activeSide} view`}
+                                                className="absolute inset-0 w-full h-full object-contain z-10"
+                                                style={{ mixBlendMode: 'multiply' }}
                                             />
-                                            </div>
+                                        </div>
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
                                             No Mockup Available
@@ -109,13 +107,13 @@ export function ThreeDPreviewModal({
 
                                     {/* LAYER 3: The User's Design */}
                                     {currentTexture && (
-                                        <div 
+                                        <div
                                             className="absolute z-20"
                                             style={{
                                                 top: `${currentMockupConfig.top}%`,
                                                 left: `${currentMockupConfig.left}%`,
                                                 width: `${currentMockupConfig.width}%`,
-                                                mixBlendMode: 'multiply' 
+                                                mixBlendMode: 'multiply'
                                             }}
                                         >
                                             <img src={currentTexture} alt="design" className="w-full h-auto" />
@@ -131,15 +129,14 @@ export function ThreeDPreviewModal({
                                         <button
                                             key={side}
                                             onClick={() => setActiveSide(side)}
-                                            className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${
-                                                activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
-                                            }`}
+                                            className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
+                                                }`}
                                         >
                                             <div className="absolute inset-0" style={{ backgroundColor: selectedColor }} />
-                                            <img 
-                                                src={mockups[side]} 
-                                                alt={side} 
-                                                className="absolute inset-0 w-full h-full object-cover" 
+                                            <img
+                                                src={mockups[side]}
+                                                alt={side}
+                                                className="absolute inset-0 w-full h-full object-cover"
                                                 style={{ mixBlendMode: 'multiply' }}
                                             />
                                         </button>
@@ -167,7 +164,7 @@ export function ThreeDPreviewModal({
 
                     {/* Footer / Add To Cart */}
                     <div className="absolute bottom-6 right-6 z-50 flex gap-3">
-                         <Button
+                        <Button
                             className="h-12 px-8 text-base font-bold bg-white text-black hover:bg-zinc-200 transition-all rounded-xl gap-2 shadow-xl"
                             onClick={onAddToCart}
                             disabled={isSaving}
