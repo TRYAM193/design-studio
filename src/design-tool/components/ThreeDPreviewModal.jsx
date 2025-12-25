@@ -238,13 +238,11 @@ export function ThreeDPreviewModal({
                                 </div>
                             </div>
 
-                            {/* 2. SIZE CONTROLS */}
                             <div className="space-y-6 pt-2">
                                 <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
                                     <Maximize2 size={12} /> Dimensions
                                 </h4>
 
-                                {/* Width Slider */}
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-zinc-400 text-xs font-medium">
                                         <span>Width</span>
@@ -259,7 +257,6 @@ export function ThreeDPreviewModal({
                                     />
                                 </div>
 
-                                {/* Height Slider */}
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-zinc-400 text-xs font-medium">
                                         <span>Height</span>
