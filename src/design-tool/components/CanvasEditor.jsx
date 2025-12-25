@@ -139,7 +139,8 @@ export default function CanvasEditor({
     canvas.setDimensions({ width: canvasWidth, height: canvasHeight });
     
     // C. Reset Viewport (Crucial: Remove any old zoom if it existed)
-    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]); 
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+     
     
     canvas.requestRenderAll();
     
