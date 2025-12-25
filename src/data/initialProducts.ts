@@ -1,5 +1,7 @@
 // src/data/initialProducts.ts
 
+import { ca } from "date-fns/locale";
+
 export const INITIAL_PRODUCTS = [
   // =========================================
   // 👕 MEN'S COLLECTION
@@ -389,7 +391,8 @@ export const INITIAL_PRODUCTS = [
       back:  { width: 3000, height: 3000 }
     },
 
-    
+    canvas_size: {
+      width: 400,
 
     mockups: {
       front: "/assets/mockups/tote-bag-front.png",
