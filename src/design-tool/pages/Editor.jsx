@@ -73,8 +73,6 @@ export default function EditorPanel() {
         options: { colors: [] }
     });
 
-    console.log(productData)
-
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
 
@@ -175,7 +173,7 @@ export default function EditorPanel() {
         }
         
         fabricCanvas.renderAll();
-        
+
         try {
             const dataUrl = fabricCanvas.toDataURL({
                 format: 'png',
