@@ -63,6 +63,7 @@ export default function CanvasEditor({
   fabricCanvas,
   setEditingDesignId,
   setCurrentDesign,
+  printDimensions = { width: 4500, height: 5400 }
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
