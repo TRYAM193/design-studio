@@ -64,7 +64,7 @@ export default function CanvasEditor({
   setEditingDesignId,
   setCurrentDesign,
   printDimensions,
-  productId // ✅ Received Product ID
+  productId,// ✅ Received Product ID
   activeView
 }) {
   const canvasRef = useRef(null);
@@ -221,7 +221,7 @@ export default function CanvasEditor({
     const updateEvent = new Event('resize_menu_update');
     window.dispatchEvent(updateEvent);
 
-  }, [printWidth, printHeight, productId, containerSize, fabricCanvas]); 
+  }, [printWidth, printHeight, productId, containerSize, fabricCanvas, activeView]); 
 
   // 🟩 Load Saved Designs (From Navigation State)
   useEffect(() => {
