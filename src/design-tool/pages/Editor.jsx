@@ -179,17 +179,17 @@ export default function EditorPanel() {
         fabricCanvas.renderAll();
 
         try {
-            setTimeout(() => {}, 100); // Allow render update
-            const dataUrl = fabricCanvas.toDataURL({
-                format: 'png',
-                quality: 1,
-                multiplier: 1,
-                enableRetinaScaling: false
-            });
-            const blob = dataURLtoBlob(dataUrl);
-            const blobUrl = URL.createObjectURL(blob);
-            return { blob, url: blobUrl };
-
+            setTimeout(() => { // Allow render update
+                const dataUrl = fabricCanvas.toDataURL({
+                    format: 'png',
+                    quality: 1,
+                    multiplier: 1,
+                    enableRetinaScaling: false
+                });
+                const blob = dataURLtoBlob(dataUrl);
+                const blobUrl = URL.createObjectURL(blob);
+                return { blob, url: blobUrl };
+            }, 100);
         } catch (err) {
             console.error("Failed to capture canvas:", err);
             return null;
