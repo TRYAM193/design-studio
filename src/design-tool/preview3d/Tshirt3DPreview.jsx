@@ -35,7 +35,7 @@ const MODEL_CONFIGS = {
     position: [0, -1.5, 0],
     cameraZ: 1.5,
     meshes: {
-      front: "Bag_Front",
+      front: "FRONT",
       back: "Bag_Back",
       straps: "Bag_Straps"
     },
