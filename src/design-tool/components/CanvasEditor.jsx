@@ -65,6 +65,7 @@ export default function CanvasEditor({
   setCurrentDesign,
   productData
 }) {
+  console.log("CanvasEditor productData:", productData);
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const isSyncingRef = useRef(false);
