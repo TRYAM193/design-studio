@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShoppingBag, X, Box, Image as ImageIcon, Move, Maximize2 } from "lucide-react";
+import { Loader2, ShoppingBag, X, Box, Image as ImageIcon } from "lucide-react";
 import Tshirt3DPreview from '../preview3d/Tshirt3DPreview';
 
 export function ThreeDPreviewModal({
@@ -22,25 +22,21 @@ export function ThreeDPreviewModal({
     const [viewMode, setViewMode] = useState('2d');
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
 
-    // ✅ DEFAULT VALUES (Left: 15%, Top: 18%, Scale: 71%)
-    const fallbackDefaults = { top: 18, left: 15, width: 71 };
+    // ✅ FIXED CONFIGURATION (The "Print Area" Definition)
+    // Since editing happens on canvas, this defines where the "Canvas" sits on the "Shirt"
+    const printAreaConfig = productData.print_area_2d?.[activeSide] || { 
+        top: 18,   // 18% from top
+        left: 15,  // 15% from left
+        width: 71  // 71% width
+    };
 
-    const [adjustments, setAdjustments] = useState({ 
-        top: fallbackDefaults.top, 
-        left: fallbackDefaults.left, 
-        scale: fallbackDefaults.width 
-    });
-
+    // Reset view when opening
     useEffect(() => {
         if (isOpen) {
-            const defaults = productData.print_area_2d?.[activeSide] || fallbackDefaults;
-            setAdjustments({
-                top: defaults.top,
-                left: defaults.left,
-                scale: defaults.width || defaults.scale || 71
-            });
+            setViewMode('2d');
+            setActiveSide(mockupKeys[0] || 'front');
         }
-    }, [isOpen, activeSide, productId]);
+    }, [isOpen, productId]);
 
     const getCurrentTexture = () => {
         if (activeSide === 'left' || activeSide === 'right') return textures.front?.url; 
@@ -49,10 +45,6 @@ export function ThreeDPreviewModal({
 
     const currentTexture = getCurrentTexture();
     const currentMockupImage = mockups[activeSide];
-
-    const handleAdjustment = (key, value) => {
-        setAdjustments(prev => ({ ...prev, [key]: parseFloat(value) }));
-    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -93,10 +85,10 @@ export function ThreeDPreviewModal({
                 {/* --- MAIN CONTENT AREA --- */}
                 <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex">
                     
-                    {/* === LEFT: PREVIEW CANVAS (Maximized) === */}
+                    {/* === FULL WIDTH VIEWPORT === */}
                     <div className="flex-1 relative flex flex-col min-w-0"> 
                         {viewMode === '2d' && (
-                            // ⚡ CHANGED: Padding removed (p-0) to maximize space
+                            // p-0 ensures the image goes edge-to-edge
                             <div className="flex-1 flex items-center justify-center bg-zinc-900 p-0 overflow-hidden relative">
                                 
                                 <div className="relative w-full h-full flex items-center justify-center bg-transparent group">
@@ -118,23 +110,23 @@ export function ThreeDPreviewModal({
                                                 }}
                                             />
 
-                                            {/* Layer 2: Mockup Image (Maximized to full available height) */}
+                                            {/* Layer 2: Mockup Image (Maximized) */}
+                                            {/* h-[calc(100vh-64px)] ensures it fills vertical space exactly */}
                                             <img 
                                                 src={currentMockupImage} 
                                                 alt={`${activeSide} view`} 
-                                                // ⚡ CHANGED: h-[calc(100vh-64px)] forces it to fill the vertical space completely
                                                 className="relative z-10 block h-[calc(100vh-64px)] w-auto object-contain"
                                                 style={{ mixBlendMode: 'multiply' }} 
                                             />
 
-                                            {/* Layer 3: Design Overlay */}
+                                            {/* Layer 3: Design Overlay (Fixed Positioning) */}
                                             {currentTexture && (
                                                 <div 
                                                     className="absolute z-20"
                                                     style={{
-                                                        top: `${adjustments.top}%`,
-                                                        left: `${adjustments.left}%`,
-                                                        width: `${adjustments.scale}%`,
+                                                        top: `${printAreaConfig.top}%`,
+                                                        left: `${printAreaConfig.left}%`,
+                                                        width: `${printAreaConfig.width}%`,
                                                         mixBlendMode: 'multiply',
                                                         opacity: 0.95 
                                                     }}
@@ -167,7 +159,7 @@ export function ThreeDPreviewModal({
                             </div>
                         )}
 
-                        {/* Side Selector (Floating at Bottom Center) */}
+                        {/* Side Selector (Floating Bottom Center) */}
                         {viewMode === '2d' && mockupKeys.length > 1 && (
                             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-4 bg-zinc-900/80 p-2 rounded-xl backdrop-blur-sm border border-white/10">
                                 {mockupKeys.map(side => (
@@ -189,75 +181,19 @@ export function ThreeDPreviewModal({
                                 ))}
                             </div>
                         )}
-                    </div>
 
-                    {/* === RIGHT: CONTROLS SIDEBAR === */}
-                    {viewMode === '2d' && (
-                        <div className="w-80 bg-zinc-900 border-l border-white/10 p-6 flex flex-col gap-8 z-40 shadow-xl flex-shrink-0">
-                            <h3 className="text-white font-semibold text-lg flex items-center gap-2 border-b border-white/10 pb-4">
-                                <Move size={18} /> Position & Scale
-                            </h3>
-
-                            {/* Top / Y-Axis Slider */}
-                            <div className="space-y-4">
-                                <div className="flex justify-between text-zinc-400 text-xs uppercase tracking-wider font-medium">
-                                    <span>Vertical Position (Y)</span>
-                                    <span className="text-white">{adjustments.top.toFixed(0)}%</span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min="0" max="100" step="1"
-                                    value={adjustments.top}
-                                    onChange={(e) => handleAdjustment('top', e.target.value)}
-                                    className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                                />
-                            </div>
-
-                            {/* Left / X-Axis Slider */}
-                            <div className="space-y-4">
-                                <div className="flex justify-between text-zinc-400 text-xs uppercase tracking-wider font-medium">
-                                    <span>Horizontal Position (X)</span>
-                                    <span className="text-white">{adjustments.left.toFixed(0)}%</span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min="0" max="100" step="1"
-                                    value={adjustments.left}
-                                    onChange={(e) => handleAdjustment('left', e.target.value)}
-                                    className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                                />
-                            </div>
-
-                            {/* Scale / Size Slider */}
-                            <div className="space-y-4 pt-4 border-t border-white/10">
-                                <div className="flex justify-between text-zinc-400 text-xs uppercase tracking-wider font-medium items-center">
-                                    <span className="flex items-center gap-2"><Maximize2 size={14} /> Size / Scale</span>
-                                    <span className="text-white">{adjustments.scale.toFixed(0)}%</span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min="5" max="100" step="1"
-                                    value={adjustments.scale}
-                                    onChange={(e) => handleAdjustment('scale', e.target.value)}
-                                    className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                                />
-                            </div>
-
-                            <div className="mt-auto pt-6 border-t border-white/10">
-                                <p className="text-xs text-zinc-500 mb-4 text-center">
-                                    Use sliders to fine-tune the print placement on the mockup.
-                                </p>
-                                <Button
-                                    className="w-full h-14 text-base font-bold bg-white text-black hover:bg-zinc-200 rounded-xl gap-2 shadow-xl"
-                                    onClick={onAddToCart}
-                                    disabled={isSaving}
-                                >
-                                    {isSaving ? <Loader2 className="animate-spin" size={20} /> : <ShoppingBag size={20} />}
-                                    {isSaving ? "Processing..." : "Add to Cart"}
-                                </Button>
-                            </div>
+                        {/* Add to Cart Button (Floating Bottom Right) */}
+                        <div className="absolute bottom-6 right-6 z-50">
+                            <Button
+                                className="h-14 px-8 text-base font-bold bg-white text-black hover:bg-zinc-200 transition-all rounded-xl gap-2 shadow-xl"
+                                onClick={onAddToCart}
+                                disabled={isSaving}
+                            >
+                                {isSaving ? <Loader2 className="animate-spin" size={20} /> : <ShoppingBag size={20} />}
+                                {isSaving ? "Processing..." : "Add to Cart"}
+                            </Button>
                         </div>
-                    )}
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>
