@@ -194,7 +194,7 @@ export function ThreeDPreviewModal({
                     </div>
 
                     {/* === RIGHT: ADJUSTMENT SIDEBAR (Only in 2D Mode) === */}
-                    {/* {viewMode === '2d' && ( */}
+                    {viewMode === '2d' && (
                         // <div className="w-80 bg-zinc-900 border-l border-white/10 p-6 flex flex-col gap-8 z-30 shadow-xl overflow-y-auto">
                             
                         //     <div className="flex items-center gap-2 pb-4 border-b border-white/10">
