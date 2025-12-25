@@ -115,11 +115,11 @@ export default function CanvasEditor({
   useEffect(() => {
     // UPDATED: Set dimensions to match standard T-Shirt print aspect ratio (5:6)
     // 800 width / 960 height = 0.833... (matches 4500/5400)
-    let ORIGINAL_WIDTH = ;
-    let ORIGINAL_HEIGHT;
+    let ORIGINAL_WIDTH = 800;
+    let ORIGINAL_HEIGHT = 960;
 
     if (productData.title.includes('Mug')){
-      ORIGINAL_WIDTH = productData.print_area_width || 800;
+      ORIGINAL_WIDTH = 200;
       ORIGINAL_HEIGHT = productData.print_area_height || 960;
     }
 
