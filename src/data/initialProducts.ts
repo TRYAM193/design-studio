@@ -403,8 +403,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     print_area_2d: {
-      front: { top: 28, left: 7, width: 50 },
-      back: { top: 30, left: 25, width: 50 }
+      front: { top: 28, left: 7, width: 88, height: 66 },
+      back: { top: 28, left: 7, width: 88, height: 66 }
     },
 
     options: {
