@@ -315,7 +315,9 @@ export const INITIAL_PRODUCTS = [
       front: { width: 2700, height: 1100 } // Approx 9" x 3.5" wrap
     },
 
-    
+    canvas_size: {
+      width
+    }
 
     mockups: {
       front: "/assets/mockups/mug-front.png",
