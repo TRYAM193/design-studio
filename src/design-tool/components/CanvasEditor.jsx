@@ -126,11 +126,10 @@ export default function CanvasEditor({
     const canvas = new fabric.Canvas(canvasRef.current, {
       backgroundColor: 'transparent',
       selection: true,
-      width
+      width: ORIGINAL_WIDTH,
+      height: ORIGINAL_HEIGHT,
+      preserveObjectStacking: true,
     });
-
-    canvas.setWidth(ORIGINAL_WIDTH);
-    canvas.setHeight(ORIGINAL_HEIGHT);
 
     const resize = () => {
       const wrapper = wrapperRef.current;
