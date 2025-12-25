@@ -114,8 +114,6 @@ export default function CanvasEditor({
   // 🟩 Initialize Fabric.js
   // 🟩 Initialize Fabric.js
   useEffect(() => {
-    // UPDATED: Set dimensions to match standard T-Shirt print aspect ratio (5:6)
-    // 800 width / 960 height = 0.833... (matches 4500/5400)
     let ORIGINAL_WIDTH = 800;
     let ORIGINAL_HEIGHT = 960;
 
