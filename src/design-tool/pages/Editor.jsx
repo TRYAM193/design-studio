@@ -170,7 +170,7 @@ export default function EditorPanel() {
         fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
 
-        if (productData.)
+        if (productData.title)
 
         try {
             const dataUrl = fabricCanvas.toDataURL({
