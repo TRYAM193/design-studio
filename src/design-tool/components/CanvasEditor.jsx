@@ -85,32 +85,26 @@ export default function CanvasEditor({
     if (!canvas) return;
 
     const activeObj = canvas.getActiveObject();
-    const canvasContainer = document.getElementById('canvas-wrapper');
+    const canvasContainer = document.getElementById('canvas-wrapper'); 
 
     if (activeObj && canvasContainer) {
-      // 1. Get the Object's center in "Scene Coordinates" (e.g., 2250px)
+      // 1. Get simple object coordinates (No zoom math needed)
       const objectCenter = activeObj.getCenterPoint();
-
-      // 2. Convert to "Screen Coordinates" using the Viewport Transform
-      // This applies the Zoom and Offset we set in Step 1
-      const vpt = canvas.viewportTransform;
-      const screenX = objectCenter.x * vpt[0] + vpt[4];
-      const screenY = objectCenter.y * vpt[3] + vpt[5];
-
-      // 3. Get Canvas Absolute Position on Page
+      
+      // 2. Get Canvas Page Position
       const containerRect = canvasContainer.getBoundingClientRect();
-
-      // 4. Set Final Position
+      
+      // 3. Simple Addition
       setMenuPosition({
-        left: containerRect.left + screenX,
-        top: containerRect.top + screenY - (activeObj.getScaledHeight() * vpt[3] / 2) - 60
+        left: containerRect.left + objectCenter.x, 
+        top: containerRect.top + objectCenter.y - (activeObj.getScaledHeight() / 2) - 60 
       });
 
+      // ... (Selection state logic remains the same)
       if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
         const ids = activeObj.getObjects().map(o => o.customId);
         setSelectedObjectUUIDs(ids);
-        const isAnyLocked = activeObj.getObjects().some(o => o.lockMovementX);
-        setSelectedObjectLocked(isAnyLocked);
+        setSelectedObjectLocked(activeObj.getObjects().some(o => o.lockMovementX));
       } else {
         setSelectedObjectUUIDs([activeObj.customId]);
         setSelectedObjectLocked(activeObj.lockMovementX === true);
