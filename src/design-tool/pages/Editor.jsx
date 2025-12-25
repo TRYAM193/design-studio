@@ -388,6 +388,7 @@ export default function EditorPanel() {
                         setEditingDesignId={setEditingDesignId}
                         past={past}
                         bgcolor={canvasBg}
+                        printDimensions={currentPrintArea}
                     />
 
                 </main>
