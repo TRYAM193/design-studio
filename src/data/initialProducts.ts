@@ -20,6 +20,11 @@ export const INITIAL_PRODUCTS = [
       back:  { width: 4500, height: 5400 }
     },
 
+    canvas_size: {
+      width: 800,
+      height: 300
+    },
+
     // 🖼️ MOCKUPS (Must be Transparent PNGs for color blending)
     mockups: {
       front: "/assets/mockups/men-classic-tee-front.png",
