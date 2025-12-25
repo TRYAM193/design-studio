@@ -179,6 +179,7 @@ export default function EditorPanel() {
         fabricCanvas.renderAll();
 
         try {
+            setTimeout(() => {}, 100); // Allow render update
             const dataUrl = fabricCanvas.toDataURL({
                 format: 'png',
                 quality: 1,
