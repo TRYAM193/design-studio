@@ -187,6 +187,12 @@ export default function EditorPanel() {
         }
 
         fabricCanvas.clipPath = null; 
+        const borderObj = fabricCanvas?.getObjects().find(obj => obj.id === 'print-area-border');
+        let wasBorderVisible = false;
+        if (borderObj) {
+            wasBorderVisible = borderObj.visible; // Remember state
+            borderObj.visible = false; // Hide it
+        }
 
         fabricCanvas.renderAll();
 
