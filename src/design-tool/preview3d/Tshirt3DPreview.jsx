@@ -76,11 +76,11 @@ function CameraRig({ z }) {
   return null;
 }
 
-function CalibrationDecal({ texture, x, y, z, scaleX, scaleY, rotation = [0, 0, 0] }) {
+function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
   if (!texture) return null;
   return (
-    // ✅ REMOVED debug={true}
-    <Decal position={[x, y, z]} rotation={rotation} scale={[scaleX, scaleY, 1.5]} debug={false}>
+    // Uniform scaling based on the single 'scale' property
+    <Decal position={[x, y, z]} rotation={rotation} scale={[scale, scale, 1.5]} debug={false}>
       <meshBasicMaterial map={texture} transparent depthTest={true} depthWrite={false} polygonOffset polygonOffsetFactor={-4} />
     </Decal>
   );
@@ -99,22 +99,24 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
   const RenderPart = ({ meshName, tex, decalProps }) => {
     if (!nodes || !nodes[meshName]) return null;
 
+    // 1. FULL WRAP MODE (MUG/TOTE)
     if (config.fullWrap && tex) {
       useEffect(() => {
         if (tex) {
+          // A. Prevent Tiling 
           tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; 
           tex.colorSpace = THREE.SRGBColorSpace;
           
-          const sx = Math.max(decalProps.scaleX, 0.01);
-          const sy = Math.max(decalProps.scaleY, 0.01);
+          // B. Calculate Scale (Uniform)
+          // 1/scale = repeat. (Smaller scale = larger repeat value = texture looks smaller)
+          const s = Math.max(decalProps.scale, 0.01);
+          const repeatVal = 1 / s;
           
-          const repeatX = 1 / sx;
-          const repeatY = 1 / sy;
-          
-          tex.repeat.set(repeatX, repeatY);
+          tex.repeat.set(repeatVal, repeatVal);
 
-          tex.offset.x = -decalProps.x + (0.5 - repeatX / 2); 
-          tex.offset.y = decalProps.y + (0.5 - repeatY / 2);
+          // C. Calculate Position (Pan) & Keep Centered
+          tex.offset.x = -decalProps.x + (0.5 - repeatVal / 2); 
+          tex.offset.y = decalProps.y + (0.5 - repeatVal / 2);
 
           tex.needsUpdate = true;
         }
@@ -134,6 +136,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
       );
     }
 
+    // 2. STANDARD DECAL MODE (T-Shirts)
     return (
       <mesh
         geometry={nodes[meshName].geometry}
@@ -148,23 +151,25 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
 
   return (
     <group position={config.position} scale={config.scale} dispose={null}>
+      {/* Front */}
       <RenderPart
         meshName={m.front}
         tex={frontTex}
         decalProps={{
           x: frontPos.x, y: frontPos.y, z: frontPos.z,
-          scaleX: frontPos.scaleX, scaleY: frontPos.scaleY, 
+          scale: frontPos.scale, 
           rotation: [0, 0, 0]
         }}
       />
 
+      {/* Back */}
       {!config.fullWrap && (
         <RenderPart
           meshName={m.back}
           tex={backTex}
           decalProps={{
             x: backPos.x, y: backPos.y, z: backPos.z,
-            scaleX: backPos.scaleX, scaleY: backPos.scaleY, 
+            scale: backPos.scale, 
             rotation: [0, Math.PI, 0]
           }}
         />
@@ -185,10 +190,10 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
 export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" }) {
   const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
   
-  // Internal defaults for positions (no longer controlled by UI)
+  // Initialize state from Config (No Sliders, so these act as static constants)
   const [cameraZ] = useState(config.cameraZ || 2.5);
-  const [frontPos] = useState(config.frontDecal || { x: 0, y: 0.04, z: 0.15, scaleX: 0.25, scaleY: 0.25 });
-  const [backPos] = useState(config.backDecal || { x: 0, y: 0.04, z: 0.15, scaleX: 0.25, scaleY: 0.25 });
+  const [frontPos] = useState(config.frontDecal || { x: 0, y: 0, z: 0, scale: 0.5 });
+  const [backPos] = useState(config.backDecal || { x: 0, y: 0, z: 0, scale: 0.5 });
 
   if (!modelUrl) return <div>No 3D Model URL provided</div>;
 
