@@ -23,14 +23,12 @@ export function ThreeDPreviewModal({
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
 
     // ✅ FIXED CONFIGURATION (The "Print Area" Definition)
-    // Since editing happens on canvas, this defines where the "Canvas" sits on the "Shirt"
     const printAreaConfig = productData.print_area_2d?.[activeSide] || { 
-        top: 18,   // 18% from top
-        left: 15,  // 15% from left
-        width: 71  // 71% width
+        top: 18,   
+        left: 15,  
+        width: 71  
     };
 
-    // Reset view when opening
     useEffect(() => {
         if (isOpen) {
             setViewMode('2d');
@@ -83,15 +81,18 @@ export function ThreeDPreviewModal({
                 </div>
 
                 {/* --- MAIN CONTENT AREA --- */}
-                <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex">
+                <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex flex-col">
                     
                     {/* === FULL WIDTH VIEWPORT === */}
-                    <div className="flex-1 relative flex flex-col min-w-0"> 
+                    <div className="flex-1 relative flex flex-col min-w-0 min-h-0"> 
                         {viewMode === '2d' && (
-                            // p-0 ensures the image goes edge-to-edge
-                            <div className="flex-1 flex items-center justify-center bg-zinc-900 p-0 overflow-hidden relative">
+                            <div className="flex-1 flex items-center justify-center bg-zinc-900 p-2 overflow-hidden relative">
                                 
-                                <div className="relative w-full h-full flex items-center justify-center bg-transparent group">
+                                {/* ⚡ FIX: "h-auto w-auto max-h-full max-w-full"
+                                    This ensures the div collapses to fit the image dimensions exactly.
+                                    The image drives the size, and the overlay respects that size.
+                                */}
+                                <div className="relative flex-none h-[calc(100vh-140px)] w-auto aspect-auto group">
                                     {currentMockupImage ? (
                                         <>
                                             {/* Layer 1: Color Mask */}
@@ -110,20 +111,21 @@ export function ThreeDPreviewModal({
                                                 }}
                                             />
 
-                                            {/* Layer 2: Mockup Image (Maximized) */}
-                                            {/* h-[calc(100vh-64px)] ensures it fills vertical space exactly */}
+                                            {/* Layer 2: Mockup Image */}
+                                            {/* 'h-full w-auto' ensures height is fixed to container, width scales automatically */}
                                             <img 
                                                 src={currentMockupImage} 
                                                 alt={`${activeSide} view`} 
-                                                className="relative z-10 block h-[calc(100vh-64px)] w-auto object-contain"
+                                                className="relative z-10 block h-full w-auto object-contain"
                                                 style={{ mixBlendMode: 'multiply' }} 
                                             />
 
-                                            {/* Layer 3: Design Overlay (Fixed Positioning) */}
+                                            {/* Layer 3: Design Overlay */}
                                             {currentTexture && (
                                                 <div 
                                                     className="absolute z-20"
                                                     style={{
+                                                        // Now '15%' is 15% of the IMAGE WIDTH, not screen width
                                                         top: `${printAreaConfig.top}%`,
                                                         left: `${printAreaConfig.left}%`,
                                                         width: `${printAreaConfig.width}%`,
@@ -161,7 +163,7 @@ export function ThreeDPreviewModal({
 
                         {/* Side Selector (Floating Bottom Center) */}
                         {viewMode === '2d' && mockupKeys.length > 1 && (
-                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-4 bg-zinc-900/80 p-2 rounded-xl backdrop-blur-sm border border-white/10">
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-4 bg-zinc-900/80 p-2 rounded-xl backdrop-blur-sm border border-white/10">
                                 {mockupKeys.map(side => (
                                     <button
                                         key={side}
