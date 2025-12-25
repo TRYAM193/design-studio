@@ -114,8 +114,16 @@ export default function CanvasEditor({
   // 🟩 Initialize Fabric.js
   // 🟩 Initialize Fabric.js
   useEffect(() => {
+    // UPDATED: Set dimensions to match standard T-Shirt print aspect ratio (5:6)
+    // 800 width / 960 height = 0.833... (matches 4500/5400)
     let ORIGINAL_WIDTH = 800;
     let ORIGINAL_HEIGHT = 960;
+
+    if (productData.title.includes('Mug')){
+      ORIGINAL_WIDTH = 200;
+      ORIGINAL_HEIGHT = 100;
+      console.log("Mug dimensions set");
+    }
 
     const canvas = new fabric.Canvas(canvasRef.current, {
       backgroundColor: 'transparent',
@@ -150,7 +158,7 @@ export default function CanvasEditor({
       fabricCanvasRef.current = null;
       window.removeEventListener('resize', resize);
     };
-  }, [productData]);
+  }, []);
 
   // 🟩 Load Saved Designs (From Navigation State)
   useEffect(() => {
