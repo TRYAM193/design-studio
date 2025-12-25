@@ -170,6 +170,8 @@ export default function EditorPanel() {
         fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
 
+        if 
+
         try {
             const dataUrl = fabricCanvas.toDataURL({
                 format: 'png',
