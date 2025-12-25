@@ -93,7 +93,7 @@ export function ThreeDPreviewModal({
 
                                     {/* LAYER 2: The Mockup Image (Shadows/Highlights) */}
                                     {mockups[activeSide] ? (
-                                        <div>
+                                        <div style={{ backgroundColor: selectedColor }}>
                                         <img 
                                             src={mockups[activeSide]} 
                                             alt={`${activeSide} view`} 
