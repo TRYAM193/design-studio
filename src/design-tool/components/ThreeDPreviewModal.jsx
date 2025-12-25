@@ -45,7 +45,7 @@ export function ThreeDPreviewModal({
             left: defaults.left,
             width: defaults.width,
             // If height isn't in DB, default to same as width or a fixed value
-            height: defaults.height 
+            height: defaults.height || defaults.width || 40
         });
     }, [activeSide, productData]);
 
