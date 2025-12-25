@@ -124,6 +124,14 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
 
       return (
         <group>
+          <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
+            <meshStandardMaterial
+              color={color} // Use the user-selected color here!
+              metalness={0}
+              roughness={0.5}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
         <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
           <meshStandardMaterial
             color="white"
@@ -134,6 +142,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
             side={THREE.DoubleSide}
           />
         </mesh>
+        </group>
       );
     }
 
