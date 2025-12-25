@@ -195,96 +195,96 @@ export function ThreeDPreviewModal({
 
                     {/* === RIGHT: ADJUSTMENT SIDEBAR (Only in 2D Mode) === */}
                     {viewMode === '2d' && (
-                        // <div className="w-80 bg-zinc-900 border-l border-white/10 p-6 flex flex-col gap-8 z-30 shadow-xl overflow-y-auto">
+                        <div className="w-80 bg-zinc-900 border-l border-white/10 p-6 flex flex-col gap-8 z-30 shadow-xl overflow-y-auto">
                             
-                        //     <div className="flex items-center gap-2 pb-4 border-b border-white/10">
-                        //         <Settings2 className="text-zinc-400" size={20} />
-                        //         <h3 className="text-white font-semibold">Adjust Placement</h3>
-                        //     </div>
+                            <div className="flex items-center gap-2 pb-4 border-b border-white/10">
+                                <Settings2 className="text-zinc-400" size={20} />
+                                <h3 className="text-white font-semibold">Adjust Placement</h3>
+                            </div>
 
-                        //     <div className="space-y-6">
-                        //         <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                        //             <Move size={12} /> Position
-                        //         </h4>
+                            <div className="space-y-6">
+                                <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+                                    <Move size={12} /> Position
+                                </h4>
                                 
 
-                        //         <div className="space-y-3">
-                        //             <div className="flex justify-between text-zinc-400 text-xs font-medium">
-                        //                 <span>Top (Y)</span>
-                        //                 <span className="text-white">{adjustments.top.toFixed(0)}%</span>
-                        //             </div>
-                        //             <input
-                        //                 type="range"
-                        //                 min="0" max="100" step="1"
-                        //                 value={adjustments.top}
-                        //                 onChange={(e) => handleAdjustment('top', e.target.value)}
-                        //                 className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
-                        //             />
-                        //         </div>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-zinc-400 text-xs font-medium">
+                                        <span>Top (Y)</span>
+                                        <span className="text-white">{adjustments.top.toFixed(0)}%</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0" max="100" step="1"
+                                        value={adjustments.top}
+                                        onChange={(e) => handleAdjustment('top', e.target.value)}
+                                        className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
+                                    />
+                                </div>
 
                      
-                        //         <div className="space-y-3">
-                        //             <div className="flex justify-between text-zinc-400 text-xs font-medium">
-                        //                 <span>Left (X)</span>
-                        //                 <span className="text-white">{adjustments.left.toFixed(0)}%</span>
-                        //             </div>
-                        //             <input
-                        //                 type="range"
-                        //                 min="0" max="100" step="1"
-                        //                 value={adjustments.left}
-                        //                 onChange={(e) => handleAdjustment('left', e.target.value)}
-                        //                 className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
-                        //             />
-                        //         </div>
-                        //     </div>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-zinc-400 text-xs font-medium">
+                                        <span>Left (X)</span>
+                                        <span className="text-white">{adjustments.left.toFixed(0)}%</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0" max="100" step="1"
+                                        value={adjustments.left}
+                                        onChange={(e) => handleAdjustment('left', e.target.value)}
+                                        className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
+                                    />
+                                </div>
+                            </div>
 
-                        //     <div className="space-y-6 pt-2">
-                        //         <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
-                        //             <Maximize2 size={12} /> Dimensions
-                        //         </h4>
+                            <div className="space-y-6 pt-2">
+                                <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
+                                    <Maximize2 size={12} /> Dimensions
+                                </h4>
 
-                        //         <div className="space-y-3">
-                        //             <div className="flex justify-between text-zinc-400 text-xs font-medium">
-                        //                 <span>Width</span>
-                        //                 <span className="text-white">{adjustments.width.toFixed(0)}%</span>
-                        //             </div>
-                        //             <input
-                        //                 type="range"
-                        //                 min="5" max="100" step="1"
-                        //                 value={adjustments.width}
-                        //                 onChange={(e) => handleAdjustment('width', e.target.value)}
-                        //                 className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
-                        //             />
-                        //         </div>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-zinc-400 text-xs font-medium">
+                                        <span>Width</span>
+                                        <span className="text-white">{adjustments.width.toFixed(0)}%</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="5" max="100" step="1"
+                                        value={adjustments.width}
+                                        onChange={(e) => handleAdjustment('width', e.target.value)}
+                                        className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
+                                    />
+                                </div>
 
-                        //         <div className="space-y-3">
-                        //             <div className="flex justify-between text-zinc-400 text-xs font-medium">
-                        //                 <span>Height</span>
-                        //                 <span className="text-white">{adjustments.height.toFixed(0)}%</span>
-                        //             </div>
-                        //             <input
-                        //                 type="range"
-                        //                 min="5" max="100" step="1"
-                        //                 value={adjustments.height}
-                        //                 onChange={(e) => handleAdjustment('height', e.target.value)}
-                        //                 className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
-                        //             />
-                        //         </div>
-                        //     </div>
+                                <div className="space-y-3">
+                                    <div className="flex justify-between text-zinc-400 text-xs font-medium">
+                                        <span>Height</span>
+                                        <span className="text-white">{adjustments.height.toFixed(0)}%</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="5" max="100" step="1"
+                                        value={adjustments.height}
+                                        onChange={(e) => handleAdjustment('height', e.target.value)}
+                                        className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
+                                    />
+                                </div>
+                            </div>
 
                             {/* FOOTER ACTIONS */}
-                    //         <div className="mt-auto pt-6 border-t border-white/10">
-                    //             <Button
-                    //                 className="w-full h-12 text-base font-bold bg-white text-black hover:bg-zinc-200 transition-all rounded-xl gap-2 shadow-xl"
-                    //                 onClick={onAddToCart}
-                    //                 disabled={isSaving}
-                    //             >
-                    //                 {isSaving ? <Loader2 className="animate-spin" size={18} /> : <ShoppingBag size={18} />}
-                    //                 {isSaving ? "Processing..." : "Add to Cart"}
-                    //             </Button>
-                    //         </div>
-                    //     </div>
-                    // )}
+                            <div className="mt-auto pt-6 border-t border-white/10">
+                                <Button
+                                    className="w-full h-12 text-base font-bold bg-white text-black hover:bg-zinc-200 transition-all rounded-xl gap-2 shadow-xl"
+                                    onClick={onAddToCart}
+                                    disabled={isSaving}
+                                >
+                                    {isSaving ? <Loader2 className="animate-spin" size={18} /> : <ShoppingBag size={18} />}
+                                    {isSaving ? "Processing..." : "Add to Cart"}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
