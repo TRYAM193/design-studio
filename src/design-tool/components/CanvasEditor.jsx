@@ -116,35 +116,7 @@ export default function CanvasEditor({
 
   const [containerSize, setContainerSize] = useState({ width: 800, height: 800 });
 
-  const updateMenuPosition = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-
-    const activeObj = canvas.getActiveObject();
-    const canvasContainer = document.getElementById('canvas-wrapper'); 
-
-    if (activeObj && canvasContainer) {
-      const objectCenter = activeObj.getCenterPoint();
-      const containerRect = canvasContainer.getBoundingClientRect();
-      
-      setMenuPosition({
-        left: containerRect.left + objectCenter.x, 
-        top: containerRect.top + objectCenter.y - (activeObj.getScaledHeight() / 2) - 60 
-      });
-
-      if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
-        const ids = activeObj.getObjects().map(o => o.customId);
-        setSelectedObjectUUIDs(ids);
-        setSelectedObjectLocked(activeObj.getObjects().some(o => o.lockMovementX));
-      } else {
-        setSelectedObjectUUIDs([activeObj.customId]);
-        setSelectedObjectLocked(activeObj.lockMovementX === true);
-      }
-    } else {
-      setMenuPosition(null);
-      setSelectedObjectUUIDs([]);
-    }
-  };
+  
 
   const { width: printWidth, height: printHeight } = printDimensions; 
 
