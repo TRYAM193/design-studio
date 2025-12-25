@@ -392,7 +392,9 @@ export const INITIAL_PRODUCTS = [
     },
 
     canvas_size: {
-      width: 400,
+      width: 380,
+      height: 380
+    },
 
     mockups: {
       front: "/assets/mockups/tote-bag-front.png",
