@@ -170,7 +170,7 @@ export default function EditorPanel() {
         const originalBg = fabricCanvas.backgroundColor;
 
         if (productData.title.includes("Mug")) {
-            null
+            fab
         } else {
             fabricCanvas.backgroundColor = null;
         }
