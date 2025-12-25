@@ -39,7 +39,7 @@ export function ThreeDPreviewModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-[105vw] w-[100vw] h-[100vh] p-0 gap-0 bg-zinc-950 border-zinc-800 flex flex-col overflow-hidden rounded-xl shadow-2xl">
+            <DialogContent className="w-[100vw] h-[100vh] p-0 gap-0 bg-zinc-950 border-zinc-800 flex flex-col overflow-hidden rounded-xl shadow-2xl">
                 <DialogTitle className="sr-only">Preview Design</DialogTitle>
                 <DialogDescription className="sr-only">Preview your design in 2D or 3D</DialogDescription>
 
