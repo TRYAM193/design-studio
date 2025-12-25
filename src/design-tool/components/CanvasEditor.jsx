@@ -156,7 +156,7 @@ export default function CanvasEditor({
       fabricCanvasRef.current = null;
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [productData]);
 
   // 🟩 Load Saved Designs (From Navigation State)
   useEffect(() => {
