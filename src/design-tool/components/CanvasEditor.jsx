@@ -63,9 +63,7 @@ export default function CanvasEditor({
   fabricCanvas,
   setEditingDesignId,
   setCurrentDesign,
-  productData
 }) {
-  console.log("CanvasEditor productData:", productData);
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const isSyncingRef = useRef(false);
@@ -116,22 +114,16 @@ export default function CanvasEditor({
   useEffect(() => {
     // UPDATED: Set dimensions to match standard T-Shirt print aspect ratio (5:6)
     // 800 width / 960 height = 0.833... (matches 4500/5400)
-    let ORIGINAL_WIDTH = 800;
-    let ORIGINAL_HEIGHT = 960;
-
-    if (productData.title.includes('Mug')){
-      ORIGINAL_WIDTH = 200;
-      ORIGINAL_HEIGHT = 100;
-      console.log("Mug dimensions set");
-    }
+    const ORIGINAL_WIDTH = 800;
+    const ORIGINAL_HEIGHT = 960;
 
     const canvas = new fabric.Canvas(canvasRef.current, {
       backgroundColor: 'transparent',
       selection: true,
-      width: ORIGINAL_WIDTH,
-      height: ORIGINAL_HEIGHT,
-      preserveObjectStacking: true,
     });
+
+    canvas.setWidth(ORIGINAL_WIDTH);
+    canvas.setHeight(ORIGINAL_HEIGHT);
 
     const resize = () => {
       const wrapper = wrapperRef.current;
