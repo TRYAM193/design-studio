@@ -170,7 +170,9 @@ export default function EditorPanel() {
         fabricCanvas.backgroundColor = null;
         fabricCanvas.renderAll();
 
-        if (productData.title)
+        if (productData.title.includes("Mug")){
+            
+        }
 
         try {
             const dataUrl = fabricCanvas.toDataURL({
