@@ -27,7 +27,7 @@ const MODEL_CONFIGS = {
     meshes: {
       front: "MUG"
     },
-    frontDecal: { x: -0.05, y: -0.6, z: 0, scale: 0.6 }, 
+    frontDecal: { x: -0.05, y: -0.6, z: 0, scale: 0.6 },
     backDecal: { x: 0, y: 0, z: 0, scale: 1 }
   },
   "tote": {
@@ -104,23 +104,23 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
       useEffect(() => {
         if (tex) {
           // A. Prevent Tiling 
-          tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; 
+          tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
           tex.colorSpace = THREE.SRGBColorSpace;
-          
+
           // B. Calculate Scale (Uniform)
           // 1/scale = repeat. (Smaller scale = larger repeat value = texture looks smaller)
           const s = Math.max(decalProps.scale, 0.01);
           const repeatVal = 1 / s;
-          
+
           tex.repeat.set(repeatVal, repeatVal);
 
           // C. Calculate Position (Pan) & Keep Centered
-          tex.offset.x = -decalProps.x + (0.5 - repeatVal / 2); 
+          tex.offset.x = -decalProps.x + (0.5 - repeatVal / 2);
           tex.offset.y = decalProps.y + (0.5 - repeatVal / 2);
 
           tex.needsUpdate = true;
         }
-      }, [tex, decalProps]); 
+      }, [tex, decalProps]);
 
       return (
         <group>
@@ -132,16 +132,16 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
               side={THREE.DoubleSide}
             />
           </mesh>
-        <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
-          <meshStandardMaterial
-            color="white"
-            metalness={0}
-            roughness={0.5}
-            map={tex}
-            transparent={false}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
+          <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
+            <meshStandardMaterial
+              color="white"
+              metalness={0}
+              roughness={0.5}
+              map={tex}
+              transparent={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
         </group>
       );
     }
@@ -167,7 +167,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
         tex={frontTex}
         decalProps={{
           x: frontPos.x, y: frontPos.y, z: frontPos.z,
-          scale: frontPos.scale, 
+          scale: frontPos.scale,
           rotation: [0, 0, 0]
         }}
       />
@@ -179,7 +179,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
           tex={backTex}
           decalProps={{
             x: backPos.x, y: backPos.y, z: backPos.z,
-            scale: backPos.scale, 
+            scale: backPos.scale,
             rotation: [0, Math.PI, 0]
           }}
         />
@@ -199,7 +199,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
 // --- 4. EXPORT ---
 export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" }) {
   const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
-  
+
   // Initialize state from Config (No Sliders, so these act as static constants)
   const [cameraZ] = useState(config.cameraZ || 2.5);
   const [frontPos] = useState(config.frontDecal || { x: 0, y: 0, z: 0, scale: 0.5 });
