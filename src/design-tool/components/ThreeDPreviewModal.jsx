@@ -93,13 +93,14 @@ export function ThreeDPreviewModal({
 
                                     {/* LAYER 2: The Mockup Image (Shadows/Highlights) */}
                                     {mockups[activeSide] ? (
-                                        div
+                                        <div>
                                         <img 
                                             src={mockups[activeSide]} 
                                             alt={`${activeSide} view`} 
                                             className="absolute inset-0 w-full h-full object-contain z-10"
                                             style={{ mixBlendMode: 'multiply' }} 
-                                        />
+                                            />
+                                            </div>
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
                                             No Mockup Available
