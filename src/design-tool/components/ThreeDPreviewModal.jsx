@@ -36,6 +36,7 @@ export function ThreeDPreviewModal({
 
     const currentTexture = getCurrentTexture();
     const currentMockupConfig = productData.print_area_2d?.[activeSide] || { top: 20, left: 30, width: 40 };
+    const currentMockupImage = mockups[activeSide];
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -55,7 +56,6 @@ export function ThreeDPreviewModal({
                             <ImageIcon size={16} /> 2D Mockup
                         </button>
                         
-                        {/* ✅ UPDATED BUTTON: Shows "3D Not Available" if missing */}
                         <button
                             onClick={() => has3D && setViewMode('3d')}
                             disabled={!has3D}
@@ -79,43 +79,61 @@ export function ThreeDPreviewModal({
                     {/* === 2D VIEW === */}
                     {viewMode === '2d' && (
                         <div className="relative w-full h-full flex flex-col">
-                            <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8">
+                            <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8 overflow-auto">
                                 
-                                {/* 🖼️ MOCKUP CONTAINER */}
-                                <div className="relative w-full max-w-[500px] aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-white">
+                                {/* 🖼️ MOCKUP CONTAINER - FIXED ASPECT RATIO ISSUE */}
+                                {/* We remove fixed aspect ratio and let the image define the container size */}
+                                <div className="relative max-h-full max-w-full shadow-2xl rounded-lg overflow-hidden bg-transparent group">
                                     
-                                    {/* LAYER 1: The Selected Color (Base) */}
-                                    <div 
-                                        className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
-                                        style={{ backgroundColor: selectedColor }}
-                                    />
+                                    {/* CHECK: Do we have a mockup image? */}
+                                    {currentMockupImage ? (
+                                        <>
+                                            {/* LAYER 1: The Color Mask (Fixes Background Bleeding) */}
+                                            {/* We apply the color, but MASK it using the T-shirt image so it doesn't spill over */}
+                                            <div 
+                                                className="absolute inset-0 w-full h-full z-0 pointer-events-none"
+                                                style={{ 
+                                                    backgroundColor: selectedColor,
+                                                    maskImage: `url(${currentMockupImage})`,
+                                                    WebkitMaskImage: `url(${currentMockupImage})`,
+                                                    maskSize: 'contain',
+                                                    WebkitMaskSize: 'contain',
+                                                    maskRepeat: 'no-repeat',
+                                                    WebkitMaskRepeat: 'no-repeat',
+                                                    maskPosition: 'center',
+                                                    WebkitMaskPosition: 'center'
+                                                }}
+                                            />
 
-                                    {/* LAYER 2: The Mockup Image (Shadows/Highlights) */}
-                                    {mockups[activeSide] ? (
-                                        <img 
-                                            src={mockups[activeSide]} 
-                                            alt={`${activeSide} view`} 
-                                            className="absolute inset-0 w-full h-full object-contain z-10"
-                                            style={{ mixBlendMode: 'multiply' }} 
-                                        />
+                                            {/* LAYER 2: The Mockup Image (Shadows/Highlights) */}
+                                            {/* 'mix-blend-mode: multiply' allows the color from Layer 1 to shine through shadows */}
+                                            <img 
+                                                src={currentMockupImage} 
+                                                alt={`${activeSide} view`} 
+                                                className="relative z-10 block max-h-[70vh] w-auto object-contain"
+                                                style={{ mixBlendMode: 'multiply' }} 
+                                            />
+
+                                            {/* LAYER 3: The User's Design */}
+                                            {currentTexture && (
+                                                <div 
+                                                    className="absolute z-20"
+                                                    style={{
+                                                        top: `${currentMockupConfig.top}%`,
+                                                        left: `${currentMockupConfig.left}%`,
+                                                        width: `${currentMockupConfig.width}%`,
+                                                        // Ensure design doesn't look like a sticker (optional realism)
+                                                        mixBlendMode: 'multiply',
+                                                        opacity: 0.95 
+                                                    }}
+                                                >
+                                                    <img src={currentTexture} alt="design" className="w-full h-auto" />
+                                                </div>
+                                            )}
+                                        </>
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
+                                        <div className="w-[300px] h-[400px] flex items-center justify-center text-zinc-300 bg-zinc-800 rounded-lg">
                                             No Mockup Available
-                                        </div>
-                                    )}
-
-                                    {/* LAYER 3: The User's Design */}
-                                    {currentTexture && (
-                                        <div 
-                                            className="absolute z-20"
-                                            style={{
-                                                top: `${currentMockupConfig.top}%`,
-                                                left: `${currentMockupConfig.left}%`,
-                                                width: `${currentMockupConfig.width}%`,
-                                                mixBlendMode: 'multiply' 
-                                            }}
-                                        >
-                                            <img src={currentTexture} alt="design" className="w-full h-auto" />
                                         </div>
                                     )}
                                 </div>
@@ -123,7 +141,7 @@ export function ThreeDPreviewModal({
 
                             {/* Side Selector */}
                             {mockupKeys.length > 1 && (
-                                <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4">
+                                <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 flex-shrink-0">
                                     {mockupKeys.map(side => (
                                         <button
                                             key={side}
@@ -132,6 +150,7 @@ export function ThreeDPreviewModal({
                                                 activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
                                             }`}
                                         >
+                                            {/* Small preview of color + image */}
                                             <div className="absolute inset-0" style={{ backgroundColor: selectedColor }} />
                                             <img 
                                                 src={mockups[side]} 
