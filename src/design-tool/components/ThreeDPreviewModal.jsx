@@ -232,7 +232,7 @@ export function ThreeDPreviewModal({
 
                     {/* === RIGHT: ADJUSTMENT SIDEBAR (Only in 2D Mode) === */}
                     {/* ✅ MOBILE FIX: Responsive width (w-full on mobile, w-80 on desktop) */}
-                    {viewMode === '2d' && (
+                    {/* {viewMode === '2d' && (
                         <div className="w-full lg:w-80 h-auto lg:h-full bg-zinc-900 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col gap-8 z-30 shadow-xl overflow-y-auto">
                             
                             <div className="flex items-center gap-2 pb-4 border-b border-white/10">
@@ -306,10 +306,10 @@ export function ThreeDPreviewModal({
                                         className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
                                     />
                                 </div>
-                            </div>
+                            </div> */}
 
                             {/* FOOTER ACTIONS */}
-                            <div className="mt-auto pt-6 border-t border-white/10">
+                            {/* <div className="mt-auto pt-6 border-t border-white/10">
                                 <Button
                                     className="w-full h-12 text-base font-bold bg-white text-black hover:bg-zinc-200 transition-all rounded-xl gap-2 shadow-xl"
                                     onClick={onAddToCart}
@@ -320,7 +320,7 @@ export function ThreeDPreviewModal({
                                 </Button>
                             </div>
                         </div>
-                    )}
+                    )} */}
                 </div>
             </DialogContent>
         </Dialog>
