@@ -72,10 +72,10 @@ export default function EditorPanel() {
         print_areas: { front: { width: 4500, height: 5400 } },
         options: { colors: [] }
     });
-    
+
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
-    
+
     const currentPrintArea = productData.print_areas?.[currentView] || { width: 4500, height: 5400 };
     // ✅ Store FULL History (past, present, future) per view
     const [viewStates, setViewStates] = useState({});
@@ -99,7 +99,7 @@ export default function EditorPanel() {
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
     // Default start size (e.g. Mobile friendly or Desktop friendly)
-const [canvasDims, setCanvasDims] = useState({ width: 320, height: 380 });
+    const [canvasDims, setCanvasDims] = useState({ width: 320, height: 380 });
 
     useEffect(() => {
         async function initEditor() {
@@ -168,13 +168,13 @@ const [canvasDims, setCanvasDims] = useState({ width: 320, height: 380 });
         if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
-        
-        if (productData.title.includes("Mug")){
+
+        if (productData.title.includes("Mug")) {
             fabricCanvas.backgroundColor = "#FFFFFF";
         } else {
             fabricCanvas.backgroundColor = null;
         }
-        
+
         fabricCanvas.renderAll();
 
         try {
@@ -373,7 +373,7 @@ const [canvasDims, setCanvasDims] = useState({ width: 320, height: 380 });
                                         Generating...
                                     </>
                                 ) : (
-                                    <>Preview</> 
+                                    <>Preview</>
                                 )}
                             </Button>
                         </div>
@@ -390,7 +390,7 @@ const [canvasDims, setCanvasDims] = useState({ width: 320, height: 380 });
                         setEditingDesignId={setEditingDesignId}
                         past={past}
                         bgcolor={canvasBg}
-                       printDimensions={canvasDims}
+                        printDimensions={canvasDims}
                     />
 
                 </main>
@@ -455,6 +455,42 @@ const [canvasDims, setCanvasDims] = useState({ width: 320, height: 380 });
                     productCategory={productId ? productData.category : undefined}
                     selectedColor={canvasBg}
                 />
+            </div>
+            {/* 🛠️ CANVAS SIZE CONTROLS */}
+            <div className="absolute bottom-4 left-4 z-50 p-4 bg-white/95 border border-slate-200 shadow-xl rounded-xl w-64 backdrop-blur-sm">
+                <h3 className="text-xs font-bold uppercase text-slate-500 mb-3 tracking-wider">
+                    Set Exact Size
+                </h3>
+
+                {/* Width Slider */}
+                <div className="mb-4">
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                        <span>Width</span>
+                        <span className="font-bold text-indigo-600">{canvasDims.width}px</span>
+                    </div>
+                    <input
+                        type="range"
+                        min="200" max="1200" step="5" // Adjusted range for screen sizes
+                        value={canvasDims.width}
+                        onChange={(e) => setCanvasDims(prev => ({ ...prev, width: parseInt(e.target.value) }))}
+                        className="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                </div>
+
+                {/* Height Slider */}
+                <div>
+                    <div className="flex justify-between text-xs font-mono mb-1">
+                        <span>Height</span>
+                        <span className="font-bold text-indigo-600">{canvasDims.height}px</span>
+                    </div>
+                    <input
+                        type="range"
+                        min="200" max="1200" step="5"
+                        value={canvasDims.height}
+                        onChange={(e) => setCanvasDims(prev => ({ ...prev, height: parseInt(e.target.value) }))}
+                        className="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                </div>
             </div>
         </div>
     );
