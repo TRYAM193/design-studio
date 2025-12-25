@@ -159,7 +159,7 @@ export default function CanvasEditor({
   // If we have a print area, update it. 
   // If we don't (e.g. T-Shirt mode), maybe update canvas.backgroundColor instead.
   if (bgRect && props.backgroundColor) {
-    bgRect.set('fill', props.backgroundColor);
+    bgRect.set('fill', bgcolor);
     canvas.requestRenderAll();
   }
 }, [bgcolor]);
