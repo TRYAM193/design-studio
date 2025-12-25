@@ -164,7 +164,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
           frustumCulled={false}
         >
           <meshStandardMaterial
-            color="#ffffff"
+            color="white"
             metalness={0}    // Ceramic isn't metallic
             roughness={0.5}  // A bit shiny, but not a mirror
             map={tex}          // The texture wraps around
