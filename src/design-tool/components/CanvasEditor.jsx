@@ -1,37 +1,3 @@
-const updateMenuPosition = () => {
-  const canvas = fabricCanvasRef.current;
-  if (!canvas) return;
-
-  const activeObj = canvas.getActiveObject();
-  const canvasContainer = document.getElementById('canvas-wrapper'); 
-
-  if (activeObj && canvasContainer) {
-    // 1. Get simple object coordinates (No zoom math needed)
-    const objectCenter = activeObj.getCenterPoint();
-    
-    // 2. Get Canvas Page Position
-    const containerRect = canvasContainer.getBoundingClientRect();
-    
-    // 3. Simple Addition
-    setMenuPosition({
-      left: containerRect.left + objectCenter.x, 
-      top: containerRect.top + objectCenter.y - (activeObj.getScaledHeight() / 2) - 60 
-    });
-
-    // ... (Selection state logic remains the same)
-    if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
-      const ids = activeObj.getObjects().map(o => o.customId);
-      setSelectedObjectUUIDs(ids);
-      setSelectedObjectLocked(activeObj.getObjects().some(o => o.lockMovementX));
-    } else {
-      setSelectedObjectUUIDs([activeObj.customId]);
-      setSelectedObjectLocked(activeObj.lockMovementX === true);
-    }
-  } else {
-    setMenuPosition(null);
-    setSelectedObjectUUIDs([]);
-  }
-};
 // src/design-tool/components/CanvasEditor.jsx
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -108,16 +74,48 @@ export default function CanvasEditor({
   const location = useLocation();
   const previousStatesRef = useRef(new Map());
   const dispatch = useDispatch();
-
+  
   const [menuPosition, setMenuPosition] = useState(null);
   const [selectedObjectLocked, setSelectedObjectLocked] = useState(false);
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
-
-  const [containerSize, setContainerSize] = useState({ width: 800, height: 800 });
-
   
-
+  const [containerSize, setContainerSize] = useState({ width: 800, height: 800 });
+  
+  const updateMenuPosition = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+  
+    const activeObj = canvas.getActiveObject();
+    const canvasContainer = document.getElementById('canvas-wrapper'); 
+  
+    if (activeObj && canvasContainer) {
+      // 1. Get simple object coordinates (No zoom math needed)
+      const objectCenter = activeObj.getCenterPoint();
+      
+      // 2. Get Canvas Page Position
+      const containerRect = canvasContainer.getBoundingClientRect();
+      
+      // 3. Simple Addition
+      setMenuPosition({
+        left: containerRect.left + objectCenter.x, 
+        top: containerRect.top + objectCenter.y - (activeObj.getScaledHeight() / 2) - 60 
+      });
+  
+      // ... (Selection state logic remains the same)
+      if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
+        const ids = activeObj.getObjects().map(o => o.customId);
+        setSelectedObjectUUIDs(ids);
+        setSelectedObjectLocked(activeObj.getObjects().some(o => o.lockMovementX));
+      } else {
+        setSelectedObjectUUIDs([activeObj.customId]);
+        setSelectedObjectLocked(activeObj.lockMovementX === true);
+      }
+    } else {
+      setMenuPosition(null);
+      setSelectedObjectUUIDs([]);
+    }
+  };
   const { width: printWidth, height: printHeight } = printDimensions; 
 
   // ✅ A. Initialize Canvas & Handle Responsive Sizing
