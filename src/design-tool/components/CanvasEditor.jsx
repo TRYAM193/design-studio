@@ -109,7 +109,7 @@ export default function CanvasEditor({
       setSelectedObjectUUIDs([]);
     }
   };
-  
+
   useEffect(() => {
     // A. Initialize Canvas (if not exists)
     const canvas = new fabric.Canvas(canvasRef.current, {
@@ -126,43 +126,41 @@ export default function CanvasEditor({
     // B. The Smart Resize Function
     // This makes the canvas "Internal Size" = Print Area (e.g. 4500px)
     // But "Visual Size" = Fits the screen (e.g. 500px)
+    // Inside the initialization useEffect...
+
     const handleResize = () => {
-      const wrapper = wrapperRef.current;
-      if (!wrapper || !canvas) return;
-
-      const availableWidth = wrapper.clientWidth;
-      const availableHeight = wrapper.clientHeight;
-
-      // Calculate aspect ratios
-      const contentAspect = printDimensions.width / printDimensions.height;
-      const containerAspect = availableWidth / availableHeight;
-
-      let displayWidth, displayHeight;
-      let zoomScale;
-
-      // Fit Contain Logic
-      if (containerAspect > contentAspect) {
-        // Wrapper is wider than content -> Fit by Height
-        displayHeight = availableHeight * 0.9; // 90% of screen height
-        displayWidth = displayHeight * contentAspect;
-        zoomScale = displayHeight / printDimensions.height;
-      } else {
-        // Wrapper is taller than content -> Fit by Width
-        displayWidth = availableWidth * 0.9; // 90% of screen width
-        displayHeight = displayWidth / contentAspect;
-        zoomScale = displayWidth / printDimensions.width;
-      }
-
-      // 1. Set the visual size (CSS pixels on screen)
-      canvas.setDimensions({ width: displayWidth, height: displayHeight });
-
-      // 2. Set the zoom so 1 internal unit = 1 visual pixel * scale
-      canvas.setZoom(zoomScale);
-
-      // 3. Render
-      canvas.requestRenderAll();
+        const wrapper = wrapperRef.current;
+        if (!wrapper || !canvas) return;
+  
+        // 1. Get wrapper dimensions (Screen Size)
+        const availableWidth = wrapper.clientWidth;
+        const availableHeight = wrapper.clientHeight;
+  
+        // 2. Calculate Scale to fit Print Area (4500x5400) into Screen
+        const contentW = printDimensions.width;
+        const contentH = printDimensions.height;
+        const scale = Math.min( 
+            availableWidth / contentW, 
+            availableHeight / contentH 
+        ) * 0.9; // 90% margin
+  
+        // 3. Set Canvas to Screen Size (Visual)
+        canvas.setDimensions({ width: availableWidth, height: availableHeight });
+  
+        // 4. Set Viewport to Center the Content
+        // [ScaleX, SkewY, SkewX, ScaleY, OffsetX, OffsetY]
+        const offsetX = (availableWidth - contentW * scale) / 2;
+        const offsetY = (availableHeight - contentH * scale) / 2;
+        
+        canvas.setViewportTransform([scale, 0, 0, scale, offsetX, offsetY]);
+        
+        canvas.requestRenderAll();
+        // Force update menu immediately
+        if (canvas.getActiveObject()) {
+           const updateEvent = new Event('resize_menu_update');
+           window.dispatchEvent(updateEvent);
+        }
     };
-
     // Initial resize and listener
     handleResize();
     window.addEventListener('resize', handleResize);
