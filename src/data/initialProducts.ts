@@ -345,7 +345,6 @@ export const INITIAL_PRODUCTS = [
     mockups: {
       front: "/assets/mockups/mug-front.png",
       left:  "/assets/mockups/mug-left.png",
-      right: "/assets/mockups/mug-right.png"
     },
     
     print_area_2d: {
