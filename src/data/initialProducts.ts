@@ -289,7 +289,7 @@ export const INITIAL_PRODUCTS = [
 
      canvas_size: {
       width: 420,
-      height: 560
+      height: 500
     },
 
     mockups: {
