@@ -443,7 +443,7 @@ export default function CanvasEditor({
       canvas.off('object:rotating', handleMoving);
       canvas.off('object:modified', handleMoving);
     };
-  }, [setSelectedId, setActiveTool]);
+  }, [fabricCanvas, setSelectedId, setActiveTool]); // ✅ Re-runs when canvas is ready
 
   // 🟩 Touch / Pinch Logic (Preserved)
   useEffect(() => {
