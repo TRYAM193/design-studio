@@ -120,7 +120,7 @@ export default function CanvasEditor({
 
     if (productData.title.includes('Mug')){
       ORIGINAL_WIDTH = 200;
-      ORIGINAL_HEIGHT = productData.print_area_height || 960;
+      ORIGINAL_HEIGHT = 100;
     }
 
     const canvas = new fabric.Canvas(canvasRef.current, {
