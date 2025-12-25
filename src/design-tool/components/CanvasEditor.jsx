@@ -65,6 +65,7 @@ export default function CanvasEditor({
   setCurrentDesign,
   printDimensions,
   productId // ✅ Received Product ID
+  activeView
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
