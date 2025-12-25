@@ -459,6 +459,7 @@ export default function CanvasEditor({
 
     const handleObjectModified = (e) => {
       if (isSyncingRef.current) return;
+      updateMenuPosition();
 
       let obj = e.target;
       if (!obj) return;
