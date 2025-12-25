@@ -24,10 +24,7 @@ export function ThreeDPreviewModal({
 
     // ✅ 1. State for Position & Size Adjustments
     const [adjustments, setAdjustments] = useState({ 
-        top: 25, 
-        left: 0, 
-        width: 100, 
-        height:50 
+         top: 24, left: 9, width: 84, height: 50
     });
 
     // ✅ 2. Initialize defaults when opening or switching sides
