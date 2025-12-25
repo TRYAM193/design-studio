@@ -56,47 +56,6 @@ const isDifferent = (val1, val2) => {
   return val1 !== val2;
 };
 
-// Add this helper function inside CanvasEditor (before the return) or outside the component
-
-const initMugPrintArea = (canvas, width, height, initialColor = "#000000") => {
-  // 1. Check if it already exists to avoid duplicates
-  const existing = canvas.getObjects().find(o => o.customId === 'mug_print_area');
-  if (existing) return;
-
-  // 2. Create the Background (Visual Color)
-  const printArea = new fabric.Rect({
-    left: 0,
-    top: 0,
-    width: width,
-    height: height,
-    fill: initialColor,
-    selectable: false,       // User can't select
-    evented: false,          // User can't click
-    excludeFromExport: false,// We want this color in the final print
-    customId: 'mug_print_area', // 🔑 KEY ID used to protect it
-    absolutePositioned: true,
-  });
-
-  // 3. Add to Canvas (BYPASSING REDUX)
-  canvas.add(printArea);
-  canvas.insertAt(printArea, 0);
-
-  // 4. Create the Clip Path (The "No Out of It" Logic)
-  // This ensures images dragged outside get cut off
-  const clipRect = new fabric.Rect({
-    left: 0,
-    top: 0,
-    width: width,
-    height: height,
-    absolutePositioned: true,
-  });
-  
-  // Apply clip path to the canvas
-  canvas.clipPath = clipRect;
-  
-  canvas.requestRenderAll();
-};
-
 export default function CanvasEditor({
   setActiveTool,
   setSelectedId,
@@ -104,7 +63,6 @@ export default function CanvasEditor({
   fabricCanvas,
   setEditingDesignId,
   setCurrentDesign,
-  bgcolor
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
@@ -151,20 +109,6 @@ export default function CanvasEditor({
     }
   };
 
-  useEffect(() => {
-  const canvas = fabricCanvasRef.current;
-  if (!canvas) return;
-
-  const bgRect = canvas.getObjects().find(o => o.customId === 'mug_print_area');
-  
-  // If we have a print area, update it. 
-  // If we don't (e.g. T-Shirt mode), maybe update canvas.backgroundColor instead.
-  if (bgRect && bgcolor) {
-    bgRect.set('fill', bgcolor);
-    canvas.requestRenderAll();
-  }
-}, [bgcolor]);
-
   // 🟩 Initialize Fabric.js
   // 🟩 Initialize Fabric.js
   useEffect(() => {
@@ -180,8 +124,6 @@ export default function CanvasEditor({
 
     canvas.setWidth(ORIGINAL_WIDTH);
     canvas.setHeight(ORIGINAL_HEIGHT);
-
-    initMugPrintArea(canvas, ORIGINAL_WIDTH, ORIGINAL_HEIGHT, "#ffffff");
 
     const resize = () => {
       const wrapper = wrapperRef.current;
@@ -233,7 +175,6 @@ export default function CanvasEditor({
         // Define the logic to run once fonts are ready
         const loadCanvasData = () => {
           fabricCanvas.loadFromJSON(parsedData, () => {
-            initMugPrintArea(fabricCanvas, 800, 960, "#ffffff");
             // Callback loop to sync Redux
           });
 
@@ -392,7 +333,6 @@ export default function CanvasEditor({
 
           const loadCanvasPersistence = () => {
             fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
-              initMugPrintArea(fabricCanvas, 800, 960, "#ffffff");
               setTimeout(() => {
                 fabricCanvas.requestRenderAll();
                 fabricCanvas.getObjects().forEach(obj => {
@@ -659,7 +599,7 @@ export default function CanvasEditor({
 
     const reduxIds = new Set(canvasObjects.map(o => o.id));
     fabricObjects.forEach((obj) => {
-      if (!reduxIds.has(obj.customId) && obj.customId !== 'mug_print_area') {
+      if (!reduxIds.has(obj.customId)) {
         fabricCanvas.remove(obj);
         previousStatesRef.current.delete(obj.customId);
       }
