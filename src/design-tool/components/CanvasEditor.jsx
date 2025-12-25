@@ -150,6 +150,20 @@ export default function CanvasEditor({
     }
   };
 
+  useEffect(() => {
+  const canvas = fabricCanvasRef.current;
+  if (!canvas) return;
+
+  const bgRect = canvas.getObjects().find(o => o.customId === 'mug_print_area');
+  
+  // If we have a print area, update it. 
+  // If we don't (e.g. T-Shirt mode), maybe update canvas.backgroundColor instead.
+  if (bgRect && props.backgroundColor) {
+    bgRect.set('fill', props.backgroundColor);
+    canvas.requestRenderAll();
+  }
+}, [bgcolor]);
+
   // 🟩 Initialize Fabric.js
   // 🟩 Initialize Fabric.js
   useEffect(() => {
