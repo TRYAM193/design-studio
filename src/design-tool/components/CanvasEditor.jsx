@@ -392,7 +392,7 @@ export default function CanvasEditor({
 
           const loadCanvasPersistence = () => {
             fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
-              initMugPrintArea(fabricCanvas, 800, ORIGINAL_HEIGHT, "#ffffff");
+              initMugPrintArea(fabricCanvas, 800, 960, "#ffffff");
               setTimeout(() => {
                 fabricCanvas.requestRenderAll();
                 fabricCanvas.getObjects().forEach(obj => {
