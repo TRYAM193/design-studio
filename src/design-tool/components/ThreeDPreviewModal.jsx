@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Button } from "@/components/ui/button";
 import { Loader2, ShoppingBag, X, Box, Image as ImageIcon } from "lucide-react";
 import Tshirt3DPreview from '../preview3d/Tshirt3DPreview';
+import { div } from 'three/tsl';
 
 export function ThreeDPreviewModal({
     isOpen,
@@ -92,6 +93,7 @@ export function ThreeDPreviewModal({
 
                                     {/* LAYER 2: The Mockup Image (Shadows/Highlights) */}
                                     {mockups[activeSide] ? (
+                                        div
                                         <img 
                                             src={mockups[activeSide]} 
                                             alt={`${activeSide} view`} 
