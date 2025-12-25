@@ -392,6 +392,7 @@ export default function EditorPanel() {
                         past={past}
                         bgcolor={canvasBg}
                         printDimensions={canvasDims}
+                        productId={productId} // ✅ Pass Product ID
                     />
 
                 </main>
@@ -457,10 +458,10 @@ export default function EditorPanel() {
                     selectedColor={canvasBg}
                 />
             </div>
-            {/* 🛠️ CANVAS SIZE CONTROLS */}
+            {/* 🛠️ CANVAS SIZE CONTROLS (Acts as Print Area Controls if ProductId is present) */}
             <div className="absolute bottom-4 left-4 z-50 p-4 bg-white/95 border border-slate-200 shadow-xl rounded-xl w-64 backdrop-blur-sm">
                 <h3 className="text-xs font-bold uppercase text-slate-500 mb-3 tracking-wider">
-                    Set Exact Size
+                    {productId ? "Set Print Area" : "Set Exact Size"}
                 </h3>
 
                 {/* Width Slider */}
