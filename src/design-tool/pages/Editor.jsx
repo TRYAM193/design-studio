@@ -167,11 +167,12 @@ export default function EditorPanel() {
         if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
-        fabricCanvas.backgroundColor = null;
-        fabricCanvas.renderAll();
-
+        
         if (productData.title.includes("Mug")){
             fabricCanvas.backgroundColor = "#FFFFFF";
+            fabricCanvas.renderAll();
+        } else {
+            fabricCanvas.backgroundColor = null;
             fabricCanvas.renderAll();
         }
 
