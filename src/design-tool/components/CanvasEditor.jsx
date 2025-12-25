@@ -166,6 +166,8 @@ export default function CanvasEditor({
     canvas.setWidth(ORIGINAL_WIDTH);
     canvas.setHeight(ORIGINAL_HEIGHT);
 
+    initMugPrintArea(canvas, ORIGINAL_WIDTH, ORIGINAL_HEIGHT, "#ffffff");
+
     const resize = () => {
       const wrapper = wrapperRef.current;
       if (!wrapper) return;
