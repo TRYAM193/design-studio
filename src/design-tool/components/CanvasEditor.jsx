@@ -56,6 +56,47 @@ const isDifferent = (val1, val2) => {
   return val1 !== val2;
 };
 
+// Add this helper function inside CanvasEditor (before the return) or outside the component
+
+const initMugPrintArea = (canvas, width, height, initialColor = "#000000") => {
+  // 1. Check if it already exists to avoid duplicates
+  const existing = canvas.getObjects().find(o => o.customId === 'mug_print_area');
+  if (existing) return;
+
+  // 2. Create the Background (Visual Color)
+  const printArea = new fabric.Rect({
+    left: 0,
+    top: 0,
+    width: width,
+    height: height,
+    fill: initialColor,
+    selectable: false,       // User can't select
+    evented: false,          // User can't click
+    excludeFromExport: false,// We want this color in the final print
+    customId: 'mug_print_area', // 🔑 KEY ID used to protect it
+    absolutePositioned: true,
+  });
+
+  // 3. Add to Canvas (BYPASSING REDUX)
+  canvas.add(printArea);
+  canvas.sendToBack(printArea);
+
+  // 4. Create the Clip Path (The "No Out of It" Logic)
+  // This ensures images dragged outside get cut off
+  const clipRect = new fabric.Rect({
+    left: 0,
+    top: 0,
+    width: width,
+    height: height,
+    absolutePositioned: true,
+  });
+  
+  // Apply clip path to the canvas
+  canvas.clipPath = clipRect;
+  
+  canvas.requestRenderAll();
+};
+
 export default function CanvasEditor({
   setActiveTool,
   setSelectedId,
