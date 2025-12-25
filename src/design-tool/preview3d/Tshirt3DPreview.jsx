@@ -39,7 +39,7 @@ const MODEL_CONFIGS = {
       back: "BACK",
       straps: "STRAPS"
     },
-    frontDecal: { x: 0, y: -5, z: 2, scale: 5 },
+    frontDecal: { x: 0, y: -5, z: -0.13, scale: 4 },
     backDecal: { x: 0, y: -5, z: -2, scale: 5 }
   }
 };
