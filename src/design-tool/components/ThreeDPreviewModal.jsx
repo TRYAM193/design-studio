@@ -22,17 +22,22 @@ export function ThreeDPreviewModal({
     const [viewMode, setViewMode] = useState('2d');
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
 
-    // ✅ 1. State for Position & Scale Sliders
-    const [adjustments, setAdjustments] = useState({ top: 20, left: 30, scale: 40 });
+    // ✅ DEFAULT VALUES (Left: 15%, Top: 18%, Scale: 71%)
+    const fallbackDefaults = { top: 18, left: 15, width: 71 };
 
-    // ✅ 2. Reset/Initialize sliders when side changes
+    const [adjustments, setAdjustments] = useState({ 
+        top: fallbackDefaults.top, 
+        left: fallbackDefaults.left, 
+        scale: fallbackDefaults.width 
+    });
+
     useEffect(() => {
         if (isOpen) {
-            const defaults = productData.print_area_2d?.[activeSide] || { top: 20, left: 30, width: 40 };
+            const defaults = productData.print_area_2d?.[activeSide] || fallbackDefaults;
             setAdjustments({
                 top: defaults.top,
                 left: defaults.left,
-                scale: defaults.width
+                scale: defaults.width || defaults.scale || 71
             });
         }
     }, [isOpen, activeSide, productId]);
@@ -45,19 +50,19 @@ export function ThreeDPreviewModal({
     const currentTexture = getCurrentTexture();
     const currentMockupImage = mockups[activeSide];
 
-    // Helper for slider input change
     const handleAdjustment = (key, value) => {
         setAdjustments(prev => ({ ...prev, [key]: parseFloat(value) }));
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="w-[100vw] h-[100vh] p-0 gap-0 bg-zinc-950 border-zinc-800 flex flex-col overflow-hidden rounded-xl shadow-2xl">
+            {/* Full Screen Modal */}
+            <DialogContent className="w-[100vw] h-[100vh] max-w-none p-0 gap-0 bg-zinc-950 border-zinc-800 flex flex-col overflow-hidden shadow-2xl">
                 <DialogTitle className="sr-only">Preview Design</DialogTitle>
                 <DialogDescription className="sr-only">Preview your design in 2D or 3D</DialogDescription>
 
                 {/* --- HEADER --- */}
-                <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-zinc-900 z-10">
+                <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-zinc-900 z-50 flex-shrink-0">
                     <div className="flex gap-2 p-1 bg-black/40 rounded-lg border border-white/5">
                         <button
                             onClick={() => setViewMode('2d')}
@@ -85,15 +90,16 @@ export function ThreeDPreviewModal({
                     </Button>
                 </div>
 
-                {/* --- MAIN STAGE --- */}
+                {/* --- MAIN CONTENT AREA --- */}
                 <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex">
                     
-                    {/* === LEFT: PREVIEW CANVAS === */}
-                    <div className="flex-1 relative flex flex-col">
+                    {/* === LEFT: PREVIEW CANVAS (Expanded Viewport) === */}
+                    <div className="flex-1 relative flex flex-col min-w-0"> {/* min-w-0 prevents flex overflow */}
                         {viewMode === '2d' && (
-                            <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8 overflow-auto">
+                            // Reduced padding from p-8 to p-4 to maximize space
+                            <div className="flex-1 flex items-center justify-center bg-zinc-900 p-4 overflow-hidden relative">
                                 
-                                <div className="relative max-h-full max-w-full shadow-2xl rounded-lg overflow-hidden bg-transparent group">
+                                <div className="relative max-h-full max-w-full shadow-2xl rounded-lg overflow-hidden bg-transparent group transition-all duration-300">
                                     {currentMockupImage ? (
                                         <>
                                             {/* Layer 1: Color Mask */}
@@ -112,20 +118,20 @@ export function ThreeDPreviewModal({
                                                 }}
                                             />
 
-                                            {/* Layer 2: Mockup Image */}
+                                            {/* Layer 2: Mockup Image (Increased height to 85vh) */}
                                             <img 
                                                 src={currentMockupImage} 
                                                 alt={`${activeSide} view`} 
-                                                className="relative z-10 block max-h-[70vh] w-auto object-contain"
+                                                // ⚡ CHANGED: increased max-h to 85vh for larger view
+                                                className="relative z-10 block max-h-[85vh] w-auto object-contain"
                                                 style={{ mixBlendMode: 'multiply' }} 
                                             />
 
-                                            {/* Layer 3: Design Overlay (Controlled by Sliders) */}
+                                            {/* Layer 3: Design Overlay */}
                                             {currentTexture && (
                                                 <div 
                                                     className="absolute z-20"
                                                     style={{
-                                                        // ✅ Linked to Slider State
                                                         top: `${adjustments.top}%`,
                                                         left: `${adjustments.left}%`,
                                                         width: `${adjustments.scale}%`,
@@ -161,15 +167,15 @@ export function ThreeDPreviewModal({
                             </div>
                         )}
 
-                        {/* Side Selector (Bottom) */}
+                        {/* Side Selector (Floating at Bottom Center) */}
                         {viewMode === '2d' && mockupKeys.length > 1 && (
-                            <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 flex-shrink-0 z-30">
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-4 bg-zinc-900/80 p-2 rounded-xl backdrop-blur-sm border border-white/10">
                                 {mockupKeys.map(side => (
                                     <button
                                         key={side}
                                         onClick={() => setActiveSide(side)}
-                                        className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${
-                                            activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
+                                        className={`relative w-14 h-14 rounded-lg border-2 overflow-hidden transition-all ${
+                                            activeSide === side ? "border-white scale-110 shadow-lg" : "border-white/20 opacity-60 hover:opacity-100"
                                         }`}
                                     >
                                         <div className="absolute inset-0" style={{ backgroundColor: selectedColor }} />
@@ -185,18 +191,18 @@ export function ThreeDPreviewModal({
                         )}
                     </div>
 
-                    {/* === RIGHT: CONTROLS SIDEBAR (Visible in 2D) === */}
+                    {/* === RIGHT: CONTROLS SIDEBAR === */}
                     {viewMode === '2d' && (
-                        <div className="w-72 bg-zinc-900 border-l border-white/10 p-6 flex flex-col gap-8 z-40 shadow-xl">
-                            <h3 className="text-white font-semibold text-lg flex items-center gap-2">
+                        <div className="w-80 bg-zinc-900 border-l border-white/10 p-6 flex flex-col gap-8 z-40 shadow-xl flex-shrink-0">
+                            <h3 className="text-white font-semibold text-lg flex items-center gap-2 border-b border-white/10 pb-4">
                                 <Move size={18} /> Position & Scale
                             </h3>
 
                             {/* Top / Y-Axis Slider */}
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <div className="flex justify-between text-zinc-400 text-xs uppercase tracking-wider font-medium">
-                                    <span>Top (Y)</span>
-                                    <span>{adjustments.top.toFixed(0)}%</span>
+                                    <span>Vertical Position (Y)</span>
+                                    <span className="text-white">{adjustments.top.toFixed(0)}%</span>
                                 </div>
                                 <input
                                     type="range"
@@ -208,10 +214,10 @@ export function ThreeDPreviewModal({
                             </div>
 
                             {/* Left / X-Axis Slider */}
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <div className="flex justify-between text-zinc-400 text-xs uppercase tracking-wider font-medium">
-                                    <span>Left (X)</span>
-                                    <span>{adjustments.left.toFixed(0)}%</span>
+                                    <span>Horizontal Position (X)</span>
+                                    <span className="text-white">{adjustments.left.toFixed(0)}%</span>
                                 </div>
                                 <input
                                     type="range"
@@ -223,10 +229,10 @@ export function ThreeDPreviewModal({
                             </div>
 
                             {/* Scale / Size Slider */}
-                            <div className="space-y-3 pt-4 border-t border-white/10">
+                            <div className="space-y-4 pt-4 border-t border-white/10">
                                 <div className="flex justify-between text-zinc-400 text-xs uppercase tracking-wider font-medium items-center">
-                                    <span className="flex items-center gap-2"><Maximize2 size={14} /> Scale</span>
-                                    <span>{adjustments.scale.toFixed(0)}%</span>
+                                    <span className="flex items-center gap-2"><Maximize2 size={14} /> Size / Scale</span>
+                                    <span className="text-white">{adjustments.scale.toFixed(0)}%</span>
                                 </div>
                                 <input
                                     type="range"
@@ -237,13 +243,16 @@ export function ThreeDPreviewModal({
                                 />
                             </div>
 
-                            <div className="mt-auto">
+                            <div className="mt-auto pt-6 border-t border-white/10">
+                                <p className="text-xs text-zinc-500 mb-4 text-center">
+                                    Use sliders to fine-tune the print placement on the mockup.
+                                </p>
                                 <Button
-                                    className="w-full h-12 text-base font-bold bg-white text-black hover:bg-zinc-200 rounded-xl gap-2 shadow-xl"
+                                    className="w-full h-14 text-base font-bold bg-white text-black hover:bg-zinc-200 rounded-xl gap-2 shadow-xl"
                                     onClick={onAddToCart}
                                     disabled={isSaving}
                                 >
-                                    {isSaving ? <Loader2 className="animate-spin" size={18} /> : <ShoppingBag size={18} />}
+                                    {isSaving ? <Loader2 className="animate-spin" size={20} /> : <ShoppingBag size={20} />}
                                     {isSaving ? "Processing..." : "Add to Cart"}
                                 </Button>
                             </div>
