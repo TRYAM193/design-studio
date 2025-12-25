@@ -117,12 +117,6 @@ export default function CanvasEditor({
     let ORIGINAL_WIDTH = 800;
     let ORIGINAL_HEIGHT = 960;
 
-    if (productData.title.includes('Mug')){
-      ORIGINAL_WIDTH = 200;
-      ORIGINAL_HEIGHT = 100;
-      console.log("Mug dimensions set");
-    }
-
     const canvas = new fabric.Canvas(canvasRef.current, {
       backgroundColor: 'transparent',
       selection: true,
