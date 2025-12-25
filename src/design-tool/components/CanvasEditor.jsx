@@ -109,49 +109,71 @@ export default function CanvasEditor({
       setSelectedObjectUUIDs([]);
     }
   };
-
-  // 🟩 Initialize Fabric.js
-  // 🟩 Initialize Fabric.js
+  
   useEffect(() => {
-    // UPDATED: Set dimensions to match standard T-Shirt print aspect ratio (5:6)
-    // 800 width / 960 height = 0.833... (matches 4500/5400)
-    const ORIGINAL_WIDTH = 800;
-    const ORIGINAL_HEIGHT = 960;
-
+    // A. Initialize Canvas (if not exists)
     const canvas = new fabric.Canvas(canvasRef.current, {
-      backgroundColor: 'transparent',
+      backgroundColor: '#ffffff', // Default to white (changeable via toolbar)
       selection: true,
+      controlsAboveOverlay: true, // Ensures controls are visible
+      preserveObjectStacking: true,
     });
-
-    canvas.setWidth(ORIGINAL_WIDTH);
-    canvas.setHeight(ORIGINAL_HEIGHT);
-
-    const resize = () => {
-      const wrapper = wrapperRef.current;
-      if (!wrapper) return;
-
-      const newWidth = wrapper.clientWidth;
-      const newHeight = wrapper.clientHeight;
-      const scaleX = newWidth / ORIGINAL_WIDTH;
-      const scaleY = newHeight / ORIGINAL_HEIGHT;
-      const scale = Math.min(scaleX, scaleY);
-
-      canvas.setViewportTransform([scale, 0, 0, scale, 0, 0]);
-    };
-
-    resize();
-    window.addEventListener('resize', resize);
 
     fabricCanvasRef.current = canvas;
     setFabricCanvas(canvas);
     setInitialized(true);
 
+    // B. The Smart Resize Function
+    // This makes the canvas "Internal Size" = Print Area (e.g. 4500px)
+    // But "Visual Size" = Fits the screen (e.g. 500px)
+    const handleResize = () => {
+      const wrapper = wrapperRef.current;
+      if (!wrapper || !canvas) return;
+
+      const availableWidth = wrapper.clientWidth;
+      const availableHeight = wrapper.clientHeight;
+
+      // Calculate aspect ratios
+      const contentAspect = printDimensions.width / printDimensions.height;
+      const containerAspect = availableWidth / availableHeight;
+
+      let displayWidth, displayHeight;
+      let zoomScale;
+
+      // Fit Contain Logic
+      if (containerAspect > contentAspect) {
+        // Wrapper is wider than content -> Fit by Height
+        displayHeight = availableHeight * 0.9; // 90% of screen height
+        displayWidth = displayHeight * contentAspect;
+        zoomScale = displayHeight / printDimensions.height;
+      } else {
+        // Wrapper is taller than content -> Fit by Width
+        displayWidth = availableWidth * 0.9; // 90% of screen width
+        displayHeight = displayWidth / contentAspect;
+        zoomScale = displayWidth / printDimensions.width;
+      }
+
+      // 1. Set the visual size (CSS pixels on screen)
+      canvas.setDimensions({ width: displayWidth, height: displayHeight });
+
+      // 2. Set the zoom so 1 internal unit = 1 visual pixel * scale
+      canvas.setZoom(zoomScale);
+
+      // 3. Render
+      canvas.requestRenderAll();
+    };
+
+    // Initial resize and listener
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    // C. Clean up
     return () => {
       canvas.dispose();
       fabricCanvasRef.current = null;
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [printDimensions]);
 
   // 🟩 Load Saved Designs (From Navigation State)
   useEffect(() => {
