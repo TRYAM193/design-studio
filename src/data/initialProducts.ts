@@ -316,7 +316,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     canvas_size: {
-      width
+      width: 800,
+      height: 
     }
 
     mockups: {
