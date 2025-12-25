@@ -123,7 +123,7 @@ export default function EditorPanel() {
 
     // ✅ Effect: Sync canvasDims with Product DB Data when view or product changes
     useEffect(() => {
-        if (productData.print_areas && productData.print_areas[currentView]) {
+        if (productData.canvas_ && productData.print_areas[currentView]) {
             const area = productData.print_areas[currentView];
             // We use the DB dimensions directly now
             // Ensure you have valid defaults if DB is empty
