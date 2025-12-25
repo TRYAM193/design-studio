@@ -171,7 +171,8 @@ export default function EditorPanel() {
         fabricCanvas.renderAll();
 
         if (productData.title.includes("Mug")){
-            fabricCanvas.backgr
+            fabricCanvas.backgroundColor = "#FFFFFF";
+            fabricCanvas.renderAll();
         }
 
         try {
