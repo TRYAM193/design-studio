@@ -135,6 +135,11 @@ export const INITIAL_PRODUCTS = [
       back: "/assets/mockups/men-hoodie-back.png"
     },
 
+    canvas_size: {
+      width: 420,
+      height: 500
+    },
+
     print_area_2d: {
       front: { top: 26, left: 16, width: 67, height: 36 },
       back: { top: 34, left: 16, width: 69, height: 38 }
@@ -287,7 +292,7 @@ export const INITIAL_PRODUCTS = [
       rightSleeve: { width: 1100, height: 3500 }
     },
 
-     canvas_size: {
+    canvas_size: {
       width: 420,
       height: 500
     },
