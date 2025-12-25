@@ -287,6 +287,10 @@ export const INITIAL_PRODUCTS = [
       rightSleeve: { width: 1100, height: 3500 }
     },
 
+     canvas_size: {
+      width: 420,
+      height: 560
+    },
 
     mockups: {
       front: "/assets/mockups/men-hoodie-front.png",
