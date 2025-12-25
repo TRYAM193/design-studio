@@ -239,8 +239,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     print_area_2d: {
-      front: { top: 22, left: 28, width: 44 },
-      back: { top: 22, left: 28, width: 44 }
+      front: { top: 24, left: 9, width: 84, height: 50 },
+      back: { top: 24, left: 9, width: 84, height: 50 }
     },
 
     canvas_size: {
