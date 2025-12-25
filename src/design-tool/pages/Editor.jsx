@@ -213,6 +213,9 @@ export default function EditorPanel() {
         } finally {
             fabricCanvas.backgroundColor = originalBg;
             fabricCanvas.clipPath = originalClip;
+            if (borderObj) {
+                borderObj.visible = wasBorderVisible; // Show it again
+            }
             fabricCanvas.renderAll();
         }
     };
