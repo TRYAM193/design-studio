@@ -317,8 +317,8 @@ export const INITIAL_PRODUCTS = [
 
     canvas_size: {
       width: 800,
-      height: 
-    }
+      height: 300
+    },
 
     mockups: {
       front: "/assets/mockups/mug-front.png",
