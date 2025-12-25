@@ -78,6 +78,11 @@ export const INITIAL_PRODUCTS = [
       front: "/assets/mockups/men-oversized-front.png",
       back:  "/assets/mockups/men-oversized-back.png"
     },
+
+     canvas_size: {
+      width: 420,
+      height: 560
+    },
     
     print_area_2d: {
       front: { top: 22, left: 28, width: 44 },
@@ -234,6 +239,11 @@ export const INITIAL_PRODUCTS = [
     print_area_2d: {
       front: { top: 22, left: 28, width: 44 },
       back:  { top: 22, left: 28, width: 44 }
+    },
+
+     canvas_size: {
+      width: 420,
+      height: 560
     },
 
     options: {
