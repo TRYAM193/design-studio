@@ -181,8 +181,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     mockups: {
-      front: "/assets/mockups/women-classic-tee-front.png",
-      back:  "/assets/mockups/women-classic-tee-back.png"
+      front: "/assets/mockups/men-classic-tee-front.png",
+      back:  "/assets/mockups/men-classic-tee-back.png"
     },
 
      canvas_size: {
@@ -234,8 +234,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     mockups: {
-      front: "/assets/mockups/women-oversized-front.png",
-      back:  "/assets/mockups/women-oversized-back.png"
+      front: "/assets/mockups/men-oversized-front.png",
+      back:  "/assets/mockups/men-oversized-back.png"
     },
     
     print_area_2d: {
