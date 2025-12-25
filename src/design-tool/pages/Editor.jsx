@@ -191,7 +191,7 @@ export default function EditorPanel() {
         let wasBorderVisible = false;
         if (borderObj) {
             wasBorderVisible = borderObj.visible; // Remember state
-            borderObj.visible = false; // Hide it
+            // borderObj.visible = false; // Hide it
         }
 
         fabricCanvas.renderAll();
