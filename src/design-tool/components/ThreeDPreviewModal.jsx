@@ -111,7 +111,7 @@ export function ThreeDPreviewModal({
                                         {/* LAYER 1: The Selected Color (Base) */}
                                         <div 
                                             className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
-                                            style={{ backgroundColor: selectedColor }}
+                                            style={{ backgroundColor: 'white' }}
                                         />
 
                                         {/* LAYER 2: The Mockup Image */}
