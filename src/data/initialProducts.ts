@@ -292,7 +292,7 @@ export const INITIAL_PRODUCTS = [
       front: "/assets/mockups/men-hoodie-front.png",
       back:  "/assets/mockups/men-hoodie-back.png",
       leftSleeve: "/assets/mockups/men-hoodie-left-sleeve.png",
-      rightSleeve:
+      rightSleeve: "/assets/mockups/men"
     },
     
     print_area_2d: {
