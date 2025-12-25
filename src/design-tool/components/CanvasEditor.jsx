@@ -126,6 +126,7 @@ export default function CanvasEditor({
     const canvas = new fabric.Canvas(canvasRef.current, {
       backgroundColor: 'transparent',
       selection: true,
+      width
     });
 
     canvas.setWidth(ORIGINAL_WIDTH);
