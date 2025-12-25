@@ -158,9 +158,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
 
       return (
         <mesh
-          geometry={nodes[meshName].geometry}
-          // ⚠️ IMPORTANT: Don't use the original material here, create a new one
-          // material={nodes[meshName].material} 
+          geometry={nodes[meshName].geometry} 
           frustumCulled={false}
         >
           <meshStandardMaterial
