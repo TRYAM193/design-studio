@@ -11,13 +11,11 @@ const MODEL_CONFIGS = {
     position: [0, -0.85, 0],
     cameraZ: 0.5,
     meshes: {
-      // ✅ RETAIN YOUR MESH NAMES HERE
       front: "Body_Front_Node",
       back: "Body_Back_Node",
       leftSleeve: "Sleeves_Node",
       rightSleeve: "Sleeves_Node001",
     },
-    // 🆕 NEW: Default Decal Positions (Adjust these using the sliders)
     frontDecal: { x: 0, y: 1.25, z: -0.5, scale: 0.5 },
     backDecal: { x: 0, y: 1.25, z: 0.5, scale: 0.5 }
   },
@@ -27,11 +25,9 @@ const MODEL_CONFIGS = {
     cameraZ: 0.5,
     fullWrap: true,
     meshes: {
-      // ✅ RETAINED: Single mesh name as you requested
       front: "MUG"
     },
-    // Mugs need specific rotation logic usually, but here is the position baseline
-    frontDecal: { x: -1.03, y: -0.44, z: 0, scale: 0.6 }, 
+    frontDecal: { x: 0, y: -0.15, z: 0, scale: 1 }, 
     backDecal: { x: 0, y: 0, z: 0, scale: 1 }
   },
   "tote": {
@@ -99,8 +95,6 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
   const leftTex = useDesignTexture(textures?.leftSleeve || textures?.left);
   const rightTex = useDesignTexture(textures?.rightSleeve || textures?.right);
 
- // ... inside DynamicModel ...
-
   const RenderPart = ({ meshName, tex, decalProps }) => {
     if (!nodes || !nodes[meshName]) return null;
 
@@ -109,7 +103,8 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
       useEffect(() => {
         if (tex) {
           // A. Setup Texture for Manipulation
-          tex.wrapS = tex.wrapT = THREE.RepeatWrapping; // Allows infinite scrolling
+          // ✅ FIX: ClampToEdgeWrapping prevents tiling (repeating) when scaling down
+          tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping; 
           tex.colorSpace = THREE.SRGBColorSpace;
           
           // B. Calculate Scale (Zoom)
@@ -161,7 +156,6 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
   };
   return (
     <group position={config.position} scale={config.scale} dispose={null}>
-      {/* 🆕 UPDATED: Uses dynamic frontPos for Front Texture */}
       {/* Front / Body (This becomes the Full Wrap for Mugs) */}
       <RenderPart
         meshName={m.front}
@@ -172,7 +166,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
         }}
       />
 
-      {/* 👇 EDIT THIS: Only show separate Back Decal if NOT full wrap */}
+      {/* Only show separate Back Decal if NOT full wrap */}
       {!config.fullWrap && (
         <RenderPart
           meshName={m.back}
