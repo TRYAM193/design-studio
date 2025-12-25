@@ -310,6 +310,10 @@ export const INITIAL_PRODUCTS = [
     model3d: "/assets/mug.glb",
     description: "Durable ceramic mug with high-quality printing.",
 
+    print_areas: {
+      front: { width: 2700, height: 1100 } // Approx 9" x 3.5" wrap
+    },
+
     mockups: {
       front: "/assets/mockups/mug-front.png",
       left:  "/assets/mockups/mug-left.png",

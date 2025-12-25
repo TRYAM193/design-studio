@@ -9,60 +9,47 @@ const MODEL_CONFIGS = {
   "t-shirt": {
     scale: 0.8,
     position: [0, -0.85, 0],
-    cameraZ: 0.6, // Default T-shirt Zoom
+    cameraZ: 0.5,
     meshes: {
+      // ✅ RETAIN YOUR MESH NAMES HERE
       front: "Body_Front_Node",
       back: "Body_Back_Node",
       leftSleeve: "Sleeves_Node",
       rightSleeve: "Sleeves_Node001",
-    }
-  },
-  "oversized": {
-    scale: 0.8,
-    position: [0, -0.85, 0],
-    cameraZ: 2.2,
-    meshes: {
-      front: "Oversized_front",
-      back: "Oversized_back"
-    }
-  },
-  "hoodie": {
-    scale: 0.8,
-    position: [0, -0.85, 0],
-    cameraZ: 2.2,
-    meshes: {
-      front: "Hoodie_front",
-      back: "Hoodie_back",
-      hood: "Hoodie_hood",
-      leftSleeve: "Hoodie_left_sleeve",
-      rightSleeve: "Hoodie_right_sleeve"
-    }
+    },
+    // 🆕 NEW: Default Decal Positions (Adjust these using the sliders)
+    frontDecal: { x: 0, y: 1.25, z: -0.5, scale: 0.5 },
+    backDecal: { x: 0, y: 1.25, z: 0.5, scale: 0.5 }
   },
   "mug": {
-    scale: 0.003,
-    position: [0, -1.2, 0],
+    scale: 1.5,
+    position: [0, -1.5, 0],
     cameraZ: 0.5,
+    fullWrap: true,
     meshes: {
-      front: "MUG",
-      handle: "Mug_Handle"
-    }
+      // ✅ RETAINED: Single mesh name as you requested
+      front: "MUG"
+    },
+    // Mugs need specific rotation logic usually, but here is the position baseline
+    frontDecal: { x: 0, y: 0.5, z: 0.8, scale: 10 },
+    backDecal: { x: 0, y: 0.5, z: -0.8, scale: 0.8 }
   },
   "tote": {
     scale: 0.08,
     position: [0, -1.5, 0],
-    cameraZ: 0.6,
+    cameraZ: 1.5,
     meshes: {
       front: "Bag_Front",
       back: "Bag_Back",
       straps: "Bag_Straps"
-    }
+    },
+    frontDecal: { x: 0, y: -5, z: 2, scale: 5 },
+    backDecal: { x: 0, y: -5, z: -2, scale: 5 }
   }
 };
 
 const resolveConfig = (url) => {
   if (!url) return MODEL_CONFIGS["t-shirt"];
-  if (url.includes("hoodie")) return MODEL_CONFIGS["hoodie"];
-  if (url.includes("oversized")) return MODEL_CONFIGS["oversized"];
   if (url.includes("mug")) return MODEL_CONFIGS["mug"];
   if (url.includes("tote")) return MODEL_CONFIGS["tote"];
   return MODEL_CONFIGS["t-shirt"];
@@ -84,7 +71,6 @@ function useDesignTexture(url) {
   return texture;
 }
 
-// ✅ NEW: Camera Rig to handle dynamic slider updates
 function CameraRig({ z }) {
   const { camera } = useThree();
   useEffect(() => {
@@ -97,14 +83,57 @@ function CameraRig({ z }) {
 function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
   if (!texture) return null;
   return (
-    <Decal position={[x, y, z]} rotation={rotation} scale={[scale, scale, 1.5]}>
+    <Decal position={[x, y, z]} rotation={rotation} scale={[scale, scale, 1.5]} debug={true}>
       <meshBasicMaterial map={texture} transparent depthTest={true} depthWrite={false} polygonOffset polygonOffsetFactor={-4} />
     </Decal>
   );
 }
 
+// 🛠️ HELPER: Auto-calculates UVs for a cylinder (Mug)
+function fixCylindricalUVs(geometry) {
+  if (!geometry) return;
+
+  // Check if we already fixed this geometry to avoid infinite loops
+  if (geometry.userData.uvsFixed) return;
+
+  const posAttribute = geometry.attributes.position;
+  const uvAttribute = geometry.attributes.uv;
+
+  // If no UVs exist, create them
+  if (!uvAttribute) {
+    const uvs = new Float32Array(posAttribute.count * 2);
+    geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+  }
+
+  const uvs = geometry.attributes.uv;
+  const positions = posAttribute;
+  const box = new THREE.Box3().setFromBufferAttribute(positions);
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+
+  // Loop through every vertex and calculate angle (u) and height (v)
+  for (let i = 0; i < positions.count; i++) {
+    const x = positions.getX(i) - center.x;
+    const y = positions.getY(i) - center.y;
+    const z = positions.getZ(i) - center.z;
+
+    // Calculate angle around Y axis
+    let angle = Math.atan2(x, z);
+    // Normalize angle from -PI/PI to 0..1
+    let u = (angle / (2 * Math.PI)) + 0.5;
+
+    // Normalize height based on bounding box
+    let v = (y - box.min.y) / (box.max.y - box.min.y);
+
+    uvs.setXY(i, u, v);
+  }
+
+  geometry.attributes.uv.needsUpdate = true;
+  geometry.userData.uvsFixed = true; // Mark as fixed
+}
+
 // --- 3. MAIN MODEL ---
-function DynamicModel({ modelUrl, textures, color, controls, config }) {
+function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) {
   const { nodes, materials } = useGLTF(modelUrl);
   const m = config.meshes;
 
@@ -115,21 +144,80 @@ function DynamicModel({ modelUrl, textures, color, controls, config }) {
 
   const RenderPart = ({ meshName, tex, decalProps }) => {
     if (!nodes || !nodes[meshName]) return null;
+
+    // 1. FULL WRAP MODE (Active for Mug)
+    if (config.fullWrap && tex) {
+      useEffect(() => {
+        if (tex) {
+          tex.flipY = true;
+          tex.needsUpdate = true;
+          // If using a CanvasTexture (Fabric.js), you might need:
+          tex.colorSpace = THREE.SRGBColorSpace;
+        }
+      }, [tex]);
+
+      return (
+        <mesh
+          geometry={nodes[meshName].geometry}
+          // ⚠️ IMPORTANT: Don't use the original material here, create a new one
+          // material={nodes[meshName].material} 
+          frustumCulled={false}
+        >
+          <meshStandardMaterial
+            color="#ffffff"
+            metalness={0}    // Ceramic isn't metallic
+            roughness={0.5}  // A bit shiny, but not a mirror
+            map={tex}          // The texture wraps around
+            transparent={false}
+            side={THREE.DoubleSide} // 👈 Force both sides to render
+          />
+        </mesh>
+      );
+    }
+
+    // 2. STANDARD DECAL MODE (T-Shirts)
     return (
-      <mesh geometry={nodes[meshName].geometry} material={nodes[meshName].material}>
+      <mesh
+        geometry={nodes[meshName].geometry}
+        material={nodes[meshName].material}
+        frustumCulled={false}
+      >
         <meshStandardMaterial color={color} roughness={0.7} />
         {tex && decalProps && <CalibrationDecal texture={tex} {...decalProps} />}
       </mesh>
     );
   };
-
   return (
     <group position={config.position} scale={config.scale} dispose={null}>
-      <RenderPart meshName={m.front} tex={frontTex} decalProps={{ x: 0, y: 1.25, z: -0.5, scale: 0.5 }} />
-      <RenderPart meshName={m.back} tex={backTex} decalProps={{ x: 0, y: 1.25, z: 0.5, scale: 0.5, rotation: [0, Math.PI, 0] }} />
+      {/* 🆕 UPDATED: Uses dynamic frontPos for Front Texture */}
+      {/* Front / Body (This becomes the Full Wrap for Mugs) */}
+      <RenderPart
+        meshName={m.front}
+        tex={frontTex}
+        decalProps={{
+          x: frontPos.x, y: frontPos.y, z: frontPos.z,
+          scale: frontPos.scale, rotation: [0, 0, 0]
+        }}
+      />
+
+      {/* 👇 EDIT THIS: Only show separate Back Decal if NOT full wrap */}
+      {!config.fullWrap && (
+        <RenderPart
+          meshName={m.back}
+          tex={backTex}
+          decalProps={{
+            x: backPos.x, y: backPos.y, z: backPos.z,
+            scale: backPos.scale, rotation: [0, Math.PI, 0]
+          }}
+        />
+      )}
+
       <RenderPart meshName={m.leftSleeve} tex={leftTex} />
       <RenderPart meshName={m.rightSleeve} tex={rightTex} />
-      <RenderPart meshName={m.body} decalProps={{x : controls.x, y: controls.y, z: controls.z, scale: controls.scale}}/>
+      <RenderPart meshName={m.hood} />
+      <RenderPart meshName={m.handle} />
+      <RenderPart meshName={m.straps} />
+
       {(!m.front || !nodes[m.front]) && <primitive object={nodes.Scene || nodes.root} />}
     </group>
   );
@@ -137,43 +225,43 @@ function DynamicModel({ modelUrl, textures, color, controls, config }) {
 
 // --- 4. EXPORT ---
 export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" }) {
-  // Initial config resolution
   const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
+  const [activeTab, setActiveTab] = useState("camera");
 
-  // State now includes cameraZ
-  const [controls, setControls] = useState({
-    x: 0, y: 1.25, z: 0.5, scale: 0.5,
-    cameraZ: config.cameraZ || 2.5 // Initialize from config
-  });
+  // Initialize state from the Config (defaults)
+  const [cameraZ, setCameraZ] = useState(config.cameraZ || 2.5);
+  const [frontPos, setFrontPos] = useState(config.frontDecal || { x: 0, y: 0.04, z: 0.15, scale: 0.25 });
+  const [backPos, setBackPos] = useState(config.backDecal || { x: 0, y: 0.04, z: 0.15, scale: 0.25 });
 
-  // Reset controls when model changes
+  // Reset when model changes
   useEffect(() => {
-    setControls(prev => ({ ...prev, cameraZ: config.cameraZ || 2.5 }));
+    setCameraZ(config.cameraZ || 2.5);
+    setFrontPos(config.frontDecal || { x: 0, y: 0.04, z: 0.15, scale: 0.25 });
+    setBackPos(config.backDecal || { x: 0, y: 0.04, z: 0.15, scale: 0.25 });
   }, [config]);
 
-  const updateControl = (key, value) => {
-    setControls(prev => ({ ...prev, [key]: parseFloat(value) }));
-  };
+  const updateFront = (key, val) => setFrontPos(p => ({ ...p, [key]: parseFloat(val) }));
+  const updateBack = (key, val) => setBackPos(p => ({ ...p, [key]: parseFloat(val) }));
 
   if (!modelUrl) return <div>No 3D Model URL provided</div>;
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <Canvas fov={45}>
+      <Canvas fov={45} camera={{ position: [0, 0, cameraZ], near: 0.1, far: 1000 }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 10, 7]} intensity={1} />
         <directionalLight position={[0, 5, -10]} intensity={0.8} />
         <Environment preset="city" />
 
-        {/* ✅ The Camera Rig updates the camera when slider moves */}
-        <CameraRig z={controls.cameraZ} />
+        <CameraRig z={cameraZ} />
 
         <Center>
           <DynamicModel
             modelUrl={modelUrl}
             textures={textures}
             color={color}
-            controls={controls}
+            frontPos={frontPos}
+            backPos={backPos}
             config={config}
           />
         </Center>
@@ -182,40 +270,49 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
       </Canvas>
 
       {/* 🛠 DEBUG CONTROLS */}
-      <div className="absolute top-4 right-4 bg-black/80 text-white p-4 rounded text-xs w-64 z-50">
-        <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Camera Zoom</h3>
-        <div className="mb-4">
-          <div className="flex justify-between mb-1">
-            <label>Distance (Z)</label>
-            <span className="text-gray-400">{controls.cameraZ.toFixed(2)}</span>
-          </div>
-          <input
-            type="range" min="0.5" max="8" step="0.1"
-            value={controls.cameraZ}
-            onChange={(e) => updateControl('cameraZ', e.target.value)}
-            className="w-full accent-indigo-500"
-          />
+      <div className="absolute top-4 right-4 bg-zinc-900/90 text-white p-4 rounded-xl shadow-2xl border border-zinc-700 w-72 z-50 backdrop-blur-md">
+
+        <div className="flex bg-zinc-800 p-1 rounded-lg mb-4">
+          {['camera', 'front', 'back'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-1 text-xs font-bold uppercase rounded-md transition-all ${activeTab === tab ? "bg-indigo-600 text-white shadow-md" : "text-zinc-400 hover:text-white"
+                }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
 
-        {textures?.front && (
-          <>
-            <h3 className="font-bold mb-2 border-b border-gray-600 pb-1">Front Decal Calibration</h3>
-            {['x', 'y', 'z', 'scale'].map(axis => (
-              <div key={axis} className="mb-2">
-                <div className="flex justify-between mb-1">
-                  <label className="capitalize">{axis}</label>
-                  <span className="text-gray-400">{controls[axis].toFixed(2)}</span>
-                </div>
-                <input
-                  type="range" min="-2" max="2" step="0.01"
-                  value={controls[axis]}
-                  onChange={(e) => updateControl(axis, e.target.value)}
-                  className="w-full accent-indigo-500"
-                />
+        <div className="space-y-4">
+          {activeTab === 'camera' && (
+            <div>
+              <div className="flex justify-between mb-1 text-xs font-mono text-zinc-400">
+                <span>ZOOM (Z)</span><span>{cameraZ.toFixed(2)}</span>
               </div>
-            ))}
-          </>
-        )}
+              <input type="range" min="0.5" max="8" step="0.1" value={cameraZ} onChange={(e) => setCameraZ(parseFloat(e.target.value))} className="w-full accent-indigo-500 h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer" />
+            </div>
+          )}
+
+          {activeTab === 'front' && ['x', 'y', 'z', 'scale'].map(axis => (
+            <div key={axis}>
+              <div className="flex justify-between mb-1 text-xs font-mono text-zinc-400">
+                <span className="uppercase">{axis}</span><span>{frontPos[axis].toFixed(2)}</span>
+              </div>
+              <input type="range" min={axis === 'scale' ? "0.1" : "-2"} max={axis === 'scale' ? "5" : "2"} step="0.01" value={frontPos[axis]} onChange={(e) => updateFront(axis, e.target.value)} className="w-full accent-indigo-500 h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer" />
+            </div>
+          ))}
+
+          {activeTab === 'back' && ['x', 'y', 'z', 'scale'].map(axis => (
+            <div key={axis}>
+              <div className="flex justify-between mb-1 text-xs font-mono text-zinc-400">
+                <span className="uppercase">{axis}</span><span>{backPos[axis].toFixed(2)}</span>
+              </div>
+              <input type="range" min={axis === 'scale' ? "0.1" : "-200"} max={axis === 'scale' ? "5" : "2"} step="0.01" value={backPos[axis]} onChange={(e) => updateBack(axis, e.target.value)} className="w-full accent-indigo-500 h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
