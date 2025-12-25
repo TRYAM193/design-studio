@@ -24,7 +24,7 @@ export function ThreeDPreviewModal({
 
     // ✅ 1. State for Position & Size Adjustments
     const [adjustments, setAdjustments] = useState({ 
-        top: 24, 
+        top: 25, 
         left: 9, 
         width: 40, 
         height: 40 
