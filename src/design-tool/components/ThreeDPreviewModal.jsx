@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShoppingBag, X, Box, Image as ImageIcon, Settings2, Move, Maximize2, ArrowUpFromLine } from "lucide-react";
+import { Loader2, ShoppingBag, X, Box, Image as ImageIcon, Settings2, Move, Maximize2 } from "lucide-react";
 import Tshirt3DPreview from '../preview3d/Tshirt3DPreview';
 
 export function ThreeDPreviewModal({
@@ -19,18 +19,20 @@ export function ThreeDPreviewModal({
     const mockups = productData.mockups || {};
     const mockupKeys = Object.keys(mockups);
     
+    // ✅ DETECT MUG PRODUCT (Case insensitive check)
+    const isMug = productData?.title?.toLowerCase().includes("mug") || 
+                  productData?.category?.toLowerCase().includes("mug");
+
     const [viewMode, setViewMode] = useState('2d');
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
 
-    // ✅ 1. State for Position & Size Adjustments
     const [adjustments, setAdjustments] = useState({ 
         top: 25, 
         left: 0, 
         width: 100, 
-        height:50 
+        height: 50 
     });
 
-    // ✅ 2. Initialize defaults when opening or switching sides
     useEffect(() => {
         if (isOpen) {
             setViewMode('2d');
@@ -38,27 +40,42 @@ export function ThreeDPreviewModal({
         }
     }, [isOpen, productId]);
 
+    // Load defaults when switching sides
     useEffect(() => {
         const defaults = productData.print_area_2d?.[activeSide] || { top: 20, left: 30, width: 40, height: 40 };
         setAdjustments({
             top: defaults.top,
             left: defaults.left,
             width: defaults.width,
-            // If height isn't in DB, default to same as width or a fixed value
             height: defaults.height || defaults.width || 40
         });
     }, [activeSide, productData]);
 
     const getCurrentTexture = () => {
+        // If it's a mug, we usually reuse the 'front' (full wrap) texture for all sides
+        if (isMug) return textures.front?.url;
         if (activeSide === 'left' || activeSide === 'right') return textures.front?.url; 
         return textures[activeSide]?.url;
     };
 
     const currentTexture = getCurrentTexture();
     
-    // Handler for sliders
     const handleAdjustment = (key, value) => {
         setAdjustments(prev => ({ ...prev, [key]: parseFloat(value) }));
+    };
+
+    console.log(i)
+
+    // ✅ CALCULATE MUG WRAP OFFSET
+    // If viewing 'Left', show left 1/3 of image. 'Front' -> Center. 'Right' -> Right 1/3.
+    const getMugShift = () => {
+        if (!isMug) return '0%';
+        switch(activeSide) {
+            case 'left': return '0%';      // Start of image
+            case 'front': return '-100%';  // Center of image (shift left by 1 width)
+            case 'right': return '-200%';  // End of image (shift left by 2 widths)
+            default: return '0%';
+        }
     };
 
     return (
@@ -97,10 +114,11 @@ export function ThreeDPreviewModal({
                 </div>
 
                 {/* --- MAIN STAGE --- */}
-                <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex">
+                {/* ✅ MOBILE FIX: Added 'flex-col lg:flex-row' to stack on mobile */}
+                <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex flex-col lg:flex-row">
                     
                     {/* === LEFT: PREVIEW AREA === */}
-                    <div className="flex-1 relative flex flex-col min-w-0">
+                    <div className="flex-1 relative flex flex-col min-w-0 h-full">
                         {viewMode === '2d' && (
                             <div className="relative w-full h-full flex flex-col">
                                 <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8 overflow-auto">
@@ -108,13 +126,13 @@ export function ThreeDPreviewModal({
                                     {/* 🖼️ MOCKUP CONTAINER */}
                                     <div className="relative w-full max-w-[500px] aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-white flex-shrink-0">
                                         
-                                        {/* LAYER 1: The Selected Color (Base) */}
+                                        {/* LAYER 1: Base Color */}
                                         <div 
                                             className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
                                             style={{ backgroundColor: selectedColor }}
                                         />
 
-                                        {/* LAYER 2: The Mockup Image */}
+                                        {/* LAYER 2: Mockup Image */}
                                         {mockups[activeSide] ? (
                                             <img 
                                                 src={mockups[activeSide]} 
@@ -128,24 +146,43 @@ export function ThreeDPreviewModal({
                                             </div>
                                         )}
 
-                                        {/* LAYER 3: The User's Design (Controlled by Sliders) */}
+                                        {/* LAYER 3: User Design (With Wrap Logic) */}
                                         {currentTexture && (
                                             <div 
-                                                className="absolute z-20 border border-transparent hover:border-white/50 transition-colors"
+                                                className="absolute z-20 border border-transparent hover:border-white/50 transition-all overflow-hidden"
                                                 style={{
                                                     top: `${adjustments.top}%`,
                                                     left: `${adjustments.left}%`,
                                                     width: `${adjustments.width}%`,
-                                                    height: `${adjustments.height}%`, // ✅ Added Height Control
+                                                    height: `${adjustments.height}%`,
                                                     mixBlendMode: 'multiply' 
                                                 }}
                                             >
-                                                {/* Use w-full h-full to force image to fit the container's width/height */}
-                                                <img 
-                                                    src={currentTexture} 
-                                                    alt="design" 
-                                                    className="w-full h-full object-fill" 
-                                                />
+                                                {/* ✅ WRAP LOGIC: If Mug, render 300% width and shift. If Shirt, standard fill. */}
+                                                {isMug ? (
+                                                    <div className="w-full h-full relative">
+                                                        <img 
+                                                            src={currentTexture}
+                                                            alt="design"
+                                                            style={{
+                                                                position: 'absolute',
+                                                                top: 0,
+                                                                height: '100%',
+                                                                width: '300%', // Assume wrap covers 3 views
+                                                                maxWidth: 'none',
+                                                                left: getMugShift(), // Shift based on side
+                                                                transition: 'left 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)', // Smooth slide effect
+                                                                objectFit: 'fill'
+                                                            }}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <img 
+                                                        src={currentTexture} 
+                                                        alt="design" 
+                                                        className="w-full h-full object-fill" 
+                                                    />
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -153,12 +190,12 @@ export function ThreeDPreviewModal({
 
                                 {/* Side Selector */}
                                 {mockupKeys.length > 1 && (
-                                    <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 flex-shrink-0">
+                                    <div className="h-20 lg:h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 flex-shrink-0">
                                         {mockupKeys.map(side => (
                                             <button
                                                 key={side}
                                                 onClick={() => setActiveSide(side)}
-                                                className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${
+                                                className={`relative w-14 h-14 lg:w-16 lg:h-16 rounded-lg border-2 overflow-hidden transition-all ${
                                                     activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
                                                 }`}
                                             >
@@ -194,8 +231,9 @@ export function ThreeDPreviewModal({
                     </div>
 
                     {/* === RIGHT: ADJUSTMENT SIDEBAR (Only in 2D Mode) === */}
+                    {/* ✅ MOBILE FIX: Responsive width (w-full on mobile, w-80 on desktop) */}
                     {viewMode === '2d' && (
-                        <div className="w-80 bg-zinc-900 border-l border-white/10 p-6 flex flex-col gap-8 z-30 shadow-xl overflow-y-auto">
+                        <div className="w-full lg:w-80 h-auto lg:h-full bg-zinc-900 border-t lg:border-t-0 lg:border-l border-white/10 p-6 flex flex-col gap-8 z-30 shadow-xl overflow-y-auto">
                             
                             <div className="flex items-center gap-2 pb-4 border-b border-white/10">
                                 <Settings2 className="text-zinc-400" size={20} />
@@ -207,7 +245,6 @@ export function ThreeDPreviewModal({
                                     <Move size={12} /> Position
                                 </h4>
                                 
-
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-zinc-400 text-xs font-medium">
                                         <span>Top (Y)</span>
@@ -221,7 +258,6 @@ export function ThreeDPreviewModal({
                                         className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
                                     />
                                 </div>
-
                      
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-zinc-400 text-xs font-medium">
