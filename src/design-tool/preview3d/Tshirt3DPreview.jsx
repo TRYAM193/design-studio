@@ -89,49 +89,6 @@ function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
   );
 }
 
-// 🛠️ HELPER: Auto-calculates UVs for a cylinder (Mug)
-function fixCylindricalUVs(geometry) {
-  if (!geometry) return;
-
-  // Check if we already fixed this geometry to avoid infinite loops
-  if (geometry.userData.uvsFixed) return;
-
-  const posAttribute = geometry.attributes.position;
-  const uvAttribute = geometry.attributes.uv;
-
-  // If no UVs exist, create them
-  if (!uvAttribute) {
-    const uvs = new Float32Array(posAttribute.count * 2);
-    geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-  }
-
-  const uvs = geometry.attributes.uv;
-  const positions = posAttribute;
-  const box = new THREE.Box3().setFromBufferAttribute(positions);
-  const center = new THREE.Vector3();
-  box.getCenter(center);
-
-  // Loop through every vertex and calculate angle (u) and height (v)
-  for (let i = 0; i < positions.count; i++) {
-    const x = positions.getX(i) - center.x;
-    const y = positions.getY(i) - center.y;
-    const z = positions.getZ(i) - center.z;
-
-    // Calculate angle around Y axis
-    let angle = Math.atan2(x, z);
-    // Normalize angle from -PI/PI to 0..1
-    let u = (angle / (2 * Math.PI)) + 0.5;
-
-    // Normalize height based on bounding box
-    let v = (y - box.min.y) / (box.max.y - box.min.y);
-
-    uvs.setXY(i, u, v);
-  }
-
-  geometry.attributes.uv.needsUpdate = true;
-  geometry.userData.uvsFixed = true; // Mark as fixed
-}
-
 // --- 3. MAIN MODEL ---
 function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) {
   const { nodes, materials } = useGLTF(modelUrl);
