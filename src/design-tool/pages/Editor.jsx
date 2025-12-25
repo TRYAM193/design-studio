@@ -168,6 +168,7 @@ export default function EditorPanel() {
         if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
+        const originalClip = fabricCanvas.clipPath;
 
         if (productData.title.includes("Mug")) {
             fabricCanvas.backgroundColor = "#FFFFFF";
