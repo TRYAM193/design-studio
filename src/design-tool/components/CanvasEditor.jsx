@@ -79,7 +79,7 @@ const initMugPrintArea = (canvas, width, height, initialColor = "#000000") => {
 
   // 3. Add to Canvas (BYPASSING REDUX)
   canvas.add(printArea);
-  canvas.sendToBack(printArea);
+  canvas.sendObjectToBack(printArea);
 
   // 4. Create the Clip Path (The "No Out of It" Logic)
   // This ensures images dragged outside get cut off
