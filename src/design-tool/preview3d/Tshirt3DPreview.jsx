@@ -27,7 +27,7 @@ const MODEL_CONFIGS = {
     meshes: {
       front: "MUG"
     },
-    frontDecal: { x: 0, y: -0.15, z: 0, scale: 1 }, 
+    frontDecal: { x: 0, y: -0.6, z: 0, scale: 0.6 }, 
     backDecal: { x: 0, y: 0, z: 0, scale: 1 }
   },
   "tote": {
