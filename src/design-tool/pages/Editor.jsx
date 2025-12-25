@@ -73,6 +73,8 @@ export default function EditorPanel() {
         options: { colors: [] }
     });
 
+    console.log()
+
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
 
