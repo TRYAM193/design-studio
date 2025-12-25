@@ -386,7 +386,7 @@ export default function EditorPanel() {
                         setCurrentDesign={setCurrentDesign}
                         setEditingDesignId={setEditingDesignId}
                         past={past}
-                        bgcolor={can}
+                        bgcolor={canvasBg}
                     />
 
                 </main>
