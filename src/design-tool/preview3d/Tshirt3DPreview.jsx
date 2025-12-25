@@ -215,8 +215,6 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
 
         <OrbitControls enablePan={false} minPolarAngle={0} maxPolarAngle={Math.PI} />
       </Canvas>
-
-      {/* 🗑️ REMOVED DEBUG CONTROLS OVERLAY */}
     </div>
   );
 }
