@@ -35,7 +35,7 @@ export const INITIAL_PRODUCTS = [
     
     // 📐 2D POSITIONING (Top/Left/Width %)
     print_area_2d: {
-      front: { top: 30, left: 30, width: 50 },
+      front: { top: 24, left: 30, width: 50 },
       back:  { top: 30, left: 30, width: 50 }
     },
 
