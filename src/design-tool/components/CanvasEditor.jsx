@@ -233,6 +233,7 @@ export default function CanvasEditor({
         // Define the logic to run once fonts are ready
         const loadCanvasData = () => {
           fabricCanvas.loadFromJSON(parsedData, () => {
+            initMugPrintArea(fabricCanvas, ORIGINAL_WIDTH, ORIGINAL_HEIGHT, "#ffffff");
             // Callback loop to sync Redux
           });
 
