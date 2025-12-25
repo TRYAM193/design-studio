@@ -291,6 +291,7 @@ export const INITIAL_PRODUCTS = [
     mockups: {
       front: "/assets/mockups/women-hoodie-front.png",
       back:  "/assets/mockups/women-hoodie-back.png"
+      
     },
     
     print_area_2d: {
