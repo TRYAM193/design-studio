@@ -98,6 +98,8 @@ export default function EditorPanel() {
 
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
+    // Default start size (e.g. Mobile friendly or Desktop friendly)
+const [canvasDims, setCanvasDims] = useState({ width: 320, height: 380 });
 
     useEffect(() => {
         async function initEditor() {
