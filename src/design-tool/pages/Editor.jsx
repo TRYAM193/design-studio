@@ -231,7 +231,7 @@ export default function EditorPanel() {
         fabricCanvas.backgroundColor = hex;
         fabricCanvas.renderAll();
     };
-
+    console.log(fabricCanvas)
     const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
 
