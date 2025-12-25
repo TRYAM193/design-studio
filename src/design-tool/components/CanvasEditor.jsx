@@ -88,11 +88,22 @@ export default function CanvasEditor({
     const canvasContainer = document.getElementById('canvas-wrapper');
 
     if (activeObj && canvasContainer) {
-      const boundingRect = activeObj.getBoundingRect(true);
+      // 1. Get the Object's center in "Scene Coordinates" (e.g., 2250px)
+      const objectCenter = activeObj.getCenterPoint();
 
+      // 2. Convert to "Screen Coordinates" using the Viewport Transform
+      // This applies the Zoom and Offset we set in Step 1
+      const vpt = canvas.viewportTransform;
+      const screenX = objectCenter.x * vpt[0] + vpt[4];
+      const screenY = objectCenter.y * vpt[3] + vpt[5];
+
+      // 3. Get Canvas Absolute Position on Page
+      const containerRect = canvasContainer.getBoundingClientRect();
+
+      // 4. Set Final Position
       setMenuPosition({
-        left: boundingRect.left + boundingRect.width / 2,
-        top: boundingRect.top
+        left: containerRect.left + screenX,
+        top: containerRect.top + screenY - (activeObj.getScaledHeight() * vpt[3] / 2) - 60
       });
 
       if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
@@ -129,37 +140,37 @@ export default function CanvasEditor({
     // Inside the initialization useEffect...
 
     const handleResize = () => {
-        const wrapper = wrapperRef.current;
-        if (!wrapper || !canvas) return;
-  
-        // 1. Get wrapper dimensions (Screen Size)
-        const availableWidth = wrapper.clientWidth;
-        const availableHeight = wrapper.clientHeight;
-  
-        // 2. Calculate Scale to fit Print Area (4500x5400) into Screen
-        const contentW = printDimensions.width;
-        const contentH = printDimensions.height;
-        const scale = Math.min( 
-            availableWidth / contentW, 
-            availableHeight / contentH 
-        ) * 0.9; // 90% margin
-  
-        // 3. Set Canvas to Screen Size (Visual)
-        canvas.setDimensions({ width: availableWidth, height: availableHeight });
-  
-        // 4. Set Viewport to Center the Content
-        // [ScaleX, SkewY, SkewX, ScaleY, OffsetX, OffsetY]
-        const offsetX = (availableWidth - contentW * scale) / 2;
-        const offsetY = (availableHeight - contentH * scale) / 2;
-        
-        canvas.setViewportTransform([scale, 0, 0, scale, offsetX, offsetY]);
-        
-        canvas.requestRenderAll();
-        // Force update menu immediately
-        if (canvas.getActiveObject()) {
-           const updateEvent = new Event('resize_menu_update');
-           window.dispatchEvent(updateEvent);
-        }
+      const wrapper = wrapperRef.current;
+      if (!wrapper || !canvas) return;
+
+      // 1. Get wrapper dimensions (Screen Size)
+      const availableWidth = wrapper.clientWidth;
+      const availableHeight = wrapper.clientHeight;
+
+      // 2. Calculate Scale to fit Print Area (4500x5400) into Screen
+      const contentW = printDimensions.width;
+      const contentH = printDimensions.height;
+      const scale = Math.min(
+        availableWidth / contentW,
+        availableHeight / contentH
+      ) * 0.9; // 90% margin
+
+      // 3. Set Canvas to Screen Size (Visual)
+      canvas.setDimensions({ width: availableWidth, height: availableHeight });
+
+      // 4. Set Viewport to Center the Content
+      // [ScaleX, SkewY, SkewX, ScaleY, OffsetX, OffsetY]
+      const offsetX = (availableWidth - contentW * scale) / 2;
+      const offsetY = (availableHeight - contentH * scale) / 2;
+
+      canvas.setViewportTransform([scale, 0, 0, scale, offsetX, offsetY]);
+
+      canvas.requestRenderAll();
+      // Force update menu immediately
+      if (canvas.getActiveObject()) {
+        const updateEvent = new Event('resize_menu_update');
+        window.dispatchEvent(updateEvent);
+      }
     };
     // Initial resize and listener
     handleResize();
