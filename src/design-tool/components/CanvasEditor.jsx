@@ -599,7 +599,7 @@ export default function CanvasEditor({
 
     const reduxIds = new Set(canvasObjects.map(o => o.id));
     fabricObjects.forEach((obj) => {
-      if (!reduxIds.has(obj.customId)) {
+      if (!reduxIds.has(obj.customId) && obj.customId !== 'mug_print_area') {
         fabricCanvas.remove(obj);
         previousStatesRef.current.delete(obj.customId);
       }
