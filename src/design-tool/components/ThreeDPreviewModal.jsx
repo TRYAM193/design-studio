@@ -64,7 +64,7 @@ export function ThreeDPreviewModal({
         setAdjustments(prev => ({ ...prev, [key]: parseFloat(value) }));
     };
 
-    console.log(i)
+    console.log(isMug)
 
     // ✅ CALCULATE MUG WRAP OFFSET
     // If viewing 'Left', show left 1/3 of image. 'Front' -> Center. 'Right' -> Right 1/3.
