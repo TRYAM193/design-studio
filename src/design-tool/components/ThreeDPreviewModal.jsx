@@ -202,13 +202,12 @@ export function ThreeDPreviewModal({
                                 <h3 className="text-white font-semibold">Adjust Placement</h3>
                             </div>
 
-                            {/* 1. POSITION CONTROLS */}
                             <div className="space-y-6">
                                 <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2">
                                     <Move size={12} /> Position
                                 </h4>
                                 
-                                {/* Top Slider */}
+
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-zinc-400 text-xs font-medium">
                                         <span>Top (Y)</span>
@@ -223,7 +222,7 @@ export function ThreeDPreviewModal({
                                     />
                                 </div>
 
-                                {/* Left Slider */}
+                     
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-zinc-400 text-xs font-medium">
                                         <span>Left (X)</span>
