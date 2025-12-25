@@ -121,68 +121,44 @@ export default function CanvasEditor({
     }
   };
 
+  // src/design-tool/components/CanvasEditor.jsx
+
+  // 1. Accepts dimensions directly from props
+  const { width: canvasWidth, height: canvasHeight } = printDimensions; 
+
   useEffect(() => {
-    // A. Initialize Canvas (if not exists)
-    const canvas = new fabric.Canvas(canvasRef.current, {
-      backgroundColor: '#ffffff', // Default to white (changeable via toolbar)
-      selection: true,
-      controlsAboveOverlay: true, // Ensures controls are visible
-      preserveObjectStacking: true,
-    });
+    // A. Initialize (or get) Canvas
+    let canvas = fabricCanvasRef.current;
+    if (!canvas) {
+      canvas = new fabric.Canvas(canvasRef.current, {
+        backgroundColor: '#ffffff',
+        selection: true,
+        controlsAboveOverlay: true,
+        preserveObjectStacking: true,
+      });
+      fabricCanvasRef.current = canvas;
+      setFabricCanvas(canvas);
+      setInitialized(true);
+    }
 
-    fabricCanvasRef.current = canvas;
-    setFabricCanvas(canvas);
-    setInitialized(true);
+    // B. ⭐️ DIRECT RESIZE (No math, no zoom, just set it)
+    canvas.setDimensions({ width: canvasWidth, height: canvasHeight });
+    
+    // C. Reset Viewport (Crucial: Remove any old zoom if it existed)
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]); 
+    
+    canvas.requestRenderAll();
+    
+    // Update menu position immediately in case size changed
+    const updateEvent = new Event('resize_menu_update');
+    window.dispatchEvent(updateEvent);
 
-    // B. The Smart Resize Function
-    // This makes the canvas "Internal Size" = Print Area (e.g. 4500px)
-    // But "Visual Size" = Fits the screen (e.g. 500px)
-    // Inside the initialization useEffect...
-
-    const handleResize = () => {
-      const wrapper = wrapperRef.current;
-      if (!wrapper || !canvas) return;
-
-      // 1. Get wrapper dimensions (Screen Size)
-      const availableWidth = wrapper.clientWidth;
-      const availableHeight = wrapper.clientHeight;
-
-      // 2. Calculate Scale to fit Print Area (4500x5400) into Screen
-      const contentW = printDimensions.width;
-      const contentH = printDimensions.height;
-      const scale = Math.min(
-        availableWidth / contentW,
-        availableHeight / contentH
-      ) * 0.9; // 90% margin
-
-      // 3. Set Canvas to Screen Size (Visual)
-      canvas.setDimensions({ width: availableWidth, height: availableHeight });
-
-      // 4. Set Viewport to Center the Content
-      // [ScaleX, SkewY, SkewX, ScaleY, OffsetX, OffsetY]
-      const offsetX = (availableWidth - contentW * scale) / 2;
-      const offsetY = (availableHeight - contentH * scale) / 2;
-
-      canvas.setViewportTransform([scale, 0, 0, scale, offsetX, offsetY]);
-
-      canvas.requestRenderAll();
-      // Force update menu immediately
-      if (canvas.getActiveObject()) {
-        const updateEvent = new Event('resize_menu_update');
-        window.dispatchEvent(updateEvent);
-      }
-    };
-    // Initial resize and listener
-    handleResize();
-    window.addEventListener('resize', handleResize);
-
-    // C. Clean up
+    // Cleanup not needed for dimensions change, only on unmount
     return () => {
-      canvas.dispose();
-      fabricCanvasRef.current = null;
-      window.removeEventListener('resize', handleResize);
+      // Don't dispose here, or it flickers on slider change. 
+      // Dispose only on component unmount (handled by empty dependency [] usually)
     };
-  }, [printDimensions]);
+  }, [canvasWidth, canvasHeight]); // 👈 Re-run ONLY when you move sliders
 
   // 🟩 Load Saved Designs (From Navigation State)
   useEffect(() => {
