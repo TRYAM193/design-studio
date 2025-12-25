@@ -264,8 +264,7 @@ export const INITIAL_PRODUCTS = [
       leftSleeve: { width: 1100, height: 3500 },
       rightSleeve: { width: 1100, height: 3500 }
     },
-
-    canvas_dimensio
+    
 
     mockups: {
       front: "/assets/mockups/women-hoodie-front.png",
@@ -315,6 +314,8 @@ export const INITIAL_PRODUCTS = [
     print_areas: {
       front: { width: 2700, height: 1100 } // Approx 9" x 3.5" wrap
     },
+
+    
 
     mockups: {
       front: "/assets/mockups/mug-front.png",
