@@ -63,7 +63,8 @@ export default function CanvasEditor({
   fabricCanvas,
   setEditingDesignId,
   setCurrentDesign,
-  printDimensions = { width: 4500, height: 5400 }
+  printDimensions = { width: 4500, height: 5400 },
+  productId // ✅ Received Product ID
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
@@ -79,6 +80,9 @@ export default function CanvasEditor({
   const [selectedObjectLocked, setSelectedObjectLocked] = useState(false);
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
+
+  // ✅ Used for responsive centering
+  const [containerSize, setContainerSize] = useState({ width: 800, height: 800 });
 
   const updateMenuPosition = () => {
     const canvas = fabricCanvasRef.current;
@@ -115,13 +119,11 @@ export default function CanvasEditor({
     }
   };
 
-  // src/design-tool/components/CanvasEditor.jsx
-
   // 1. Accepts dimensions directly from props
-  const { width: canvasWidth, height: canvasHeight } = printDimensions; 
+  const { width: printWidth, height: printHeight } = printDimensions; 
 
+  // ✅ A. Initialize Canvas & Handle Responsive Sizing
   useEffect(() => {
-    // A. Initialize (or get) Canvas
     let canvas = fabricCanvasRef.current;
     if (!canvas) {
       canvas = new fabric.Canvas(canvasRef.current, {
@@ -135,25 +137,90 @@ export default function CanvasEditor({
       setInitialized(true);
     }
 
-    // B. ⭐️ DIRECT RESIZE (No math, no zoom, just set it)
-    canvas.setDimensions({ width: canvasWidth, height: canvasHeight });
+    // ✅ Resize Observer: Keep Canvas Full Size relative to Container
+    const resizeCanvas = () => {
+        if (wrapperRef.current && canvas) {
+            const { clientWidth, clientHeight } = wrapperRef.current;
+            canvas.setDimensions({ width: clientWidth, height: clientHeight });
+            // Reset viewport to ensure 1:1 scale
+            canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+            setContainerSize({ width: clientWidth, height: clientHeight });
+            canvas.requestRenderAll();
+        }
+    };
+
+    const ro = new ResizeObserver(() => resizeCanvas());
+    if (wrapperRef.current) ro.observe(wrapperRef.current);
     
-    // C. Reset Viewport (Crucial: Remove any old zoom if it existed)
-    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-     
-    
+    // Initial call
+    resizeCanvas();
+
+    return () => {
+      // ro.disconnect(); // Cleanup managed by React unmount typically
+    };
+  }, []); // Run once on mount
+
+  // ✅ B. HANDLE PRINT AREA MASK (ClipPath) & BORDER
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    // Remove existing visual border if any
+    canvas.getObjects().forEach((obj) => {
+      if (obj.id === 'print-area-border') {
+        canvas.remove(obj);
+      }
+    });
+
+    if (productId) {
+      // --- 1. Define Geometry (Centered) ---
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const leftPos = centerX - printWidth / 2;
+      const topPos = centerY - printHeight / 2;
+
+      // --- 2. The Clip Path (Logical Mask) ---
+      // absolutePositioned: true is CRITICAL. It locks the clip path to the canvas.
+      const clipRect = new fabric.Rect({
+        left: leftPos,
+        top: topPos,
+        width: printWidth,
+        height: printHeight,
+        absolutePositioned: true, 
+      });
+
+      canvas.clipPath = clipRect;
+
+      // --- 3. The Visual Border (User Feedback) ---
+      const visualBorder = new fabric.Rect({
+        left: leftPos,
+        top: topPos,
+        width: printWidth,
+        height: printHeight,
+        fill: 'transparent',
+        stroke: 'rgba(0,0,0,0.3)', // Subtle dashed border
+        strokeWidth: 2,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        id: 'print-area-border'
+      });
+
+      canvas.add(visualBorder);
+      canvas.bringObjectToFront(visualBorder);
+
+    } else {
+      // --- No Product ID: Free Canvas ---
+      canvas.clipPath = null;
+    }
+
     canvas.requestRenderAll();
     
-    // Update menu position immediately in case size changed
+    // Trigger menu update
     const updateEvent = new Event('resize_menu_update');
     window.dispatchEvent(updateEvent);
 
-    // Cleanup not needed for dimensions change, only on unmount
-    return () => {
-      // Don't dispose here, or it flickers on slider change. 
-      // Dispose only on component unmount (handled by empty dependency [] usually)
-    };
-  }, [canvasWidth, canvasHeight]); // 👈 Re-run ONLY when you move sliders
+  }, [printWidth, printHeight, productId, containerSize, fabricCanvas]); 
 
   // 🟩 Load Saved Designs (From Navigation State)
   useEffect(() => {
