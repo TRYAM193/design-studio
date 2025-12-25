@@ -63,7 +63,7 @@ export default function CanvasEditor({
   setCurrentDesign,
   printDimensions = { width: 4500, height: 5400 },
   productId,
-  activeView // ✅ Receive activeView
+  activeView 
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
@@ -74,35 +74,31 @@ export default function CanvasEditor({
   const location = useLocation();
   const previousStatesRef = useRef(new Map());
   const dispatch = useDispatch();
-  
+
   const [menuPosition, setMenuPosition] = useState(null);
   const [selectedObjectLocked, setSelectedObjectLocked] = useState(false);
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
-  
+
   const [containerSize, setContainerSize] = useState({ width: 800, height: 800 });
-  
+
+  // ✅ UPDATED: Calculate position relative to the local canvas wrapper
+  // This removes reliance on viewport coordinates, fixing the "far away" issue.
   const updateMenuPosition = () => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-  
+
     const activeObj = canvas.getActiveObject();
-    const canvasContainer = document.getElementById('canvas-wrapper'); 
-  
-    if (activeObj && canvasContainer) {
-      // 1. Get simple object coordinates (No zoom math needed)
+    
+    if (activeObj) {
       const objectCenter = activeObj.getCenterPoint();
       
-      // 2. Get Canvas Page Position
-      const containerRect = canvasContainer.getBoundingClientRect();
-      
-      // 3. Simple Addition
       setMenuPosition({
-        left: containerRect.left + objectCenter.x, 
-        top: containerRect.top + objectCenter.y - (activeObj.getScaledHeight() / 2) - 60 
+        // Since the canvas scales 1:1 with the container now, we can use object coordinates directly
+        left: objectCenter.x, 
+        top: objectCenter.y - (activeObj.getScaledHeight() / 2) - 60 
       });
-  
-      // ... (Selection state logic remains the same)
+
       if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
         const ids = activeObj.getObjects().map(o => o.customId);
         setSelectedObjectUUIDs(ids);
@@ -116,6 +112,7 @@ export default function CanvasEditor({
       setSelectedObjectUUIDs([]);
     }
   };
+
   const { width: printWidth, height: printHeight } = printDimensions; 
 
   // ✅ A. Initialize Canvas & Handle Responsive Sizing
@@ -133,7 +130,6 @@ export default function CanvasEditor({
       setInitialized(true);
     }
 
-    // ✅ Resize Observer: Keep Canvas Full Size relative to Container
     const resizeCanvas = () => {
         if (wrapperRef.current && canvas) {
             const { clientWidth, clientHeight } = wrapperRef.current;
@@ -157,7 +153,6 @@ export default function CanvasEditor({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
-    // Remove existing visual border if any
     canvas.getObjects().forEach((obj) => {
       if (obj.id === 'print-area-border') {
         canvas.remove(obj);
@@ -165,13 +160,11 @@ export default function CanvasEditor({
     });
 
     if (productId) {
-      // --- 1. Define Geometry (Centered) ---
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       const leftPos = centerX - printWidth / 2;
       const topPos = centerY - printHeight / 2;
 
-      // --- 2. The Clip Path (Logical Mask) ---
       const clipRect = new fabric.Rect({
         left: leftPos,
         top: topPos,
@@ -182,14 +175,13 @@ export default function CanvasEditor({
 
       canvas.clipPath = clipRect;
 
-      // --- 3. The Visual Border (User Feedback) ---
       const visualBorder = new fabric.Rect({
         left: leftPos,
         top: topPos,
         width: printWidth,
         height: printHeight,
         fill: 'transparent',
-        stroke: 'rgba(0,0,0,0.3)', // Subtle dashed border
+        stroke: 'rgba(0,0,0,0.3)', 
         strokeWidth: 2,
         strokeDashArray: [5, 5],
         selectable: false,
@@ -201,17 +193,15 @@ export default function CanvasEditor({
       canvas.bringObjectToFront(visualBorder);
 
     } else {
-      // --- No Product ID: Free Canvas ---
       canvas.clipPath = null;
     }
 
     canvas.requestRenderAll();
     
-    // Trigger menu update
     const updateEvent = new Event('resize_menu_update');
     window.dispatchEvent(updateEvent);
 
-  }, [printWidth, printHeight, productId, containerSize, fabricCanvas, activeView]); // ✅ Add activeView to trigger
+  }, [printWidth, printHeight, productId, containerSize, fabricCanvas, activeView]); 
 
   // 🟩 Load Saved Designs
   useEffect(() => {
@@ -690,7 +680,8 @@ export default function CanvasEditor({
   };
 
   return (
-    <div ref={wrapperRef} id="canvas-wrapper">
+    // ✅ ADDED position: relative to wrapper to localize menu coordinates
+    <div ref={wrapperRef} id="canvas-wrapper" className="relative w-full h-full">
       <canvas ref={canvasRef} id="canvas" />
 
       {menuPosition && selectedObjectUUIDs.length > 0 && (
