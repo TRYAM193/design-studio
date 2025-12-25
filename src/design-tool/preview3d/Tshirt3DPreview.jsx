@@ -139,7 +139,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
               roughness={0.5}
               map={tex}
               transparent={false}
-              side={THREE.SingleSide}
+              side={THREE.DoubleSide}
             />
           </mesh>
         </group>
