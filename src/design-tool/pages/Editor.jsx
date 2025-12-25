@@ -194,6 +194,7 @@ export default function EditorPanel() {
             return null;
         } finally {
             fabricCanvas.backgroundColor = originalBg;
+            fabricCanvas.clipPath = originalClip;
             fabricCanvas.renderAll();
         }
     };
