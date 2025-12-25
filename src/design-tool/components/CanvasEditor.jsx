@@ -118,7 +118,9 @@ export default function CanvasEditor({
     let ORIGINAL_WIDTH = 800;
     let ORIGINAL_HEIGHT = 960;
 
-    if () return nu;l
+    if (productData){
+      O
+    }
 
     const canvas = new fabric.Canvas(canvasRef.current, {
       backgroundColor: 'transparent',
