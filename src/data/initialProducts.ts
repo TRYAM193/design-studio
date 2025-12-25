@@ -265,6 +265,8 @@ export const INITIAL_PRODUCTS = [
       rightSleeve: { width: 1100, height: 3500 }
     },
 
+    canvas_dimensio
+
     mockups: {
       front: "/assets/mockups/women-hoodie-front.png",
       back:  "/assets/mockups/women-hoodie-back.png"
