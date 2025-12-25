@@ -270,10 +270,10 @@ export function ThreeDPreviewModal({
                                         className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white"
                                     />
                                 </div>
-                            </div> */}
+                            </div>
 
                             {/* FOOTER ACTIONS */}
-                            {/* <div className="mt-auto pt-6 border-t border-white/10">
+                            <div className="mt-auto pt-6 border-t border-white/10">
                                 <Button
                                     className="w-full h-12 text-base font-bold bg-white text-black hover:bg-zinc-200 transition-all rounded-xl gap-2 shadow-xl"
                                     onClick={onAddToCart}
@@ -284,7 +284,7 @@ export function ThreeDPreviewModal({
                                 </Button>
                             </div>
                         </div>
-                    {/* )} 
+                    )}
                 </div>
             </DialogContent>
         </Dialog>
