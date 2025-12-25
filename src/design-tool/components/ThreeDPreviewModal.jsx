@@ -22,11 +22,13 @@ export function ThreeDPreviewModal({
     const [viewMode, setViewMode] = useState('2d');
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
 
-    // ✅ FIXED CONFIGURATION (The "Print Area" Definition)
+    // ✅ CONFIGURATION UPDATE
+    // Added 'scaleY' to control vertical stretching independently
     const printAreaConfig = productData.print_area_2d?.[activeSide] || { 
         top: 18,   
         left: 15,  
-        width: 71  
+        width: 71,
+        scaleY: 1.0 // 🆕 CHANGE THIS VALUE (e.g., 1.2 to stretch 20% taller)
     };
 
     useEffect(() => {
@@ -46,7 +48,6 @@ export function ThreeDPreviewModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            {/* Full Screen Modal */}
             <DialogContent className="w-[100vw] h-[100vh] max-w-none p-0 gap-0 bg-zinc-950 border-zinc-800 flex flex-col overflow-hidden shadow-2xl">
                 <DialogTitle className="sr-only">Preview Design</DialogTitle>
                 <DialogDescription className="sr-only">Preview your design in 2D or 3D</DialogDescription>
@@ -83,15 +84,10 @@ export function ThreeDPreviewModal({
                 {/* --- MAIN CONTENT AREA --- */}
                 <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex flex-col">
                     
-                    {/* === FULL WIDTH VIEWPORT === */}
                     <div className="flex-1 relative flex flex-col min-w-0 min-h-0"> 
                         {viewMode === '2d' && (
                             <div className="flex-1 flex items-center justify-center bg-zinc-900 p-2 overflow-hidden relative">
                                 
-                                {/* ⚡ FIX: "h-auto w-auto max-h-full max-w-full"
-                                    This ensures the div collapses to fit the image dimensions exactly.
-                                    The image drives the size, and the overlay respects that size.
-                                */}
                                 <div className="relative flex-none h-[calc(100vh-140px)] w-auto aspect-auto group">
                                     {currentMockupImage ? (
                                         <>
@@ -112,7 +108,6 @@ export function ThreeDPreviewModal({
                                             />
 
                                             {/* Layer 2: Mockup Image */}
-                                            {/* 'h-full w-auto' ensures height is fixed to container, width scales automatically */}
                                             <img 
                                                 src={currentMockupImage} 
                                                 alt={`${activeSide} view`} 
@@ -125,10 +120,12 @@ export function ThreeDPreviewModal({
                                                 <div 
                                                     className="absolute z-20"
                                                     style={{
-                                                        // Now '15%' is 15% of the IMAGE WIDTH, not screen width
                                                         top: `${printAreaConfig.top}%`,
                                                         left: `${printAreaConfig.left}%`,
                                                         width: `${printAreaConfig.width}%`,
+                                                        // 🆕 APPLY SCALE Y HERE
+                                                        transform: `scale(1, ${printAreaConfig.scaleY || 1})`, 
+                                                        transformOrigin: 'top center', // Ensures it stretches downwards
                                                         mixBlendMode: 'multiply',
                                                         opacity: 0.95 
                                                     }}
@@ -161,7 +158,6 @@ export function ThreeDPreviewModal({
                             </div>
                         )}
 
-                        {/* Side Selector (Floating Bottom Center) */}
                         {viewMode === '2d' && mockupKeys.length > 1 && (
                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-4 bg-zinc-900/80 p-2 rounded-xl backdrop-blur-sm border border-white/10">
                                 {mockupKeys.map(side => (
@@ -184,7 +180,6 @@ export function ThreeDPreviewModal({
                             </div>
                         )}
 
-                        {/* Add to Cart Button (Floating Bottom Right) */}
                         <div className="absolute bottom-6 right-6 z-50">
                             <Button
                                 className="h-14 px-8 text-base font-bold bg-white text-black hover:bg-zinc-200 transition-all rounded-xl gap-2 shadow-xl"
