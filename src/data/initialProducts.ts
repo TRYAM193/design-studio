@@ -289,8 +289,8 @@ export const INITIAL_PRODUCTS = [
     
 
     mockups: {
-      front: "/assets/mockups/women-hoodie-front.png",
-      back:  "/assets/mockups/women-hoodie-back.png"
+      front: "/assets/mockups/men-hoodie-front.png",
+      back:  "/assets/mockups/men-hoodie-back.png",
       leftSleeve: "/assets/mockups/women-hoodie-left-sleeve.png",
     },
     
