@@ -104,6 +104,7 @@ export default function CanvasEditor({
   fabricCanvas,
   setEditingDesignId,
   setCurrentDesign,
+  bgcolor
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
@@ -158,7 +159,7 @@ export default function CanvasEditor({
   
   // If we have a print area, update it. 
   // If we don't (e.g. T-Shirt mode), maybe update canvas.backgroundColor instead.
-  if (bgRect && props.backgroundColor) {
+  if (bgRect && bgcolor) {
     bgRect.set('fill', bgcolor);
     canvas.requestRenderAll();
   }
