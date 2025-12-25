@@ -392,6 +392,7 @@ export default function EditorPanel() {
                         bgcolor={canvasBg}
                         printDimensions={canvasDims}
                         productId={productId} // ✅ Pass Product ID
+                        activeView={currentView}
                     />
 
                 </main>
