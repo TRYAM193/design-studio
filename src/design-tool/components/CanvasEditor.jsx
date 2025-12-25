@@ -63,6 +63,7 @@ export default function CanvasEditor({
   fabricCanvas,
   setEditingDesignId,
   setCurrentDesign,
+  productData
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
@@ -117,7 +118,7 @@ export default function CanvasEditor({
     let ORIGINAL_WIDTH = 800;
     let ORIGINAL_HEIGHT = 960;
 
-    if ()
+    if () return nu;l
 
     const canvas = new fabric.Canvas(canvasRef.current, {
       backgroundColor: 'transparent',
