@@ -25,6 +25,7 @@ import { Loader2 } from "lucide-react";
 import {
     FiTrash2, FiRotateCcw, FiRotateCw, FiCheckCircle, FiSettings, FiX
 } from 'react-icons/fi';
+import { pass } from 'three/tsl';
 
 const COLOR_MAP = {
     "White": "#FFFFFF", "Natural": "#F3E5AB", "Soft Cream": "#F5F5DC", "Sand": "#C2B280", "Silver": "#C0C0C0",
@@ -170,7 +171,7 @@ export default function EditorPanel() {
         const originalBg = fabricCanvas.backgroundColor;
 
         if (productData.title.includes("Mug")) {
-            fabricCanvas.backgroundColor = "#FFFFFF";
+            pass
         } else {
             fabricCanvas.backgroundColor = null;
         }
