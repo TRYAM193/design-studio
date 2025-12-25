@@ -123,6 +123,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
       }, [tex, decalProps]); 
 
       return (
+        <group>
         <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
           <meshStandardMaterial
             color="white"
