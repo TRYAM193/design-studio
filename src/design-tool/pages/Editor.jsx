@@ -390,7 +390,7 @@ const [canvasDims, setCanvasDims] = useState({ width: 320, height: 380 });
                         setEditingDesignId={setEditingDesignId}
                         past={past}
                         bgcolor={canvasBg}
-                        printDimensions={currentPrintArea}
+                       printDimensions={canvasDims}
                     />
 
                 </main>
