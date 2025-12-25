@@ -119,7 +119,7 @@ export default function CanvasEditor({
     let ORIGINAL_HEIGHT = 960;
 
     if (productData){
-      O
+      ORIGINAL_WIDTH = 
     }
 
     const canvas = new fabric.Canvas(canvasRef.current, {
