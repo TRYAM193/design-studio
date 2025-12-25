@@ -397,8 +397,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     mockups: {
-      front: "/assets/mockups/tote-bag-front.png",
-      back:  "/assets/mockups/tote-bag-back.png"
+      front: "/assets/mockups/tote-bag.png",
+      back:  "/assets/mockups/tote-bag.png"
     },
     
     print_area_2d: {
