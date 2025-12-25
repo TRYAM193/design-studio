@@ -79,14 +79,7 @@ const initMugPrintArea = (canvas, width, height, initialColor = "#000000") => {
 
   // 3. Add to Canvas (BYPASSING REDUX)
   canvas.add(printArea);
-  if (typeof canvas.sendObjectToBack === 'function') {
-      canvas.sendObjectToBack(printArea); // Fabric v6+
-  } else if (typeof canvas.sendToBack === 'function') {
-      canvas.sendToBack(printArea);       // Fabric v5
-  } else {
-      // Universal fallback: Move to index 0 (bottom)
-      canvas.moveTo(printArea, 0); 
-  }
+  canvas.insertAt(printArea, 0);
 
   // 4. Create the Clip Path (The "No Out of It" Logic)
   // This ensures images dragged outside get cut off
