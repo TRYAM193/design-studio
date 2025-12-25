@@ -389,6 +389,8 @@ export const INITIAL_PRODUCTS = [
       back:  { width: 3000, height: 3000 }
     },
 
+    
+
     mockups: {
       front: "/assets/mockups/tote-bag-front.png",
       back:  "/assets/mockups/tote-bag-back.png"
