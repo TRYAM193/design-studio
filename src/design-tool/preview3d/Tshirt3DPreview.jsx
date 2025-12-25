@@ -31,7 +31,7 @@ const MODEL_CONFIGS = {
     backDecal: { x: 0, y: 0, z: 0, scale: 1 }
   },
   "tote": {
-    scale: 0.08,
+    scale: 0.8,
     position: [0, -1.5, 0],
     cameraZ: 1.5,
     meshes: {
