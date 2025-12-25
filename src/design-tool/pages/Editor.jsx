@@ -175,7 +175,7 @@ export default function EditorPanel() {
         } else {
             fabricCanvas.backgroundColor = null;
         }
-
+        fabricCanvas.clipPath = null;
         fabricCanvas.renderAll();
 
         try {
