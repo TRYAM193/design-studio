@@ -99,19 +99,36 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
   const leftTex = useDesignTexture(textures?.leftSleeve || textures?.left);
   const rightTex = useDesignTexture(textures?.rightSleeve || textures?.right);
 
+ // ... inside DynamicModel ...
+
   const RenderPart = ({ meshName, tex, decalProps }) => {
     if (!nodes || !nodes[meshName]) return null;
 
-    // 1. FULL WRAP MODE (Active for Mug)
+    // 1. FULL WRAP MODE (MUG) - Now Interactive! 🎛️
     if (config.fullWrap && tex) {
       useEffect(() => {
         if (tex) {
-          tex.flipY = true;
-          tex.needsUpdate = true;
-          // If using a CanvasTexture (Fabric.js), you might need:
+          // A. Setup Texture for Manipulation
+          tex.wrapS = tex.wrapT = THREE.RepeatWrapping; // Allows infinite scrolling
           tex.colorSpace = THREE.SRGBColorSpace;
+          
+          // B. Calculate Scale (Zoom)
+          // Slider Scale 1 = 1x Zoom. 
+          // We invert it (1/scale) because in UV mapping, smaller "repeat" = larger image.
+          // Safety: ensure scale isn't 0 to avoid Infinity.
+          const s = decalProps.scale || 1; 
+          const repeatVal = 1 / Math.max(s, 0.01); 
+          tex.repeat.set(repeatVal, repeatVal);
+
+          // C. Calculate Position (Pan)
+          // We apply the offset. 
+          // Optional Math: "+ (0.5 - repeatVal / 2)" keeps the zoom centered!
+          tex.offset.x = -decalProps.x + (0.5 - repeatVal / 2); 
+          tex.offset.y = decalProps.y + (0.5 - repeatVal / 2);
+
+          tex.needsUpdate = true;
         }
-      }, [tex]);
+      }, [tex, decalProps]); // 👈 Re-run whenever sliders change
 
       return (
         <mesh
@@ -120,15 +137,28 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
         >
           <meshStandardMaterial
             color="white"
-            metalness={0}    // Ceramic isn't metallic
-            roughness={0.5}  // A bit shiny, but not a mirror
-            map={tex}          // The texture wraps around
+            metalness={0}
+            roughness={0.5}
+            map={tex}
             transparent={false}
-            side={THREE.DoubleSide} // 👈 Force both sides to render
+            side={THREE.DoubleSide}
           />
         </mesh>
       );
     }
+
+    // 2. STANDARD DECAL MODE (T-Shirts) - Unchanged
+    return (
+      <mesh
+        geometry={nodes[meshName].geometry}
+        material={nodes[meshName].material}
+        frustumCulled={false}
+      >
+        <meshStandardMaterial color={color} roughness={0.7} />
+        {tex && decalProps && <CalibrationDecal texture={tex} {...decalProps} />}
+      </mesh>
+    );
+  };
 
     // 2. STANDARD DECAL MODE (T-Shirts)
     return (
