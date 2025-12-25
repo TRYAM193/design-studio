@@ -37,7 +37,7 @@ const MODEL_CONFIGS = {
     meshes: {
       front: "FRONT",
       back: "BACK",
-      straps: "O"
+      straps: "Object20"
     },
     frontDecal: { x: 0, y: -5, z: 2, scale: 5 },
     backDecal: { x: 0, y: -5, z: -2, scale: 5 }
