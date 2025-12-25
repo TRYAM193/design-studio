@@ -7,7 +7,6 @@ import updateObject from '../functions/update';
 import removeObject from '../functions/remove';
 import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
-// ✅ IMPORT setHistory and store
 import { undo, redo, setCanvasObjects, setHistory } from '../redux/canvasSlice';
 import { store } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
@@ -75,10 +74,9 @@ export default function EditorPanel() {
 
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
-    // ✅ Store FULL History (past, present, future) per view
+
     const [viewStates, setViewStates] = useState({});
 
-    // Store textures as Blob URLs
     const [designTextures, setDesignTextures] = useState({
         front: { blob: null, url: null },
         back: { blob: null, url: null },
@@ -96,8 +94,9 @@ export default function EditorPanel() {
 
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
-    // Default start size (e.g. Mobile friendly or Desktop friendly)
-    const [canvasDims, setCanvasDims] = useState({ width: 320, height: 380 });
+    
+    // ✅ Initialize dims directly from default or product data logic
+    const [canvasDims, setCanvasDims] = useState({ width: 300, height: 400 });
 
     useEffect(() => {
         async function initEditor() {
@@ -121,6 +120,19 @@ export default function EditorPanel() {
         }
         initEditor();
     }, [productId]);
+
+    // ✅ Effect: Sync canvasDims with Product DB Data when view or product changes
+    useEffect(() => {
+        if (productData.print_areas && productData.print_areas[currentView]) {
+            const area = productData.print_areas[currentView];
+            // We use the DB dimensions directly now
+            // Ensure you have valid defaults if DB is empty
+            setCanvasDims({ 
+                width: area.width || 300, 
+                height: area.height || 400 
+            });
+        }
+    }, [productData, currentView]);
 
     useEffect(() => {
         function calculateScale() {
@@ -169,11 +181,13 @@ export default function EditorPanel() {
         const originalClip = fabricCanvas.clipPath;
 
         if (productData.title.includes("Mug")) {
-            fabricCanvas.backgroundColor = "#FFFFFF";
+            null
         } else {
             fabricCanvas.backgroundColor = null;
         }
-        fabricCanvas.clipPath = null;
+
+        fabricCanvas.clipPath = null; 
+
         fabricCanvas.renderAll();
 
         try {
@@ -201,30 +215,21 @@ export default function EditorPanel() {
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
-        // 1. Capture 3D Texture Snapshot
         const currentSnapshot = await captureCurrentCanvas();
         setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
 
-        // 2. SAVE Current History: Get full Redux State (Past + Present + Future)
-        // Using store.getState() ensures we get the exact latest Redux state
         const currentCanvasState = store.getState().canvas;
 
         setViewStates(prev => ({
             ...prev,
-            [currentView]: currentCanvasState // Save everything!
+            [currentView]: currentCanvasState 
         }));
 
-        // 3. Switch Index
         setCurrentView(newView);
 
-        // 4. LOAD New History
-        // Retrieve the full history stack for the new view (or default to empty)
         const nextHistory = viewStates[newView] || { past: [], present: [], future: [] };
 
-        // 5. Replace Redux State
         dispatch(setHistory(nextHistory));
-
-        // Note: CanvasEditor will automatically re-render because it listens to Redux 'present'
     };
 
     const handleColorChange = (colorName) => {
@@ -234,7 +239,7 @@ export default function EditorPanel() {
         fabricCanvas.backgroundColor = hex;
         fabricCanvas.renderAll();
     };
-    console.log(fabricCanvas?.getActiveObject());
+
     const handleGeneratePreview = () => {
         if (!fabricCanvas) return;
 
@@ -391,7 +396,7 @@ export default function EditorPanel() {
                         past={past}
                         bgcolor={canvasBg}
                         printDimensions={canvasDims}
-                        productId={productId} // ✅ Pass Product ID
+                        productId={productId} 
                         activeView={currentView}
                     />
 
@@ -458,42 +463,8 @@ export default function EditorPanel() {
                     selectedColor={canvasBg}
                 />
             </div>
-            {/* 🛠️ CANVAS SIZE CONTROLS (Acts as Print Area Controls if ProductId is present) */}
-            <div className="absolute bottom-4 left-4 z-50 p-4 bg-white/95 border border-slate-200 shadow-xl rounded-xl w-64 backdrop-blur-sm">
-                <h3 className="text-xs font-bold uppercase text-slate-500 mb-3 tracking-wider">
-                    {productId ? "Set Print Area" : "Set Exact Size"}
-                </h3>
-
-                {/* Width Slider */}
-                <div className="mb-4">
-                    <div className="flex justify-between text-xs font-mono mb-1">
-                        <span>Width</span>
-                        <span className="font-bold text-indigo-600">{canvasDims.width}px</span>
-                    </div>
-                    <input
-                        type="range"
-                        min="200" max="1200" step="5" // Adjusted range for screen sizes
-                        value={canvasDims.width}
-                        onChange={(e) => setCanvasDims(prev => ({ ...prev, width: parseInt(e.target.value) }))}
-                        className="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                    />
-                </div>
-
-                {/* Height Slider */}
-                <div>
-                    <div className="flex justify-between text-xs font-mono mb-1">
-                        <span>Height</span>
-                        <span className="font-bold text-indigo-600">{canvasDims.height}px</span>
-                    </div>
-                    <input
-                        type="range"
-                        min="200" max="1200" step="5"
-                        value={canvasDims.height}
-                        onChange={(e) => setCanvasDims(prev => ({ ...prev, height: parseInt(e.target.value) }))}
-                        className="w-full accent-indigo-600 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
-                    />
-                </div>
-            </div>
+            
+            {/* 🗑️ REMOVED SLIDERS UI BLOCK HERE */}
         </div>
     );
 }
