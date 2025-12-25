@@ -118,7 +118,7 @@ export default function CanvasEditor({
     let ORIGINAL_WIDTH;
     let ORIGINAL_HEIGHT;
 
-    if (productData){
+    if (productData.titl){
       ORIGINAL_WIDTH = productData.print_area_width || 800;
       ORIGINAL_HEIGHT = productData.print_area_height || 960;
     }
