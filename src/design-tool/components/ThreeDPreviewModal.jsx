@@ -93,13 +93,13 @@ export function ThreeDPreviewModal({
                 {/* --- MAIN CONTENT AREA --- */}
                 <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex">
                     
-                    {/* === LEFT: PREVIEW CANVAS (Expanded Viewport) === */}
-                    <div className="flex-1 relative flex flex-col min-w-0"> {/* min-w-0 prevents flex overflow */}
+                    {/* === LEFT: PREVIEW CANVAS (Maximized) === */}
+                    <div className="flex-1 relative flex flex-col min-w-0"> 
                         {viewMode === '2d' && (
-                            // Reduced padding from p-8 to p-4 to maximize space
-                            <div className="flex-1 flex items-center justify-center bg-zinc-900 p-4 overflow-hidden relative">
+                            // ⚡ CHANGED: Padding removed (p-0) to maximize space
+                            <div className="flex-1 flex items-center justify-center bg-zinc-900 p-0 overflow-hidden relative">
                                 
-                                <div className="relative max-h-full max-w-full shadow-2xl rounded-lg overflow-hidden bg-transparent group transition-all duration-300">
+                                <div className="relative w-full h-full flex items-center justify-center bg-transparent group">
                                     {currentMockupImage ? (
                                         <>
                                             {/* Layer 1: Color Mask */}
@@ -118,12 +118,12 @@ export function ThreeDPreviewModal({
                                                 }}
                                             />
 
-                                            {/* Layer 2: Mockup Image (Increased height to 85vh) */}
+                                            {/* Layer 2: Mockup Image (Maximized to full available height) */}
                                             <img 
                                                 src={currentMockupImage} 
                                                 alt={`${activeSide} view`} 
-                                                // ⚡ CHANGED: increased max-h to 85vh for larger view
-                                                className="relative z-10 block max-h-[85vh] w-auto object-contain"
+                                                // ⚡ CHANGED: h-[calc(100vh-64px)] forces it to fill the vertical space completely
+                                                className="relative z-10 block h-[calc(100vh-64px)] w-auto object-contain"
                                                 style={{ mixBlendMode: 'multiply' }} 
                                             />
 
@@ -169,7 +169,7 @@ export function ThreeDPreviewModal({
 
                         {/* Side Selector (Floating at Bottom Center) */}
                         {viewMode === '2d' && mockupKeys.length > 1 && (
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-4 bg-zinc-900/80 p-2 rounded-xl backdrop-blur-sm border border-white/10">
+                            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-4 bg-zinc-900/80 p-2 rounded-xl backdrop-blur-sm border border-white/10">
                                 {mockupKeys.map(side => (
                                     <button
                                         key={side}
