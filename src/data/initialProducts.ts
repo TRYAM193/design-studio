@@ -21,8 +21,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     canvas_size: {
-      width: 800,
-      height: 300
+      width: 420,
+      height: 560
     },
 
     // 🖼️ MOCKUPS (Must be Transparent PNGs for color blending)
@@ -176,6 +176,11 @@ export const INITIAL_PRODUCTS = [
     mockups: {
       front: "/assets/mockups/women-classic-tee-front.png",
       back:  "/assets/mockups/women-classic-tee-back.png"
+    },
+
+     canvas_size: {
+      width: 420,
+      height: 560
     },
     
     print_area_2d: {
