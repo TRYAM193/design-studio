@@ -40,13 +40,13 @@ export function ThreeDPreviewModal({
 
     useEffect(() => {
         const defaults = productData.print_area_2d?.[activeSide] || { top: 20, left: 30, width: 40, height: 40 };
-        // setAdjustments({
-        //     top: defaults.top,
-        //     left: defaults.left,
-        //     width: defaults.width,
-        //     // If height isn't in DB, default to same as width or a fixed value
-        //     height: defaults.height || defaults.width 
-        // });
+        setAdjustments({
+            top: defaults.top,
+            left: defaults.left,
+            width: defaults.width,
+            // If height isn't in DB, default to same as width or a fixed value
+            height: defaults.height 
+        });
     }, [activeSide, productData]);
 
     const getCurrentTexture = () => {
