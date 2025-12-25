@@ -31,8 +31,8 @@ const MODEL_CONFIGS = {
       front: "MUG"
     },
     // Mugs need specific rotation logic usually, but here is the position baseline
-    frontDecal: { x: 0, y: 1, z: 0.8, scale: 10 },
-    backDecal: { x: 0, y: 0.5, z: -0.8, scale: 0.8 }
+    frontDecal: { x: 0, y: 0, z: 0, scale: 1 }, 
+    backDecal: { x: 0, y: 0, z: 0, scale: 1 }
   },
   "tote": {
     scale: 0.08,
