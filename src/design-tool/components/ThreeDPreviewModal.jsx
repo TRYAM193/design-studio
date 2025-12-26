@@ -33,7 +33,7 @@ export function ThreeDPreviewModal({
         height: 50 
     });
 
-    // Detect Pure Black to tune the highlights
+    // Detect Pure Black
     const isPureBlack = selectedColor.toLowerCase() === '#000000' || selectedColor.toLowerCase() === '#000';
 
     useEffect(() => {
@@ -127,16 +127,14 @@ export function ThreeDPreviewModal({
                                 <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8 overflow-auto">
                                     
                                     {/* 🖼️ MOCKUP CONTAINER */}
-                                    {/* ✅ FIX 1: Set the Container Background to Grey (zinc-200) */}
+                                    {/* Background is Grey (zinc-200) to contrast with black shirt */}
                                     <div className="relative w-full max-w-[500px] aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-zinc-200 flex-shrink-0 group">
                                         
-                                        {/* LAYER 1: Base Color */}
-                                        {/* ✅ FIX 2: Apply MASKING so color only fills the shirt, not the box */}
+                                        {/* LAYER 1: Base Color (Masked to Shirt Shape) */}
                                         <div 
                                             className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
                                             style={{ 
-                                                backgroundColor: !isPureBlack ? selectedColor : '#000000',
-                                                // MASKING MAGIC: Use the mockup image itself as the mask
+                                                backgroundColor: selectedColor,
                                                 maskImage: `url(${mockups[activeSide]})`,
                                                 maskSize: 'contain',
                                                 maskRepeat: 'no-repeat',
@@ -166,8 +164,8 @@ export function ThreeDPreviewModal({
                                                     className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none"
                                                     style={{ 
                                                         mixBlendMode: 'screen', 
-                                                        // Subtle opacity so black stays black, but wrinkles show
-                                                        opacity: isPureBlack ? 0.3 : 0.2 
+                                                        // 👇 FIX: Reduce opacity drastically for black (0.1), keep normal for others (0.3)
+                                                        opacity: isPureBlack ? 0.1 : 0.3 
                                                     }} 
                                                 />
                                             </>
@@ -236,7 +234,6 @@ export function ThreeDPreviewModal({
                                                     activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
                                                 }`}
                                             >
-                                                {/* Mask the thumbnail color too */}
                                                 <div 
                                                     className="absolute inset-0" 
                                                     style={{ 
@@ -258,7 +255,8 @@ export function ThreeDPreviewModal({
                                                     src={mockups[side]} 
                                                     alt={side} 
                                                     className="absolute inset-0 w-full h-full object-cover" 
-                                                    style={{ mixBlendMode: 'screen', opacity: isPureBlack ? 0.3 : 0.2 }}
+                                                    // 👇 FIX: Same fix for thumbnails
+                                                    style={{ mixBlendMode: 'screen', opacity: isPureBlack ? 0.1 : 0.3 }}
                                                 />
                                             </button>
                                         ))}
