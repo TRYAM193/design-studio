@@ -1,11 +1,10 @@
 import { db as firestore } from '@/firebase';
-import { collection, doc, setDoc } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 import { store } from '../redux/store';
 import { setCanvasObjects } from '../redux/canvasSlice';
-import { useDispatch } from 'react-redux';
-import ActionCreators from 'redux-undo' 
 
+// Helper to clean JSON
 function removeUndefined(obj) {
   if (Array.isArray(obj)) {
     return obj.map(removeUndefined);
@@ -22,81 +21,96 @@ function removeUndefined(obj) {
 }
 
 const handleRedux = () => {
-//  const dispatch = useDispatch();
-
  store.dispatch(setCanvasObjects([]))
-//  store.dispatch(ActionCreators.clearHistory());
 }
 
-export const saveNewDesign = async (userId, canvas, setSaving) => {
-  if (!canvas) return;
-
-  const canvasJSON = removeUndefined(canvas.toJSON());
-  const imageData = canvas.toDataURL("image/png");
-  const designId = uuidv4();
-
+export const saveDesign = async ({ 
+  userId, 
+  designId, 
+  canvas, 
+  productData, // New: contains productId, color, category
+  viewStates,  // New: contains JSON for other views { front: {...}, back: {...} }
+  currentView, // New: "front", "back", etc.
+  isNew = false,
+  setSaving
+}) => {
+  if (!canvas || !userId) return;
   setSaving(true);
 
   try {
-    const designRef = doc(
-      firestore,
-      `users/${userId}/designs`,
-      designId
-    );
+    const finalDesignId = designId || uuidv4();
+    const now = Date.now();
+    
+    // 1. CAPTURE IMAGE (Current View)
+    // This serves as the main dashboard thumbnail
+    const imageData = canvas.toDataURL({ format: "png", multiplier: 0.5 }); // 0.5 for smaller size
 
-    await setDoc(designRef, {
-      id: designId,
-      name: "Copy Design",
-      canvasJSON,
+    // 2. CAPTURE JSON
+    let canvasJSON;
+    let designType = 'BLANK';
+    let productConfig = null;
+
+    if (productData && productData.productId) {
+      // --- PRODUCT MODE ---
+      designType = 'PRODUCT';
+      
+      // Merge: Stored States + Current Canvas State
+      const currentJSON = removeUndefined(canvas.toJSON());
+      
+      const allViews = {
+        ...viewStates,           // Previous views (e.g., Front)
+        [currentView]: currentJSON // The active view (e.g., Back)
+      };
+
+      canvasJSON = allViews; // We save an OBJECT of JSONs, not just one
+
+      productConfig = {
+        productId: productData.productId,
+        variantColor: productData.color || '#ffffff',
+        activeView: currentView, // So we load back into the same view
+        printAreas: productData.print_areas // Store dims just in case
+      };
+
+    } else {
+      // --- BLANK MODE ---
+      designType = 'BLANK';
+      canvasJSON = removeUndefined(canvas.toJSON()); // Just the single canvas
+      
+      productConfig = {
+        width: canvas.width,
+        height: canvas.height,
+        backgroundColor: canvas.backgroundColor
+      };
+    }
+
+    // 3. PREPARE DOCUMENT
+    const designDoc = {
+      id: finalDesignId,
+      name: isNew ? "New Design" : undefined, // Don't overwrite name if updating
+      type: designType,
+      canvasJSON, // This is now either a single JSON or { front:..., back:... }
       imageData,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    });
+      productConfig,
+      updatedAt: now,
+      ...(isNew && { createdAt: now, name: "Untitled Design" }) // Set defaults for new
+    };
 
-    return { success: true, message: "Saved as new copy", id: designId };
+    // Remove undefined keys (like name if updating)
+    Object.keys(designDoc).forEach(key => designDoc[key] === undefined && delete designDoc[key]);
+
+    // 4. WRITE TO FIRESTORE
+    const designRef = doc(firestore, `users/${userId}/designs`, finalDesignId);
+    await setDoc(designRef, designDoc, { merge: true });
+
+    return { success: true, id: finalDesignId };
+
   } catch (err) {
-    console.error("Error creating design:", err);
+    console.error("Error saving design:", err);
     return { success: false, error: err };
   } finally {
     setSaving(false);
-    canvas.clear();
-    canvas.renderAll();
-    handleRedux()
-  }
-};
-
-export const overwriteDesign = async (userId, designId, canvas, setSaving) => {
-  if (!canvas || !designId) return;
-
-  const canvasJSON = removeUndefined(canvas.toJSON());
-  const imageData = canvas.toDataURL("image/png");
-
-  setSaving(true);
-
-  try {
-    const designRef = doc(
-      firestore,
-      `users/${userId}/designs`,
-      designId
-    );
-
-    await setDoc(designRef, {
-      id: designId,
-      name: "Updated Design",
-      canvasJSON,
-      imageData,
-      updatedAt: Date.now(),
-    }, { merge: true });
-
-    return { success: true, message: "Design overwritten" };
-  } catch (err) {
-    console.error("Error overwriting design:", err);
-    return { success: false, error: err };
-  } finally {
-    setSaving(false);
-    canvas.clear();
-    canvas.renderAll();
-    handleRedux()
+    // Optional: Clear canvas if navigating away, but usually we stay
+    // handleRedux(); 
   }
 };
 
