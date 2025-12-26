@@ -174,7 +174,7 @@ export function ThreeDPreviewModal({
 
                                                             backgroundColor: "#fff",
 
-                                                            WebkitMaskImage: "url(/masks/mug-mask.png)",
+                                                            WebkitMaskImage: "url(/assets/mug-mask.png)",
                                                             WebkitMaskSize: "100% 100%",
                                                             WebkitMaskRepeat: "no-repeat",
 
