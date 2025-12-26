@@ -151,17 +151,57 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
-    useEffect(() => {
-        if (location.state?.designToLoad && fabricCanvas) {
-            const { designToLoad } = location.state;
-            if (designToLoad.canvasData) {
-                const jsonContent = typeof designToLoad.canvasData === 'string'
-                    ? designToLoad.canvasData
-                    : JSON.stringify(designToLoad.canvasData);
-                fabricCanvas.loadFromJSON(jsonContent, () => fabricCanvas.renderAll());
+    // ... imports
+// Inside EditorPanel component...
+
+// 🟩 UPDATED LOADING LOGIC
+useEffect(() => {
+    // Helper to process the loaded data
+    const handleLoadDesign = (design) => {
+        setCurrentDesign(design);
+        setEditingDesignId(design.id);
+
+        let parsedData = design.canvasJSON;
+        if (typeof parsedData === 'string') parsedData = JSON.parse(parsedData);
+
+        // CHECK: Is this a Product Design (multi-view) or Blank (single)?
+        if (design.type === 'PRODUCT' && design.productConfig) {
+            // 1. Load Product Configuration
+            setProductData(prev => ({
+                ...prev,
+                productId: design.productConfig.productId,
+                options: { ...prev.options, colors: [design.productConfig.variantColor] } // visuals
+            }));
+            setCanvasBg(design.productConfig.variantColor);
+            
+            // 2. Hydrate View States (CRITICAL FOR OVERWRITING)
+            // We store ALL views in memory so we don't lose them when saving
+            setViewStates(parsedData); 
+
+            // 3. Load the Active View onto Canvas
+            const activeView = design.productConfig.activeView || 'front';
+            setCurrentView(activeView);
+            
+            // Load specifically the active view's JSON
+            if (parsedData[activeView]) {
+                fabricCanvas.loadFromJSON(parsedData[activeView], () => {
+                    fabricCanvas.renderAll();
+                    dispatch(setCanvasObjects(fabricCanvas.getObjects())); // Sync Redux
+                });
             }
+
+        } else {
+            fabricCanvas.loadFromJSON(parsedData, () => {
+                fabricCanvas.renderAll();
+                dispatch(setCanvasObjects(fabricCanvas.getObjects()));
+            });
         }
-    }, [location.state, fabricCanvas]);
+    };
+
+    if (location.state?.designToLoad && fabricCanvas) {
+        handleLoadDesign(location.state.designToLoad);
+    } 
+}, [location.state, fabricCanvas]);
 
     const dataURLtoBlob = (dataURL) => {
         const arr = dataURL.split(',');
