@@ -269,8 +269,6 @@ export default function EditorPanel() {
         if (location.state?.designToLoad && fabricCanvas) {
             handleLoadDesign(location.state.designToLoad);
         }
-        // 2. Check Persistence (Refresh handling) - (Simplify your existing logic to use handleLoadDesign)
-        // ...
     }, [location.state, fabricCanvas]);
 
     const dataURLtoBlob = (dataURL) => {
