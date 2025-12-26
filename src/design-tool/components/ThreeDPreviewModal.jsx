@@ -170,7 +170,7 @@ export function ThreeDPreviewModal({
                                             src={mockups[activeSide]}
                                             alt={`${activeSide} view`}
                                             className="absolute inset-0 w-full h-full object-contain z-0"
-                                            style={{ transform: 'scaleX(0.85)', transformOrigin: 'center' }}
+                                            style={{ transform: 'scaleX(0.8)', transformOrigin: 'center' }}
                                         />
                                     ) : (
                                         <div className="text-white">No Mockup Image</div>
