@@ -33,9 +33,17 @@ export function ThreeDPreviewModal({
         height: 50 
     });
 
+    // ✅ COLOR CORRECTION LOGIC
+    // If the user selects Pure Black (#000000), we must render it as Dark Grey (#262626).
+    // Why? Because Multiply Mode works by darkening. 
+    // If the base is already #000000, it cannot get darker, so you lose all texture/shadows.
+    // By starting at #262626, the shadows (Multiply) become #000000, creating a "Real Black" look.
+    const isPureBlack = selectedColor.toLowerCase() === '#000000' || selectedColor.toLowerCase() === '#000';
+    const displayColor = isPureBlack ? '#262626' : selectedColor;
+
     useEffect(() => {
         if (isOpen) {
-            // ✅ FIX: If it is a Mug, force default to '3d' view immediately
+            // FIX: If it is a Mug, force default to '3d' view immediately
             if (isMug && has3D) {
                 setViewMode('3d');
             } else {
@@ -56,9 +64,7 @@ export function ThreeDPreviewModal({
     }, [activeSide, productData]);
 
     const getCurrentTexture = () => {
-        // ✅ For Mugs, ALWAYS use the 'front' texture (which contains the full wrap design)
         if (isMug) return textures.front?.url;
-        
         if (activeSide === 'left' || activeSide === 'right') return textures.front?.url; 
         return textures[activeSide]?.url;
     };
@@ -69,13 +75,12 @@ export function ThreeDPreviewModal({
         setAdjustments(prev => ({ ...prev, [key]: parseFloat(value) }));
     };
 
-    // ✅ 2. CALCULATE SHIFT (The "Pan Camera" Logic)
     const getMugShift = () => {
         if (!isMug) return '0%';
         switch(activeSide) {
-            case 'left': return '0%';      // Show Left 1/3
-            case 'front': return '-100%';  // Show Middle 1/3
-            case 'right': return '-200%';  // Show Right 1/3
+            case 'left': return '0%';
+            case 'front': return '-100%';
+            case 'right': return '-200%';
             default: return '0%';
         }
     };
@@ -90,7 +95,6 @@ export function ThreeDPreviewModal({
                 <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-zinc-900 z-10 flex-shrink-0">
                     <div className="flex gap-2 p-1 bg-black/40 rounded-lg border border-white/5">
                         
-                        {/* ✅ FIX: Hide 2D Mockup button if it is a Mug */}
                         {!isMug && (
                             <button
                                 onClick={() => setViewMode('2d')}
@@ -131,16 +135,16 @@ export function ThreeDPreviewModal({
                                     {/* 🖼️ MOCKUP CONTAINER */}
                                     <div className="relative w-full max-w-[500px] aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-white flex-shrink-0 group">
                                         
-                                        {/* LAYER 1: Base Color */}
+                                        {/* LAYER 1: Base Color (Updated to use displayColor) */}
                                         <div 
                                             className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
-                                            style={{ backgroundColor: selectedColor }}
+                                            style={{ backgroundColor: displayColor }}
                                         />
 
                                         {/* LAYER 2: Mockup Image (Composite) */}
                                         {mockups[activeSide] ? (
                                             <>
-                                                {/* A. SHADOW LAYER (Multiply): Gives color and depth */}
+                                                {/* A. SHADOW LAYER (Multiply): Adds Deep Black Shadows */}
                                                 <img 
                                                     src={mockups[activeSide]} 
                                                     alt={`${activeSide} view`} 
@@ -148,15 +152,15 @@ export function ThreeDPreviewModal({
                                                     style={{ mixBlendMode: 'multiply' }} 
                                                 />
                                                 
-                                                {/* B. HIGHLIGHT LAYER (Screen): ✅ FIX FOR BLACK SHIRTS */}
-                                                {/* This restores the white wrinkles/reflections on top of black */}
+                                                {/* B. HIGHLIGHT LAYER (Screen): Restores Texture */}
+                                                {/* Adjusted Opacity: 0.1 for Black (subtle), 0.3 for colors */}
                                                 <img 
                                                     src={mockups[activeSide]} 
                                                     alt={`${activeSide} highlights`} 
                                                     className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none"
                                                     style={{ 
                                                         mixBlendMode: 'screen', 
-                                                        opacity: 0.3 // Adjust this (0.2 - 0.5) to control wrinkle visibility
+                                                        opacity: isPureBlack ? 0.1 : 0.3 
                                                     }} 
                                                 />
                                             </>
@@ -225,22 +229,20 @@ export function ThreeDPreviewModal({
                                                     activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
                                                 }`}
                                             >
-                                                <div className="absolute inset-0" style={{ backgroundColor: selectedColor }} />
+                                                {/* Apply the same color fix to thumbnails */}
+                                                <div className="absolute inset-0" style={{ backgroundColor: displayColor }} />
                                                 
-                                                {/* Thumbnails: Shadow Layer */}
                                                 <img 
                                                     src={mockups[side]} 
                                                     alt={side} 
                                                     className="absolute inset-0 w-full h-full object-cover" 
                                                     style={{ mixBlendMode: 'multiply' }}
                                                 />
-                                                
-                                                {/* Thumbnails: Highlight Layer (Fix for Black) */}
                                                 <img 
                                                     src={mockups[side]} 
                                                     alt={side} 
                                                     className="absolute inset-0 w-full h-full object-cover" 
-                                                    style={{ mixBlendMode: 'screen', opacity: 0.3 }}
+                                                    style={{ mixBlendMode: 'screen', opacity: isPureBlack ? 0.1 : 0.3 }}
                                                 />
                                             </button>
                                         ))}
