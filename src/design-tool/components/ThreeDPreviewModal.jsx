@@ -13,24 +13,24 @@ export function ThreeDPreviewModal({
     isSaving,
     productId,
     productData = {},
-    selectedColor = "#FFFFFF" 
+    selectedColor = "#FFFFFF"
 }) {
     const has3D = !!productData.model3d;
     const mockups = productData.mockups || {};
     const mockupKeys = Object.keys(mockups);
-    
+
     // ✅ 1. DETECT MUG
-    const isMug = productData?.title?.toLowerCase().includes("mug") || 
-                  productData?.category?.toLowerCase().includes("mug");
+    const isMug = productData?.title?.toLowerCase().includes("mug") ||
+        productData?.category?.toLowerCase().includes("mug");
 
     const [viewMode, setViewMode] = useState('2d');
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
 
-    const [adjustments, setAdjustments] = useState({ 
-        top: 25, 
-        left: 0, 
-        width: 100, 
-        height: 50 
+    const [adjustments, setAdjustments] = useState({
+        top: 25,
+        left: 0,
+        width: 100,
+        height: 50
     });
 
     useEffect(() => {
@@ -53,13 +53,13 @@ export function ThreeDPreviewModal({
     const getCurrentTexture = () => {
         // ✅ For Mugs, ALWAYS use the 'front' texture (which contains the full wrap design)
         if (isMug) return textures.front?.url;
-        
-        if (activeSide === 'left' || activeSide === 'right') return textures.front?.url; 
+
+        if (activeSide === 'left' || activeSide === 'right') return textures.front?.url;
         return textures[activeSide]?.url;
     };
 
     const currentTexture = getCurrentTexture();
-    
+
     const handleAdjustment = (key, value) => {
         setAdjustments(prev => ({ ...prev, [key]: parseFloat(value) }));
     };
@@ -68,7 +68,7 @@ export function ThreeDPreviewModal({
     // This tells the image to slide Left/Right inside the frame
     const getMugShift = () => {
         if (!isMug) return '0%';
-        switch(activeSide) {
+        switch (activeSide) {
             case 'left': return '0%';      // Show Left 1/3
             case 'front': return '-100%';  // Show Middle 1/3
             case 'right': return '-200%';  // Show Right 1/3
@@ -87,21 +87,19 @@ export function ThreeDPreviewModal({
                     <div className="flex gap-2 p-1 bg-black/40 rounded-lg border border-white/5">
                         <button
                             onClick={() => setViewMode('2d')}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                                viewMode === '2d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
-                            }`}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === '2d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
+                                }`}
                         >
                             <ImageIcon size={16} /> 2D Mockup
                         </button>
-                        
+
                         <button
                             onClick={() => has3D && setViewMode('3d')}
                             disabled={!has3D}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                                viewMode === '3d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
-                            } ${!has3D ? "opacity-40 cursor-not-allowed bg-transparent hover:text-zinc-400" : ""}`}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === '3d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
+                                } ${!has3D ? "opacity-40 cursor-not-allowed bg-transparent hover:text-zinc-400" : ""}`}
                         >
-                            <Box size={16} /> 
+                            <Box size={16} />
                             {has3D ? "3D View" : "3D Not Available"}
                         </button>
                     </div>
@@ -113,29 +111,29 @@ export function ThreeDPreviewModal({
 
                 {/* --- MAIN STAGE --- */}
                 <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex">
-                    
+
                     {/* === LEFT: PREVIEW AREA === */}
                     <div className="flex-1 relative flex flex-col min-w-0">
                         {viewMode === '2d' && (
                             <div className="relative w-full h-full flex flex-col">
                                 <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8 overflow-auto">
-                                    
+
                                     {/* 🖼️ MOCKUP CONTAINER */}
                                     <div className="relative w-full max-w-[500px] aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-white flex-shrink-0 group">
-                                        
+
                                         {/* LAYER 1: Base Color */}
-                                        <div 
+                                        <div
                                             className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
                                             style={{ backgroundColor: selectedColor }}
                                         />
 
                                         {/* LAYER 2: Mockup Image */}
                                         {mockups[activeSide] ? (
-                                            <img 
-                                                src={mockups[activeSide]} 
-                                                alt={`${activeSide} view`} 
+                                            <img
+                                                src={mockups[activeSide]}
+                                                alt={`${activeSide} view`}
                                                 className="absolute inset-0 w-full h-full object-contain z-10"
-                                                style={{ mixBlendMode: 'multiply' }} 
+                                                style={{ mixBlendMode: 'multiply' }}
                                             />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
@@ -146,7 +144,7 @@ export function ThreeDPreviewModal({
                                         {/* ✅ LAYER 3: GLOBAL SHADOW (MUG ONLY) */}
                                         {/* Sits between Mug and Design to create smooth shading */}
                                         {isMug && (
-                                            <div 
+                                            <div
                                                 className="absolute inset-0 z-15 pointer-events-none"
                                                 style={{
                                                     background: `linear-gradient(
@@ -164,46 +162,49 @@ export function ThreeDPreviewModal({
                                         )}
 
                                         {/* ✅ LAYER 4: USER DESIGN (With Shift Logic) */}
-                                        {currentTexture && (
-                                            <div 
-                                                className="absolute z-20 border border-transparent hover:border-white/50 transition-colors overflow-hidden"
+                                        {/* ===== USER DESIGN (ACTIVE SIDE ONLY) ===== */}
+                                        {isMug && currentTexture && mockups[activeSide] && (
+                                            <div
+                                                key={activeSide} // 🔥 forces rerender when side changes
+                                                className="absolute z-20 pointer-events-none"
                                                 style={{
                                                     top: `${adjustments.top}%`,
                                                     left: `${adjustments.left}%`,
                                                     width: `${adjustments.width}%`,
                                                     height: `${adjustments.height}%`,
-                                                    mixBlendMode: 'multiply' 
+
+                                                    /* MASK */
+                                                    WebkitMaskImage: "url('/masks/mug-mask.png')",
+                                                    WebkitMaskSize: "100% 100%",
+                                                    WebkitMaskRepeat: "no-repeat",
+                                                    WebkitMaskPosition: "center",
+
+                                                    maskImage: "url('/masks/mug-mask.png')",
+                                                    maskSize: "100% 100%",
+                                                    maskRepeat: "no-repeat",
+                                                    maskPosition: "center",
+
+                                                    mixBlendMode: "multiply",
+                                                    overflow: "hidden"
                                                 }}
                                             >
-                                                {/* --- CONDITIONAL RENDERING --- */}
-                                                {isMug ? (
-                                                    // A. MUG LOGIC: 300% Width + Shift
-                                                    <div className="relative w-full h-full">
-                                                        <img 
-                                                            src={currentTexture} 
-                                                            alt="design" 
-                                                            style={{
-                                                                width: '300%',        // Make it 3x wider than the box
-                                                                maxWidth: 'none',     // Allow it to overflow
-                                                                height: '100%',
-                                                                position: 'absolute',
-                                                                top: 0,
-                                                                left: getMugShift(),  // SHIFT IT (0%, -100%, -200%)
-                                                                transition: 'left 0.4s ease-in-out',
-                                                                objectFit: 'fill'
-                                                            }}
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    // B. T-SHIRT LOGIC: Normal Fit
-                                                    <img 
-                                                        src={currentTexture} 
-                                                        alt="design" 
-                                                        className="w-full h-full object-fill" 
-                                                    />
-                                                )}
+                                                <img
+                                                    src={currentTexture}
+                                                    alt={`Mug design ${activeSide}`}
+                                                    style={{
+                                                        width: "300%",
+                                                        height: "100%",
+                                                        position: "absolute",
+                                                        top: 0,
+                                                        left: getMugShift(), // 0 / -100 / -200
+                                                        transition: "left 0.35s ease-in-out",
+                                                        objectFit: "fill"
+                                                    }}
+                                                    draggable={false}
+                                                />
                                             </div>
                                         )}
+
                                     </div>
                                 </div>
 
@@ -214,15 +215,14 @@ export function ThreeDPreviewModal({
                                             <button
                                                 key={side}
                                                 onClick={() => setActiveSide(side)}
-                                                className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${
-                                                    activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
-                                                }`}
+                                                className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
+                                                    }`}
                                             >
                                                 <div className="absolute inset-0" style={{ backgroundColor: selectedColor }} />
-                                                <img 
-                                                    src={mockups[side]} 
-                                                    alt={side} 
-                                                    className="absolute inset-0 w-full h-full object-cover" 
+                                                <img
+                                                    src={mockups[side]}
+                                                    alt={side}
+                                                    className="absolute inset-0 w-full h-full object-cover"
                                                     style={{ mixBlendMode: 'multiply' }}
                                                 />
                                             </button>
