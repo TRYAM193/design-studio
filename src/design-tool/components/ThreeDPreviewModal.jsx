@@ -162,44 +162,47 @@ export function ThreeDPreviewModal({
                                         {currentTexture && (
                                             <>
                                                 {/* 🟡 MUG (WRAP + MASK + SHIFT) */}
-                                                {isMug && (
-                                                    <div
-                                                        key={activeSide}
-                                                        className="absolute z-20 pointer-events-none"
-                                                        style={{
-                                                            top: `${adjustments.top}%`,
-                                                            left: `${adjustments.left}%`,
-                                                            width: `${adjustments.width}%`,
-                                                            height: `${adjustments.height}%`,
+                                                {isMug && currentTexture && (
+  <div
+    key={activeSide}
+    className="absolute z-20 pointer-events-none"
+    style={{
+      top: `${adjustments.top}%`,
+      left: "15%",          // FIXED CENTERING
+      width: "70%",         // FIXED WRAP WIDTH
+      height: `${adjustments.height}%`,
 
-                                                            WebkitMaskImage: "url('/assets/mug-mockup.png')",
-                                                            WebkitMaskSize: "100% 100%",
-                                                            WebkitMaskRepeat: "no-repeat",
+      backgroundColor: "#fff",
 
-                                                            maskImage: "url('/assets/mug-mockup.png')",
-                                                            maskSize: "100% 100%",
-                                                            maskRepeat: "no-repeat",
+      WebkitMaskImage: "url(/masks/mug-mask.png)",
+      WebkitMaskSize: "100% 100%",
+      WebkitMaskRepeat: "no-repeat",
 
-                                                            mixBlendMode: "multiply",
-                                                            overflow: "hidden"
-                                                        }}
-                                                    >
-                                                        <img
-                                                            src={currentTexture}
-                                                            alt={`Mug design ${activeSide}`}
-                                                            style={{
-                                                                width: "300%",
-                                                                height: "100%",
-                                                                position: "absolute",
-                                                                top: 0,
-                                                                left: getMugShift(),
-                                                                transition: "left 0.35s ease-in-out",
-                                                                objectFit: "fill"
-                                                            }}
-                                                            draggable={false}
-                                                        />
-                                                    </div>
-                                                )}
+      maskImage: "url(/masks/mug-mask.png)",
+      maskSize: "100% 100%",
+      maskRepeat: "no-repeat",
+
+      overflow: "hidden",
+      mixBlendMode: "multiply"
+    }}
+  >
+    <img
+      src={currentTexture}
+      alt="Mug wrap design"
+      draggable={false}
+      style={{
+        width: "300%",
+        height: "100%",
+        position: "absolute",
+        top: 0,
+        left: getMugShift(),
+        transition: "left 0.35s ease-in-out",
+        objectFit: "fill"
+      }}
+    />
+  </div>
+)}
+
 
                                                 {/* 🟢 NORMAL PRODUCTS (STATIC PER SIDE) */}
                                                 {!isMug && (
