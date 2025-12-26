@@ -179,12 +179,12 @@ export function ThreeDPreviewModal({
                                         className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
                                         style={{
                                             // DYNAMIC MASKING: Looks for 'mug-mask-front.png', 'mug-mask-left.png', etc.
-                                            maskImage: `url('/assets/mug-${activeSide}-mask.png')`,
+                                            maskImage: `url('/assets/mockups/mug-${activeSide}-mask.png')`,
                                             maskSize: 'contain',
                                             maskRepeat: 'no-repeat',
                                             maskPosition: 'center',
 
-                                            WebkitMaskImage: `url('/assets/mug-${activeSide}-mask.png')`,
+                                            WebkitMaskImage: `url('/assets/mockups/mug-${activeSide}-mask.png')`,
                                             WebkitMaskSize: 'contain',
                                             WebkitMaskRepeat: 'no-repeat',
                                             WebkitMaskPosition: 'center',
