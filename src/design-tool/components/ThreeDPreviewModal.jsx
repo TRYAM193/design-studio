@@ -160,9 +160,7 @@ export function ThreeDPreviewModal({
                                                 }}
                                             />
                                         )}
-
-                                        {/* ✅ LAYER 4: USER DESIGN (With Shift Logic) */}
-                                        {/* ===== USER DESIGN (ACTIVE SIDE ONLY) ===== */}
+                                        
                                         {/* ===== USER DESIGN ===== */}
                                         {currentTexture && (
                                             <>
