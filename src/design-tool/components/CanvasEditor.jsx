@@ -139,6 +139,8 @@ export default function CanvasEditor({
         selection: true,
         controlsAboveOverlay: true,
         preserveObjectStacking: true,
+        width: scaledWidth,
+        height: scaledHeight,
       });
       fabricCanvasRef.current = canvas;
       setFabricCanvas(canvas);
