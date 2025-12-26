@@ -70,7 +70,6 @@ export function ThreeDPreviewModal({
     };
 
     // ✅ 2. CALCULATE SHIFT (The "Pan Camera" Logic)
-    // This tells the image to slide Left/Right inside the frame
     const getMugShift = () => {
         if (!isMug) return '0%';
         switch(activeSide) {
@@ -138,14 +137,29 @@ export function ThreeDPreviewModal({
                                             style={{ backgroundColor: selectedColor }}
                                         />
 
-                                        {/* LAYER 2: Mockup Image */}
+                                        {/* LAYER 2: Mockup Image (Composite) */}
                                         {mockups[activeSide] ? (
-                                            <img 
-                                                src={mockups[activeSide]} 
-                                                alt={`${activeSide} view`} 
-                                                className="absolute inset-0 w-full h-full object-contain z-10"
-                                                style={{ mixBlendMode: 'multiply' }} 
-                                            />
+                                            <>
+                                                {/* A. SHADOW LAYER (Multiply): Gives color and depth */}
+                                                <img 
+                                                    src={mockups[activeSide]} 
+                                                    alt={`${activeSide} view`} 
+                                                    className="absolute inset-0 w-full h-full object-contain z-10"
+                                                    style={{ mixBlendMode: 'multiply' }} 
+                                                />
+                                                
+                                                {/* B. HIGHLIGHT LAYER (Screen): ✅ FIX FOR BLACK SHIRTS */}
+                                                {/* This restores the white wrinkles/reflections on top of black */}
+                                                <img 
+                                                    src={mockups[activeSide]} 
+                                                    alt={`${activeSide} highlights`} 
+                                                    className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none"
+                                                    style={{ 
+                                                        mixBlendMode: 'screen', 
+                                                        opacity: 0.3 // Adjust this (0.2 - 0.5) to control wrinkle visibility
+                                                    }} 
+                                                />
+                                            </>
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
                                                 No Mockup Available
@@ -153,26 +167,17 @@ export function ThreeDPreviewModal({
                                         )}
 
                                         {/* ✅ LAYER 3: GLOBAL SHADOW (MUG ONLY) */}
-                                        {/* Sits between Mug and Design to create smooth shading */}
                                         {isMug && (
                                             <div 
                                                 className="absolute inset-0 z-15 pointer-events-none"
                                                 style={{
-                                                    background: `linear-gradient(
-                                                        to right, 
-                                                        rgba(0,0,0,0.4) 0%,     /* Left Shadow */
-                                                        rgba(0,0,0,0.05) 25%,   /* Highlight */
-                                                        rgba(255,255,255,0.2) 40%, /* Glare Center */
-                                                        rgba(255,255,255,0.0) 50%, 
-                                                        rgba(0,0,0,0.05) 75%, 
-                                                        rgba(0,0,0,0.4) 100%    /* Right Shadow */
-                                                    )`,
+                                                    background: `linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.05) 25%, rgba(255,255,255,0.2) 40%, rgba(255,255,255,0.0) 50%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.4) 100%)`,
                                                     mixBlendMode: 'multiply'
                                                 }}
                                             />
                                         )}
 
-                                        {/* ✅ LAYER 4: USER DESIGN (With Shift Logic) */}
+                                        {/* ✅ LAYER 4: USER DESIGN */}
                                         {currentTexture && (
                                             <div 
                                                 className="absolute z-20 border border-transparent hover:border-white/50 transition-colors overflow-hidden"
@@ -184,32 +189,25 @@ export function ThreeDPreviewModal({
                                                     mixBlendMode: 'multiply' 
                                                 }}
                                             >
-                                                {/* --- CONDITIONAL RENDERING --- */}
                                                 {isMug ? (
-                                                    // A. MUG LOGIC: 300% Width + Shift
                                                     <div className="relative w-full h-full">
                                                         <img 
                                                             src={currentTexture} 
                                                             alt="design" 
                                                             style={{
-                                                                width: '300%',        // Make it 3x wider than the box
-                                                                maxWidth: 'none',     // Allow it to overflow
+                                                                width: '300%',
+                                                                maxWidth: 'none',
                                                                 height: '100%',
                                                                 position: 'absolute',
                                                                 top: 0,
-                                                                left: getMugShift(),  // SHIFT IT (0%, -100%, -200%)
+                                                                left: getMugShift(),
                                                                 transition: 'left 0.4s ease-in-out',
                                                                 objectFit: 'fill'
                                                             }}
                                                         />
                                                     </div>
                                                 ) : (
-                                                    // B. T-SHIRT LOGIC: Normal Fit
-                                                    <img 
-                                                        src={currentTexture} 
-                                                        alt="design" 
-                                                        className="w-full h-full object-fill" 
-                                                    />
+                                                    <img src={currentTexture} alt="design" className="w-full h-full object-fill" />
                                                 )}
                                             </div>
                                         )}
@@ -228,11 +226,21 @@ export function ThreeDPreviewModal({
                                                 }`}
                                             >
                                                 <div className="absolute inset-0" style={{ backgroundColor: selectedColor }} />
+                                                
+                                                {/* Thumbnails: Shadow Layer */}
                                                 <img 
                                                     src={mockups[side]} 
                                                     alt={side} 
                                                     className="absolute inset-0 w-full h-full object-cover" 
                                                     style={{ mixBlendMode: 'multiply' }}
+                                                />
+                                                
+                                                {/* Thumbnails: Highlight Layer (Fix for Black) */}
+                                                <img 
+                                                    src={mockups[side]} 
+                                                    alt={side} 
+                                                    className="absolute inset-0 w-full h-full object-cover" 
+                                                    style={{ mixBlendMode: 'screen', opacity: 0.3 }}
                                                 />
                                             </button>
                                         ))}
