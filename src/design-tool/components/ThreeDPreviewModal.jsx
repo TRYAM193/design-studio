@@ -233,7 +233,6 @@ export function ThreeDPreviewModal({
                                                 className="w-full h-full object-fill"
                                             />
                                         )}
-                                    </div>
                                 </div>
                             </div>
 
@@ -257,7 +256,6 @@ export function ThreeDPreviewModal({
                                     </button>
                                 ))}
                             </div>
-                        
                         )}
 
                     {/* === 3D VIEW === */}
