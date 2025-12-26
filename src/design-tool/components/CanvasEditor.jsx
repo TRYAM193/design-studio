@@ -82,7 +82,21 @@ export default function CanvasEditor({
 
   const [containerSize, setContainerSize] = useState({ width: 800, height: 800 });
 
-  // ✅ UPDATED: Calculate position relative to the local canvas wrapper
+  // Add this helper or calculate inside your component
+const calculateScaledSize = (originalWidth: number, originalHeight: number) => {
+  // Use window.innerWidth or your specific container's width
+  const currentScreenWidth = window.innerWidth; 
+  const referenceWidth = 1024;
+
+  // Your specific logic: dimension * current / 1024
+  const scaleFactor = currentScreenWidth / referenceWidth;
+
+  return {
+    width: originalWidth * scaleFactor,
+    height: originalHeight * scaleFactor,
+    scaleFactor: scaleFactor // Keep this if you need to scale objects inside too
+  };
+};
   // This removes reliance on viewport coordinates, fixing the "far away" issue.
   const updateMenuPosition = () => {
     const canvas = fabricCanvasRef.current;
