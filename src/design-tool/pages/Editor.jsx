@@ -249,7 +249,7 @@ export default function EditorPanel() {
                 if (parsedData[activeView]) {
                     fabricCanvas.loadFromJSON(parsedData[activeView], () => {
                         fabricCanvas.renderAll();
-                        addObj; // Sync Redux
+                        addObj(); // Sync Redux
                     });
                 }
 
@@ -258,7 +258,7 @@ export default function EditorPanel() {
                 // Just load the JSON directly
                 fabricCanvas.loadFromJSON(parsedData, () => {
                     fabricCanvas.renderAll();
-                    dispatch(setCanvasObjects(fabricCanvas.getObjects()));
+                    addObj();
                 });
             }
         };
