@@ -62,8 +62,8 @@ export default function EditorPanel() {
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
 
-    const productId = searchParams.get('product');
-    const urlColor = searchParams.get('color');
+    const productId = searchParams.get('product') || currentDesign?.productConfig?.productId;
+    const urlColor = searchParams.get('color') || currentDesign?.productConfig?.variantColor;
 
     const [productData, setProductData] = useState({
         title: "Custom Design",
