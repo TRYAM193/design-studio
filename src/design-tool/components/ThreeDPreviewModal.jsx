@@ -164,17 +164,50 @@ export function ThreeDPreviewModal({
                                         )}
 
                                         {/* ✅ LAYER 4: USER DESIGN (With Shift Logic) */}
-                                        {currentTexture && (
-                                            <div 
-                                                className="absolute z-20 border border-transparent hover:border-white/50 transition-colors overflow-hidden"
-                                                style={{
-                                                    top: `${adjustments.top}%`,
-                                                    left: `${adjustments.left}%`,
-                                                    width: `${adjustments.width}%`,
-                                                    height: `${adjustments.height}%`,
-                                                    mixBlendMode: 'multiply' 
-                                                }}
-                                            >
+                                        {isMug && currentTexture && (
+  <div
+    className="absolute z-20 pointer-events-none"
+    style={{
+      top: `${adjustments.top}%`,
+      left: `${adjustments.left}%`,
+      width: `${adjustments.width}%`,
+      height: `${adjustments.height}%`,
+
+      /* === PRINTIFY-STYLE MASKING === */
+      WebkitMaskImage: "url('/masks/mug-mask.png')",
+      WebkitMaskSize: "100% 100%",
+      WebkitMaskRepeat: "no-repeat",
+      WebkitMaskPosition: "center",
+
+      maskImage: "url('/masks/mug-mask.png')",
+      maskSize: "100% 100%",
+      maskRepeat: "no-repeat",
+      maskPosition: "center",
+
+      /* === PRINT LOOK === */
+      mixBlendMode: "multiply",
+      overflow: "hidden"
+    }}
+  >
+    {/* === WRAP IMAGE (3x WIDTH) === */}
+    <img
+      src={currentTexture}
+      alt="Mug design wrap"
+      style={{
+        width: "300%",
+        maxWidth: "none",
+        height: "100%",
+        position: "absolute",
+        top: 0,
+        left: getMugShift(),   // 0% | -100% | -200%
+        transition: "left 0.4s ease-in-out",
+        objectFit: "fill"
+      }}
+      draggable={false}
+    />
+  </div>
+)}
+
                                                 {/* --- CONDITIONAL RENDERING --- */}
                                                 {isMug ? (
                                                     // A. MUG LOGIC: 300% Width + Shift
