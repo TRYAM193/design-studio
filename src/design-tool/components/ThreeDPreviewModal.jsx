@@ -186,7 +186,6 @@ export function ThreeDPreviewModal({
                                                         src={mockups[activeSide]}
                                                         alt={`${activeSide} view`}
                                                         className="absolute inset-0 w-full h-full object-contain z-10"
-                                                        style={{ mixBlendMode: 'multiply' }}
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
