@@ -169,8 +169,7 @@ export function ThreeDPreviewModal({
                                         <img
                                             src={mockups[activeSide]}
                                             alt={`${activeSide} view`}
-                                            className="absolute inset-0 w-full h-full object-contain z-0"
-                                            // style={{ transform: ' translateX(10px)', transformOrigin: 'center' }}
+                                            className="absolute inset-0 w-[92%] h-full mx-auto object-contain z-0"
                                         />
                                     ) : (
                                         <div className="text-white">No Mockup Image</div>
