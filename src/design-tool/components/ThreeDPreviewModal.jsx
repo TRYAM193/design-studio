@@ -59,7 +59,7 @@ export function ThreeDPreviewModal({
     };
 
     const currentTexture = getCurrentTexture();
-    console.log()
+    console.log(currentTexture)
 
     // ✅ 2. CALCULATE SHIFT (The "Pan Camera" Logic)
     // This tells the image to slide Left/Right inside the frame
