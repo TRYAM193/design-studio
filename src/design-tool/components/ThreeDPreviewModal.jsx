@@ -122,6 +122,8 @@ export function ThreeDPreviewModal({
         return textures[activeSide]?.url;
     };
 
+    console.log(activeSide)
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="w-[100vw] h-[100vh] p-0 gap-0 bg-zinc-950 border-zinc-800 flex flex-col overflow-hidden rounded-xl shadow-2xl">
