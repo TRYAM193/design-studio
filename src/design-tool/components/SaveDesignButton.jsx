@@ -1,53 +1,72 @@
-// src/components/SaveDesignButton.jsx
 import React, { useState } from 'react';
 import SavePromptModal from './SavePromptModal';
 import { saveNewDesign, overwriteDesign } from '../utils/saveDesign';
-import { FiSave, FiRotateCw } from 'react-icons/fi'; // <-- ADDED ICONS
+import { FiSave, FiRotateCw } from 'react-icons/fi';
 
-export default function SaveDesignButton({ canvas, userId, editingDesignId, className }) {
+export default function SaveDesignButton({ 
+  canvas, 
+  userId, 
+  editingDesignId, 
+  className,
+  // New Props
+  productData, 
+  viewStates, 
+  currentView 
+}) {
   const [saving, setSaving] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
-  const classNames = className + ' text-button'
+  const classNames = className + ' text-button';
 
-  const handleSave = () => {
+  const handleSaveClick = () => {
     if (!canvas) return;
 
-    // NEW DESIGN → save directly
+    // IF NEW: Save directly
     if (!editingDesignId) {
-      saveNewDesign(userId, canvas, setSaving); //
+      saveNewDesign(userId, canvas, productData, viewStates, currentView, setSaving);
       return;
     }
 
-    // EXISTING DESIGN → show save prompt
+    // IF EXISTING: Prompt user
     setShowSavePrompt(true);
   };
 
   const handleOverwrite = async () => {
-    await overwriteDesign(userId, editingDesignId, canvas, setSaving); //
+    await overwriteDesign(
+      userId, 
+      editingDesignId, 
+      canvas, 
+      productData, // Pass Product Info
+      viewStates,  // Pass Hidden Views (Back, Sleeves)
+      currentView, // Pass Active View
+      setSaving
+    );
     setShowSavePrompt(false);
   };
 
   const handleSaveCopy = async () => {
-    await saveNewDesign(userId, canvas, setSaving); //
+    // "Save as Copy" creates a NEW ID but keeps the full product data
+    await saveNewDesign(
+      userId, 
+      canvas, 
+      productData, 
+      viewStates, 
+      currentView, 
+      setSaving
+    );
     setShowSavePrompt(false);
   };
 
   return (
     <>
-      {/* FIX: Render FiSave icon or FiRotateCw spinner based on 'saving' state */}
       <button 
-        onClick={handleSave} 
+        onClick={handleSaveClick} 
         disabled={saving} 
-        title={saving ? 'Saving...' : 'Save Design'}
         className={classNames} 
       >
-        {saving ? (
-          <FiRotateCw size={20} className="icon-spin" />
-        ) : (
-          <FiSave size={20} /> // Save icon when ready
-        )}
+        {saving ? <FiRotateCw size={20} className="icon-spin" /> : <FiSave size={20} />}
         <span>Save</span>
       </button>
+
       <SavePromptModal
         open={showSavePrompt}
         onClose={() => setShowSavePrompt(false)}
