@@ -1,8 +1,6 @@
 import { db as firestore } from '@/firebase';
 import { doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
-import { store } from '../redux/store';
-import { setCanvasObjects } from '../redux/canvasSlice';
 
 // --- HELPER: Cleans JSON (removes undefined) ---
 function removeUndefined(obj) {
