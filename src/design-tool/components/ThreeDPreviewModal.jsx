@@ -80,202 +80,201 @@ export function ThreeDPreviewModal({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="w-[100vw] h-[100vh] p-0 gap-0 bg-zinc-950 border-zinc-800 flex flex-col overflow-hidden rounded-xl shadow-2xl">
                 <DialogTitle className="sr-only">Preview Design</DialogTitle>
-                <DialogDescription className="sr-only">Preview your design in 2D or 3D</DialogDescription>
+                <DialogDescription className="sr-only">
+                    Preview your design in 2D or 3D
+                </DialogDescription>
 
-                {/* --- HEADER --- */}
-                <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-zinc-900 z-10 flex-shrink-0">
+                {/* ===== HEADER ===== */}
+                <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-zinc-900 z-10">
                     <div className="flex gap-2 p-1 bg-black/40 rounded-lg border border-white/5">
                         <button
-                            onClick={() => setViewMode('2d')}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === '2d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
+                            onClick={() => setViewMode("2d")}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium ${viewMode === "2d"
+                                    ? "bg-white text-black"
+                                    : "text-zinc-400 hover:text-white"
                                 }`}
                         >
                             <ImageIcon size={16} /> 2D Mockup
                         </button>
 
                         <button
-                            onClick={() => has3D && setViewMode('3d')}
+                            onClick={() => has3D && setViewMode("3d")}
                             disabled={!has3D}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === '3d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
-                                } ${!has3D ? "opacity-40 cursor-not-allowed bg-transparent hover:text-zinc-400" : ""}`}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium ${viewMode === "3d"
+                                    ? "bg-white text-black"
+                                    : "text-zinc-400 hover:text-white"
+                                } ${!has3D ? "opacity-40 cursor-not-allowed" : ""}`}
                         >
                             <Box size={16} />
                             {has3D ? "3D View" : "3D Not Available"}
                         </button>
                     </div>
 
-                    <Button variant="ghost" size="icon" onClick={onClose} className="text-zinc-400 hover:text-white rounded-full hover:bg-white/10">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={onClose}
+                        className="text-zinc-400 hover:text-white"
+                    >
                         <X size={20} />
                     </Button>
                 </div>
 
-                {/* --- MAIN STAGE --- */}
-                <div className="flex-1 relative w-full bg-zinc-900 overflow-hidden flex">
+                {/* ===== MAIN STAGE ===== */}
+                <div className="flex-1 flex bg-zinc-900 overflow-hidden">
 
-                    {/* === LEFT: PREVIEW AREA === */}
-                    <div className="flex-1 relative flex flex-col min-w-0">
-                        {viewMode === '2d' && (
-                            <div className="relative w-full h-full flex flex-col">
-                                <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8 overflow-auto">
+                    {/* ===== LEFT PREVIEW ===== */}
+                    <div className="flex-1 flex flex-col">
+                        {viewMode === "2d" && (
+                            <div className="flex-1 flex items-center justify-center p-8">
 
-                                    {/* 🖼️ MOCKUP CONTAINER */}
-                                    <div className="relative w-full max-w-[500px] aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-white flex-shrink-0 group">
+                                {/* MOCKUP CONTAINER */}
+                                <div className="relative w-full max-w-[500px] aspect-[3/4] bg-white rounded-lg shadow-2xl overflow-hidden">
 
-                                        {/* LAYER 1: Base Color */}
-                                        <div
-                                            className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
-                                            style={{ backgroundColor: selectedColor }}
+                                    {/* Base color */}
+                                    <div
+                                        className="absolute inset-0"
+                                        style={{ backgroundColor: selectedColor }}
+                                    />
+
+                                    {/* Mockup image */}
+                                    {mockups[activeSide] && (
+                                        <img
+                                            src={mockups[activeSide]}
+                                            alt={activeSide}
+                                            className="absolute inset-0 w-full h-full object-contain z-10"
+                                            style={{ mixBlendMode: "multiply" }}
                                         />
+                                    )}
 
-                                        {/* LAYER 2: Mockup Image */}
-                                        {mockups[activeSide] ? (
-                                            <img
-                                                src={mockups[activeSide]}
-                                                alt={`${activeSide} view`}
-                                                className="absolute inset-0 w-full h-full object-contain z-10"
-                                                style={{ mixBlendMode: 'multiply' }}
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
-                                                No Mockup Available
-                                            </div>
-                                        )}
+                                    {/* Mug shadow */}
+                                    {isMug && (
+                                        <div
+                                            className="absolute inset-0 z-15 pointer-events-none"
+                                            style={{
+                                                background: `linear-gradient(
+                      to right,
+                      rgba(0,0,0,0.4) 0%,
+                      rgba(0,0,0,0.05) 25%,
+                      rgba(255,255,255,0.2) 40%,
+                      rgba(255,255,255,0) 50%,
+                      rgba(0,0,0,0.05) 75%,
+                      rgba(0,0,0,0.4) 100%
+                    )`,
+                                                mixBlendMode: "multiply"
+                                            }}
+                                        />
+                                    )}
 
-                                        {/* ✅ LAYER 3: GLOBAL SHADOW (MUG ONLY) */}
-                                        {/* Sits between Mug and Design to create smooth shading */}
-                                        {isMug && (
-                                            <div
-                                                className="absolute inset-0 z-15 pointer-events-none"
-                                                style={{
-                                                    background: `linear-gradient(
-                                                        to right, 
-                                                        rgba(0,0,0,0.4) 0%,     /* Left Shadow */
-                                                        rgba(0,0,0,0.05) 25%,   /* Highlight */
-                                                        rgba(255,255,255,0.2) 40%, /* Glare Center */
-                                                        rgba(255,255,255,0.0) 50%, 
-                                                        rgba(0,0,0,0.05) 75%, 
-                                                        rgba(0,0,0,0.4) 100%    /* Right Shadow */
-                                                    )`,
-                                                    mixBlendMode: 'multiply'
-                                                }}
-                                            />
-                                        )}
-
-                                        {/* ✅ LAYER 4: USER DESIGN (With Shift Logic) */}
-                                        {isMug && currentTexture && (
-                                            <div
-                                                className="absolute z-20 pointer-events-none"
-                                                style={{
-                                                    top: `${adjustments.top}%`,
-                                                    left: `${adjustments.left}%`,
-                                                    width: `${adjustments.width}%`,
-                                                    height: `${adjustments.height}%`,
-
-                                                    /* === PRINTIFY-STYLE MASKING === */
-                                                    WebkitMaskImage: "url('/masks/mug-mask.png')",
-                                                    WebkitMaskSize: "100% 100%",
-                                                    WebkitMaskRepeat: "no-repeat",
-                                                    WebkitMaskPosition: "center",
-
-                                                    maskImage: "url('/masks/mug-mask.png')",
-                                                    maskSize: "100% 100%",
-                                                    maskRepeat: "no-repeat",
-                                                    maskPosition: "center",
-
-                                                    /* === PRINT LOOK === */
-                                                    mixBlendMode: "multiply",
-                                                    overflow: "hidden"
-                                                }}
-                                            >
-                                                {/* === WRAP IMAGE (3x WIDTH) === */}
-                                                <img
-                                                    src={currentTexture}
-                                                    alt="Mug design wrap"
+                                    {/* ===== USER DESIGN ===== */}
+                                    {currentTexture && (
+                                        <>
+                                            {/* MUG (MASKED WRAP) */}
+                                            {isMug && (
+                                                <div
+                                                    className="absolute z-20 pointer-events-none"
                                                     style={{
-                                                        width: "300%",
-                                                        maxWidth: "none",
-                                                        height: "100%",
-                                                        position: "absolute",
-                                                        top: 0,
-                                                        left: getMugShift(),   // 0% | -100% | -200%
-                                                        transition: "left 0.4s ease-in-out",
-                                                        objectFit: "fill"
-                                                    }}
-                                                    draggable={false}
-                                                />
-                                            </div>
-                                        )}
+                                                        top: `${adjustments.top}%`,
+                                                        left: `${adjustments.left}%`,
+                                                        width: `${adjustments.width}%`,
+                                                        height: `${adjustments.height}%`,
 
-                                        {/* --- CONDITIONAL RENDERING --- */}
-                                        {isMug ? (
-                                            // A. MUG LOGIC: 300% Width + Shift
-                                            <div className="relative w-full h-full">
-                                                <img
-                                                    src={currentTexture}
-                                                    alt="design"
-                                                    style={{
-                                                        width: '300%',        // Make it 3x wider than the box
-                                                        maxWidth: 'none',     // Allow it to overflow
-                                                        height: '100%',
-                                                        position: 'absolute',
-                                                        top: 0,
-                                                        left: getMugShift(),  // SHIFT IT (0%, -100%, -200%)
-                                                        transition: 'left 0.4s ease-in-out',
-                                                        objectFit: 'fill'
+                                                        WebkitMaskImage: "url('/masks/mug-mask.png')",
+                                                        WebkitMaskSize: "100% 100%",
+                                                        WebkitMaskRepeat: "no-repeat",
+
+                                                        maskImage: "url('/masks/mug-mask.png')",
+                                                        maskSize: "100% 100%",
+                                                        maskRepeat: "no-repeat",
+
+                                                        mixBlendMode: "multiply",
+                                                        overflow: "hidden"
                                                     }}
-                                                />
-                                            </div>
-                                        ) : (
-                                            // B. T-SHIRT LOGIC: Normal Fit
-                                            <img
-                                                src={currentTexture}
-                                                alt="design"
-                                                className="w-full h-full object-fill"
-                                            />
-                                        )}
+                                                >
+                                                    <img
+                                                        src={currentTexture}
+                                                        alt="Mug wrap"
+                                                        style={{
+                                                            width: "300%",
+                                                            height: "100%",
+                                                            position: "absolute",
+                                                            top: 0,
+                                                            left: getMugShift(),
+                                                            transition: "left 0.4s ease-in-out",
+                                                            objectFit: "fill"
+                                                        }}
+                                                        draggable={false}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* NON-MUG */}
+                                            {!isMug && (
+                                                <div
+                                                    className="absolute z-20"
+                                                    style={{
+                                                        top: `${adjustments.top}%`,
+                                                        left: `${adjustments.left}%`,
+                                                        width: `${adjustments.width}%`,
+                                                        height: `${adjustments.height}%`
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={currentTexture}
+                                                        alt="Design"
+                                                        className="w-full h-full object-fill"
+                                                    />
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
                             </div>
+                        )}
 
-                                {/* Side Selector */}
+                        {/* Side selector */}
                         {mockupKeys.length > 1 && (
-                            <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 flex-shrink-0">
+                            <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4">
                                 {mockupKeys.map(side => (
                                     <button
                                         key={side}
                                         onClick={() => setActiveSide(side)}
-                                        className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
+                                        className={`w-16 h-16 rounded-lg border-2 overflow-hidden ${activeSide === side
+                                                ? "border-white scale-110"
+                                                : "border-white/20 opacity-60"
                                             }`}
                                     >
-                                        <div className="absolute inset-0" style={{ backgroundColor: selectedColor }} />
+                                        <div
+                                            className="absolute inset-0"
+                                            style={{ backgroundColor: selectedColor }}
+                                        />
                                         <img
                                             src={mockups[side]}
                                             alt={side}
                                             className="absolute inset-0 w-full h-full object-cover"
-                                            style={{ mixBlendMode: 'multiply' }}
+                                            style={{ mixBlendMode: "multiply" }}
                                         />
                                     </button>
                                 ))}
                             </div>
                         )}
+                    </div>
 
-                    {/* === 3D VIEW === */}
-                    {viewMode === '3d' && has3D && (
-                        <div className="w-full h-full">
-                            <Tshirt3DPreview
-                                modelUrl={productData.model3d}
-                                textures={{
-                                    front: textures.front?.url,
-                                    back: textures.back?.url,
-                                    leftSleeve: textures.leftSleeve?.url,
-                                    rightSleeve: textures.rightSleeve?.url
-                                }}
-                                color={selectedColor}
-                            />
-                        </div>
+                    {/* ===== 3D VIEW ===== */}
+                    {viewMode === "3d" && has3D && (
+                        <Tshirt3DPreview
+                            modelUrl={productData.model3d}
+                            textures={{
+                                front: textures.front?.url,
+                                back: textures.back?.url,
+                                leftSleeve: textures.leftSleeve?.url,
+                                rightSleeve: textures.rightSleeve?.url
+                            }}
+                            color={selectedColor}
+                        />
                     )}
                 </div>
-            </div>
-        </DialogContent>
-        </Dialog >
+            </DialogContent>
+        </Dialog>
     );
 }
