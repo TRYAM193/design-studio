@@ -275,7 +275,7 @@ export function ThreeDPreviewModal({
                         )}
 
                         {/* === FOOTER: THUMBNAILS === */}
-                        {mockupKeys.length > 1 && isMug && (
+                        {mockupKeys.length > 1 && !isMug && (
                             <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 flex-shrink-0 z-30">
                                 {mockupKeys.map(side => (
                                     <button
