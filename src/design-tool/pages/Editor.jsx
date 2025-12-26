@@ -94,7 +94,7 @@ export default function EditorPanel() {
 
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
-    
+
     // ✅ Initialize dims directly from default or product data logic
     const [canvasDims, setCanvasDims] = useState({ width: 300, height: 400 });
 
@@ -120,7 +120,7 @@ export default function EditorPanel() {
         }
         initEditor();
     }, [productId]);
-     console.log(canvasObjects);
+    console.log(canvasObjects);
 
     // ✅ Effect: Sync canvasDims with Product DB Data when view or product changes
     useEffect(() => {
@@ -128,9 +128,9 @@ export default function EditorPanel() {
             const area = productData.canvas_size;
             // We use the DB dimensions directly now
             // Ensure you have valid defaults if DB is empty
-            setCanvasDims({ 
-                width: area.width || 300, 
-                height: area.height || 400 
+            setCanvasDims({
+                width: area.width || 300,
+                height: area.height || 400
             });
         }
     }, [productData, currentView]);
@@ -151,57 +151,52 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
-    // ... imports
-// Inside EditorPanel component...
+    useEffect(() => {
+        // Helper to process the loaded data
+        const handleLoadDesign = (design) => {
+            setCurrentDesign(design);
+            setEditingDesignId(design.id);
 
-// 🟩 UPDATED LOADING LOGIC
-useEffect(() => {
-    // Helper to process the loaded data
-    const handleLoadDesign = (design) => {
-        setCurrentDesign(design);
-        setEditingDesignId(design.id);
+            let parsedData = design.canvasJSON;
+            if (typeof parsedData === 'string') parsedData = JSON.parse(parsedData);
 
-        let parsedData = design.canvasJSON;
-        if (typeof parsedData === 'string') parsedData = JSON.parse(parsedData);
+            // CHECK: Is this a Product Design (multi-view) or Blank (single)?
+            if (design.type === 'PRODUCT' && design.productConfig) {
+                // 1. Load Product Configuration
+                setProductData(prev => ({
+                    ...prev,
+                    productId: design.productConfig.productId,
+                    options: { ...prev.options, colors: [design.productConfig.variantColor] } // visuals
+                }));
+                setCanvasBg(design.productConfig.variantColor);
 
-        // CHECK: Is this a Product Design (multi-view) or Blank (single)?
-        if (design.type === 'PRODUCT' && design.productConfig) {
-            // 1. Load Product Configuration
-            setProductData(prev => ({
-                ...prev,
-                productId: design.productConfig.productId,
-                options: { ...prev.options, colors: [design.productConfig.variantColor] } // visuals
-            }));
-            setCanvasBg(design.productConfig.variantColor);
-            
-            // 2. Hydrate View States (CRITICAL FOR OVERWRITING)
-            // We store ALL views in memory so we don't lose them when saving
-            setViewStates(parsedData); 
+                // 2. Hydrate View States (CRITICAL FOR OVERWRITING)
+                // We store ALL views in memory so we don't lose them when saving
+                setViewStates(parsedData);
 
-            // 3. Load the Active View onto Canvas
-            const activeView = design.productConfig.activeView || 'front';
-            setCurrentView(activeView);
-            
-            // Load specifically the active view's JSON
-            if (parsedData[activeView]) {
-                fabricCanvas.loadFromJSON(parsedData[activeView], () => {
+                // 3. Load the Active View onto Canvas
+                const activeView = design.productConfig.activeView || 'front';
+                setCurrentView(activeView);
+
+                if (parsedData[activeView]) {
+                    fabricCanvas.loadFromJSON(parsedData[activeView], () => {
+                        fabricCanvas.renderAll();
+                        dispatch(setCanvasObjects(fabricCanvas.getObjects())); // Sync Redux
+                    });
+                }
+
+            } else {
+                fabricCanvas.loadFromJSON(parsedData, () => {
                     fabricCanvas.renderAll();
-                    dispatch(setCanvasObjects(fabricCanvas.getObjects())); // Sync Redux
+                    dispatch(setCanvasObjects(fabricCanvas.getObjects()));
                 });
             }
+        };
 
-        } else {
-            fabricCanvas.loadFromJSON(parsedData, () => {
-                fabricCanvas.renderAll();
-                dispatch(setCanvasObjects(fabricCanvas.getObjects()));
-            });
+        if (location.state?.designToLoad && fabricCanvas) {
+            handleLoadDesign(location.state.designToLoad);
         }
-    };
-
-    if (location.state?.designToLoad && fabricCanvas) {
-        handleLoadDesign(location.state.designToLoad);
-    } 
-}, [location.state, fabricCanvas]);
+    }, [location.state, fabricCanvas]);
 
     const dataURLtoBlob = (dataURL) => {
         const arr = dataURL.split(',');
@@ -227,7 +222,7 @@ useEffect(() => {
             fabricCanvas.backgroundColor = null;
         }
 
-        fabricCanvas.clipPath = null; 
+        fabricCanvas.clipPath = null;
         const borderObj = fabricCanvas?.getObjects().find(obj => obj.id === 'print-area-border');
         let wasBorderVisible = false;
         if (borderObj) {
@@ -272,7 +267,7 @@ useEffect(() => {
 
         setViewStates(prev => ({
             ...prev,
-            [currentView]: currentCanvasState 
+            [currentView]: currentCanvasState
         }));
 
         setCurrentView(newView);
@@ -446,7 +441,7 @@ useEffect(() => {
                         past={past}
                         bgcolor={canvasBg}
                         printDimensions={canvasDims}
-                        productId={productId} 
+                        productId={productId}
                         activeView={currentView}
                     />
 
@@ -513,7 +508,7 @@ useEffect(() => {
                     selectedColor={canvasBg}
                 />
             </div>
-            
+
             {/* 🗑️ REMOVED SLIDERS UI BLOCK HERE */}
         </div>
     );
