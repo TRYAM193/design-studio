@@ -626,8 +626,10 @@ export default function CanvasEditor({
       if (objData.type === 'image') {
         if (!existing && !fabricCanvas.getObjects().some(obj => obj.customId === objData.id)) {
           try {
-            const newObj = await FabricImage.fromURL(objData.src, { ...objData.props, customId: objData.id });
-            new
+            const newObj = await FabricImage.fromURL(objData.src, { ...objData.props });
+            newObj.set({
+              customId: objData.id
+            })
             fabricCanvas.add(newObj);
             console.log('Image added', objData, canvasObjects)
           } catch (err) {
