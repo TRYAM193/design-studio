@@ -183,8 +183,8 @@ export default function CanvasEditor({
       const clipRect = new fabric.Rect({
         left: leftPos,
         top: topPos,
-        width: printWidth,
-        height: printHeight,
+        width: scaledWidth,
+        height: scaledHeight,
         absolutePositioned: true,
       });
 
