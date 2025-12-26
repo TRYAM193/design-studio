@@ -37,7 +37,7 @@ const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew)
 
     designDoc = {
       type: 'PRODUCT',
-      canvasJSON: allViewsJSON, // Save ALL views
+      canvasJSON: JSON.stringify(allViewsJSON), // Save ALL views
       productConfig: {
         productId: productData.productId,
         variantColor: productData.color,
