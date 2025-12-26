@@ -128,7 +128,7 @@ export default function CanvasEditor({
   };
 
   const { width: printWidth, height: printHeight } = printDimensions;
-  const { width: scaledWidth, height: scaledHeight }
+  // const { width: scaledWidth, height: scaledHeight }
 
   // ✅ A. Initialize Canvas & Handle Responsive Sizing
   useEffect(() => {
