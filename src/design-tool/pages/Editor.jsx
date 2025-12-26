@@ -153,7 +153,70 @@ export default function EditorPanel() {
 
     // ... imports
     // Inside EditorPanel component...
-    const addObj = 
+    const addObj = () => {
+        const newObjs = fabricCanvas.getObjects().map((obj, i) => {
+            const commonProps = {
+                left: obj.left,
+                top: obj.top,
+                angle: obj.angle,
+                fill: obj.fill,
+                opacity: obj.opacity,
+                shadowBlur: obj.shadowBlur || 0,
+                shadowOffsetX: obj.shadowOffsetX || 0,
+                shadowOffsetY: obj.shadowOffsetY || 0,
+                shadowColor: obj.shadowColor || '',
+                stroke: obj.stroke,
+                strokeWidth: obj.strokeWidth,
+                scaleX: obj.scaleX || 1,
+                scaleY: obj.scaleY || 1,
+                lockMovementX: obj.lockMovementX,
+                lockMovementY: obj.lockMovementY,
+            };
+
+            let specificProps = {};
+
+            if (obj.type === 'image') {
+                specificProps = {
+                    width: obj.width,
+                    height: obj.height,
+                    cropX: obj.cropX,
+                    cropY: obj.cropY,
+                };
+            }
+            else if (['text', 'textbox', 'i-text', 'circle-text'].includes(obj.type) || obj.textEffect === 'circle') {
+                specificProps = {
+                    text: obj.text,
+                    fontSize: obj.fontSize,
+                    fontFamily: obj.fontFamily,
+                    charSpacing: obj.charSpacing,
+                    textAlign: obj.textAlign,
+                    textStyle: obj.textStyle,
+                    textEffect: obj.textEffect,
+                    effectValue: obj.effectValue,
+                };
+            }
+            else {
+                specificProps = {
+                    width: obj.width,
+                    height: obj.height,
+                    radius: obj.radius,
+                    rx: obj.rx,
+                    ry: obj.ry,
+                };
+            }
+
+            return {
+                id: obj.customId || Date.now() + i,
+                type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+                ...(obj.type === 'image' && { src: obj.src }),
+                props: { ...commonProps, ...specificProps }
+            };
+        });
+        if (newObjs) {
+            store.dispatch(setCanvasObjects(newObjs))
+            console.log('Redux Synced')
+        }
+    }
 
     // 🟩 UPDATED LOADING LOGIC
     useEffect(() => {
@@ -201,7 +264,7 @@ export default function EditorPanel() {
             }
         };
 
-        
+
 
         // 1. Check Location State (Coming from Dashboard)
         if (location.state?.designToLoad && fabricCanvas) {
