@@ -614,6 +614,7 @@ export default function CanvasEditor({
           try {
             const newObj = await FabricImage.fromURL(objData.src, { ...objData.props, customId: objData.id });
             fabricCanvas.add(newObj);
+            
           } catch (err) {
             console.error("Error loading image:", err);
           }
