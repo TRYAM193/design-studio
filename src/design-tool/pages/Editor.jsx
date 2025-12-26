@@ -213,8 +213,7 @@ export default function EditorPanel() {
             };
         });
         if (newObjs) {
-            store.dispatch(setCanvasObjects(newObjs))
-            console.log('Redux Synced')
+            store.dispatch(setCanvasObjects(newObjs));
         }
     }
 
