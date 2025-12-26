@@ -185,7 +185,7 @@ export function ThreeDPreviewModal({
                                                     <img
                                                         src={mockups[activeSide]}
                                                         alt={`${activeSide} view`}
-                                                        className="absolute inset-0 w-full h-full object-contain z-10"
+                                                        className="absolute inset-0 w-full h-full object-fill z-10"
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
