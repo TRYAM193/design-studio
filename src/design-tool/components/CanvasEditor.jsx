@@ -193,8 +193,8 @@ export default function CanvasEditor({
       const visualBorder = new fabric.Rect({
         left: leftPos,
         top: topPos,
-        width: printWidth,
-        height: printHeight,
+        width: scaledWidth,
+        height: scaledHeight,
         fill: 'transparent',
         stroke: 'rgba(0,0,0,0.3)',
         strokeWidth: 2,
