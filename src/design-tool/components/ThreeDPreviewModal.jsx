@@ -232,7 +232,7 @@ export function ThreeDPreviewModal({
                                                 maskSize: 'contain',
                                                 maskRepeat: 'no-repeat',
                                                 maskPosition: 'center',
-                                                WebkitMaskImage: `url('/assets/mockups/mug-mask-${activeSide}.png')`,
+                                                WebkitMaskImage: `url('/assets/mockups/mug-${activeSide}-mask.png')`,
                                                 WebkitMaskSize: 'contain',
                                                 WebkitMaskRepeat: 'no-repeat',
                                                 WebkitMaskPosition: 'center',
