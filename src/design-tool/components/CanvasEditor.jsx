@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import * as fabric from 'fabric';
-import WebFont from 'webfontloader'; 
+import WebFont from 'webfontloader';
 import StraightText from '../objectAdders/straightText';
 import CircleText from '../objectAdders/CircleText';
 import updateObject from '../functions/update';
@@ -63,7 +63,7 @@ export default function CanvasEditor({
   setCurrentDesign,
   printDimensions = { width: 4500, height: 5400 },
   productId,
-  activeView 
+  activeView
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
@@ -83,34 +83,34 @@ export default function CanvasEditor({
   const [containerSize, setContainerSize] = useState({ width: 800, height: 800 });
 
   // Add this helper or calculate inside your component
-const calculateScaledSize = (originalWidth: number, originalHeight: number) => {
-  // Use window.innerWidth or your specific container's width
-  const currentScreenWidth = window.innerWidth; 
-  const referenceWidth = 1024;
+  const calculateScaledSize = (originalWidth, originalHeight) => {
+    // Use window.innerWidth or your specific container's width
+    const currentScreenWidth = window.innerWidth;
+    const referenceWidth = 1024;
 
-  // Your specific logic: dimension * current / 1024
-  const scaleFactor = currentScreenWidth / referenceWidth;
+    // Your specific logic: dimension * current / 1024
+    const scaleFactor = currentScreenWidth / referenceWidth;
 
-  return {
-    width: originalWidth * scaleFactor,
-    height: originalHeight * scaleFactor,
-    scaleFactor: scaleFactor // Keep this if you need to scale objects inside too
+    return {
+      width: originalWidth * scaleFactor,
+      height: originalHeight * scaleFactor,
+      scaleFactor: scaleFactor // Keep this if you need to scale objects inside too
+    };
   };
-};
   // This removes reliance on viewport coordinates, fixing the "far away" issue.
   const updateMenuPosition = () => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
     const activeObj = canvas.getActiveObject();
-    
+
     if (activeObj) {
       const objectCenter = activeObj.getCenterPoint();
-      
+
       setMenuPosition({
         // Since the canvas scales 1:1 with the container now, we can use object coordinates directly
-        left: objectCenter.x, 
-        top: objectCenter.y - (activeObj.getScaledHeight() / 2) - 60 
+        left: objectCenter.x,
+        top: objectCenter.y - (activeObj.getScaledHeight() / 2) - 60
       });
 
       if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
@@ -127,7 +127,7 @@ const calculateScaledSize = (originalWidth: number, originalHeight: number) => {
     }
   };
 
-  const { width: printWidth, height: printHeight } = printDimensions; 
+  const { width: printWidth, height: printHeight } = printDimensions;
 
   // ✅ A. Initialize Canvas & Handle Responsive Sizing
   useEffect(() => {
@@ -145,21 +145,21 @@ const calculateScaledSize = (originalWidth: number, originalHeight: number) => {
     }
 
     const resizeCanvas = () => {
-        if (wrapperRef.current && canvas) {
-            const { clientWidth, clientHeight } = wrapperRef.current;
-            canvas.setDimensions({ width: clientWidth, height: clientHeight });
-            canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-            setContainerSize({ width: clientWidth, height: clientHeight });
-            canvas.requestRenderAll();
-        }
+      if (wrapperRef.current && canvas) {
+        const { clientWidth, clientHeight } = wrapperRef.current;
+        canvas.setDimensions({ width: clientWidth, height: clientHeight });
+        canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        setContainerSize({ width: clientWidth, height: clientHeight });
+        canvas.requestRenderAll();
+      }
     };
 
     const ro = new ResizeObserver(() => resizeCanvas());
     if (wrapperRef.current) ro.observe(wrapperRef.current);
-    
+
     resizeCanvas();
 
-    return () => {};
+    return () => { };
   }, []);
 
   // ✅ B. HANDLE PRINT AREA MASK (ClipPath) & BORDER
@@ -184,7 +184,7 @@ const calculateScaledSize = (originalWidth: number, originalHeight: number) => {
         top: topPos,
         width: printWidth,
         height: printHeight,
-        absolutePositioned: true, 
+        absolutePositioned: true,
       });
 
       canvas.clipPath = clipRect;
@@ -195,7 +195,7 @@ const calculateScaledSize = (originalWidth: number, originalHeight: number) => {
         width: printWidth,
         height: printHeight,
         fill: 'transparent',
-        stroke: 'rgba(0,0,0,0.3)', 
+        stroke: 'rgba(0,0,0,0.3)',
         strokeWidth: 2,
         strokeDashArray: [5, 5],
         selectable: false,
@@ -211,11 +211,11 @@ const calculateScaledSize = (originalWidth: number, originalHeight: number) => {
     }
 
     canvas.requestRenderAll();
-    
+
     const updateEvent = new Event('resize_menu_update');
     window.dispatchEvent(updateEvent);
 
-  }, [printWidth, printHeight, productId, containerSize, fabricCanvas, activeView]); 
+  }, [printWidth, printHeight, productId, containerSize, fabricCanvas, activeView]);
 
   // 🟩 Load Saved Designs
   useEffect(() => {
@@ -238,7 +238,7 @@ const calculateScaledSize = (originalWidth: number, originalHeight: number) => {
 
         const loadCanvasData = () => {
           fabricCanvas.loadFromJSON(parsedData, () => {
-             // Redux Sync will handle the rest
+            // Redux Sync will handle the rest
           });
 
           setTimeout(() => {
@@ -315,7 +315,7 @@ const calculateScaledSize = (originalWidth: number, originalHeight: number) => {
               console.log("Fonts loaded for new design.");
               loadCanvasData();
             },
-            inactive: loadCanvasData 
+            inactive: loadCanvasData
           });
         } else {
           loadCanvasData();
@@ -460,7 +460,7 @@ const calculateScaledSize = (originalWidth: number, originalHeight: number) => {
       canvas.off('object:rotating', handleMoving);
       canvas.off('object:modified', handleMoving);
     };
-  }, [fabricCanvas, setSelectedId, setActiveTool]); 
+  }, [fabricCanvas, setSelectedId, setActiveTool]);
 
   // 🟩 Handle Modifications
   useEffect(() => {
