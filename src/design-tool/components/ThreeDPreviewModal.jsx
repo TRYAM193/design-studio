@@ -33,8 +33,7 @@ export function ThreeDPreviewModal({
         height: 50 
     });
 
-    // ✅ DETECT PURE BLACK
-    // We use this ONLY to adjust the Highlight intensity, NOT to change the base color.
+    // Detect Pure Black to tune the highlights
     const isPureBlack = selectedColor.toLowerCase() === '#000000' || selectedColor.toLowerCase() === '#000';
 
     useEffect(() => {
@@ -128,19 +127,31 @@ export function ThreeDPreviewModal({
                                 <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8 overflow-auto">
                                     
                                     {/* 🖼️ MOCKUP CONTAINER */}
-                                    {/* Added 'bg-zinc-200' to create a grey background behind the shirt if it's transparent */}
+                                    {/* ✅ FIX 1: Set the Container Background to Grey (zinc-200) */}
                                     <div className="relative w-full max-w-[500px] aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-zinc-200 flex-shrink-0 group">
                                         
-                                        {/* LAYER 1: Base Color - USES REAL SELECTED COLOR (e.g. #000000) */}
+                                        {/* LAYER 1: Base Color */}
+                                        {/* ✅ FIX 2: Apply MASKING so color only fills the shirt, not the box */}
                                         <div 
                                             className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
-                                            style={{ backgroundColor: selectedColor }}
+                                            style={{ 
+                                                backgroundColor: selectedColor,
+                                                // MASKING MAGIC: Use the mockup image itself as the mask
+                                                maskImage: `url(${mockups[activeSide]})`,
+                                                maskSize: 'contain',
+                                                maskRepeat: 'no-repeat',
+                                                maskPosition: 'center',
+                                                WebkitMaskImage: `url(${mockups[activeSide]})`,
+                                                WebkitMaskSize: 'contain',
+                                                WebkitMaskRepeat: 'no-repeat',
+                                                WebkitMaskPosition: 'center',
+                                            }}
                                         />
 
                                         {/* LAYER 2: Mockup Image (Composite) */}
                                         {mockups[activeSide] ? (
                                             <>
-                                                {/* A. SHADOW LAYER (Multiply): Adds Deep Black Shadows */}
+                                                {/* A. SHADOW LAYER (Multiply) */}
                                                 <img 
                                                     src={mockups[activeSide]} 
                                                     alt={`${activeSide} view`} 
@@ -148,15 +159,15 @@ export function ThreeDPreviewModal({
                                                     style={{ mixBlendMode: 'multiply' }} 
                                                 />
                                                 
-                                                {/* B. HIGHLIGHT LAYER (Screen): Restores Texture on Black */}
-                                                {/* Increased Opacity to 0.4 for Pure Black to make wrinkles pop */}
+                                                {/* B. HIGHLIGHT LAYER (Screen) */}
                                                 <img 
                                                     src={mockups[activeSide]} 
                                                     alt={`${activeSide} highlights`} 
                                                     className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none"
                                                     style={{ 
                                                         mixBlendMode: 'screen', 
-                                                        opacity: isPureBlack ? 0.4 : 0.2 // Stronger highlights for black
+                                                        // Subtle opacity so black stays black, but wrinkles show
+                                                        opacity: isPureBlack ? 0.3 : 0.2 
                                                     }} 
                                                 />
                                             </>
@@ -166,7 +177,7 @@ export function ThreeDPreviewModal({
                                             </div>
                                         )}
 
-                                        {/* ✅ LAYER 3: GLOBAL SHADOW (MUG ONLY) */}
+                                        {/* LAYER 3: MUG SHADOW (Only for mugs) */}
                                         {isMug && (
                                             <div 
                                                 className="absolute inset-0 z-15 pointer-events-none"
@@ -177,7 +188,7 @@ export function ThreeDPreviewModal({
                                             />
                                         )}
 
-                                        {/* ✅ LAYER 4: USER DESIGN */}
+                                        {/* LAYER 4: USER DESIGN */}
                                         {currentTexture && (
                                             <div 
                                                 className="absolute z-20 border border-transparent hover:border-white/50 transition-colors overflow-hidden"
@@ -214,18 +225,28 @@ export function ThreeDPreviewModal({
                                     </div>
                                 </div>
 
-                                {/* Side Selector */}
+                                {/* Side Selector Thumbnails */}
                                 {mockupKeys.length > 1 && (
                                     <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 flex-shrink-0">
                                         {mockupKeys.map(side => (
                                             <button
                                                 key={side}
                                                 onClick={() => setActiveSide(side)}
-                                                className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden transition-all ${
+                                                className={`relative w-16 h-16 rounded-lg border-2 overflow-hidden transition-all bg-zinc-200 ${
                                                     activeSide === side ? "border-white scale-110" : "border-white/20 opacity-60 hover:opacity-100"
                                                 }`}
                                             >
-                                                <div className="absolute inset-0" style={{ backgroundColor: selectedColor }} />
+                                                {/* Mask the thumbnail color too */}
+                                                <div 
+                                                    className="absolute inset-0" 
+                                                    style={{ 
+                                                        backgroundColor: selectedColor,
+                                                        maskImage: `url(${mockups[side]})`,
+                                                        maskSize: 'cover',
+                                                        WebkitMaskImage: `url(${mockups[side]})`,
+                                                        WebkitMaskSize: 'cover'
+                                                    }} 
+                                                />
                                                 
                                                 <img 
                                                     src={mockups[side]} 
@@ -237,7 +258,7 @@ export function ThreeDPreviewModal({
                                                     src={mockups[side]} 
                                                     alt={side} 
                                                     className="absolute inset-0 w-full h-full object-cover" 
-                                                    style={{ mixBlendMode: 'screen', opacity: isPureBlack ? 0.4 : 0.2 }}
+                                                    style={{ mixBlendMode: 'screen', opacity: isPureBlack ? 0.3 : 0.2 }}
                                                 />
                                             </button>
                                         ))}
