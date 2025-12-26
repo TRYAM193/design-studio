@@ -96,15 +96,10 @@ export function ThreeDPreviewModal({
     // Reset when modal opens
     useEffect(() => {
         if (isOpen) {
-            // FIX: If it is a Mug, force default to '3d' view (skipping 2d)
-            if (isMug && has3D) {
-                setViewMode('3d');
-            } else {
-                setViewMode('2d');
-            }
+            setViewMode('2d');
             setActiveSide(mockupKeys[0] || 'front');
         }
-    }, [isOpen, productId, isMug, has3D]);
+    }, [isOpen, productId]);
 
     // --- 2. GENERATE WARP EFFECT ---
     useEffect(() => {
@@ -138,17 +133,12 @@ export function ThreeDPreviewModal({
                 {/* --- HEADER --- */}
                 <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-zinc-900 z-10 flex-shrink-0">
                     <div className="flex gap-2 p-1 bg-black/40 rounded-lg border border-white/5">
-                        
-                        {/* FIX: Hide 2D button if it's a mug */}
-                        {!isMug && (
-                            <button
-                                onClick={() => setViewMode('2d')}
-                                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === '2d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"}`}
-                            >
-                                <ImageIcon size={16} /> 2D Mockup
-                            </button>
-                        )}
-
+                        <button
+                            onClick={() => setViewMode('2d')}
+                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === '2d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"}`}
+                        >
+                            <ImageIcon size={16} /> 2D Mockup
+                        </button>
                         <button
                             onClick={() => has3D && setViewMode('3d')}
                             disabled={!has3D}
@@ -275,7 +265,7 @@ export function ThreeDPreviewModal({
                         )}
 
                         {/* === FOOTER: THUMBNAILS === */}
-                        {mockupKeys.length > 1 && !isMug && (
+                        {mockupKeys.length > 1 && (
                             <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 flex-shrink-0 z-30">
                                 {mockupKeys.map(side => (
                                     <button
