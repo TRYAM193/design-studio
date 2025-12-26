@@ -125,18 +125,6 @@ export function ThreeDPreviewModal({
                                         />
 
                                         {/* LAYER 2: Mockup Image */}
-                                        {mockups[activeSide] ? (
-                                            <img
-                                                src={mockups[activeSide]}
-                                                alt={`${activeSide} view`}
-                                                className="absolute inset-0 w-full h-full object-contain z-10"
-                                                style={{ mixBlendMode: 'multiply' }}
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
-                                                No Mockup Available
-                                            </div>
-                                        )}
 
                                         {/* ✅ LAYER 3: GLOBAL SHADOW (MUG ONLY) */}
                                         {/* Sits between Mug and Design to create smooth shading */}
@@ -152,7 +140,7 @@ export function ThreeDPreviewModal({
                                                         rgba(255,255,255,0.0) 50%, 
                                                         rgba(0,0,0,0.05) 75%, 
                                                         rgba(0,0,0,0.4) 100%    /* Right Shadow */
-                                                    )`,
+                                                        )`,
                                                     mixBlendMode: 'multiply'
                                                 }}
                                             />
@@ -193,6 +181,18 @@ export function ThreeDPreviewModal({
                                                     </div>
                                                 )}
 
+                                                {mockups[activeSide] ? (
+                                                    <img
+                                                        src={mockups[activeSide]}
+                                                        alt={`${activeSide} view`}
+                                                        className="absolute inset-0 w-full h-full object-contain z-10"
+                                                        style={{ mixBlendMode: 'multiply' }}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-zinc-300 relative z-20">
+                                                        No Mockup Available
+                                                    </div>
+                                                )}
 
 
                                                 {/* 🟢 NORMAL PRODUCTS (STATIC PER SIDE) */}
