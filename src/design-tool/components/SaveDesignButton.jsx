@@ -19,50 +19,28 @@ export default function SaveDesignButton({
 
   const handleSaveClick = () => {
     if (!canvas) return;
-
-    // IF NEW: Save directly
     if (!editingDesignId) {
+      // New Design -> Save directly
       saveNewDesign(userId, canvas, productData, viewStates, currentView, setSaving);
-      return;
+    } else {
+      // Existing Design -> Ask user
+      setShowSavePrompt(true);
     }
-
-    // IF EXISTING: Prompt user
-    setShowSavePrompt(true);
   };
 
   const handleOverwrite = async () => {
-    await overwriteDesign(
-      userId, 
-      editingDesignId, 
-      canvas, 
-      productData, // Pass Product Info
-      viewStates,  // Pass Hidden Views (Back, Sleeves)
-      currentView, // Pass Active View
-      setSaving
-    );
+    await overwriteDesign(userId, editingDesignId, canvas, productData, viewStates, currentView, setSaving);
     setShowSavePrompt(false);
   };
 
   const handleSaveCopy = async () => {
-    // "Save as Copy" creates a NEW ID but keeps the full product data
-    await saveNewDesign(
-      userId, 
-      canvas, 
-      productData, 
-      viewStates, 
-      currentView, 
-      setSaving
-    );
+    await saveNewDesign(userId, canvas, productData, viewStates, currentView, setSaving);
     setShowSavePrompt(false);
   };
 
   return (
     <>
-      <button 
-        onClick={handleSaveClick} 
-        disabled={saving} 
-        className={classNames} 
-      >
+      <button onClick={handleSaveClick} disabled={saving} className={classNames}>
         {saving ? <FiRotateCw size={20} className="icon-spin" /> : <FiSave size={20} />}
         <span>Save</span>
       </button>
