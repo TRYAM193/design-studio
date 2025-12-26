@@ -427,8 +427,8 @@ export default function EditorPanel() {
                                         productId: productId,
                                         color: canvasBg,
                                         print_areas: productData.print_areas
-                                            />
-                            )}
+                                    )}
+                                    />
                             <Button
                                 onClick={handleGeneratePreview}
                                 disabled={isGeneratingPreview || !fabricCanvas}
