@@ -246,15 +246,15 @@ export function ThreeDPreviewModal({
                             </div>
                         )}
 
+                        {/* 3D RENDERER (Keep existing) */}
+                        {viewMode === "3d" && has3D && (
+                            <Tshirt3DPreview
+                                modelUrl={productData.model3d}
+                                textures={textures} // Pass full textures, let 3D component handle mapping
+                                color={selectedColor}
+                            />
+                        )}
                     </div>
-                    {/* 3D RENDERER (Keep existing) */}
-                    {viewMode === "3d" && has3D && (
-                        <Tshirt3DPreview
-                            modelUrl={productData.model3d}
-                            textures={textures} // Pass full textures, let 3D component handle mapping
-                            color={selectedColor}
-                        />
-                    )}
                 </div>
             </DialogContent>
         </Dialog>
