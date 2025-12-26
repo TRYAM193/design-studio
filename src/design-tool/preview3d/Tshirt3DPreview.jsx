@@ -90,6 +90,7 @@ function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
 function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) {
   const { nodes, materials } = useGLTF(modelUrl);
   const m = config.meshes;
+  console.log(color)
 
   const frontTex = useDesignTexture(textures?.front);
   const backTex = useDesignTexture(textures?.back);

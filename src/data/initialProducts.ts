@@ -354,9 +354,9 @@ export const INITIAL_PRODUCTS = [
     },
 
     print_area_2d: {
-      front: { top: 15, left: 25, width: 50 },
-      left: { top: 15, left: 25, width: 50 },
-      right: { top: 15, left: 25, width: 50 }
+      front: { top: 13, left: 25, width: 50, height: 79 },
+      left: { top: 13, left: 25, width: 50, height: 79 },
+      right: { top: 13, left: 25, width: 50, height: 79 }
     },
 
     options: {
