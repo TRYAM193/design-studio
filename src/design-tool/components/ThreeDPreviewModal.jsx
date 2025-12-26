@@ -169,7 +169,7 @@ export function ThreeDPreviewModal({
                                         <img
                                             src={mockups[activeSide]}
                                             alt={`${activeSide} view`}
-                                            className="absolute inset-0 w-full h-full object-fill px-8 z-0"
+                                            className="absolute inset-0 w-full h-full object-fill z-0"
                                         />
                                     ) : (
                                         <div className="text-white">No Mockup Image</div>
