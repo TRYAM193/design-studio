@@ -502,7 +502,7 @@ export default function CanvasEditor({
             }
             hasChanges = true;
           });
-          console.log(present)
+          console.log(present);
           if (hasChanges) {
             store.dispatch(setCanvasObjects(updatedPresent));
           }
