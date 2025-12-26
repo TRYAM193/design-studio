@@ -172,11 +172,11 @@ export function ThreeDPreviewModal({
                                                             width: `${adjustments.width}%`,
                                                             height: `${adjustments.height}%`,
 
-                                                            WebkitMaskImage: "url('/masks/mug-mask.png')",
+                                                            WebkitMaskImage: "url('/assets/mug-mockup.png')",
                                                             WebkitMaskSize: "100% 100%",
                                                             WebkitMaskRepeat: "no-repeat",
 
-                                                            maskImage: "url('/masks/mug-mask.png')",
+                                                            maskImage: "url('/assets/mug-mockup.png')",
                                                             maskSize: "100% 100%",
                                                             maskRepeat: "no-repeat",
 
