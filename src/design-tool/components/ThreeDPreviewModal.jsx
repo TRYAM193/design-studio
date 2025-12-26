@@ -230,9 +230,9 @@ export function ThreeDPreviewModal({
                                     )}
                                 </div>
                             </div>
-)}
+                        )}
 
-                           {mockupKeys.length > 1 && (
+                        {mockupKeys.length > 1 && (
                             <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 z-30">
                                 {mockupKeys.map(side => (
                                     <button
