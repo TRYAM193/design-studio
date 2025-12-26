@@ -153,6 +153,7 @@ export default function EditorPanel() {
 
     // ... imports
     // Inside EditorPanel component...
+    const addObj = 
 
     // 🟩 UPDATED LOADING LOGIC
     useEffect(() => {
