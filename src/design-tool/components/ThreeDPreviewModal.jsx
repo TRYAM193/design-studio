@@ -228,7 +228,7 @@ export function ThreeDPreviewModal({
                                                     rgba(0,0,0,0.3) 100%)`,
 
                                                 // We mask the shadow too, so it doesn't darken the background
-                                                maskImage: `url('/assets/mockups/mug-mask-${activeSide}.png')`,
+                                                maskImage: `url('/assets/mockups/mug-${activeSide}-mask.png')`,
                                                 maskSize: 'contain',
                                                 maskRepeat: 'no-repeat',
                                                 maskPosition: 'center',
