@@ -35,10 +35,15 @@ export function ThreeDPreviewModal({
 
     useEffect(() => {
         if (isOpen) {
-            setViewMode('2d');
+            // ✅ FIX: If it is a Mug, force default to '3d' view immediately
+            if (isMug && has3D) {
+                setViewMode('3d');
+            } else {
+                setViewMode('2d');
+            }
             setActiveSide(mockupKeys[0] || 'front');
         }
-    }, [isOpen, productId]);
+    }, [isOpen, productId, isMug, has3D]);
 
     useEffect(() => {
         const defaults = productData.print_area_2d?.[activeSide] || { top: 20, left: 30, width: 40, height: 40 };
@@ -85,14 +90,18 @@ export function ThreeDPreviewModal({
                 {/* --- HEADER --- */}
                 <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-zinc-900 z-10 flex-shrink-0">
                     <div className="flex gap-2 p-1 bg-black/40 rounded-lg border border-white/5">
-                        <button
-                            onClick={() => setViewMode('2d')}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
-                                viewMode === '2d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
-                            }`}
-                        >
-                            <ImageIcon size={16} /> 2D Mockup
-                        </button>
+                        
+                        {/* ✅ FIX: Hide 2D Mockup button if it is a Mug */}
+                        {!isMug && (
+                            <button
+                                onClick={() => setViewMode('2d')}
+                                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+                                    viewMode === '2d' ? "bg-white text-black shadow-sm" : "text-zinc-400 hover:text-white"
+                                }`}
+                            >
+                                <ImageIcon size={16} /> 2D Mockup
+                            </button>
+                        )}
                         
                         <button
                             onClick={() => has3D && setViewMode('3d')}
@@ -248,47 +257,6 @@ export function ThreeDPreviewModal({
                             </div>
                         )}
                     </div>
-
-                    {/* === RIGHT: ADJUSTMENT SIDEBAR === */}
-                    {/* {viewMode === '2d' && (
-                        <div className="w-80 bg-zinc-900 border-l border-white/10 p-6 flex flex-col gap-8 z-30 shadow-xl overflow-y-auto">
-                            <div className="flex items-center gap-2 pb-4 border-b border-white/10">
-                                <Settings2 className="text-zinc-400" size={20} />
-                                <h3 className="text-white font-semibold">Adjust Placement</h3>
-                            </div>
-
-                            <div className="space-y-6">
-                                <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2"><Move size={12} /> Position</h4>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-zinc-400 text-xs font-medium"><span>Top (Y)</span><span className="text-white">{adjustments.top.toFixed(0)}%</span></div>
-                                    <input type="range" min="0" max="100" step="1" value={adjustments.top} onChange={(e) => handleAdjustment('top', e.target.value)} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white" />
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-zinc-400 text-xs font-medium"><span>Left (X)</span><span className="text-white">{adjustments.left.toFixed(0)}%</span></div>
-                                    <input type="range" min="0" max="100" step="1" value={adjustments.left} onChange={(e) => handleAdjustment('left', e.target.value)} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white" />
-                                </div>
-                            </div>
-
-                            <div className="space-y-6 pt-2">
-                                <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-2"><Maximize2 size={12} /> Dimensions</h4>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-zinc-400 text-xs font-medium"><span>Width</span><span className="text-white">{adjustments.width.toFixed(0)}%</span></div>
-                                    <input type="range" min="5" max="100" step="1" value={adjustments.width} onChange={(e) => handleAdjustment('width', e.target.value)} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white" />
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-zinc-400 text-xs font-medium"><span>Height</span><span className="text-white">{adjustments.height.toFixed(0)}%</span></div>
-                                    <input type="range" min="5" max="100" step="1" value={adjustments.height} onChange={(e) => handleAdjustment('height', e.target.value)} className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-white" />
-                                </div>
-                            </div>
-
-                            <div className="mt-auto pt-6 border-t border-white/10">
-                                <Button className="w-full h-12 text-base font-bold bg-white text-black hover:bg-zinc-200 transition-all rounded-xl gap-2 shadow-xl" onClick={onAddToCart} disabled={isSaving}>
-                                    {isSaving ? <Loader2 className="animate-spin" size={18} /> : <ShoppingBag size={18} />}
-                                    {isSaving ? "Processing..." : "Add to Cart"}
-                                </Button>
-                            </div>
-                        </div>
-                    )} */}
                 </div>
             </DialogContent>
         </Dialog>
