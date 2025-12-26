@@ -60,10 +60,6 @@ export function ThreeDPreviewModal({
 
     const currentTexture = getCurrentTexture();
 
-    const handleAdjustment = (key, value) => {
-        setAdjustments(prev => ({ ...prev, [key]: parseFloat(value) }));
-    };
-
     // ✅ 2. CALCULATE SHIFT (The "Pan Camera" Logic)
     // This tells the image to slide Left/Right inside the frame
     const getMugShift = () => {
@@ -160,7 +156,7 @@ export function ThreeDPreviewModal({
                                                 }}
                                             />
                                         )}
-                                        
+
                                         {/* ===== USER DESIGN ===== */}
                                         {currentTexture && (
                                             <>
