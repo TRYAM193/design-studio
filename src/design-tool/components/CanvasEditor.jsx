@@ -86,7 +86,7 @@ export default function CanvasEditor({
   const calculateScaledSize = (originalWidth, originalHeight) => {
     // Use window.innerWidth or your specific container's width
     const currentScreenWidth = window.innerWidth;
-    const referenceWidth = 1024;
+    const referenceWidth = 1707;
     console.log(window.innerWidth);
     // Your specific logic: dimension * current / 1024
     const scaleFactor = currentScreenWidth / referenceWidth;
