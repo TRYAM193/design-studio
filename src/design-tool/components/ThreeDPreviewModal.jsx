@@ -135,7 +135,7 @@ export function ThreeDPreviewModal({
                                         <div 
                                             className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
                                             style={{ 
-                                                backgroundColor: selectedColor ? !isPureBlack ? selectedColor : '#111111' : '#FFFFFF',
+                                                backgroundColor: !isPureBlack ? selectedColor : '#111111' : '#FFFFFF',
                                                 // MASKING MAGIC: Use the mockup image itself as the mask
                                                 maskImage: `url(${mockups[activeSide]})`,
                                                 maskSize: 'contain',
