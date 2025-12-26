@@ -163,48 +163,72 @@ export function ThreeDPreviewModal({
 
                                         {/* ✅ LAYER 4: USER DESIGN (With Shift Logic) */}
                                         {/* ===== USER DESIGN (ACTIVE SIDE ONLY) ===== */}
-                                        {isMug && currentTexture && mockups[activeSide] && (
-                                            <div
-                                                key={activeSide} // 🔥 forces rerender when side changes
-                                                className="absolute z-20 pointer-events-none"
-                                                style={{
-                                                    top: `${adjustments.top}%`,
-                                                    left: `${adjustments.left}%`,
-                                                    width: `${adjustments.width}%`,
-                                                    height: `${adjustments.height}%`,
+                                        {/* ===== USER DESIGN ===== */}
+                                        {currentTexture && (
+                                            <>
+                                                {/* 🟡 MUG (WRAP + MASK + SHIFT) */}
+                                                {isMug && (
+                                                    <div
+                                                        key={activeSide}
+                                                        className="absolute z-20 pointer-events-none"
+                                                        style={{
+                                                            top: `${adjustments.top}%`,
+                                                            left: `${adjustments.left}%`,
+                                                            width: `${adjustments.width}%`,
+                                                            height: `${adjustments.height}%`,
 
-                                                    /* MASK */
-                                                    WebkitMaskImage: "url('/masks/mug-mask.png')",
-                                                    WebkitMaskSize: "100% 100%",
-                                                    WebkitMaskRepeat: "no-repeat",
-                                                    WebkitMaskPosition: "center",
+                                                            WebkitMaskImage: "url('/masks/mug-mask.png')",
+                                                            WebkitMaskSize: "100% 100%",
+                                                            WebkitMaskRepeat: "no-repeat",
 
-                                                    maskImage: "url('/masks/mug-mask.png')",
-                                                    maskSize: "100% 100%",
-                                                    maskRepeat: "no-repeat",
-                                                    maskPosition: "center",
+                                                            maskImage: "url('/masks/mug-mask.png')",
+                                                            maskSize: "100% 100%",
+                                                            maskRepeat: "no-repeat",
 
-                                                    mixBlendMode: "multiply",
-                                                    overflow: "hidden"
-                                                }}
-                                            >
-                                                <img
-                                                    src={currentTexture}
-                                                    alt={`Mug design ${activeSide}`}
-                                                    style={{
-                                                        width: "300%",
-                                                        height: "100%",
-                                                        position: "absolute",
-                                                        top: 0,
-                                                        left: getMugShift(), // 0 / -100 / -200
-                                                        transition: "left 0.35s ease-in-out",
-                                                        objectFit: "fill"
-                                                    }}
-                                                    draggable={false}
-                                                />
-                                            </div>
+                                                            mixBlendMode: "multiply",
+                                                            overflow: "hidden"
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={currentTexture}
+                                                            alt={`Mug design ${activeSide}`}
+                                                            style={{
+                                                                width: "300%",
+                                                                height: "100%",
+                                                                position: "absolute",
+                                                                top: 0,
+                                                                left: getMugShift(),
+                                                                transition: "left 0.35s ease-in-out",
+                                                                objectFit: "fill"
+                                                            }}
+                                                            draggable={false}
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                {/* 🟢 NORMAL PRODUCTS (STATIC PER SIDE) */}
+                                                {!isMug && (
+                                                    <div
+                                                        key={activeSide}
+                                                        className="absolute z-20"
+                                                        style={{
+                                                            top: `${adjustments.top}%`,
+                                                            left: `${adjustments.left}%`,
+                                                            width: `${adjustments.width}%`,
+                                                            height: `${adjustments.height}%`,
+                                                            mixBlendMode: "multiply"
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={currentTexture}
+                                                            alt={`${activeSide} design`}
+                                                            className="w-full h-full object-fill"
+                                                            draggable={false}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
-
                                     </div>
                                 </div>
 
