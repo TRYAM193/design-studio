@@ -257,8 +257,7 @@ export function ThreeDPreviewModal({
                                     </button>
                                 ))}
                             </div>
-                        )}
-                    </div>
+                        
                         )}
 
                     {/* === 3D VIEW === */}
