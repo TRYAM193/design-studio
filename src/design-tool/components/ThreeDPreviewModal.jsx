@@ -220,7 +220,7 @@ export function ThreeDPreviewModal({
                                     {/* This sits ON TOP of the design to make it look round */}
                                     {isMug && (
                                         <div
-                                            className="absolute inset-0 z-20 pointer-events-none"
+                                            className="absolute w-full inset-0 z-20 pointer-events-none"
                                             style={{
                                                 background: `linear-gradient(90deg, 
                                                     rgba(0,0,0,0.3) 0%, 
