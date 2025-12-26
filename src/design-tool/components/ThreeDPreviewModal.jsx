@@ -34,12 +34,12 @@ const generateWarpedMugView = (textureUrl, viewSide) => {
 
             // 2. The Vertical Slicing Algorithm (Warping)
             const outputWidth = canvas.width;
-            
+
             // Iterate over every vertical column of pixels in the OUTPUT canvas
             for (let x = 0; x < outputWidth; x++) {
                 // Normalize x from -1 to 1 (calculating the curve)
                 let n = (x / outputWidth) * 2 - 1;
-                
+
                 // Inverse Sine mapping to fake a cylinder projection
                 // This calculates WHERE on the flat source image this pixel comes from
                 let textureXOffset = (Math.asin(n) / (Math.PI / 2)) * (sliceWidth / 2) + (sliceWidth / 2);
@@ -78,7 +78,7 @@ export function ThreeDPreviewModal({
 
     // Detect Mug
     const isMug = productData?.title?.toLowerCase().includes("mug") ||
-                  productData?.category?.toLowerCase().includes("mug");
+        productData?.category?.toLowerCase().includes("mug");
 
     const [viewMode, setViewMode] = useState('2d');
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
@@ -98,7 +98,7 @@ export function ThreeDPreviewModal({
         // If it's a mug and in 2D mode, we need to generate the warp
         if (isOpen && isMug && viewMode === '2d' && textures.front?.url) {
             setIsProcessing(true);
-            
+
             // Mugs usually use the 'front' texture for the whole wrap. 
             // We pass the current 'activeSide' so the function knows which part to crop.
             generateWarpedMugView(textures.front.url, activeSide)
@@ -151,13 +151,13 @@ export function ThreeDPreviewModal({
                 {/* ===== MAIN STAGE ===== */}
                 <div className="flex-1 flex bg-zinc-900 overflow-hidden">
                     <div className="flex-1 flex flex-col">
-                        
+
                         {/* 2D VIEW PORT */}
                         {viewMode === "2d" && (
                             <div className="flex-1 flex items-center justify-center p-8 bg-zinc-900 relative">
-                                
+
                                 <div className="relative w-full max-w-[500px] aspect-[1/1] flex items-center justify-center">
-                                    
+
                                     {/* --- LAYER 1: THE MUG BASE (Background) --- */}
                                     {/* This is the photo of the blank mug */}
                                     {mockups[activeSide] && (
@@ -170,7 +170,7 @@ export function ThreeDPreviewModal({
 
                                     {/* --- LAYER 2: THE WARPED DESIGN (Middle) --- */}
                                     {/* This sits ON TOP of the mug image, but UNDER the shadows */}
-                                    <div 
+                                    <div
                                         className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
                                         style={{
                                             // THIS IS THE KEY MASKING LOGIC
@@ -179,7 +179,7 @@ export function ThreeDPreviewModal({
                                             WebkitMaskSize: 'contain',
                                             WebkitMaskRepeat: 'no-repeat',
                                             WebkitMaskPosition: 'center',
-                                            
+
                                             maskImage: `url('/masks/mug-mask-${activeSide}.png')`,
                                             maskSize: 'contain',
                                             maskRepeat: 'no-repeat',
@@ -189,20 +189,20 @@ export function ThreeDPreviewModal({
                                         {isProcessing ? (
                                             <Loader2 className="animate-spin text-white/50" />
                                         ) : isMug && warpedTextureSrc ? (
-                                            <img 
-                                                src={warpedTextureSrc} 
+                                            <img
+                                                src={warpedTextureSrc}
                                                 alt="Warped Design"
                                                 className="w-full h-full object-contain"
-                                                style={{ 
+                                                style={{
                                                     // "Multiply" makes the design look like it soaked into the ceramic
-                                                    mixBlendMode: 'multiply', 
-                                                    opacity: 0.9 
+                                                    mixBlendMode: 'multiply',
+                                                    opacity: 0.9
                                                 }}
                                             />
                                         ) : !isMug && getStandardTexture() ? (
                                             /* Fallback for T-shirts/Non-mugs */
-                                            <img 
-                                                src={getStandardTexture()} 
+                                            <img
+                                                src={getStandardTexture()}
                                                 className="w-[50%] h-[50%] object-contain" // Simplified sizing for non-mugs
                                             />
                                         ) : null}
@@ -211,7 +211,7 @@ export function ThreeDPreviewModal({
                                     {/* --- LAYER 3: SHADOWS & HIGHLIGHTS (Top) --- */}
                                     {/* This is a generated gradient to fake the roundness sheen */}
                                     {isMug && (
-                                        <div 
+                                        <div
                                             className="absolute inset-0 z-20 pointer-events-none"
                                             style={{
                                                 background: `linear-gradient(90deg, 
@@ -230,9 +230,7 @@ export function ThreeDPreviewModal({
                                     )}
                                 </div>
                             </div>
-                        )}
 
-                        {/* VIEW SWITCHER (Thumbnail Strip) */}
                         {mockupKeys.length > 1 && (
                             <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 z-30">
                                 {mockupKeys.map(side => (
@@ -246,7 +244,8 @@ export function ThreeDPreviewModal({
                                 ))}
                             </div>
                         )}
-                        
+                        )}
+
                         {/* 3D RENDERER (Keep existing) */}
                         {viewMode === "3d" && has3D && (
                             <Tshirt3DPreview
