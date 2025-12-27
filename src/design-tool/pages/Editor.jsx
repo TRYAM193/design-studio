@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
-import * as fabric from 'fabric';
 import CanvasEditor from '../components/CanvasEditor';
 import Text from '../functions/text';
 import updateObject from '../functions/update';
@@ -19,7 +18,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX } from 'react-icons/fi';
+import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle } from 'react-icons/fi';
 
 const uuidv4 = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
