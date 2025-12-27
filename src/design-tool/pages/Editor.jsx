@@ -216,14 +216,14 @@ export default function EditorPanel() {
                 let finalId = obj.customId || obj.id;
 
                 // CRITICAL: If this ID has already been seen in this loop (duplicate!), generate a new one.
-                if (!finalId || seenIds.has(finalId)) {
-                    // Generate a new unique ID
-                    finalId = `${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
+                // if (!finalId || seenIds.has(finalId)) {
+                //     // Generate a new unique ID
+                //     finalId = `${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
 
-                    // Update the actual canvas object so it stays in sync with Redux
-                    obj.set('customId', finalId);
-                    obj.set('id', finalId);
-                }
+                //     // Update the actual canvas object so it stays in sync with Redux
+                //     obj.set('customId', finalId);
+                //     obj.set('id', finalId);
+                // }
 
                 // Mark this ID as taken
                 seenIds.add(finalId);
