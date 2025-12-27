@@ -198,7 +198,6 @@ export default function CanvasEditor({
       canvas.clipPath = clipRect;
       
       if (scaledHeight && scaledWidth) {
-        console.log('running')
         const visualBorder = new fabric.Rect({
           left: leftPos,
           top: topPos,
@@ -217,6 +216,7 @@ export default function CanvasEditor({
         canvas.bringObjectToFront(visualBorder);
       }
     } else {
+          console.log('running')
       canvas.clipPath = null;
     }
 
