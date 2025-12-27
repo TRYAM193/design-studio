@@ -174,6 +174,7 @@ export default function CanvasEditor({
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
+    console.log('running')
 
     canvas.getObjects().forEach((obj) => {
       if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') {
