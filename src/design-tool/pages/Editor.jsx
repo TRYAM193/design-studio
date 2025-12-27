@@ -328,25 +328,6 @@ export default function EditorPanel() {
                                 }
                             }));
                             
-                            // However, since addObj is robust, let's just use it on the CANVAS objects
-                            // This is safe now because we just added them and we know what's there.
-                            // OR to be strictly "Simpler":
-                            // Just pass [ ...fabricCanvas.getObjects() ] to addObj? 
-                            // No, user said "don't read canvas".
-                            
-                            // CORRECT PATH: Pass the enlivened objects to addObj, but addObj needs to APPEND.
-                            // Since addObj replaces, we must construct the full list.
-                            
-                            // Let's use the `fabricCanvas.getObjects()` just this once because we know we just populated it correctly?
-                            // User: "see you are passing this also const currentJson... this would create duplicate"
-                            
-                            // OK, Cleanest Way:
-                            // We have `incomingObjects` (JSON). We have `currentReduxState`.
-                            // We can format `incomingObjects` to Redux format directly.
-                            
-                            // Let's modify addObj to handle the "Append" logic or do it here?
-                            // Doing it here is clearer.
-                            
                             // 1. Format Incoming
                             const newReduxObjs = incomingObjects.map(obj => ({
                                 id: obj.customId,
