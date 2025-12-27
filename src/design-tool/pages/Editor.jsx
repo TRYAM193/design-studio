@@ -206,6 +206,7 @@ export default function EditorPanel() {
             if (typeof parsedJSON === 'string') {
                 try { parsedJSON = JSON.parse(parsedJSON); } catch (e) { console.error("JSON Parse Error", e); return; }
             }
+            console.log()
 
             // ---------------------------------------------------------
             // CASE A: PRODUCT DESIGN (Replace Full Context)
