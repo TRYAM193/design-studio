@@ -1,134 +1,123 @@
-// src/design-tool/components/SavePromptModal.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import '../styles/SavePromptModal.css';
-import { FiFile, FiCopy } from 'react-icons/fi';
+import { FiFile, FiCopy, FiX } from 'react-icons/fi';
+import "../styles/SavePromptModal.css";
 
-export default function SavePromptModal({ 
+const SavePromptModal = ({ 
   isOpen, 
   onClose, 
   onConfirm, 
   isSaving, 
   currentName, 
   isExistingDesign 
-}) {
+}) => {
   const [designName, setDesignName] = useState("");
-  const [mode, setMode] = useState('initial'); // 'initial' or 'input'
+  const [mode, setMode] = useState('initial'); 
+  const [mounted, setMounted] = useState(false);
 
-  // Reset state when modal opens
+  // Ensure we only use Portal after component mounts (prevents hydration errors)
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       setDesignName(currentName || "Untitled Design");
-      // If it's new, go straight to input. If existing, show choices.
+      // If existing, ask for Choice. If new, ask for Name directly.
       setMode(isExistingDesign ? 'choice' : 'input'); 
     }
   }, [isOpen, currentName, isExistingDesign]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
+  // Handlers
   const handleUpdateClick = () => {
-    // Save as Update (keep ID, keep name)
+    // "Update" -> Overwrite existing, keep same name (or update it if we add that field later)
     onConfirm(designName, false); 
   };
 
   const handleSaveAsCopyClick = () => {
-    // Switch to input mode to rename the copy
-    setDesignName(`${currentName} (Copy)`);
-    setMode('input');
+    setDesignName(`${currentName || 'Untitled'} (Copy)`);
+    setMode('input'); 
   };
 
   const handleFinalConfirm = () => {
-    // If we are in input mode & existing design, it implies "Save As Copy"
-    // If we are in input mode & new design, it implies "Create New"
+    // If we are in input mode for an existing design, it is a Copy.
     const isCopy = isExistingDesign && mode === 'input';
     onConfirm(designName, isCopy);
   };
 
   const modalContent = (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ width: '400px' }}>
-        <h3 className="mb-4 text-lg font-bold">
-          {mode === 'choice' ? 'Save Design' : 'Name Your Design'}
-        </h3>
-        
-        {/* MODE A: CHOICE (Update or Copy) */}
-        {mode === 'choice' && (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm text-slate-500 mb-2">You are editing an existing design.</p>
-            
-            <button 
-              onClick={handleUpdateClick}
-              className="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 transition-all text-left group"
-              disabled={isSaving}
-            >
-              <div className="p-2 bg-blue-100 text-blue-600 rounded-full group-hover:bg-blue-200">
-                <FiFile size={20}/>
-              </div>
-              <div>
-                <span className="block font-semibold text-slate-700">Update Existing</span>
-                <span className="text-xs text-slate-500">Overwrite "{currentName}"</span>
-              </div>
-            </button>
+    <div className="modal-backdrop">
+      <div className="modal-box">
+        <button className="close-btn" onClick={onClose}><FiX /></button>
 
-            <button 
-              onClick={handleSaveAsCopyClick}
-              className="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 transition-all text-left group"
-              disabled={isSaving}
-            >
-              <div className="p-2 bg-green-100 text-green-600 rounded-full group-hover:bg-green-200">
-                <FiCopy size={20}/>
-              </div>
-              <div>
-                <span className="block font-semibold text-slate-700">Save as Copy</span>
-                <span className="text-xs text-slate-500">Create a new file</span>
-              </div>
-            </button>
-          </div>
+        <h3>{mode === 'choice' ? 'Save Changes' : 'Name Your Design'}</h3>
+        
+        {/* --- MODE: CHOICE (Existing Design) --- */}
+        {mode === 'choice' && (
+          <>
+            <p className="text-sm text-gray-500 mb-4">How would you like to save your changes?</p>
+            <div className="flex flex-col gap-3">
+              <button className="choice-btn" onClick={handleUpdateClick} disabled={isSaving}>
+                <div className="choice-icon bg-blue-50 text-blue-600"><FiFile /></div>
+                <div className="choice-info">
+                  <strong>Update Existing</strong>
+                  <span>Overwrite current file</span>
+                </div>
+              </button>
+
+              <button className="choice-btn" onClick={handleSaveAsCopyClick} disabled={isSaving}>
+                <div className="choice-icon bg-green-50 text-green-600"><FiCopy /></div>
+                <div className="choice-info">
+                  <strong>Save as Copy</strong>
+                  <span>Create a new file</span>
+                </div>
+              </button>
+            </div>
+            <div className="text-right mt-3">
+                <span className="text-xs text-gray-400 cursor-pointer hover:text-gray-600" onClick={onClose}>Cancel</span>
+            </div>
+          </>
         )}
 
-        {/* MODE B: INPUT (Rename for Copy or New) */}
+        {/* --- MODE: INPUT (New Design OR Copy) --- */}
         {mode === 'input' && (
-          <div>
-            <p className="text-sm text-slate-500 mb-3">
-              {isExistingDesign ? "Enter a name for the copy:" : "Give your design a name to find it easily later."}
+          <>
+            <p className="text-sm text-gray-500 mb-2">
+              {isExistingDesign ? "Enter a name for the copy:" : "Give your design a name:"}
             </p>
             
             <input 
               type="text" 
+              className="save-name-input"
               value={designName}
               onChange={(e) => setDesignName(e.target.value)}
               placeholder="Enter design name..."
-              className="save-name-input w-full p-2 border rounded mb-4 focus:ring-2 ring-indigo-500 outline-none"
               autoFocus
             />
 
-            <div className="modal-actions flex justify-end gap-2">
-              <button 
-                className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded" 
-                onClick={() => isExistingDesign ? setMode('choice') : onClose()} 
-                disabled={isSaving}
-              >
+            <div className="modal-actions">
+              <button className="btn secondary" onClick={() => isExistingDesign ? setMode('choice') : onClose()}>
                 {isExistingDesign ? 'Back' : 'Cancel'}
               </button>
               <button 
-                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50" 
+                className="btn primary" 
                 onClick={handleFinalConfirm} 
                 disabled={isSaving || !designName.trim()}
               >
                 {isSaving ? 'Saving...' : 'Save Design'}
               </button>
             </div>
-          </div>
-        )}
-        
-        {/* Cancel button for Choice Mode */}
-        {mode === 'choice' && (
-             <div className="mt-4 text-right">
-                <button className="text-xs text-slate-400 hover:text-slate-600" onClick={onClose}>Cancel</button>
-             </div>
+          </>
         )}
       </div>
     </div>
   );
+
+  // ✅ THIS FIXES THE "TOP BAR" ISSUE
   return ReactDOM.createPortal(modalContent, document.body);
-}
+};
+
+export default SavePromptModal;
