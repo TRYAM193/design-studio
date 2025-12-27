@@ -189,23 +189,23 @@ export default function CanvasEditor({
 
       canvas.clipPath = clipRect;
       if (scaledHeight && scaledWidth) {
-      const visualBorder = new fabric.Rect({
-        left: leftPos,
-        top: topPos,
-        width: scaledWidth,
-        height: scaledHeight,
-        fill: 'transparent',
-        stroke: 'rgba(0,0,0,0.3)',
-        strokeWidth: 2,
-        strokeDashArray: [5, 5],
-        selectable: false,
-        evented: false,
-        customId: 'print-area-border'
-      });
-    }
+        const visualBorder = new fabric.Rect({
+          left: leftPos,
+          top: topPos,
+          width: scaledWidth,
+          height: scaledHeight,
+          fill: 'transparent',
+          stroke: 'rgba(0,0,0,0.3)',
+          strokeWidth: 2,
+          strokeDashArray: [5, 5],
+          selectable: false,
+          evented: false,
+          customId: 'print-area-border'
+        });
+        canvas.add(visualBorder);
+        canvas.bringObjectToFront(visualBorder);
+      }
 
-      canvas.add(visualBorder);
-      canvas.bringObjectToFront(visualBorder);
 
     } else {
       canvas.clipPath = null;
