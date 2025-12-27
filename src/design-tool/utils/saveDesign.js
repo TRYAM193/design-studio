@@ -3,7 +3,7 @@ import { doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 
 // --- HELPER: Build Data Object (Redux Version) ---
-const buildDesignDoc = (id, currentObjects, viewStates, productData, currentView, isNew, thumbnailDataUrl) => {
+const buildDesignDoc = (id, currentObjects, viewStates, productData, currentView, isNew, thumbnailDataUrl, name) => {
   const now = Date.now();
   
   // 1. Merge Current View Objects into ViewStates
