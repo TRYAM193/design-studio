@@ -428,7 +428,8 @@ export default function EditorPanel() {
                                     productData={{
                                         productId: productId,
                                         color: canvasBg,
-                                        print_areas: productData.print_areas
+                                        print_areas: productData.print_areas,
+                                        size: urlSize
                                     }}
                                     onGetSnapshot={getCleanDataURL}
                                     onSaveSuccess={handleSaveSuccess}
