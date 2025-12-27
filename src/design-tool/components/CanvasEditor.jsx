@@ -78,15 +78,9 @@ export default function CanvasEditor({
   setSelectedId,
   setFabricCanvas,
   fabricCanvas,
-  setEditingDesignId,
-  setCurrentDesign,
   printDimensions = { width: 4500, height: 5400 },
   productId,
   activeView,
-  setProductData,
-  setCanvasBg,
-  setViewStates,
-  setCurrentView
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
