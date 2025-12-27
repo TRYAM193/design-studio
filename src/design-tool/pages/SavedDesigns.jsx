@@ -50,7 +50,7 @@ export default function SavedDesignsPage() {
     if (filterMode === 'product' && (design.type === 'BLANK' || !design.type)) {
        const targetUrl = `/design?product=${filterProductId}&color=${filterColor || ''}&size=${filterSize || ''}`;
 
-       navigate(target, { 
+       navigate(targetUrl, { 
            state: { 
                mergeDesign: design, // Special flag for Editor.jsx
                previousState: location.state // Keep context if needed
