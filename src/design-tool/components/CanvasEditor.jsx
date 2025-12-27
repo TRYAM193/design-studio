@@ -222,7 +222,7 @@ export default function CanvasEditor({
     canvas.requestRenderAll();
     window.dispatchEvent(new Event('resize_menu_update'));
 
-  }, [printWidth, printHeight, activeView]);
+  }, [printDimensions, activeView]);
 
   // ✅ 4. HANDLE SELECTION EVENTS
   useEffect(() => {
