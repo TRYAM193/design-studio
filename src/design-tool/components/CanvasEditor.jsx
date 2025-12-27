@@ -645,7 +645,7 @@ export default function CanvasEditor({
     const reduxIds = new Set(canvasObjects.map(o => o.id));
     fabricObjects.forEach((obj) => {
       // ✅ PROTECT BORDER FROM REDUX DELETE LOOP
-      if (obj.id === 'print-area-border') return;
+      if (obj.customId === 'print-area-border') return;
 
       if (!reduxIds.has(obj.customId)) {
         fabricCanvas.remove(obj);
