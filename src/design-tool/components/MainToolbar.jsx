@@ -1,11 +1,9 @@
-// src/components/MainToolbar.jsx
 import React from 'react';
 import ImageHandler from './Image';
 import {
     FiType, FiImage, FiZap, FiSquare, FiTool, FiFolder
 } from 'react-icons/fi';
 
-// Component for a single tool button
 const ToolButton = ({ icon: Icon, label, isActive, onClick }) => (
     <button
         title={label}
@@ -17,26 +15,43 @@ const ToolButton = ({ icon: Icon, label, isActive, onClick }) => (
     </button>
 );
 
-// CHANGED: Added brandDisplay prop
-export default function MainToolbar({ activePanel, onSelectTool, setSelectedId, setActiveTool, navigation, brandDisplay, fabricCanvas }) {
+// ✅ ADDED productId prop
+export default function MainToolbar({ 
+    activePanel, 
+    onSelectTool, 
+    setSelectedId, 
+    setActiveTool, 
+    navigation, 
+    brandDisplay, 
+    fabricCanvas,
+    productId // <--- Receive this from Editor.jsx
+}) {
+
+    // ✅ NEW: Handle navigation with context
+    const handleSavedDesignsClick = () => {
+        navigation('/design/saved', { 
+            state: { 
+                filterMode: productId ? 'product' : 'blank', 
+                filterProductId: productId 
+            } 
+        });
+    };
+
     return (
         <div className="main-toolbar">
-
-            {/* FIX: Render Brand Display at the very top */}
             {brandDisplay}
 
-            {/* Saved Designs Link (Now below the brand) */}
             <button
                 title="Saved Designs"
-                onClick={() => navigation('/design/saved')}
+                onClick={handleSavedDesignsClick} // <--- Use new handler
                 className="tool-button-wrapper saved-designs-link"
             >
                 <FiFolder size={24} />
                 <span>Saved</span>
             </button>
+            
             <hr className="toolbar-divider" />
 
-            {/* ... rest of tools remain the same ... */}
             <ToolButton
                 icon={FiType}
                 label="Text"
