@@ -1,7 +1,7 @@
 // src/design-tool/pages/Editor.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
-import  uuidv4  from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import CanvasEditor from '../components/CanvasEditor';
 import Text from '../functions/text';
 import updateObject from '../functions/update';
