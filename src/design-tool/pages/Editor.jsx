@@ -292,8 +292,8 @@ export default function EditorPanel() {
         if (location.state?.designToLoad && fabricCanvas) {
             handleLoadDesign(location.state.designToLoad);
         }
-        
-        if (location.state.mergeDesign) {
+
+        if (location.state?.mergeDesign) {
             const { mergeDesign } = location.state;
             console.log("Merging design:", mergeDesign);
 
