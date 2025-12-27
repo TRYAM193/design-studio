@@ -3,7 +3,6 @@ import ImageHandler from './Image';
 import {
     FiType, FiImage, FiZap, FiSquare, FiTool, FiFolder
 } from 'react-icons/fi';
-import { fileURLToPath } from 'url';
 
 const ToolButton = ({ icon: Icon, label, isActive, onClick }) => (
     <button
