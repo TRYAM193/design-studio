@@ -214,10 +214,10 @@ export default function CanvasEditor({
         });
         canvas.add(visualBorder);
         canvas.bringObjectToFront(visualBorder);
-        console.log('added border')
+        // console.log('added border')
       }
     } else {
-          console.log('running')
+          // console.log('running')
       // canvas.clipPath = null;
     }
 console.log(canvas.clipPath)
