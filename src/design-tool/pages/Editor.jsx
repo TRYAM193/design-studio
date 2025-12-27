@@ -550,6 +550,7 @@ export default function EditorPanel() {
                                     currentObjects={canvasObjects}
                                     onGetSnapshot={getCleanDataURL}
                                     onSaveSuccess={handleSaveSuccess}
+                                    currentDesignName={currentDesign?.name}
                                 />
                             )}
                             <Button onClick={handleGeneratePreview} disabled={isGeneratingPreview || !fabricCanvas}>
