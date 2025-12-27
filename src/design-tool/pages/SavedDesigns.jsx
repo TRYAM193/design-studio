@@ -40,6 +40,7 @@ export default function SavedDesignsPage() {
 
   const handleSelectDesign = (design) => {
     // SCENARIO 1: Merge (e.g., Adding a saved sticker to the current shirt)
+    console.log('Selected design:', design);
     if (filterMode === 'product' && (design.type === 'BLANK' || !design.type)) {
       const targetUrl = `/design?product=${filterProductId}&color=${filterColor || ''}&size=${filterSize || ''}`;
 
