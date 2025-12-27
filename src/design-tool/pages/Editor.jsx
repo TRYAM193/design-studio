@@ -1,3 +1,4 @@
+// src/design-tool/pages/Editor.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
 import * as fabric from 'fabric';
@@ -19,7 +20,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle } from 'react-icons/fi';
+import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX } from 'react-icons/fi';
 
 const uuidv4 = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -102,30 +103,36 @@ export default function EditorPanel() {
     const [activePanel, setActivePanel] = useState('text');
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
 
-    // ✅ SESSION BACKUP: Save Full State on Unmount
-    useEffect(() => {
-        return () => {
-            const state = store.getState().canvas.present;
-            const view = currentViewRef.current;
-            const storedViewStates = viewStatesRef.current;
+    // ✅ NAVIGATE & FREEZE: Save Session Before Leaving
+    const navigateToTemplates = () => {
+        // 1. Capture Current State Synchronously
+        const currentObjects = store.getState().canvas.present;
+        const currentViewSnapshot = currentViewRef.current;
+        const allViewsSnapshot = viewStatesRef.current;
 
-            // Update the viewState for the current view before saving
-            // This ensures we capture the latest edits on the active view
-            const finalViewStates = {
-                ...storedViewStates,
-                [view]: state
-            };
-
-            // Only backup if we have content
-            if (state.length > 0 || Object.keys(finalViewStates).length > 0) {
-                sessionStorage.setItem('editor_backup', JSON.stringify({
-                    view: view,
-                    viewStates: finalViewStates, // This contains ALL views (Front, Back, etc.)
-                    timestamp: Date.now()
-                }));
-            }
+        // 2. Build Backup Payload
+        const backupData = {
+            view: currentViewSnapshot,
+            viewStates: {
+                ...allViewsSnapshot,
+                [currentViewSnapshot]: currentObjects // Ensure latest objects are saved
+            },
+            timestamp: Date.now()
         };
-    }, []);
+
+        // 3. Save to Storage
+        sessionStorage.setItem('merge_context', JSON.stringify(backupData));
+
+        // 4. Navigate
+        navigation('/dashboard/templates', { 
+            state: { 
+                filterMode: 'product',
+                filterProductId: productData.productId,
+                filterColor: canvasBg,
+                filterSize: urlSize
+            }
+        });
+    }
 
     // ✅ 1. FETCH PRODUCT DATA
     useEffect(() => {
@@ -156,7 +163,7 @@ export default function EditorPanel() {
     }, [urlProductId, currentDesign]);
 
 
-    // ✅ 2. UNIFIED LOAD & MERGE LOGIC (Fixed)
+    // ✅ 2. UNIFIED LOAD & MERGE LOGIC (Fixed for Back View Preservation)
     useEffect(() => {
         if (!userId) return;
 
@@ -166,31 +173,32 @@ export default function EditorPanel() {
         // --- SCENARIO A: MERGING ---
         if (isMerge) {
             async function performMerge() {
-                const backupJSON = sessionStorage.getItem('editor_backup');
+                // 1. THAW: Restore Context from Storage
+                const contextJSON = sessionStorage.getItem('merge_context');
                 
-                // Initialize fallback state
-                let restoredView = 'front';
-                let restoredViewStates = {};
-                let restoredCurrentObjects = [];
+                // Defaults if restore fails
+                let targetView = 'front';
+                let currentViewObjects = [];
+                let fullHistory = {};
 
-                // 1. RESTORE FROM BACKUP (Memory Only First)
-                if (backupJSON) {
+                if (contextJSON) {
                     try {
-                        const backup = JSON.parse(backupJSON);
-                        // Check expiry (1 hour)
-                        if (Date.now() - backup.timestamp < 3600000) {
-                            restoredView = backup.view || 'front';
-                            restoredViewStates = backup.viewStates || {};
-                            
-                            // The backup of 'viewStates' contains the latest data for all views
-                            // So we grab the object array for the view we were on
-                            restoredCurrentObjects = restoredViewStates[restoredView] || [];
+                        const context = JSON.parse(contextJSON);
+                        // Check freshness (e.g. < 1 hour)
+                        if (Date.now() - context.timestamp < 3600000) {
+                            targetView = context.view;
+                            fullHistory = context.viewStates || {};
+                            // Get objects for the restored view
+                            currentViewObjects = fullHistory[targetView] || [];
                         }
-                    } catch (e) { console.error("Backup parse error", e); }
+                    } catch (e) { console.error("Restore failed", e); }
+                    
+                    // Clean up storage so we don't restore old data later
+                    sessionStorage.removeItem('merge_context');
                 }
 
-                // 2. FETCH MERGE DESIGN
-                let mergeObjects = [];
+                // 2. FETCH: Get New Design to Merge
+                let incomingObjects = [];
                 try {
                     const designRef = doc(db, `users/${userId}/designs`, mergeId);
                     const designSnap = await getDoc(designRef);
@@ -199,7 +207,7 @@ export default function EditorPanel() {
                         const raw = Array.isArray(design.canvasData) ? design.canvasData : (design.canvasData?.front || []);
                         
                         if (raw.length > 0) {
-                            mergeObjects = raw.map(obj => ({
+                            incomingObjects = raw.map(obj => ({
                                 ...obj, 
                                 id: uuidv4(), 
                                 customId: uuidv4(),
@@ -209,21 +217,22 @@ export default function EditorPanel() {
                     }
                 } catch (e) { console.error(e); }
 
-                // 3. COMBINE DATA
-                const finalCurrentObjects = [...restoredCurrentObjects, ...mergeObjects];
+                // 3. COMBINE (InMemory)
+                const finalObjectsForView = [...currentViewObjects, ...incomingObjects];
                 
-                const finalViewStates = {
-                    ...restoredViewStates,
-                    [restoredView]: finalCurrentObjects // Update the specific view with merged data
+                // Update the history with the merged result
+                const finalHistory = {
+                    ...fullHistory,
+                    [targetView]: finalObjectsForView
                 };
 
-                // 4. ATOMIC UPDATE (Apply to React/Redux once)
-                setCurrentView(restoredView);
-                setViewStates(finalViewStates);
-                dispatch(setCanvasObjects(finalCurrentObjects));
-
-                console.log(`Merge Success. View: ${restoredView}, Objects: ${finalCurrentObjects.length}`);
+                // 4. APPLY ATOMICALLY
+                console.log(`Merging on ${targetView}: ${currentViewObjects.length} existing + ${incomingObjects.length} new`);
                 
+                setCurrentView(targetView); // Force correct view
+                setViewStates(finalHistory); // Restore full history (Front, etc.)
+                dispatch(setCanvasObjects(finalObjectsForView)); // Render current view
+
                 // 5. Cleanup
                 window.history.replaceState({}, document.title);
             }
@@ -281,8 +290,8 @@ export default function EditorPanel() {
 
     // ... (Keep existing Scale, Dims, Snapshot Logic) ...
     useEffect(() => {
-        if (productData.canvas_size) {
-            const area = productData.canvas_size;
+        if (productData.print_areas && productData.print_areas[currentView]) {
+            const area = productData.print_areas[currentView];
             setCanvasDims({ width: area.width || 4500, height: area.height || 5400 });
         }
     }, [productData, currentView]);
@@ -383,18 +392,6 @@ export default function EditorPanel() {
             });
         }
     };
-    
-    const navigateToTemplates = () => {
-        const params = new URLSearchParams(searchParams);
-        navigation('/dashboard/templates', { 
-            state: { 
-                filterMode: 'product',
-                filterProductId: productData.productId,
-                filterColor: canvasBg,
-                filterSize: urlSize
-            }
-        });
-    }
 
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
@@ -409,6 +406,7 @@ export default function EditorPanel() {
                 <MainToolbar
                     activePanel={activePanel}
                     onSelectTool={(tool) => {
+                        // ✅ Use the new freeze-and-navigate logic
                         if (tool === 'templates') {
                             navigateToTemplates();
                         } else {
@@ -484,7 +482,7 @@ export default function EditorPanel() {
                         setSelectedId={setSelectedId}
                         fabricCanvas={fabricCanvas}
                         printDimensions={canvasDims}
-                        productId={productData.id}
+                        productId={productData.productId}
                         activeView={currentView}
                     />
                 </main>
@@ -499,32 +497,14 @@ export default function EditorPanel() {
                             <RightSidebarTabs id={selectedId} type={activeTool} object={canvasObjects.find((obj) => obj.id === selectedId)} updateObject={updateObject} removeObject={removeObject} addText={addText} fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} />
                         </>
                     ) : (
-                         <div className="p-5">
-                            {productData.id && productData.options?.colors?.length > 0 ? (
-                                <>
-                                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
-                                    <div className="grid grid-cols-4 gap-3">
-                                        {productData.options.colors.map((color) => {
-                                            const hex = COLOR_MAP[color] || "#ccc";
-                                            const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
-                                            return (
-                                                <button
-                                                    key={color}
-                                                    onClick={() => handleColorChange(color)}
-                                                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}`}
-                                                    style={{ backgroundColor: hex }}
-                                                    title={color}
-                                                >
-                                                    {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} /></span>}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <p className="text-xs text-slate-400 mt-4 leading-relaxed">Visualize your design on different fabric colors.</p>
-                                </>
-                            ) : (
-                                <div className="text-center text-slate-400 py-10">Select an element to edit properties.</div>
-                            )}
+                        <div className="p-5">
+                             {productData.options?.colors?.length > 0 && (
+                                 <div className="grid grid-cols-4 gap-3">
+                                     {productData.options.colors.map(color => (
+                                         <button key={color} onClick={() => handleColorChange(color)} className={`w-10 h-10 rounded-full border-2 ${canvasBg.toLowerCase() === (COLOR_MAP[color]||color).toLowerCase() ? "border-indigo-600" : ""}`} style={{ backgroundColor: COLOR_MAP[color] || color }} title={color}></button>
+                                     ))}
+                                 </div>
+                             )}
                         </div>
                     )}
                 </aside>
