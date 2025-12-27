@@ -186,6 +186,7 @@ export default function EditorPanel() {
                 props: { ...commonProps, ...specificProps }
             };
         });
+        console.log(formattedObjects)
 
         store.dispatch(setCanvasObjects(formattedObjects));
     };
