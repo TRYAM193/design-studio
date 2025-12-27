@@ -269,7 +269,7 @@ export default function EditorPanel() {
                     fabricCanvas.loadFromJSON(currentJSON, () => {
                         fabricCanvas.renderAll();
                         // Sync FULL combined list to Redux
-                        addObj(incomingObjects);
+                        addObj(combinedObjects);
                         setLoadTimestamp(Date.now());
                     });
 
