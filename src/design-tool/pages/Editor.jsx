@@ -99,6 +99,7 @@ export default function EditorPanel() {
 
     // ✅ Initialize dims directly from default or product data logic
     const [canvasDims, setCanvasDims] = useState({ width: 300, height: 400 });
+    const [loadTimestamp, setLoadTimestamp] = useState(0);
 
     useEffect(() => {
         async function initEditor() {
