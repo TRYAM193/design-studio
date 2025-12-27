@@ -435,7 +435,7 @@ export default function EditorPanel() {
                     navigation={navigation}
                     brandDisplay={BrandDisplay}
                     fabricCanvas={fabricCanvas}
-                    pro
+                    productId={productId}
                 />
 
                 {activePanel && (
