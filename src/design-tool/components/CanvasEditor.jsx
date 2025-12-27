@@ -241,6 +241,7 @@ export default function CanvasEditor({
   }, [printWidth, printHeight, activeView]);
 
   // ✅ 3. LOAD & MERGE DESIGN LOGIC
+ // ✅ 3. LOAD & MERGE DESIGN LOGIC
   useEffect(() => {
     if (!location.state || !fabricCanvas) return;
 
@@ -255,21 +256,20 @@ export default function CanvasEditor({
         try { parsedJSON = JSON.parse(parsedJSON); } catch (e) { console.error("JSON Parse Error", e); return; }
       }
 
-      // --- Filter out Borders (Real & Ghosts) ---
+      // --- Filter out Borders ---
       const filterBorders = (objects) => {
         if (!Array.isArray(objects)) return [];
         return objects.filter(obj => {
           if (obj.id === 'print-area-border' || obj.customId === 'print-area-border') return false;
-          // Filter "Ghost" Borders (Old saves)
           if (obj.type === 'rect' && obj.strokeDashArray && obj.fill === 'transparent' && !obj.selectable) return false;
           return true;
         });
       };
 
-      // --- Sync to Redux (Helper) ---
+      // --- Sync to Redux ---
       const syncToRedux = () => {
         setTimeout(() => {
-          const newObjs = fabricCanvas.getObjects().map((obj, i) => {
+          const newObjs = fabricCanvas.getObjects().map((obj) => {
             if (obj.customId === 'print-area-border') return null;
 
             const commonProps = {
@@ -310,7 +310,9 @@ export default function CanvasEditor({
         }, 100);
       };
 
+      // -----------------------------------------------------------
       // CASE A: PRODUCT DESIGN (Replace Full Context)
+      // -----------------------------------------------------------
       if (payload.type === 'PRODUCT' && payload.productConfig && !isMerge) {
         if (setProductData) {
           setProductData(prev => ({
@@ -336,12 +338,31 @@ export default function CanvasEditor({
           });
         }
       }
-      // CASE B: MERGE / BLANK DESIGN
+      // -----------------------------------------------------------
+      // CASE B: MERGE / BLANK / SAVED DESIGN
+      // -----------------------------------------------------------
       else {
-        let incomingObjects = parsedJSON.objects || (Array.isArray(parsedJSON) ? parsedJSON : []);
+        // ✨ FIX STARTS HERE: Handle View Switching for Saved Designs ✨
+        
+        // 1. Check if the saved design specifically requested a view (e.g., 'back')
+        const targetView = payload.activeView || 'front';
+        
+        // 2. If we are replacing (not merging) and the view is different, switch it.
+        if (!isMerge && setCurrentView && targetView !== activeView) {
+            setCurrentView(targetView);
+        }
+
+        // 3. Handle Multi-View JSON (if JSON contains {front:..., back:...})
+        // If parsedJSON has the specific key for the target view, use that object data.
+        let dataToLoad = parsedJSON;
+        if (parsedJSON[targetView] && parsedJSON[targetView].objects) {
+            dataToLoad = parsedJSON[targetView];
+        }
+
+        let incomingObjects = dataToLoad.objects || (Array.isArray(dataToLoad) ? dataToLoad : []);
         incomingObjects = filterBorders(incomingObjects);
 
-        // Assign New IDs for incoming objects
+        // Assign New IDs
         incomingObjects.forEach(obj => {
           const newId = uuidv4();
           obj.id = newId;
@@ -368,11 +389,16 @@ export default function CanvasEditor({
             syncToRedux();
           });
         } else {
-          // Pure Replace (Blank or Saved Design)
-          if (parsedJSON.objects) parsedJSON.objects = incomingObjects;
-          else parsedJSON = { objects: incomingObjects };
+          // Pure Replace
+          let finalJSON = {};
+          if (dataToLoad.objects) {
+             finalJSON = { ...dataToLoad }; // keep other props like background
+             finalJSON.objects = incomingObjects;
+          } else {
+             finalJSON = { objects: incomingObjects };
+          }
 
-          fabricCanvas.loadFromJSON(parsedJSON, () => {
+          fabricCanvas.loadFromJSON(finalJSON, () => {
             fabricCanvas.renderAll();
             syncToRedux();
           });
@@ -383,7 +409,7 @@ export default function CanvasEditor({
     handleLoad();
     window.history.replaceState({}, document.title);
 
-  }, [location.state, fabricCanvas]); // Removed duplicate dependency
+  }, [location.state, fabricCanvas]);
 
   // ✅ 4. HANDLE SELECTION EVENTS
   useEffect(() => {
