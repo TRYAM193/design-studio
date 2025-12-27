@@ -74,7 +74,7 @@ export default function EditorPanel() {
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
     const [viewStates, setViewStates] = useState({});
-    cons
+    const [isActive, setIsActive] = useState(false);
     // ... (keep designTextures, refs, etc. same as before) ...
     const [designTextures, setDesignTextures] = useState({
         front: { blob: null, url: null },
