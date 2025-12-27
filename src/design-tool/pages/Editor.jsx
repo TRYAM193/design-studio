@@ -263,8 +263,6 @@ export default function EditorPanel() {
             }
         };
 
-
-
         // 1. Check Location State (Coming from Dashboard)
         if (location.state?.designToLoad && fabricCanvas) {
             handleLoadDesign(location.state.designToLoad);
