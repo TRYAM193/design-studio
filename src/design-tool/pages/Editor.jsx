@@ -151,8 +151,6 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
-    // ... imports
-    // Inside EditorPanel component...
     const addObj = () => {
         const newObjs = fabricCanvas.getObjects().map((obj, i) => {
             const commonProps = {
