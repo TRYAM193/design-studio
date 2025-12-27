@@ -64,11 +64,7 @@ export default function EditorPanel() {
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
 
-    if(urlColor && ){
-        fabricCanvas.backgroundColor = COLOR_MAP[urlColor] || urlColor;
-        fabricCanvas.renderAll();
-    }
-
+    
     const [productData, setProductData] = useState({
         title: "Custom Design",
         category: "Apparel",
@@ -93,7 +89,11 @@ export default function EditorPanel() {
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
-
+    
+    if(urlColor && !){
+        fabricCanvas.backgroundColor = COLOR_MAP[urlColor] || urlColor;
+        fabricCanvas.renderAll();
+    }
     // ✅ 1. FETCH PRODUCT DATA (Base)
     useEffect(() => {
         async function initProduct() {
