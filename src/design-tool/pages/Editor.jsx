@@ -249,7 +249,7 @@ export default function EditorPanel() {
                 if (parsedData[activeView]) {
                     fabricCanvas.loadFromJSON(parsedData[activeView], () => {
                         fabricCanvas.renderAll();
-                        addObj(parde);
+                        addObj(parsedData.);
                     });
                 }
             } else {
