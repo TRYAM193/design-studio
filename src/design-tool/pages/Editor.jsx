@@ -240,6 +240,7 @@ export default function EditorPanel() {
 
         // Dispatch the clean, unique list to Redux
         if (newObjs) {
+            console.log("Syncing to Redux:", newObjs);
             store.dispatch(setCanvasObjects(newObjs));
         }
     }
