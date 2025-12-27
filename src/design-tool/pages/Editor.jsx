@@ -247,8 +247,7 @@ export default function EditorPanel() {
         }, 100)
     }
 
-    // 🟩 UPDATED LOADING LOGIC
-    // ✅ FIX: Merge using loadFromJSON for stability
+    // ✅ FIX: Merge with Strict Border Deduplication
     useEffect(() => {
         if (!location.state || !fabricCanvas) return;
 
@@ -260,7 +259,7 @@ export default function EditorPanel() {
 
             let parsedData = designToLoad.canvasJSON;
             if (typeof parsedData === 'string') {
-                try { parsedData = JSON.parse(parsedData); } catch (e) { }
+                 try { parsedData = JSON.parse(parsedData); } catch(e) {}
             }
 
             // Handle Product vs Blank
@@ -271,27 +270,26 @@ export default function EditorPanel() {
                     options: { ...prev.options, colors: [designToLoad.productConfig.variantColor] }
                 }));
                 setCanvasBg(designToLoad.productConfig.variantColor);
-                setViewStates(parsedData);
-
+                setViewStates(parsedData); 
+                
                 const activeView = designToLoad.productConfig.activeView || 'front';
                 setCurrentView(activeView);
 
                 if (parsedData[activeView]) {
                     fabricCanvas.loadFromJSON(parsedData[activeView], () => {
                         fabricCanvas.renderAll();
-                        addObj(); // Sync Redux
+                        addObj(); 
                     });
                 }
             } else {
                 // Blank Design
                 fabricCanvas.loadFromJSON(parsedData, () => {
                     fabricCanvas.renderAll();
-                    addObj(); // Sync Redux
+                    addObj(); 
                 });
             }
         }
 
-        // --- SCENARIO 2: MERGE LOAD (Append Objects to Current) ---
         // --- SCENARIO 2: MERGE LOAD (Append Objects to Current) ---
         if (location.state.mergeDesign) {
             const { mergeDesign } = location.state;
@@ -302,27 +300,41 @@ export default function EditorPanel() {
                 try { incomingJson = JSON.parse(incomingJson); } catch(e) {}
             }
 
-            // 1. Get Objects from the Incoming Design
+            // 1. Prepare Incoming Objects (Exclude ANY existing borders)
             let incomingObjects = incomingJson.objects || (Array.isArray(incomingJson) ? incomingJson : []);
-
-            // 🛑 FIX: Remove saved borders/masks so they don't duplicate the current product's ones
             incomingObjects = incomingObjects.filter(obj => obj.id !== 'print-area-border');
 
             if (incomingObjects.length > 0) {
+                // 2. Regenerate IDs for incoming items
+                incomingObjects.forEach((obj, index) => {
+                    const newId = `${Date.now()}_merged_${index}_${Math.random().toString(36).substr(2, 9)}`;
+                    obj.id = newId;
+                    obj.customId = newId;
+                });
 
-                const currentJson = fabricCanvas.toJSON(['customId', 'id']); // Include custom props
+                // 3. Get CURRENT Canvas State
+                // We must grab 'id' to identify the border
+                const currentJson = fabricCanvas.toJSON(['customId', 'id']);
+                
+                // 🛑 CRITICAL FIX: Find and Preserve ONLY ONE Border
+                const existingBorder = currentJson.objects.find(obj => obj.id === 'print-area-border');
+                
+                // Remove ALL borders from the base list to start clean
+                currentJson.objects = currentJson.objects.filter(obj => obj.id !== 'print-area-border');
 
-                // 4. Combine: Current Objects + Filtered Incoming Objects
+                // 4. Combine: Clean Current + New Objects
                 currentJson.objects = [...currentJson.objects, ...incomingObjects];
 
-                // 5. Load the Combined State
+                // 5. Re-inject EXACTLY ONE Border (if it existed)
+                // This prevents 'CanvasEditor' from creating a duplicate, because we restore the original.
+                if (existingBorder) {
+                    currentJson.objects.push(existingBorder);
+                }
+
+                // 6. Load the Combined State
                 fabricCanvas.loadFromJSON(currentJson, () => {
                     fabricCanvas.renderAll();
-                    
-                    // 6. Sync Redux
-                    addObj();
-                    
-                    // 7. Cleanup
+                    addObj(); // Sync Redux
                     window.history.replaceState({}, document.title);
                 });
             }
