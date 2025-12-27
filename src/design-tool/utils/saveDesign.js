@@ -67,7 +67,7 @@ const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew)
     designDoc.name = "Untitled Design";
     designDoc.createdAt = now;
   }
-
+  
   return designDoc;
 };
 
