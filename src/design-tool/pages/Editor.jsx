@@ -186,7 +186,7 @@ export default function EditorPanel() {
     // ... (Keep existing Canvas Dims & Scaling logic) ...
     useEffect(() => {
         if (productData.print_areas && productData.print_areas[currentView]) {
-            const area = productData.canv[currentView];
+            const area = productData.canvas_size[currentView];
             setCanvasDims({ width: area.width || 4500, height: area.height || 5400 });
         }
     }, [productData, currentView]);
