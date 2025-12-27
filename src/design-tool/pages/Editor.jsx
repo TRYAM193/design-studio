@@ -19,7 +19,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle } from 'react-icons/fi';
+import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX } from 'react-icons/fi';
 
 const uuidv4 = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -110,15 +110,17 @@ export default function EditorPanel() {
             const storedViewStates = viewStatesRef.current;
 
             // Update the viewState for the current view before saving
+            // This ensures we capture the latest edits on the active view
             const finalViewStates = {
                 ...storedViewStates,
                 [view]: state
             };
 
+            // Only backup if we have content
             if (state.length > 0 || Object.keys(finalViewStates).length > 0) {
                 sessionStorage.setItem('editor_backup', JSON.stringify({
                     view: view,
-                    viewStates: finalViewStates, // Save ALL views
+                    viewStates: finalViewStates, // This contains ALL views (Front, Back, etc.)
                     timestamp: Date.now()
                 }));
             }
@@ -154,7 +156,7 @@ export default function EditorPanel() {
     }, [urlProductId, currentDesign]);
 
 
-    // ✅ 2. UNIFIED LOAD & MERGE LOGIC
+    // ✅ 2. UNIFIED LOAD & MERGE LOGIC (Fixed)
     useEffect(() => {
         if (!userId) return;
 
@@ -164,78 +166,66 @@ export default function EditorPanel() {
         // --- SCENARIO A: MERGING ---
         if (isMerge) {
             async function performMerge() {
-                // 1. RESTORE FULL SESSION
                 const backupJSON = sessionStorage.getItem('editor_backup');
-                let targetView = 'front'; // Fallback
                 
-                if (backupJSON) {
-                    const backup = JSON.parse(backupJSON);
-                    
-                    if (Date.now() - backup.timestamp < 3600000) { // 1 Hour Expiry
-                        // Restore View Logic
-                        if (backup.view) {
-                            targetView = backup.view;
-                            setCurrentView(targetView);
-                        }
+                // Initialize fallback state
+                let restoredView = 'front';
+                let restoredViewStates = {};
+                let restoredCurrentObjects = [];
 
-                        // Restore Other Views Logic
-                        if (backup.viewStates) {
-                            setViewStates(backup.viewStates);
+                // 1. RESTORE FROM BACKUP (Memory Only First)
+                if (backupJSON) {
+                    try {
+                        const backup = JSON.parse(backupJSON);
+                        // Check expiry (1 hour)
+                        if (Date.now() - backup.timestamp < 3600000) {
+                            restoredView = backup.view || 'front';
+                            restoredViewStates = backup.viewStates || {};
                             
-                            // Restore Current View Objects
-                            const restoredObjects = backup.viewStates[targetView] || [];
-                            dispatch(setCanvasObjects(restoredObjects));
-                            
-                            console.log(`Session Restored: View=${targetView}, Objects=${restoredObjects.length}`);
+                            // The backup of 'viewStates' contains the latest data for all views
+                            // So we grab the object array for the view we were on
+                            restoredCurrentObjects = restoredViewStates[restoredView] || [];
                         }
-                    }
-                    // IMPORTANT: Do NOT removeItem immediately to support StrictMode
+                    } catch (e) { console.error("Backup parse error", e); }
                 }
 
-                // 2. FETCH & APPEND MERGE DESIGN
+                // 2. FETCH MERGE DESIGN
+                let mergeObjects = [];
                 try {
                     const designRef = doc(db, `users/${userId}/designs`, mergeId);
                     const designSnap = await getDoc(designRef);
-                    
                     if (designSnap.exists()) {
                         const design = designSnap.data();
+                        const raw = Array.isArray(design.canvasData) ? design.canvasData : (design.canvasData?.front || []);
                         
-                        let newObjects = Array.isArray(design.canvasData) 
-                            ? design.canvasData 
-                            : (design.canvasData?.front || []); // Handle weird saves
-
-                        if (newObjects.length > 0) {
-                            const objectsToAdd = newObjects.map(obj => ({
-                                ...obj,
-                                id: uuidv4(),
+                        if (raw.length > 0) {
+                            mergeObjects = raw.map(obj => ({
+                                ...obj, 
+                                id: uuidv4(), 
                                 customId: uuidv4(),
-                                props: {
-                                    ...obj.props,
-                                    left: (obj.props.left || 0) + 30,
-                                    top: (obj.props.top || 0) + 30
-                                }
-                            }));
-
-                            // Use store.getState() to get the objects we JUST restored + new ones
-                            // We wait a tick to ensure dispatch has processed if needed, though Redux is sync
-                            const currentObjects = store.getState().canvas.present;
-                            
-                            // Merge
-                            const merged = [...currentObjects, ...objectsToAdd];
-                            dispatch(setCanvasObjects(merged));
-
-                            // Update ViewStates immediately to prevent loss on switch
-                            setViewStates(prev => ({
-                                ...prev,
-                                [targetView]: merged
+                                props: { ...obj.props, left: (obj.props.left||0)+30, top: (obj.props.top||0)+30 }
                             }));
                         }
                     }
-                } catch (e) {
-                    console.error("Merge failed", e);
-                } finally {
-                    window.history.replaceState({}, document.title);
-                }
+                } catch (e) { console.error(e); }
+
+                // 3. COMBINE DATA
+                const finalCurrentObjects = [...restoredCurrentObjects, ...mergeObjects];
+                
+                const finalViewStates = {
+                    ...restoredViewStates,
+                    [restoredView]: finalCurrentObjects // Update the specific view with merged data
+                };
+
+                // 4. ATOMIC UPDATE (Apply to React/Redux once)
+                setCurrentView(restoredView);
+                setViewStates(finalViewStates);
+                dispatch(setCanvasObjects(finalCurrentObjects));
+
+                console.log(`Merge Success. View: ${restoredView}, Objects: ${finalCurrentObjects.length}`);
+                
+                // 5. Cleanup
+                window.history.replaceState({}, document.title);
             }
             performMerge();
         }
@@ -291,8 +281,8 @@ export default function EditorPanel() {
 
     // ... (Keep existing Scale, Dims, Snapshot Logic) ...
     useEffect(() => {
-        if (productData.canvas_size) {
-            const area = productData.canvas_size;
+        if (productData.print_areas && productData.print_areas[currentView]) {
+            const area = productData.print_areas[currentView];
             setCanvasDims({ width: area.width || 4500, height: area.height || 5400 });
         }
     }, [productData, currentView]);
@@ -494,7 +484,7 @@ export default function EditorPanel() {
                         setSelectedId={setSelectedId}
                         fabricCanvas={fabricCanvas}
                         printDimensions={canvasDims}
-                        productId={productData.id}
+                        productId={productData.productId}
                         activeView={currentView}
                     />
                 </main>
@@ -510,31 +500,13 @@ export default function EditorPanel() {
                         </>
                     ) : (
                         <div className="p-5">
-                            {productData.id && productData.options?.colors?.length > 0 ? (
-                                <>
-                                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
-                                    <div className="grid grid-cols-4 gap-3">
-                                        {productData.options.colors.map((color) => {
-                                            const hex = COLOR_MAP[color] || "#ccc";
-                                            const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
-                                            return (
-                                                <button
-                                                    key={color}
-                                                    onClick={() => handleColorChange(color)}
-                                                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}`}
-                                                    style={{ backgroundColor: hex }}
-                                                    title={color}
-                                                >
-                                                    {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} /></span>}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <p className="text-xs text-slate-400 mt-4 leading-relaxed">Visualize your design on different fabric colors.</p>
-                                </>
-                            ) : (
-                                <div className="text-center text-slate-400 py-10">Select an element to edit properties.</div>
-                            )}
+                             {productData.options?.colors?.length > 0 && (
+                                 <div className="grid grid-cols-4 gap-3">
+                                     {productData.options.colors.map(color => (
+                                         <button key={color} onClick={() => handleColorChange(color)} className={`w-10 h-10 rounded-full border-2 ${canvasBg.toLowerCase() === (COLOR_MAP[color]||color).toLowerCase() ? "border-indigo-600" : ""}`} style={{ backgroundColor: COLOR_MAP[color] || color }} title={color}></button>
+                                     ))}
+                                 </div>
+                             )}
                         </div>
                     )}
                 </aside>
