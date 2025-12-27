@@ -325,95 +325,95 @@ export default function CanvasEditor({
   // }, [location.state, fabricCanvas]);
 
   // 🟩 Load from Persistence
-  useEffect(() => {
-    if (!fabricCanvas || !initialized) return;
+  // useEffect(() => {
+  //   if (!fabricCanvas || !initialized) return;
 
-    const loadDesign = async () => {
-      let designToLoad = null;
-      let designId = null;
+  //   const loadDesign = async () => {
+  //     let designToLoad = null;
+  //     let designId = null;
 
-      try {
-        const sessionData = sessionStorage.getItem('editingDesign');
-        if (sessionData) {
-          designToLoad = JSON.parse(sessionData);
-          sessionStorage.removeItem('editingDesign');
-        }
-      } catch (e) { console.warn(e); }
+  //     try {
+  //       const sessionData = sessionStorage.getItem('editingDesign');
+  //       if (sessionData) {
+  //         designToLoad = JSON.parse(sessionData);
+  //         sessionStorage.removeItem('editingDesign');
+  //       }
+  //     } catch (e) { console.warn(e); }
 
-      if (!designToLoad) {
-        try {
-          const localData = localStorage.getItem('editingDesign');
-          if (localData) {
-            designToLoad = JSON.parse(localData);
-            localStorage.removeItem('editingDesign');
-          }
-        } catch (e) { console.warn(e); }
-      }
+  //     if (!designToLoad) {
+  //       try {
+  //         const localData = localStorage.getItem('editingDesign');
+  //         if (localData) {
+  //           designToLoad = JSON.parse(localData);
+  //           localStorage.removeItem('editingDesign');
+  //         }
+  //       } catch (e) { console.warn(e); }
+  //     }
 
-      if (!designToLoad) {
-        const urlParams = new URLSearchParams(window.location.search);
-        designId = urlParams.get('designId');
-      }
+  //     if (!designToLoad) {
+  //       const urlParams = new URLSearchParams(window.location.search);
+  //       designId = urlParams.get('designId');
+  //     }
 
-      if (!designToLoad && !designId) {
-        designId = getCookie('editingDesignId');
-        if (designId) {
-          document.cookie = 'editingDesignId=; path=/; max-age=0';
-        }
-      }
+  //     if (!designToLoad && !designId) {
+  //       designId = getCookie('editingDesignId');
+  //       if (designId) {
+  //         document.cookie = 'editingDesignId=; path=/; max-age=0';
+  //       }
+  //     }
 
-      if (!designToLoad && designId) {
-        try {
-          const designRef = doc(firestore, `users/test-user-123/designs`, designId);
-          const designSnap = await getDoc(designRef);
-          if (designSnap.exists()) {
-            designToLoad = { id: designId, ...designSnap.data() };
-          }
-        } catch (e) { console.error(e); }
-      }
+  //     if (!designToLoad && designId) {
+  //       try {
+  //         const designRef = doc(firestore, `users/test-user-123/designs`, designId);
+  //         const designSnap = await getDoc(designRef);
+  //         if (designSnap.exists()) {
+  //           designToLoad = { id: designId, ...designSnap.data() };
+  //         }
+  //       } catch (e) { console.error(e); }
+  //     }
 
-      if (designToLoad) {
-        setCurrentDesign(designToLoad);
-        setEditingDesignId(designToLoad.id);
+  //     if (designToLoad) {
+  //       setCurrentDesign(designToLoad);
+  //       setEditingDesignId(designToLoad.id);
 
-        if (designToLoad.canvasJSON) {
-          const parsedData = typeof designToLoad.canvasJSON === 'string'
-            ? JSON.parse(designToLoad.canvasJSON)
-            : designToLoad.canvasJSON;
+  //       if (designToLoad.canvasJSON) {
+  //         const parsedData = typeof designToLoad.canvasJSON === 'string'
+  //           ? JSON.parse(designToLoad.canvasJSON)
+  //           : designToLoad.canvasJSON;
 
-          const fontsToLoad = extractFontsFromJSON(parsedData);
+  //         const fontsToLoad = extractFontsFromJSON(parsedData);
 
-          const loadCanvasPersistence = () => {
-            fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
-              setTimeout(() => {
-                fabricCanvas.requestRenderAll();
-                fabricCanvas.getObjects().forEach(obj => {
-                  const state = store.getState();
-                  const currentObjs = state.canvas.present;
-                  if (!currentObjs.find(o => o.id === obj.customId)) {
-                  }
-                });
-              }, 90);
-            });
-          };
+  //         const loadCanvasPersistence = () => {
+  //           fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
+  //             setTimeout(() => {
+  //               fabricCanvas.requestRenderAll();
+  //               fabricCanvas.getObjects().forEach(obj => {
+  //                 const state = store.getState();
+  //                 const currentObjs = state.canvas.present;
+  //                 if (!currentObjs.find(o => o.id === obj.customId)) {
+  //                 }
+  //               });
+  //             }, 90);
+  //           });
+  //         };
 
-          if (fontsToLoad.length > 0) {
-            WebFont.load({
-              google: { families: fontsToLoad },
-              active: () => {
-                console.log("Fonts loaded from persistence.");
-                loadCanvasPersistence();
-              },
-              inactive: loadCanvasPersistence
-            });
-          } else {
-            loadCanvasPersistence();
-          }
-        }
-      }
-    };
-    loadDesign();
-  }, [fabricCanvas, initialized]);
+  //         if (fontsToLoad.length > 0) {
+  //           WebFont.load({
+  //             google: { families: fontsToLoad },
+  //             active: () => {
+  //               console.log("Fonts loaded from persistence.");
+  //               loadCanvasPersistence();
+  //             },
+  //             inactive: loadCanvasPersistence
+  //           });
+  //         } else {
+  //           loadCanvasPersistence();
+  //         }
+  //       }
+  //     }
+  //   };
+  //   loadDesign();
+  // }, [fabricCanvas, initialized]);
 
   // 🟩 Handle Selection Events
   useEffect(() => {
