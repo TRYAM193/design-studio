@@ -2,7 +2,7 @@ import { db as firestore } from '@/firebase';
 import { doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 
-// --- HELPER: Cleans JSON (removes undefined) ---
+// --- HELPER: Clean JSON ---
 function removeUndefined(obj) {
   if (Array.isArray(obj)) {
     return obj.map(removeUndefined);
@@ -18,30 +18,31 @@ function removeUndefined(obj) {
   return obj;
 }
 
-// --- HELPER: Builds the Data Object (Shared Logic) ---
-const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew) => {
-  const imageData = canvas.toDataURL({ format: "png", multiplier: 0.5 });
+// --- HELPER: Build Data Object ---
+const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew, thumbnailDataUrl) => {
+  // Use the passed clean thumbnail, or fallback to canvas capture (which might have borders)
+  const imageData = thumbnailDataUrl || canvas.toDataURL({ format: "png", multiplier: 0.5 });
   const now = Date.now();
   let designDoc = {};
 
+  // 1. Clean the current view's objects (remove border object from JSON)
+  const currentJSON = removeUndefined(canvas.toJSON());
+  if (currentJSON.objects) {
+    currentJSON.objects = currentJSON.objects.filter(obj => 
+      obj.customId !== 'print-area-border' && obj.id !== 'print-area-border'
+    );
+  }
+
   if (productData && productData.productId) {
     // === PRODUCT MODE ===
-    // 1. Get current canvas JSON
-    const currentJSON = removeUndefined(canvas.toJSON());
-    if (currentJSON.objects) {
-      currentJSON.objects = currentJSON.objects.filter(obj => obj.customId !== 'print-area-border');
-     console.log(currentJSON.objects)
-    }
-    
-    // 2. Merge with stored views (Front + Back + etc.)
     const allViewsJSON = {
-      ...viewStates,           // Previous views (e.g., Front)
-      [currentView]: currentJSON // The active view (e.g., Back)
+      ...viewStates,           // Previous views
+      [currentView]: currentJSON // Current view (clean)
     };
 
     designDoc = {
       type: 'PRODUCT',
-      canvasJSON: JSON.stringify(allViewsJSON), // Save ALL views
+      canvasJSON: JSON.stringify(allViewsJSON),
       productConfig: {
         productId: productData.productId,
         variantColor: productData.color,
@@ -53,41 +54,36 @@ const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew)
     // === BLANK MODE ===
     designDoc = {
       type: 'BLANK',
-      canvasJSON: removeUndefined(canvas.toJSON()), // Just single JSON
+      canvasJSON: currentJSON,
       productConfig: null
     };
   }
 
-  // Common Fields
   designDoc.id = id;
   designDoc.imageData = imageData;
   designDoc.updatedAt = now;
 
-  // Only set name/created for NEW designs
   if (isNew) {
     designDoc.name = "Untitled Design";
     designDoc.createdAt = now;
   }
-  console.log(designDoc);
+  
   return designDoc;
 };
 
-
-// --- FUNCTION 1: SAVE NEW (Save as Copy / First Save) ---
-export const saveNewDesign = async (userId, canvas, productData, viewStates, currentView, setSaving) => {
+// --- SAVE NEW ---
+export const saveNewDesign = async (userId, canvas, productData, viewStates, currentView, setSaving, thumbnailDataUrl) => {
   if (!canvas || !userId) return;
   setSaving(true);
 
   try {
     const newDesignId = uuidv4();
-    
-    // Build the full data object
-    const designDoc = buildDesignDoc(newDesignId, canvas, productData, viewStates, currentView, true);
+    const designDoc = buildDesignDoc(newDesignId, canvas, productData, viewStates, currentView, true, thumbnailDataUrl);
 
     const designRef = doc(firestore, `users/${userId}/designs`, newDesignId);
     await setDoc(designRef, designDoc);
 
-    return { success: true, message: "Saved as new design", id: newDesignId };
+    return { success: true, message: "Saved successfully", id: newDesignId };
   } catch (err) {
     console.error("Error creating design:", err);
     return { success: false, error: err };
@@ -96,20 +92,19 @@ export const saveNewDesign = async (userId, canvas, productData, viewStates, cur
   }
 };
 
-
-// --- FUNCTION 2: OVERWRITE (Update Existing) ---
-export const overwriteDesign = async (userId, designId, canvas, productData, viewStates, currentView, setSaving) => {
+// --- OVERWRITE ---
+export const overwriteDesign = async (userId, designId, canvas, productData, viewStates, currentView, setSaving, thumbnailDataUrl) => {
   if (!canvas || !designId) return;
   setSaving(true);
 
   try {
-    // Build the full data object (isNew = false)
-    const designDoc = buildDesignDoc(designId, canvas, productData, viewStates, currentView, false);
-
+    const designDoc = buildDesignDoc(designId, canvas, productData, viewStates, currentView, false, thumbnailDataUrl);
+    
+    // We strictly use setDoc with merge: true to avoid deleting fields we don't know about
     const designRef = doc(firestore, `users/${userId}/designs`, designId);
     await setDoc(designRef, designDoc, { merge: true });
 
-    return { success: true, message: "Design overwritten" };
+    return { success: true, message: "Design updated", id: designId };
   } catch (err) {
     console.error("Error overwriting design:", err);
     return { success: false, error: err };
@@ -118,31 +113,22 @@ export const overwriteDesign = async (userId, designId, canvas, productData, vie
   }
 };
 
+// --- EXPORT JSON (Temp) ---
 export const handleSaveTemp = (canvas) => {
-  if (!canvas) return
-
+  if (!canvas) return;
   const rawJSON = canvas.toJSON();
+  // Filter border from download too
+  if(rawJSON.objects) {
+    rawJSON.objects = rawJSON.objects.filter(obj => obj.customId !== 'print-area-border');
+  }
   const cleanJSON = removeUndefined(rawJSON);
-
-  let fileName = 'design-001.json'
-
-  // 3. Convert to a formatted string
-  const jsonString = JSON.stringify(cleanJSON, null, 2);
-
-  // 4. Create a Blob (File-like object)
-  const blob = new Blob([jsonString], { type: "application/json" });
-
-  // 5. Create a temporary link to trigger the download
+  const blob = new Blob([JSON.stringify(cleanJSON, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = fileName.endsWith('.json') ? fileName : `${fileName}.json`;
-  
-  // 6. Programmatically click the link
+  link.download = `design-${Date.now()}.json`;
   document.body.appendChild(link);
   link.click();
-
-  // 7. Cleanup
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-} 
+}
