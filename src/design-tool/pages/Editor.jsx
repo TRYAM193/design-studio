@@ -246,94 +246,91 @@ export default function EditorPanel() {
     }
 
     // 🟩 UPDATED LOADING LOGIC
+    // ✅ FIX: Merge using loadFromJSON for stability
     useEffect(() => {
-        // Helper to process the loaded data
-        const handleLoadDesign = (design) => {
-            setCurrentDesign(design);
-            setEditingDesignId(design.id);
+        if (!location.state || !fabricCanvas) return;
 
-            let parsedData = design.canvasJSON;
-            if (typeof parsedData === 'string') parsedData = JSON.parse(parsedData);
+        // --- SCENARIO 1: STANDARD LOAD (Replace Everything) ---
+        if (location.state.designToLoad) {
+            const { designToLoad } = location.state;
+            setCurrentDesign(designToLoad);
+            setEditingDesignId(designToLoad.id);
 
-            // CHECK: Is this a Product Design (multi-view) or Blank (single)?
-            if (design.type === 'PRODUCT' && design.productConfig) {
-                // 1. Load Product Configuration
+            let parsedData = designToLoad.canvasJSON;
+            if (typeof parsedData === 'string') {
+                 try { parsedData = JSON.parse(parsedData); } catch(e) {}
+            }
+
+            // Handle Product vs Blank
+            if (designToLoad.type === 'PRODUCT' && designToLoad.productConfig) {
                 setProductData(prev => ({
                     ...prev,
-                    productId: design.productConfig.productId,
-                    options: { ...prev.options, colors: [design.productConfig.variantColor] } // visuals
+                    productId: designToLoad.productConfig.productId,
+                    options: { ...prev.options, colors: [designToLoad.productConfig.variantColor] }
                 }));
-                setCanvasBg(design.productConfig.variantColor);
-
-                // 2. Hydrate View States (CRITICAL FOR OVERWRITING)
-                // We store ALL views in memory so we don't lose them when saving
-                setViewStates(parsedData);
-
-                // 3. Load the Active View onto Canvas
-                const activeView = design.productConfig.activeView || 'front';
+                setCanvasBg(designToLoad.productConfig.variantColor);
+                setViewStates(parsedData); 
+                
+                const activeView = designToLoad.productConfig.activeView || 'front';
                 setCurrentView(activeView);
 
-                // Load specifically the active view's JSON
                 if (parsedData[activeView]) {
                     fabricCanvas.loadFromJSON(parsedData[activeView], () => {
                         fabricCanvas.renderAll();
                         addObj(); // Sync Redux
                     });
                 }
-
             } else {
-                // --- BLANK DESIGN HANDLING ---
-                // Just load the JSON directly
+                // Blank Design
                 fabricCanvas.loadFromJSON(parsedData, () => {
                     fabricCanvas.renderAll();
                     addObj(); // Sync Redux
                 });
             }
-        };
-
-        // 1. Check Location State (Coming from Dashboard)
-        if (location.state?.designToLoad && fabricCanvas) {
-            handleLoadDesign(location.state.designToLoad);
         }
 
-        if (location.state?.mergeDesign) {
+        // --- SCENARIO 2: MERGE LOAD (Append Objects to Current) ---
+        if (location.state.mergeDesign) {
             const { mergeDesign } = location.state;
-            console.log("Merging design:", mergeDesign);
+            console.log("Merging Design:", mergeDesign);
 
-            // 1. Get the JSON data
-            let jsonData = mergeDesign.canvasJSON;
-            if (typeof jsonData === 'string') {
-                try { jsonData = JSON.parse(jsonData); }
-                catch (e) { console.error("Bad JSON", e); return; }
+            let incomingJson = mergeDesign.canvasJSON;
+            if (typeof incomingJson === 'string') {
+                try { incomingJson = JSON.parse(incomingJson); } catch(e) {}
             }
 
-            // If it's a BLANK design (which it should be), objects are in jsonData.objects
-            const objectsToLoad = jsonData.objects || [];
+            // 1. Get Objects from the Incoming Design
+            const incomingObjects = incomingJson.objects || (Array.isArray(incomingJson) ? incomingJson : []);
 
-            if (objectsToLoad.length > 0) {
-                // 2. Deselect current objects
-                // fabricCanvas.discardActiveObject();
+            if (incomingObjects.length > 0) {
+                // 2. Regenerate IDs to prevent conflicts
+                // We do this purely on the JSON data before loading
+                incomingObjects.forEach((obj, index) => {
+                    const newId = `${Date.now()}_merged_${index}_${Math.random().toString(36).substr(2, 9)}`;
+                    obj.id = newId;
+                    obj.customId = newId;
+                });
 
-                // 3. Revive objects from JSON
-                fabric.util.enlivenObjects(objectsToLoad, (enlivenedObjects) => {
-                    enlivenedObjects.forEach((obj) => {
+                // 3. Get CURRENT Canvas State (Preserves Product Background/Dims)
+                const currentJson = fabricCanvas.toJSON();
 
-                        // Important: Regenerate ID to prevent sync conflicts
-                        obj.set('id', uuidv4());
-                        obj.set('customId', uuidv4());
+                // 4. Combine: Current Objects + Incoming Objects
+                // We append new objects to the end so they appear "on top"
+                currentJson.objects = [...currentJson.objects, ...incomingObjects];
 
-                        fabricCanvas.add(obj);
-                    });
-
-                    // 4. Render and Save
+                // 5. Load the Combined State
+                fabricCanvas.loadFromJSON(currentJson, () => {
+                    fabricCanvas.renderAll();
+                    
+                    // 6. Sync Redux (Now guaranteed to run after full render)
                     addObj();
-                    fabricCanvas.requestRenderAll();
-
-                    // Clean up state so we don't re-merge on refresh
+                    
+                    // 7. Cleanup
                     window.history.replaceState({}, document.title);
-                }, 'fabric');
+                });
             }
         }
+
     }, [location.state, fabricCanvas]);
 
     const dataURLtoBlob = (dataURL) => {
