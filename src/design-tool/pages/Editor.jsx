@@ -269,6 +269,46 @@ export default function EditorPanel() {
         if (location.state?.designToLoad && fabricCanvas) {
             handleLoadDesign(location.state.designToLoad);
         }
+        if (location.state.mergeDesign) {
+                const { mergeDesign } = location.state;
+                console.log("Merging design:", mergeDesign);
+
+                // 1. Get the JSON data
+                let jsonData = mergeDesign.canvasJSON;
+                if (typeof jsonData === 'string') {
+                    try { jsonData = JSON.parse(jsonData); } 
+                    catch(e) { console.error("Bad JSON", e); return; }
+                }
+
+                // If it's a BLANK design (which it should be), objects are in jsonData.objects
+                const objectsToLoad = jsonData.objects || [];
+
+                if (objectsToLoad.length > 0) {
+                    // 2. Deselect current objects
+                    fabricCanvas.discardActiveObject();
+
+                    // 3. Revive objects from JSON
+                    fabric.util.enlivenObjects(objectsToLoad, (enlivenedObjects) => {
+                        enlivenedObjects.forEach((obj) => {
+                            // OPTIONAL: Offset slightly so they don't stack exactly on top?
+                            // obj.set({ left: obj.left + 20, top: obj.top + 20 });
+                            
+                            // Important: Regenerate ID to prevent sync conflicts
+                            obj.set('id', uuidv4()); 
+                            obj.set('customId', uuidv4()); 
+
+                            fabricCanvas.add(obj);
+                        });
+                        
+                        // 4. Render and Save
+                        fabricCanvas.requestRenderAll();
+                        // dispatch(setCanvasObjects(...)); // Sync Redux
+                        
+                        // Clean up state so we don't re-merge on refresh
+                        window.history.replaceState({}, document.title);
+                    }, 'fabric');
+                }
+            }
     }, [location.state, fabricCanvas]);
 
     const dataURLtoBlob = (dataURL) => {
