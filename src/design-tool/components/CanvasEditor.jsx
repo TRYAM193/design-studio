@@ -217,7 +217,7 @@ export default function CanvasEditor({
       }
     } else {
           console.log('running')
-      canvas.clipPath = null;
+      // canvas.clipPath = null;
     }
 
     canvas.requestRenderAll();
