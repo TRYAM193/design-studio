@@ -56,7 +56,7 @@ const buildDesignDoc = (id, currentObjects, viewStates, productData, currentView
 };
 
 // --- SAVE NEW ---
-export const saveNewDesign = async (userId, currentObjects, viewStates, productData, currentView, setSaving, thumbnailDataUrl) => {
+export const saveNewDesign = async (userId, currentObjects, viewStates, productData, currentView, setSaving, thumbnailDataUrl, name='Untitled Design') => {
   if (!userId) return;
   setSaving(true);
 
