@@ -74,7 +74,7 @@ export default function CanvasEditor({
   setSelectedId,
   setFabricCanvas,
   fabricCanvas,
-  printDimensions = { width: 4500, height: 5400 },
+  printDimensions,
   productId,
   activeView,
 }) {
