@@ -119,6 +119,7 @@ export default function EditorPanel() {
             },
             timestamp: Date.now()
         };
+        console.log(backupData)
 
         // 3. Save to Storage
         sessionStorage.setItem('merge_context', JSON.stringify(backupData));
