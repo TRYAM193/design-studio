@@ -102,7 +102,13 @@ export default function EditorPanel() {
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
+    const 
 
+    useEffect(() => {
+        if (!selectedId) {
+             setShowColorPanel(true);
+        }
+    }, [selectedId]);
 
     const handleLoadSavedDesign = async (designItem) => {
         if (!designItem || !userId) return;
