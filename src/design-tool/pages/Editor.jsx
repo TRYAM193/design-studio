@@ -407,15 +407,31 @@ export default function EditorPanel() {
                         </>
                     ) : (
                         <div className="p-5">
-                             {productData.options?.colors?.length > 0 && (
-                                 <div className="grid grid-cols-4 gap-3">
-                                     {productData.options.colors.map(color => (
-                                         <button key={color} onClick={() => handleColorChange(color)} className={`w-10 h-10 rounded-full border-2 ${canvasBg.toLowerCase() === (COLOR_MAP[color]||color).toLowerCase() ? "border-indigo-600" : ""}`} style={{ backgroundColor: COLOR_MAP[color] || color }} title={color}>
-
-                                         </button>
-                                     ))}
-                                 </div>
-                             )}
+                            {productId && productData.options?.colors?.length > 0 ? (
+                                <>
+                                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
+                                    <div className="grid grid-cols-4 gap-3">
+                                        {productData.options.colors.map((color) => {
+                                            const hex = COLOR_MAP[color] || "#ccc";
+                                            const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
+                                            return (
+                                                <button
+                                                    key={color}
+                                                    onClick={() => handleColorChange(color)}
+                                                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}`}
+                                                    style={{ backgroundColor: hex }}
+                                                    title={color}
+                                                >
+                                                    {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} /></span>}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className="text-xs text-slate-400 mt-4 leading-relaxed">Visualize your design on different fabric colors.</p>
+                                </>
+                            ) : (
+                                <div className="text-center text-slate-400 py-10">Select an element to edit properties.</div>
+                            )}
                         </div>
                     )}
                 </aside>
