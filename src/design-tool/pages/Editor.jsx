@@ -292,41 +292,44 @@ export default function EditorPanel() {
         }
 
         // --- SCENARIO 2: MERGE LOAD (Append Objects to Current) ---
+        // --- SCENARIO 2: MERGE LOAD (Append Objects to Current) ---
         if (location.state.mergeDesign) {
             const { mergeDesign } = location.state;
             console.log("Merging Design:", mergeDesign);
 
             let incomingJson = mergeDesign.canvasJSON;
             if (typeof incomingJson === 'string') {
-                try { incomingJson = JSON.parse(incomingJson); } catch (e) { }
+                try { incomingJson = JSON.parse(incomingJson); } catch(e) {}
             }
 
             // 1. Get Objects from the Incoming Design
-            const incomingObjects = incomingJson.objects || (Array.isArray(incomingJson) ? incomingJson : []);
+            let incomingObjects = incomingJson.objects || (Array.isArray(incomingJson) ? incomingJson : []);
+
+            // 🛑 FIX: Remove saved borders/masks so they don't duplicate the current product's ones
+            incomingObjects = incomingObjects.filter(obj => obj.id !== 'print-area-border');
 
             if (incomingObjects.length > 0) {
                 // 2. Regenerate IDs to prevent conflicts
-                // We do this purely on the JSON data before loading
                 incomingObjects.forEach((obj, index) => {
                     const newId = `${Date.now()}_merged_${index}_${Math.random().toString(36).substr(2, 9)}`;
                     obj.id = newId;
                     obj.customId = newId;
                 });
 
-                // 3. Get CURRENT Canvas State (Preserves Product Background/Dims)
-                const currentJson = fabricCanvas.toJSON();
+                // 3. Get CURRENT Canvas State (Preserves Product Background & ClipPath)
+                // We use the CURRENT canvas as the base, so the T-Shirt mask stays correct.
+                const currentJson = fabricCanvas.toJSON(['customId', 'id']); // Include custom props
 
-                // 4. Combine: Current Objects + Incoming Objects
-                // We append new objects to the end so they appear "on top"
+                // 4. Combine: Current Objects + Filtered Incoming Objects
                 currentJson.objects = [...currentJson.objects, ...incomingObjects];
 
                 // 5. Load the Combined State
                 fabricCanvas.loadFromJSON(currentJson, () => {
                     fabricCanvas.renderAll();
-
-                    // 6. Sync Redux (Now guaranteed to run after full render)
+                    
+                    // 6. Sync Redux
                     addObj();
-
+                    
                     // 7. Cleanup
                     window.history.replaceState({}, document.title);
                 });
