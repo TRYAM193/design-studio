@@ -185,6 +185,7 @@ export default function CanvasEditor({
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       const leftPos = centerX - printWidth / 2;
+      console.log(leftPos)
       const topPos = centerY - printHeight / 2;
 
       const clipRect = new fabric.Rect({
