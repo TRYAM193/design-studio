@@ -103,6 +103,88 @@ export default function EditorPanel() {
     const [activePanel, setActivePanel] = useState('text');
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
 
+
+    const handleLoadSavedDesign = async (designItem) => {
+        if (!designItem || !userId) return;
+
+        try {
+            // 1. Fetch full design data (in case the list item is partial, or to get fresh data)
+            const designRef = doc(db, `users/${userId}/designs`, designItem.id);
+            const designSnap = await getDoc(designRef);
+            
+            if (!designSnap.exists()) return;
+            const designData = designSnap.data();
+
+            // Check Type
+            const isBlank = designData.type === 'BLANK' || !designData.type;
+            const isProduct = designData.type === 'PRODUCT';
+
+            // --- SCENARIO A: MERGE (Blank/Universal Design) ---
+            if (isBlank) {
+                console.log("Merging blank design...");
+                const incomingObjects = Array.isArray(designData.canvasData) 
+                    ? designData.canvasData 
+                    : (designData.canvasData?.front || []);
+
+                if (incomingObjects.length > 0) {
+                    // Give new IDs to avoid conflicts and shift slightly for visibility
+                    const newObjects = incomingObjects.map(obj => ({
+                        ...obj,
+                        id: uuidv4(),
+                        customId: uuidv4(),
+                        props: { 
+                            ...obj.props, 
+                            left: (obj.props.left || 0) + 20, 
+                            top: (obj.props.top || 0) + 20 
+                        }
+                    }));
+
+                    // Append to current canvas objects
+                    const currentObjects = store.getState().canvas.present;
+                    const combinedObjects = [...currentObjects, ...newObjects];
+                    
+                    dispatch(setCanvasObjects(combinedObjects));
+                    // Optional: Close sidebar after merge
+                    // setActivePanel(null); 
+                }
+            }
+            
+            // --- SCENARIO B: REPLACE (Product Specific Design) ---
+            else if (isProduct) {
+                // Double check it matches current product to be safe
+                if (designData.productConfig?.productId === (urlProductId || productData.id)) {
+                     console.log("Replacing with saved product design...");
+                     
+                     // Restore Product Configuration
+                     setCurrentDesign(designData);
+                     setEditingDesignId(designData.id);
+                     
+                     // Restore Views
+                     const savedStates = designData.canvasData || {};
+                     setViewStates(savedStates);
+                     
+                     // Set Active View
+                     const activeView = designData.productConfig.activeView || 'front';
+                     setCurrentView(activeView);
+                     
+                     // Load Objects for that view
+                     const activeObjects = savedStates[activeView] || [];
+                     dispatch(setCanvasObjects(activeObjects));
+                     
+                     // Update URL to match this design
+                     setSearchParams(prev => {
+                        prev.set('designId', designData.id);
+                        return prev;
+                     });
+
+                     setActivePanel(null); // Close sidebar on full replace
+                }
+            }
+
+        } catch (error) {
+            console.error("Error loading saved design:", error);
+        }
+    };
     // ✅ NAVIGATE & FREEZE: Save Session Before Leaving
     const navigateToTemplates = () => {
         // 1. Capture Current State Synchronously
