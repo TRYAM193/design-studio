@@ -18,7 +18,6 @@ export function ThreeDPreviewModal({
     const has3D = !!productData.model3d;
     const mockups = productData.mockups || {};
     const mockupKeys = Object.keys(mockups);
-    console.log(selectedColor);
     
     // ✅ 1. DETECT MUG
     const isMug = productData?.title?.toLowerCase().includes("mug") || 
