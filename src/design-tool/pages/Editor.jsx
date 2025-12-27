@@ -629,15 +629,15 @@ export default function EditorPanel() {
                     )}
                 </aside>
 
-                <ThreeDPreviewModal 
-                isOpen={isPreviewOpen} 
-                onClose={() => setIsPreviewOpen(false)} 
-                textures={designTextures} 
-                onAddToCart={handleAddToCart} 
-                isSaving={isSaving} 
-                productId={urlProductId || currentDesign?.productConfig?.productId} 
-                productData={productData} productCategory={productData.category} 
-                selectedColor={canvasBg} 
+                <ThreeDPreviewModal
+                    isOpen={isPreviewOpen}
+                    onClose={() => setIsPreviewOpen(false)}
+                    textures={designTextures}
+                    onAddToCart={handleAddToCart}
+                    isSaving={isSaving}
+                    productId={urlProductId || currentDesign?.productConfig?.productId}
+                    productData={productData} productCategory={productData.category}
+                    selectedColor={canvasBg}
                 />
             </div>
         </div>
