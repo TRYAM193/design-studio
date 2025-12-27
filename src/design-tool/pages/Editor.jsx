@@ -305,12 +305,6 @@ export default function EditorPanel() {
                             // C. Update Redux (Current + New)
                             const currentReduxState = store.getState().canvas.present;
                             
-                            // Format new objects to Redux shape locally
-                            // (We use a temporary call to addObj logic or manually format)
-                            // To keep it simple, we can pass the COMBINED list to addObj
-                            // But addObj expects objects with .left, .top. 
-                            // 'enlivened' has these. 'currentReduxState' does NOT (it has .props).
-                            
                             // Better Strategy: Let's trust Redux State for existing, and format new ones.
                             const formattedNewObjects = enlivened.map(obj => ({
                                 id: obj.customId,
