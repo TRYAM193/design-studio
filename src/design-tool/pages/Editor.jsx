@@ -155,10 +155,10 @@ export default function EditorPanel() {
     // ✅ FIX: Use reduce to ensure Unique IDs and prevent Redux duplicates
     const addObj = () => {
         const seenIds = new Set();
-        console.log(fabricCanvas?.getObjects())
         setTimeout(() => {
+            console.log(fabricCanvas?.getObjects())
+        }, 100)
 
-        })
 
         const newObjs = fabricCanvas.getObjects().reduce((acc, obj, i) => {
             // Extraction of common properties
