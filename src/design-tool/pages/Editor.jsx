@@ -322,6 +322,7 @@ export default function EditorPanel() {
                     });
 
                     // 4. Render and Save
+                    addObj();
                     fabricCanvas.requestRenderAll();
 
                     // Clean up state so we don't re-merge on refresh
