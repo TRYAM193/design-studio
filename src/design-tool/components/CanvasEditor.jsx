@@ -80,7 +80,7 @@ export default function CanvasEditor({
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
-  const [containerSize, setContainerSize] = useState({ width: 800, height: 800 });
+  const [containerSize, setContainerSize] = useState();
 
   // Add this helper or calculate inside your component
   const calculateScaledSize = (originalWidth, originalHeight) => {
