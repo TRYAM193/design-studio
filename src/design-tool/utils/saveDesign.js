@@ -1,13 +1,12 @@
-import { db as firestore } from '@/firebase';
-import { doc, setDoc } from "firebase/firestore";
+import { db as firestore } from '@/firebase'; // Adjust path if needed
+import { doc, setDoc, collection } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 
-// --- HELPER: Build Data Object (Redux Version) ---
+// --- HELPER: Build Data Object ---
 const buildDesignDoc = (id, currentObjects, viewStates, productData, currentView, isNew, thumbnailDataUrl, name) => {
   const now = Date.now();
   
-  // 1. Merge Current View Objects into ViewStates
-  // We clean the objects to ensure no undefined values or border objects slip in
+  // Clean objects
   const cleanObjects = (currentObjects || []).filter(obj => 
     obj.id !== 'print-area-border' && obj.customId !== 'print-area-border'
   );
@@ -23,12 +22,11 @@ const buildDesignDoc = (id, currentObjects, viewStates, productData, currentView
     // === PRODUCT MODE ===
     designDoc = {
       type: 'PRODUCT',
-      // We save the raw Redux arrays, NOT the Fabric Canvas JSON
       canvasData: finalViewStates, 
       productConfig: {
         productId: productData.productId,
         variantColor: productData.color || null,
-        variantSize: productData.size || null, // ✅ Using the passed URL data
+        variantSize: productData.size || null,
         activeView: currentView || 'front',
         printAreas: productData.print_areas || {}
       }
@@ -37,52 +35,52 @@ const buildDesignDoc = (id, currentObjects, viewStates, productData, currentView
     // === BLANK MODE ===
     designDoc = {
       type: 'BLANK',
-      canvasData: cleanObjects, // Just the array for single view
-      productConfig: null
+      canvasData: finalViewStates.front || cleanObjects // Default to front/single view
     };
   }
 
+  // Common Fields
   designDoc.id = id;
-  designDoc.imageData = thumbnailDataUrl; // We expect Editor to pass the clean snapshot
+  designDoc.name = name || "Untitled Design"; // ✅ Save Name
   designDoc.updatedAt = now;
-
+  if (thumbnailDataUrl) designDoc.imageData = thumbnailDataUrl;
   if (isNew) {
-    designDoc.name = name || 'Untitled Design';
     designDoc.createdAt = now;
+    designDoc.userId = id.split('_')[0]; // Assuming ID implies user, or pass userId explicitly
   }
-  
-  // JSON.parse(JSON.stringify) is a dirty but effective way to strip undefineds
-  return JSON.parse(JSON.stringify(designDoc));
+
+  return designDoc;
 };
 
-// --- SAVE NEW ---
-export const saveNewDesign = async (userId, currentObjects, viewStates, productData, currentView, setSaving, thumbnailDataUrl, name='Untitled Design') => {
-  if (!userId) return;
+// --- SAVE NEW DESIGN ---
+export const saveNewDesign = async (userId, currentObjects, viewStates, productData, currentView, setSaving, thumbnailDataUrl, name) => {
   setSaving(true);
-
   try {
-    const newDesignId = uuidv4();
-    const designDoc = buildDesignDoc(newDesignId, currentObjects, viewStates, productData, currentView, true, thumbnailDataUrl, name);
+    const newId = uuidv4(); // Generate new ID
+    
+    const designDoc = buildDesignDoc(newId, currentObjects, viewStates, productData, currentView, true, thumbnailDataUrl, name);
+    designDoc.userId = userId; // Explicitly set User ID
 
-    const designRef = doc(firestore, `users/${userId}/designs`, newDesignId);
+    const designRef = doc(firestore, `users/${userId}/designs`, newId);
     await setDoc(designRef, designDoc);
 
-    return { success: true, message: "Saved successfully", id: newDesignId };
+    return { success: true, message: "Design saved successfully", id: newId };
   } catch (err) {
-    console.error("Error creating design:", err);
+    console.error("Error saving new design:", err);
     return { success: false, error: err };
   } finally {
     setSaving(false);
   }
 };
 
-// --- OVERWRITE ---
-export const overwriteDesign = async (userId, designId, currentObjects, viewStates, productData, currentView, setSaving, thumbnailDataUrl) => {
-  if (!designId) return;
+// --- OVERWRITE EXISTING DESIGN ---
+export const overwriteDesign = async (userId, designId, currentObjects, viewStates, productData, currentView, setSaving, thumbnailDataUrl, name) => {
+  if (!designId) return { success: false, error: "No Design ID provided" };
   setSaving(true);
 
   try {
-    const designDoc = buildDesignDoc(designId, currentObjects, viewStates, productData, currentView, false, thumbnailDataUrl);
+    // ✅ Pass 'name' to the builder
+    const designDoc = buildDesignDoc(designId, currentObjects, viewStates, productData, currentView, false, thumbnailDataUrl, name);
     
     const designRef = doc(firestore, `users/${userId}/designs`, designId);
     await setDoc(designRef, designDoc, { merge: true });
