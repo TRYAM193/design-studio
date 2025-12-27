@@ -9,6 +9,7 @@ export default function SaveDesignButton({
   editingDesignId, 
   className,
   productData, 
+  currentObjects,
   viewStates, 
   currentView,
   onGetSnapshot, // 🆕 Function to get clean image
