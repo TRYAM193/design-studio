@@ -64,7 +64,9 @@ export default function EditorPanel() {
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
 
-    if(urlColor )
+    if(urlColor){
+        fabricCanvas.back
+    }
 
     const [productData, setProductData] = useState({
         title: "Custom Design",
