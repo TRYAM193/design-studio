@@ -90,7 +90,7 @@ export default function EditorPanel() {
     const [activePanel, setActivePanel] = useState('text');
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
     
-    if(urlColor && !){
+    if(urlColor && !canvasBg) {
         fabricCanvas.backgroundColor = COLOR_MAP[urlColor] || urlColor;
         fabricCanvas.renderAll();
     }
