@@ -338,7 +338,7 @@ export default function EditorPanel() {
 
     }, [location.state, fabricCanvas]);
 
-    console.log(fabricCanvas)
+    console.log(fabricCanvas?.getActiveObject())
 
     const dataURLtoBlob = (dataURL) => {
         const arr = dataURL.split(',');
