@@ -174,15 +174,15 @@ export default function CanvasEditor({
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    console.log('running')
-
+    
     canvas.getObjects().forEach((obj) => {
       if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') {
         canvas.remove(obj);
       }
     });
-
+    
     if (productId && canvas.width > 0 && canvas.height > 0) {
+      console.log('running')
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       const leftPos = centerX - printWidth / 2;
