@@ -47,7 +47,7 @@ const buildDesignDoc = (id, currentObjects, viewStates, productData, currentView
   designDoc.updatedAt = now;
 
   if (isNew) {
-    designDoc.name = name;
+    designDoc.name = name || 'Untitled Design';
     designDoc.createdAt = now;
   }
   
