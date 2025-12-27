@@ -157,7 +157,7 @@ export default function EditorPanel() {
     const addObj = (objectsFromJSON = null) => {
         // 1. Decide Source: Use passed list (clean JSON) or live Canvas
         const sourceObjects = objectsFromJSON || fabricCanvas.getObjects();
-        
+
         const seenIds = new Set();
 
         const newObjs = sourceObjects.reduce((acc, obj, i) => {
@@ -180,11 +180,11 @@ export default function EditorPanel() {
             const type = obj.type;
 
             if (type === 'image') {
-                 specificProps = { width: obj.width, height: obj.height, cropX: obj.cropX, cropY: obj.cropY, src: obj.src };
+                specificProps = { width: obj.width, height: obj.height, cropX: obj.cropX, cropY: obj.cropY, src: obj.src };
             } else if (['text', 'textbox', 'i-text', 'circle-text'].includes(type) || obj.textEffect === 'circle') {
-                 specificProps = { text: obj.text, fontSize: obj.fontSize, fontFamily: obj.fontFamily, charSpacing: obj.charSpacing, textAlign: obj.textAlign, textStyle: obj.textStyle, textEffect: obj.textEffect, effectValue: obj.effectValue };
+                specificProps = { text: obj.text, fontSize: obj.fontSize, fontFamily: obj.fontFamily, charSpacing: obj.charSpacing, textAlign: obj.textAlign, textStyle: obj.textStyle, textEffect: obj.textEffect, effectValue: obj.effectValue };
             } else {
-                 specificProps = { width: obj.width, height: obj.height, radius: obj.radius, rx: obj.rx, ry: obj.ry };
+                specificProps = { width: obj.width, height: obj.height, radius: obj.radius, rx: obj.rx, ry: obj.ry };
             }
 
             // C. ID Conflict Check
@@ -217,13 +217,6 @@ export default function EditorPanel() {
         }
     };
 
-            // Dispatch the clean, unique list to Redux
-            if (newObjs) {
-                console.log("Syncing to Redux:", newObjs);
-                store.dispatch(setCanvasObjects(newObjs));
-            }
-        }, 100)
-    }
 
     // ✅ FIX: Merge with Strict Border Deduplication
     useEffect(() => {
@@ -237,7 +230,7 @@ export default function EditorPanel() {
 
             let parsedData = designToLoad.canvasJSON;
             if (typeof parsedData === 'string') {
-                 try { parsedData = JSON.parse(parsedData); } catch(e) {}
+                try { parsedData = JSON.parse(parsedData); } catch (e) { }
             }
 
             // Handle Product vs Blank
@@ -248,22 +241,22 @@ export default function EditorPanel() {
                     options: { ...prev.options, colors: [designToLoad.productConfig.variantColor] }
                 }));
                 setCanvasBg(designToLoad.productConfig.variantColor);
-                setViewStates(parsedData); 
-                
+                setViewStates(parsedData);
+
                 const activeView = designToLoad.productConfig.activeView || 'front';
                 setCurrentView(activeView);
 
                 if (parsedData[activeView]) {
                     fabricCanvas.loadFromJSON(parsedData[activeView], () => {
                         fabricCanvas.renderAll();
-                        addObj(); 
+                        addObj();
                     });
                 }
             } else {
                 // Blank Design
                 fabricCanvas.loadFromJSON(parsedData, () => {
                     fabricCanvas.renderAll();
-                    addObj(); 
+                    addObj();
                 });
             }
         }
@@ -275,7 +268,7 @@ export default function EditorPanel() {
 
             let incomingJson = mergeDesign.canvasJSON;
             if (typeof incomingJson === 'string') {
-                try { incomingJson = JSON.parse(incomingJson); } catch(e) {}
+                try { incomingJson = JSON.parse(incomingJson); } catch (e) { }
             }
 
             // 1. Prepare Incoming Objects (Exclude ANY existing borders)
@@ -293,10 +286,10 @@ export default function EditorPanel() {
                 // 3. Get CURRENT Canvas State
                 // We must grab 'id' to identify the border
                 const currentJson = fabricCanvas.toJSON(['customId', 'id']);
-                
+
                 // 🛑 CRITICAL FIX: Find and Preserve ONLY ONE Border
                 const existingBorder = currentJson.objects.find(obj => obj.id === 'print-area-border');
-                
+
                 // Remove ALL borders from the base list to start clean
                 currentJson.objects = currentJson.objects.filter(obj => obj.id !== 'print-area-border');
 
