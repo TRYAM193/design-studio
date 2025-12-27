@@ -306,11 +306,11 @@ export default function EditorPanel() {
 
             if (incomingObjects.length > 0) {
                 // 2. Regenerate IDs for incoming items
-                incomingObjects.forEach((obj, index) => {
-                    const newId = `${Date.now()}_merged_${index}_${Math.random().toString(36).substr(2, 9)}`;
-                    obj.id = newId;
-                    obj.customId = newId;
-                });
+                // incomingObjects.forEach((obj, index) => {
+                //     const newId = `${Date.now()}_merged_${index}_${Math.random().toString(36).substr(2, 9)}`;
+                //     obj.id = newId;
+                //     obj.customId = newId;
+                // });
 
                 // 3. Get CURRENT Canvas State
                 // We must grab 'id' to identify the border
