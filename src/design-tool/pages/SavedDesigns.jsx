@@ -15,7 +15,7 @@ export default function SavedDesignsPage() {
   const location = useLocation();
 
   // 1. Get Context from Navigation State
-  const { filterMode, filterProductId } = location.state || {};
+  const { filterMode, filterProductId, filterColor, filterSize } = location.state || {};
 
   // 2. Filter Designs Logic
   const filteredDesigns = useMemo(() => {
