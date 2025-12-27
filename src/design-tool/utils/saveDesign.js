@@ -20,7 +20,7 @@ function removeUndefined(obj) {
 
 // --- HELPER: Build Data Object ---
 const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew, thumbnailDataUrl) => {
-  // Use the passed clean thumbnail, or fallback to canvas capture (which might have borders)
+  // Use the passed clean thumbnail, or fallback to canvas capture
   const imageData = thumbnailDataUrl || canvas.toDataURL({ format: "png", multiplier: 0.5 });
   const now = Date.now();
   let designDoc = {};
@@ -35,9 +35,10 @@ const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew,
 
   if (productData && productData.productId) {
     // === PRODUCT MODE ===
+    // This is where "Back" view is saved even if currently on "Front"
     const allViewsJSON = {
-      ...viewStates,           // Previous views
-      [currentView]: currentJSON // Current view (clean)
+      ...viewStates,           // Previous views (hydrated from load)
+      [currentView]: currentJSON // Current active view
     };
 
     designDoc = {
@@ -45,7 +46,8 @@ const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew,
       canvasJSON: JSON.stringify(allViewsJSON),
       productConfig: {
         productId: productData.productId,
-        variantColor: productData.color,
+        variantColor: productData.color || productData.variantColor,
+        variantSize: productData.size || productData.variantSize, // ✅ Save Size
         activeView: currentView,
         printAreas: productData.print_areas
       }
@@ -117,7 +119,6 @@ export const overwriteDesign = async (userId, designId, canvas, productData, vie
 export const handleSaveTemp = (canvas) => {
   if (!canvas) return;
   const rawJSON = canvas.toJSON();
-  // Filter border from download too
   if(rawJSON.objects) {
     rawJSON.objects = rawJSON.objects.filter(obj => obj.customId !== 'print-area-border');
   }
