@@ -270,6 +270,7 @@ export default function EditorPanel() {
     const handleColorChange = (colorName) => {
         const hex = COLOR_MAP[colorName] || colorName;
         fabricCanvas.backgroundColor = hex;
+        fabricCanvas.renderAll();
         setCanvasBg(hex);
         setIsActive(true);
     };
