@@ -120,6 +120,7 @@ export default function SavedDesignsPage() {
                       </button>
                       <button
                         className="icon delete"
+                        title='Delete'
                         onClick={() => handleDelete(userId, design.id)}
                       >
                         <FiTrash/>
