@@ -3,6 +3,7 @@ import ImageHandler from './Image';
 import {
     FiType, FiImage, FiZap, FiSquare, FiTool, FiFolder
 } from 'react-icons/fi';
+import { fileURLToPath } from 'url';
 
 const ToolButton = ({ icon: Icon, label, isActive, onClick }) => (
     <button
@@ -24,7 +25,8 @@ export default function MainToolbar({
     navigation, 
     brandDisplay, 
     fabricCanvas,
-    productId // <--- Receive this from Editor.jsx
+    productId, // <--- Receive this from Editor.jsx
+    urlColor
 }) {
 
     // ✅ NEW: Handle navigation with context
@@ -32,7 +34,8 @@ export default function MainToolbar({
         navigation('/design/saved', { 
             state: { 
                 filterMode: productId ? 'product' : 'blank', 
-                filterProductId: productId 
+                filterProductId: productId,
+                fileURLToPath
             } 
         });
     };
