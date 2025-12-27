@@ -188,7 +188,7 @@ export default function CanvasEditor({
       });
 
       canvas.clipPath = clipRect;
-
+      if ()
       const visualBorder = new fabric.Rect({
         left: leftPos,
         top: topPos,
