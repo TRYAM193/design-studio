@@ -78,6 +78,7 @@ export default function CanvasEditor({
   productId,
   activeView,
 }) {
+  console.log(productId)
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const isSyncingRef = useRef(false);
