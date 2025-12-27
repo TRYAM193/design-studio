@@ -1,7 +1,7 @@
 // src/design-tool/pages/Editor.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
-import {uuidv4} from 'uuid';
+import { uuidv4 } from 'uuid';
 import CanvasEditor from '../components/CanvasEditor';
 import Text from '../functions/text';
 import updateObject from '../functions/update';
@@ -171,15 +171,15 @@ export default function EditorPanel() {
             const type = obj.type;
 
             if (type === 'image') {
-                 specificProps = { width: obj.width, height: obj.height, cropX: obj.cropX, cropY: obj.cropY, src: obj.src };
+                specificProps = { width: obj.width, height: obj.height, cropX: obj.cropX, cropY: obj.cropY, src: obj.src };
             } else if (['text', 'textbox', 'i-text', 'circle-text'].includes(type) || obj.textEffect === 'circle') {
-                 specificProps = { text: obj.text, fontSize: obj.fontSize, fontFamily: obj.fontFamily, charSpacing: obj.charSpacing, textAlign: obj.textAlign, textStyle: obj.textStyle, textEffect: obj.textEffect, effectValue: obj.effectValue };
+                specificProps = { text: obj.text, fontSize: obj.fontSize, fontFamily: obj.fontFamily, charSpacing: obj.charSpacing, textAlign: obj.textAlign, textStyle: obj.textStyle, textEffect: obj.textEffect, effectValue: obj.effectValue };
             } else {
-                 specificProps = { width: obj.width, height: obj.height, radius: obj.radius, rx: obj.rx, ry: obj.ry };
+                specificProps = { width: obj.width, height: obj.height, radius: obj.radius, rx: obj.rx, ry: obj.ry };
             }
 
             return {
-                id: obj.customId || obj.id, 
+                id: obj.customId || obj.id,
                 type: obj.textEffect === 'circle' ? 'circle-text' : type,
                 ...(type === 'image' && { src: obj.src }),
                 props: { ...commonProps, ...specificProps }
@@ -191,7 +191,7 @@ export default function EditorPanel() {
 
 
     // ✅ FIX: Merge with Strict Border Deduplication
-   useEffect(() => {
+    useEffect(() => {
         if (!location.state || !fabricCanvas) return;
 
         const handleLoad = () => {
@@ -202,7 +202,7 @@ export default function EditorPanel() {
 
             let parsedJSON = payload.canvasJSON;
             if (typeof parsedJSON === 'string') {
-                try { parsedJSON = JSON.parse(parsedJSON); } catch(e) { console.error("JSON Parse Error", e); return; }
+                try { parsedJSON = JSON.parse(parsedJSON); } catch (e) { console.error("JSON Parse Error", e); return; }
             }
 
             // ---------------------------------------------------------
@@ -216,10 +216,10 @@ export default function EditorPanel() {
                     options: { ...prev.options, colors: [payload.productConfig.variantColor] }
                 }));
                 setCanvasBg(payload.productConfig.variantColor);
-                
+
                 // 2. Set View States
-                setViewStates(parsedJSON); 
-                
+                setViewStates(parsedJSON);
+
                 // 3. Load Active View
                 const activeView = payload.productConfig.activeView || 'front';
                 setCurrentView(activeView);
@@ -230,22 +230,22 @@ export default function EditorPanel() {
                     if (activeViewJSON.objects) {
                         activeViewJSON.objects = activeViewJSON.objects.filter(o => o.id !== 'print-area-border');
                     }
-                    
+
                     fabricCanvas.loadFromJSON(activeViewJSON, () => {
                         fabricCanvas.renderAll();
                         // Sync specific objects to Redux
                         addObj(activeViewJSON.objects || []);
-                        setLoadTimestamp(Date.now()); 
+                        setLoadTimestamp(Date.now());
                     });
                 }
-            } 
+            }
             // ---------------------------------------------------------
             // CASE B: BLANK DESIGN (Merge into Current View)
             // ---------------------------------------------------------
             else {
                 // 1. Extract Objects from Blank Design
                 let incomingObjects = parsedJSON.objects || (Array.isArray(parsedJSON) ? parsedJSON : []);
-                
+
                 // 2. Filter out artifacts (borders)
                 incomingObjects = incomingObjects.filter(obj => obj.id !== 'print-area-border');
 
@@ -258,13 +258,13 @@ export default function EditorPanel() {
 
                 if (isMerge) {
                     // --- MERGE: Combine Current + New ---
-                    
+
                     // A. Get Current State (Preserve Background/Dims)
                     const currentJSON = fabricCanvas.toJSON(['customId', 'id']);
-                    
+
                     // B. Filter Current Objects (Remove existing border)
                     const currentObjects = currentJSON.objects.filter(obj => obj.id !== 'print-area-border');
-                    
+
                     // C. Combine Lists
                     const combinedObjects = [...currentObjects, ...incomingObjects];
                     currentJSON.objects = combinedObjects;
@@ -291,7 +291,7 @@ export default function EditorPanel() {
         };
 
         handleLoad();
-        
+
         // Cleanup navigation state
         window.history.replaceState({}, document.title);
 
