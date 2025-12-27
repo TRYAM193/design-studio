@@ -283,6 +283,7 @@ export default function EditorPanel() {
                 // Just load the JSON directly
                 fabricCanvas.loadFromJSON(parsedData, () => {
                     fabricCanvas.renderAll();
+                    addObj(); // Sync Redux
                 });
             }
         };
