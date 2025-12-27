@@ -326,92 +326,96 @@ export default function CanvasEditor({
   }, [location.state, fabricCanvas]);
 
   // 🟩 Load from Persistence
-  // ✅ FIX: Merge using loadFromJSON for stability
   useEffect(() => {
-    if (!location.state || !fabricCanvas) return;
+    if (!fabricCanvas || !initialized) return;
 
-    // --- SCENARIO 1: STANDARD LOAD (Replace Everything) ---
-    if (location.state.designToLoad) {
-      const { designToLoad } = location.state;
-      setCurrentDesign(designToLoad);
-      setEditingDesignId(designToLoad.id);
+    const loadDesign = async () => {
+      let designToLoad = null;
+      let designId = null;
 
-      let parsedData = designToLoad.canvasJSON;
-      if (typeof parsedData === 'string') {
-        try { parsedData = JSON.parse(parsedData); } catch (e) { }
-      }
-
-      // Handle Product vs Blank
-      if (designToLoad.type === 'PRODUCT' && designToLoad.productConfig) {
-        setProductData(prev => ({
-          ...prev,
-          productId: designToLoad.productConfig.productId,
-          options: { ...prev.options, colors: [designToLoad.productConfig.variantColor] }
-        }));
-        setCanvasBg(designToLoad.productConfig.variantColor);
-        setViewStates(parsedData);
-
-        const activeView = designToLoad.productConfig.activeView || 'front';
-        setCurrentView(activeView);
-
-        if (parsedData[activeView]) {
-          fabricCanvas.loadFromJSON(parsedData[activeView], () => {
-            fabricCanvas.renderAll();
-            addObj(); // Sync Redux
-          });
+      try {
+        const sessionData = sessionStorage.getItem('editingDesign');
+        if (sessionData) {
+          designToLoad = JSON.parse(sessionData);
+          sessionStorage.removeItem('editingDesign');
         }
-      } else {
-        // Blank Design
-        fabricCanvas.loadFromJSON(parsedData, () => {
-          fabricCanvas.renderAll();
-          addObj(); // Sync Redux
-        });
-      }
-    }
+      } catch (e) { console.warn(e); }
 
-    // --- SCENARIO 2: MERGE LOAD (Append Objects to Current) ---
-    if (location.state.mergeDesign) {
-      const { mergeDesign } = location.state;
-      console.log("Merging Design:", mergeDesign);
-
-      let incomingJson = mergeDesign.canvasJSON;
-      if (typeof incomingJson === 'string') {
-        try { incomingJson = JSON.parse(incomingJson); } catch (e) { }
+      if (!designToLoad) {
+        try {
+          const localData = localStorage.getItem('editingDesign');
+          if (localData) {
+            designToLoad = JSON.parse(localData);
+            localStorage.removeItem('editingDesign');
+          }
+        } catch (e) { console.warn(e); }
       }
 
-      // 1. Get Objects from the Incoming Design
-      const incomingObjects = incomingJson.objects || (Array.isArray(incomingJson) ? incomingJson : []);
-
-      if (incomingObjects.length > 0) {
-        // 2. Regenerate IDs to prevent conflicts
-        // We do this purely on the JSON data before loading
-        incomingObjects.forEach((obj, index) => {
-          const newId = `${Date.now()}_merged_${index}_${Math.random().toString(36).substr(2, 9)}`;
-          obj.id = newId;
-          obj.customId = newId;
-        });
-
-        // 3. Get CURRENT Canvas State (Preserves Product Background/Dims)
-        const currentJson = fabricCanvas.toJSON();
-
-        // 4. Combine: Current Objects + Incoming Objects
-        // We append new objects to the end so they appear "on top"
-        currentJson.objects = [...currentJson.objects, ...incomingObjects];
-
-        // 5. Load the Combined State
-        fabricCanvas.loadFromJSON(currentJson, () => {
-          fabricCanvas.renderAll();
-
-          // 6. Sync Redux (Now guaranteed to run after full render)
-          addObj();
-
-          // 7. Cleanup
-          window.history.replaceState({}, document.title);
-        });
+      if (!designToLoad) {
+        const urlParams = new URLSearchParams(window.location.search);
+        designId = urlParams.get('designId');
       }
-    }
 
-  }, [location.state, fabricCanvas]);
+      if (!designToLoad && !designId) {
+        designId = getCookie('editingDesignId');
+        if (designId) {
+          document.cookie = 'editingDesignId=; path=/; max-age=0';
+        }
+      }
+
+      if (!designToLoad && designId) {
+        try {
+          const designRef = doc(firestore, `users/test-user-123/designs`, designId);
+          const designSnap = await getDoc(designRef);
+          if (designSnap.exists()) {
+            designToLoad = { id: designId, ...designSnap.data() };
+          }
+        } catch (e) { console.error(e); }
+      }
+
+      if (designToLoad) {
+        setCurrentDesign(designToLoad);
+        setEditingDesignId(designToLoad.id);
+
+        if (designToLoad.canvasJSON) {
+          const parsedData = typeof designToLoad.canvasJSON === 'string'
+            ? JSON.parse(designToLoad.canvasJSON)
+            : designToLoad.canvasJSON;
+
+          const fontsToLoad = extractFontsFromJSON(parsedData);
+
+          const loadCanvasPersistence = () => {
+            fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
+              setTimeout(() => {
+                fabricCanvas.requestRenderAll();
+                fabricCanvas.getObjects().forEach(obj => {
+                  const state = store.getState();
+                  const currentObjs = state.canvas.present;
+                  if (!currentObjs.find(o => o.id === obj.customId)) {
+                  }
+                });
+              }, 90);
+            });
+          };
+
+          if (fontsToLoad.length > 0) {
+            WebFont.load({
+              google: { families: fontsToLoad },
+              active: () => {
+                console.log("Fonts loaded from persistence.");
+                loadCanvasPersistence();
+              },
+              inactive: loadCanvasPersistence
+            });
+          } else {
+            loadCanvasPersistence();
+          }
+        }
+      }
+    };
+    loadDesign();
+  }, [fabricCanvas, initialized]);
+
   // 🟩 Handle Selection Events
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
