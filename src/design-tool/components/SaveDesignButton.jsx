@@ -17,6 +17,46 @@ export default function SaveDesignButton({
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const classNames = className + ' text-button';
 
+  const getCleanDataURL = () => {
+        if (!fabricCanvas) return null;
+
+        const originalBg = fabricCanvas.backgroundColor;
+        const originalClip = fabricCanvas.clipPath;
+
+        // Hide background/border logic similar to your capture function
+        if (productData.title?.includes("Mug")) {
+            fabricCanvas.backgroundColor = "#FFFFFF";
+        } else {
+            fabricCanvas.backgroundColor = null;
+        }
+        fabricCanvas.clipPath = null;
+
+        const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
+        let wasBorderVisible = false;
+        if (borderObj) {
+            wasBorderVisible = borderObj.visible;
+            borderObj.visible = false;
+        }
+
+        fabricCanvas.renderAll();
+        
+        // Capture
+        const dataUrl = fabricCanvas.toDataURL({
+            format: 'png',
+            quality: 0.8,
+            multiplier: 0.5, // Smaller thumbnail
+            enableRetinaScaling: false
+        });
+
+        // Restore
+        fabricCanvas.backgroundColor = originalBg;
+        fabricCanvas.clipPath = originalClip;
+        if (borderObj) borderObj.visible = wasBorderVisible;
+        fabricCanvas.renderAll();
+
+        return dataUrl;
+    };
+
   const handleSaveClick = () => {
     if (!canvas) return;
     if (!editingDesignId) {
