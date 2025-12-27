@@ -407,7 +407,7 @@ export default function EditorPanel() {
                         </>
                     ) : (
                         <div className="p-5">
-                            {productId && productData.options?.colors?.length > 0 ? (
+                            {productData.id && productData.options?.colors?.length > 0 ? (
                                 <>
                                     <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
                                     <div className="grid grid-cols-4 gap-3">
