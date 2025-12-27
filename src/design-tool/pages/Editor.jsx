@@ -269,7 +269,7 @@ export default function EditorPanel() {
     // ... (Keep Color Change, Preview Generation, Add to Cart) ...
     const handleColorChange = (colorName) => {
         const hex = COLOR_MAP[colorName] || colorName;
-        fabricCanvas.setBackG
+        fabricCanvas.backgroundColor = hex;
         setCanvasBg(hex);
         setIsActive(true);
     };
