@@ -259,7 +259,7 @@ export default function EditorPanel() {
                     const currentJSON = fabricCanvas.toJSON(['customId', 'id']);
 
                     // B. Filter Current Objects (Remove existing border)
-                    const currentObjects = currentJSON.objects.filter(obj => obj.id !== 'print-area-border');
+                    const currentObjects = currentJSON.objects.filter(obj => obj.customId !== 'print-area-border');
 
                     // C. Combine Lists
                     const combinedObjects = [...currentObjects, ...incomingObjects];
