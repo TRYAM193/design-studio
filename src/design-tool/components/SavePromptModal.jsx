@@ -1,5 +1,6 @@
 // src/design-tool/components/SavePromptModal.jsx
 import React, { useState, useEffect } from 'react';
+import ReactDOM from "react-dom";
 import '../styles/SavePromptModal.css';
 import { FiFile, FiCopy } from 'react-icons/fi';
 
