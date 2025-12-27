@@ -19,9 +19,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle } from 'react-icons/fi';
+import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX } from 'react-icons/fi';
 
-// --- HELPER: UUID Generator ---
 const uuidv4 = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
@@ -62,6 +61,7 @@ export default function EditorPanel() {
     const [editingDesignId, setEditingDesignId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
 
+    // Redux State
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
@@ -82,6 +82,10 @@ export default function EditorPanel() {
     const [currentView, setCurrentView] = useState("front");
     const [viewStates, setViewStates] = useState({});
     
+    // Track Current View in Ref for Cleanup
+    const currentViewRef = useRef(currentView);
+    useEffect(() => { currentViewRef.current = currentView; }, [currentView]);
+
     const [designTextures, setDesignTextures] = useState({
         front: { blob: null, url: null },
         back: { blob: null, url: null },
@@ -94,6 +98,21 @@ export default function EditorPanel() {
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
+
+    // ✅ SESSION BACKUP: Save State on Unmount (Navigating Away)
+    useEffect(() => {
+        return () => {
+            const state = store.getState().canvas.present;
+            // Only backup if we have content or are in a specific view state
+            if (state.length > 0 || currentViewRef.current !== 'front') {
+                sessionStorage.setItem('editor_backup', JSON.stringify({
+                    objects: state,
+                    view: currentViewRef.current,
+                    timestamp: Date.now()
+                }));
+            }
+        };
+    }, []);
 
     // ✅ 1. FETCH PRODUCT DATA
     useEffect(() => {
@@ -123,113 +142,127 @@ export default function EditorPanel() {
         initProduct();
     }, [urlProductId, currentDesign]);
 
-    // ✅ 2. LOAD DESIGN (Full Replace)
+
+    // ✅ 2. UNIFIED LOAD & MERGE LOGIC
+    // This effect handles: Fresh Loads, Merges, and Session Restoration
     useEffect(() => {
-        if (!urlDesignId || !userId) return;
-        if (editingDesignId === urlDesignId) return;
+        // Prevent running if no user
+        if (!userId) return;
 
-        async function loadDesign() {
-            try {
-                const designRef = doc(db, `users/${userId}/designs`, urlDesignId);
-                const designSnap = await getDoc(designRef);
-                
-                if (designSnap.exists()) {
-                    const design = designSnap.data();
-                    setCurrentDesign(design);
-                    setEditingDesignId(design.id);
-
-                    if (design.type === 'PRODUCT' && design.productConfig) {
-                        const savedStates = design.canvasData || {};
-                        setViewStates(savedStates);
-
-                        const activeView = design.productConfig.activeView || 'front';
-                        setCurrentView(activeView);
-
-                        const activeObjects = savedStates[activeView] || [];
-                        dispatch(setCanvasObjects(activeObjects));
-                    } 
-                    else {
-                        const objects = design.canvasData || [];
-                        dispatch(setCanvasObjects(objects));
-                    }
-                }
-            } catch (e) {
-                console.error("Error loading design", e);
-            }
-        }
-        loadDesign();
-    }, [urlDesignId, userId, dispatch]);
-
-    // ✅ 3. MERGE DESIGN (Append to Current)
-    useEffect(() => {
         const mergeId = location.state?.mergeDesignId;
-        if (!mergeId || !userId) return;
+        const isMerge = !!mergeId;
 
-        async function mergeDesign() {
-            try {
-                // 1. Fetch
-                const designRef = doc(db, `users/${userId}/designs`, mergeId);
-                const designSnap = await getDoc(designRef);
-                
-                if (designSnap.exists()) {
-                    const design = designSnap.data();
+        // --- SCENARIO A: MERGING (Appending to Current) ---
+        if (isMerge) {
+            async function performMerge() {
+                // 1. RESTORE SESSION (Fixes "Wiping out objects" & "Wrong View")
+                const backupJSON = sessionStorage.getItem('editor_backup');
+                if (backupJSON) {
+                    const backup = JSON.parse(backupJSON);
                     
-                    // 2. Extract Objects (Assuming we merge BLANK designs which are arrays)
-                    // If it's a product design, we technically could grab 'front', but usually merge is for templates
-                    let newObjects = Array.isArray(design.canvasData) 
-                        ? design.canvasData 
-                        : (design.canvasData?.front || []);
-
-                    if (newObjects.length > 0) {
-                        // 3. Assign New IDs (Deep Clone & Re-ID)
-                        const objectsToAdd = newObjects.map(obj => ({
-                            ...obj,
-                            id: uuidv4(),
-                            customId: uuidv4(),
-                            // Optional: Offset slightly so they don't stack directly on top if same pos
-                            props: {
-                                ...obj.props,
-                                left: (obj.props.left || 0) + 20,
-                                top: (obj.props.top || 0) + 20
-                            }
-                        }));
-
-                        // 4. Append to Redux
-                        // We get current state from store directly to ensure freshness
-                        
-                        dispatch(setCanvasObjects([...canvasObjects, ...objectsToAdd]));
-                        
-                        console.log("Merged objects:", objectsToAdd.length);
+                    // Only restore if the backup is recent (e.g., < 10 mins old)
+                    if (Date.now() - backup.timestamp < 600000) {
+                        if (backup.view) setCurrentView(backup.view);
+                        if (backup.objects) {
+                            dispatch(setCanvasObjects(backup.objects));
+                            console.log("Session Restored for Merge:", backup.view);
+                        }
                     }
+                    sessionStorage.removeItem('editor_backup'); // Clear after use
                 }
-            } catch (e) {
-                console.error("Error merging design", e);
-            } finally {
-                // 5. Cleanup State so we don't re-merge on refresh
-                window.history.replaceState({}, document.title);
-            }
-        }
-        mergeDesign();
-    }, [location.state, userId, dispatch]);
 
-    // ✅ 4. URL SYNC
+                // 2. FETCH MERGE DESIGN
+                try {
+                    const designRef = doc(db, `users/${userId}/designs`, mergeId);
+                    const designSnap = await getDoc(designRef);
+                    if (designSnap.exists()) {
+                        const design = designSnap.data();
+                        
+                        // Extract objects (usually merging templates/blanks)
+                        let newObjects = Array.isArray(design.canvasData) 
+                            ? design.canvasData 
+                            : (design.canvasData?.front || []);
+
+                        if (newObjects.length > 0) {
+                            // Re-ID objects to avoid conflicts
+                            const objectsToAdd = newObjects.map(obj => ({
+                                ...obj,
+                                id: uuidv4(),
+                                customId: uuidv4(),
+                                props: {
+                                    ...obj.props,
+                                    left: (obj.props.left || 0) + 30, // Offset slightly
+                                    top: (obj.props.top || 0) + 30
+                                }
+                            }));
+
+                            // APPEND to Redux (get latest state directly)
+                            const currentObjects = store.getState().canvas.present;
+                            dispatch(setCanvasObjects([...currentObjects, ...objectsToAdd]));
+                        }
+                    }
+                } catch (e) {
+                    console.error("Merge failed", e);
+                } finally {
+                    window.history.replaceState({}, document.title);
+                }
+            }
+            performMerge();
+        }
+
+        // --- SCENARIO B: LOADING (Full Replace from DB) ---
+        else if (urlDesignId && editingDesignId !== urlDesignId) {
+            async function loadDesign() {
+                try {
+                    const designRef = doc(db, `users/${userId}/designs`, urlDesignId);
+                    const designSnap = await getDoc(designRef);
+                    
+                    if (designSnap.exists()) {
+                        const design = designSnap.data();
+                        setCurrentDesign(design);
+                        setEditingDesignId(design.id);
+
+                        if (design.type === 'PRODUCT' && design.productConfig) {
+                            const savedStates = design.canvasData || {};
+                            setViewStates(savedStates);
+                            
+                            const activeView = design.productConfig.activeView || 'front';
+                            setCurrentView(activeView);
+
+                            const activeObjects = savedStates[activeView] || [];
+                            dispatch(setCanvasObjects(activeObjects));
+                        } else {
+                            const objects = design.canvasData || [];
+                            dispatch(setCanvasObjects(objects));
+                        }
+                    }
+                } catch (e) { console.error("Error loading design", e); }
+            }
+            loadDesign();
+        }
+
+    }, [urlDesignId, location.state, userId, dispatch]);
+
+
+    // ✅ 3. URL SYNC
     useEffect(() => {
         if (currentDesign?.productConfig) {
             const params = new URLSearchParams(searchParams);
             const { productId, variantColor, variantSize } = currentDesign.productConfig;
             
-            if (productId && params.get('product') !== productId) params.set('product', productId);
-            if (variantColor && params.get('color') !== variantColor) params.set('color', variantColor);
-            if (variantSize && params.get('size') !== variantSize) params.set('size', variantSize);
+            let changed = false;
+            if (productId && params.get('product') !== productId) { params.set('product', productId); changed = true; }
+            if (variantColor && params.get('color') !== variantColor) { params.set('color', variantColor); changed = true; }
+            if (variantSize && params.get('size') !== variantSize) { params.set('size', variantSize); changed = true; }
             
-            setSearchParams(params, { replace: true });
+            if (changed) setSearchParams(params, { replace: true });
         }
     }, [currentDesign, setSearchParams]);
 
-    // ... (Keep Dims, Scaling, Snapshot Logic) ...
+    // ... (Keep existing Scale, Dims, Snapshot Logic) ...
     useEffect(() => {
-        if (productData.canvas_size) {
-            const area = productData.canvas_size;
+        if (productData.print_areas && productData.print_areas[currentView]) {
+            const area = productData.print_areas[currentView];
             setCanvasDims({ width: area.width || 4500, height: area.height || 5400 });
         }
     }, [productData, currentView]);
@@ -330,6 +363,21 @@ export default function EditorPanel() {
             });
         }
     };
+    
+    // Add Handler for Navigating to Saved Designs (Passing state)
+    // IMPORTANT: You need to pass this or call this when clicking "Templates" button
+    const navigateToTemplates = () => {
+        const params = new URLSearchParams(searchParams);
+        // Add flags so SavedDesigns knows we are coming from Product mode
+        navigation('/dashboard/templates', { 
+            state: { 
+                filterMode: 'product',
+                filterProductId: productData.productId,
+                filterColor: canvasBg,
+                filterSize: urlSize
+            }
+        });
+    }
 
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
@@ -343,7 +391,13 @@ export default function EditorPanel() {
             <div className="main full-height-main">
                 <MainToolbar
                     activePanel={activePanel}
-                    onSelectTool={(tool) => setActivePanel(prev => prev === tool ? null : tool)}
+                    onSelectTool={(tool) => {
+                        if (tool === 'templates') {
+                            navigateToTemplates(); // Use our custom navigator
+                        } else {
+                            setActivePanel(prev => prev === tool ? null : tool);
+                        }
+                    }}
                     setSelectedId={setSelectedId}
                     setActiveTool={setActiveTool}
                     navigation={navigation}
@@ -413,7 +467,7 @@ export default function EditorPanel() {
                         setSelectedId={setSelectedId}
                         fabricCanvas={fabricCanvas}
                         printDimensions={canvasDims}
-                        productId={productData.id}
+                        productId={productData.productId}
                         activeView={currentView}
                     />
                 </main>
@@ -429,31 +483,13 @@ export default function EditorPanel() {
                         </>
                     ) : (
                         <div className="p-5">
-                            {productData.id && productData.options?.colors?.length > 0 ? (
-                                <>
-                                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
-                                    <div className="grid grid-cols-4 gap-3">
-                                        {productData.options.colors.map((color) => {
-                                            const hex = COLOR_MAP[color] || "#ccc";
-                                            const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
-                                            return (
-                                                <button
-                                                    key={color}
-                                                    onClick={() => handleColorChange(color)}
-                                                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}`}
-                                                    style={{ backgroundColor: hex }}
-                                                    title={color}
-                                                >
-                                                    {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} /></span>}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <p className="text-xs text-slate-400 mt-4 leading-relaxed">Visualize your design on different fabric colors.</p>
-                                </>
-                            ) : (
-                                <div className="text-center text-slate-400 py-10">Select an element to edit properties.</div>
-                            )}
+                             {productData.options?.colors?.length > 0 && (
+                                 <div className="grid grid-cols-4 gap-3">
+                                     {productData.options.colors.map(color => (
+                                         <button key={color} onClick={() => handleColorChange(color)} className={`w-10 h-10 rounded-full border-2 ${canvasBg.toLowerCase() === (COLOR_MAP[color]||color).toLowerCase() ? "border-indigo-600" : ""}`} style={{ backgroundColor: COLOR_MAP[color] || color }} title={color}></button>
+                                     ))}
+                                 </div>
+                             )}
                         </div>
                     )}
                 </aside>
