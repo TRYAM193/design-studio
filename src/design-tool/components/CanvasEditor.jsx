@@ -218,202 +218,202 @@ export default function CanvasEditor({
   }, [printWidth, printHeight, productId, containerSize, fabricCanvas, activeView]);
 
   // 🟩 Load Saved Designs
-  // useEffect(() => {
-  //   if (location.state?.designToLoad && fabricCanvas) {
-  //     const design = location.state.designToLoad;
-  //     setCurrentDesign(design);
+  useEffect(() => {
+    if (location.state?.designToLoad && fabricCanvas) {
+      const design = location.state.designToLoad;
+      setCurrentDesign(design);
 
-  //     if (design.id) setEditingDesignId(design.id);
-  //     else setEditingDesignId(null)
+      if (design.id) setEditingDesignId(design.id);
+      else setEditingDesignId(null)
 
-  //     let parsedData;
-  //     let jsonContent = design.canvasJSON || design.canvasData;
+      let parsedData;
+      let jsonContent = design.canvasJSON || design.canvasData;
 
-  //     if (jsonContent) {
-  //       parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
-  //     }
+      if (jsonContent) {
+        parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+      }
 
-  //     if (parsedData) {
-  //       const fontsToLoad = extractFontsFromJSON(parsedData);
+      if (parsedData) {
+        const fontsToLoad = extractFontsFromJSON(parsedData);
 
-  //       const loadCanvasData = () => {
-  //         fabricCanvas.loadFromJSON(parsedData, () => {
-  //           // Redux Sync will handle the rest
-  //         });
+        const loadCanvasData = () => {
+          fabricCanvas.loadFromJSON(parsedData, () => {
+            // Redux Sync will handle the rest
+          });
 
-  //         setTimeout(() => {
-  //           const newObjs = fabricCanvas.getObjects().map((obj, i) => {
-  //             const commonProps = {
-  //               left: obj.left,
-  //               top: obj.top,
-  //               angle: obj.angle,
-  //               fill: obj.fill,
-  //               opacity: obj.opacity,
-  //               shadowBlur: obj.shadowBlur || 0,
-  //               shadowOffsetX: obj.shadowOffsetX || 0,
-  //               shadowOffsetY: obj.shadowOffsetY || 0,
-  //               shadowColor: obj.shadowColor || '',
-  //               stroke: obj.stroke,
-  //               strokeWidth: obj.strokeWidth,
-  //               scaleX: obj.scaleX || 1,
-  //               scaleY: obj.scaleY || 1,
-  //               lockMovementX: obj.lockMovementX,
-  //               lockMovementY: obj.lockMovementY,
-  //             };
+          setTimeout(() => {
+            const newObjs = fabricCanvas.getObjects().map((obj, i) => {
+              const commonProps = {
+                left: obj.left,
+                top: obj.top,
+                angle: obj.angle,
+                fill: obj.fill,
+                opacity: obj.opacity,
+                shadowBlur: obj.shadowBlur || 0,
+                shadowOffsetX: obj.shadowOffsetX || 0,
+                shadowOffsetY: obj.shadowOffsetY || 0,
+                shadowColor: obj.shadowColor || '',
+                stroke: obj.stroke,
+                strokeWidth: obj.strokeWidth,
+                scaleX: obj.scaleX || 1,
+                scaleY: obj.scaleY || 1,
+                lockMovementX: obj.lockMovementX,
+                lockMovementY: obj.lockMovementY,
+              };
 
-  //             let specificProps = {};
+              let specificProps = {};
 
-  //             if (obj.type === 'image') {
-  //               specificProps = {
-  //                 width: obj.width,
-  //                 height: obj.height,
-  //                 cropX: obj.cropX,
-  //                 cropY: obj.cropY,
-  //               };
-  //             }
-  //             else if (['text', 'textbox', 'i-text', 'circle-text'].includes(obj.type) || obj.textEffect === 'circle') {
-  //               specificProps = {
-  //                 text: obj.text,
-  //                 fontSize: obj.fontSize,
-  //                 fontFamily: obj.fontFamily,
-  //                 charSpacing: obj.charSpacing,
-  //                 textAlign: obj.textAlign,
-  //                 textStyle: obj.textStyle,
-  //                 textEffect: obj.textEffect,
-  //                 effectValue: obj.effectValue,
-  //               };
-  //             }
-  //             else {
-  //               specificProps = {
-  //                 width: obj.width,
-  //                 height: obj.height,
-  //                 radius: obj.radius,
-  //                 rx: obj.rx,
-  //                 ry: obj.ry,
-  //               };
-  //             }
+              if (obj.type === 'image') {
+                specificProps = {
+                  width: obj.width,
+                  height: obj.height,
+                  cropX: obj.cropX,
+                  cropY: obj.cropY,
+                };
+              }
+              else if (['text', 'textbox', 'i-text', 'circle-text'].includes(obj.type) || obj.textEffect === 'circle') {
+                specificProps = {
+                  text: obj.text,
+                  fontSize: obj.fontSize,
+                  fontFamily: obj.fontFamily,
+                  charSpacing: obj.charSpacing,
+                  textAlign: obj.textAlign,
+                  textStyle: obj.textStyle,
+                  textEffect: obj.textEffect,
+                  effectValue: obj.effectValue,
+                };
+              }
+              else {
+                specificProps = {
+                  width: obj.width,
+                  height: obj.height,
+                  radius: obj.radius,
+                  rx: obj.rx,
+                  ry: obj.ry,
+                };
+              }
 
-  //             return {
-  //               id: obj.customId || Date.now() + i,
-  //               type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
-  //               ...(obj.type === 'image' && { src: obj.src }),
-  //               props: { ...commonProps, ...specificProps }
-  //             };
-  //           });
-  //           if (newObjs) {
-  //             store.dispatch(setCanvasObjects(newObjs))
-  //             console.log('Redux Synced')
-  //           }
-  //           fabricCanvas.requestRenderAll();
-  //         }, 100);
-  //       };
+              return {
+                id: obj.customId || Date.now() + i,
+                type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+                ...(obj.type === 'image' && { src: obj.src }),
+                props: { ...commonProps, ...specificProps }
+              };
+            });
+            if (newObjs) {
+              store.dispatch(setCanvasObjects(newObjs))
+              console.log('Redux Synced')
+            }
+            fabricCanvas.requestRenderAll();
+          }, 100);
+        };
 
-  //       if (fontsToLoad.length > 0) {
-  //         WebFont.load({
-  //           google: { families: fontsToLoad },
-  //           active: () => {
-  //             console.log("Fonts loaded for new design.");
-  //             loadCanvasData();
-  //           },
-  //           inactive: loadCanvasData
-  //         });
-  //       } else {
-  //         loadCanvasData();
-  //       }
-  //     }
-  //   }
-  // }, [location.state, fabricCanvas]);
+        if (fontsToLoad.length > 0) {
+          WebFont.load({
+            google: { families: fontsToLoad },
+            active: () => {
+              console.log("Fonts loaded for new design.");
+              loadCanvasData();
+            },
+            inactive: loadCanvasData
+          });
+        } else {
+          loadCanvasData();
+        }
+      }
+    }
+  }, [location.state, fabricCanvas]);
 
   // 🟩 Load from Persistence
-  // useEffect(() => {
-  //   if (!fabricCanvas || !initialized) return;
+  useEffect(() => {
+    if (!fabricCanvas || !initialized) return;
 
-  //   const loadDesign = async () => {
-  //     let designToLoad = null;
-  //     let designId = null;
+    const loadDesign = async () => {
+      let designToLoad = null;
+      let designId = null;
 
-  //     try {
-  //       const sessionData = sessionStorage.getItem('editingDesign');
-  //       if (sessionData) {
-  //         designToLoad = JSON.parse(sessionData);
-  //         sessionStorage.removeItem('editingDesign');
-  //       }
-  //     } catch (e) { console.warn(e); }
+      try {
+        const sessionData = sessionStorage.getItem('editingDesign');
+        if (sessionData) {
+          designToLoad = JSON.parse(sessionData);
+          sessionStorage.removeItem('editingDesign');
+        }
+      } catch (e) { console.warn(e); }
 
-  //     if (!designToLoad) {
-  //       try {
-  //         const localData = localStorage.getItem('editingDesign');
-  //         if (localData) {
-  //           designToLoad = JSON.parse(localData);
-  //           localStorage.removeItem('editingDesign');
-  //         }
-  //       } catch (e) { console.warn(e); }
-  //     }
+      if (!designToLoad) {
+        try {
+          const localData = localStorage.getItem('editingDesign');
+          if (localData) {
+            designToLoad = JSON.parse(localData);
+            localStorage.removeItem('editingDesign');
+          }
+        } catch (e) { console.warn(e); }
+      }
 
-  //     if (!designToLoad) {
-  //       const urlParams = new URLSearchParams(window.location.search);
-  //       designId = urlParams.get('designId');
-  //     }
+      if (!designToLoad) {
+        const urlParams = new URLSearchParams(window.location.search);
+        designId = urlParams.get('designId');
+      }
 
-  //     if (!designToLoad && !designId) {
-  //       designId = getCookie('editingDesignId');
-  //       if (designId) {
-  //         document.cookie = 'editingDesignId=; path=/; max-age=0';
-  //       }
-  //     }
+      if (!designToLoad && !designId) {
+        designId = getCookie('editingDesignId');
+        if (designId) {
+          document.cookie = 'editingDesignId=; path=/; max-age=0';
+        }
+      }
 
-  //     if (!designToLoad && designId) {
-  //       try {
-  //         const designRef = doc(firestore, `users/test-user-123/designs`, designId);
-  //         const designSnap = await getDoc(designRef);
-  //         if (designSnap.exists()) {
-  //           designToLoad = { id: designId, ...designSnap.data() };
-  //         }
-  //       } catch (e) { console.error(e); }
-  //     }
+      if (!designToLoad && designId) {
+        try {
+          const designRef = doc(firestore, `users/test-user-123/designs`, designId);
+          const designSnap = await getDoc(designRef);
+          if (designSnap.exists()) {
+            designToLoad = { id: designId, ...designSnap.data() };
+          }
+        } catch (e) { console.error(e); }
+      }
 
-  //     if (designToLoad) {
-  //       setCurrentDesign(designToLoad);
-  //       setEditingDesignId(designToLoad.id);
+      if (designToLoad) {
+        setCurrentDesign(designToLoad);
+        setEditingDesignId(designToLoad.id);
 
-  //       if (designToLoad.canvasJSON) {
-  //         const parsedData = typeof designToLoad.canvasJSON === 'string'
-  //           ? JSON.parse(designToLoad.canvasJSON)
-  //           : designToLoad.canvasJSON;
+        if (designToLoad.canvasJSON) {
+          const parsedData = typeof designToLoad.canvasJSON === 'string'
+            ? JSON.parse(designToLoad.canvasJSON)
+            : designToLoad.canvasJSON;
 
-  //         const fontsToLoad = extractFontsFromJSON(parsedData);
+          const fontsToLoad = extractFontsFromJSON(parsedData);
 
-  //         const loadCanvasPersistence = () => {
-  //           fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
-  //             setTimeout(() => {
-  //               fabricCanvas.requestRenderAll();
-  //               fabricCanvas.getObjects().forEach(obj => {
-  //                 const state = store.getState();
-  //                 const currentObjs = state.canvas.present;
-  //                 if (!currentObjs.find(o => o.id === obj.customId)) {
-  //                 }
-  //               });
-  //             }, 90);
-  //           });
-  //         };
+          const loadCanvasPersistence = () => {
+            fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
+              setTimeout(() => {
+                fabricCanvas.requestRenderAll();
+                fabricCanvas.getObjects().forEach(obj => {
+                  const state = store.getState();
+                  const currentObjs = state.canvas.present;
+                  if (!currentObjs.find(o => o.id === obj.customId)) {
+                  }
+                });
+              }, 90);
+            });
+          };
 
-  //         if (fontsToLoad.length > 0) {
-  //           WebFont.load({
-  //             google: { families: fontsToLoad },
-  //             active: () => {
-  //               console.log("Fonts loaded from persistence.");
-  //               loadCanvasPersistence();
-  //             },
-  //             inactive: loadCanvasPersistence
-  //           });
-  //         } else {
-  //           loadCanvasPersistence();
-  //         }
-  //       }
-  //     }
-  //   };
-  //   loadDesign();
-  // }, [fabricCanvas, initialized]);
+          if (fontsToLoad.length > 0) {
+            WebFont.load({
+              google: { families: fontsToLoad },
+              active: () => {
+                console.log("Fonts loaded from persistence.");
+                loadCanvasPersistence();
+              },
+              inactive: loadCanvasPersistence
+            });
+          } else {
+            loadCanvasPersistence();
+          }
+        }
+      }
+    };
+    loadDesign();
+  }, [fabricCanvas, initialized]);
 
   // 🟩 Handle Selection Events
   useEffect(() => {
