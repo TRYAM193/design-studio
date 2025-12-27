@@ -14,59 +14,23 @@ export default function SavedDesignsPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { filterMode, filterProductId, filterColor, filterSize } = location.state || {};
+  const { filterMode, filterProductId } = location.state || {};
 
   const filteredDesigns = useMemo(() => {
     if (!filterMode) return designs;
-
     return designs.filter(d => {
-      if (d.type === 'BLANK' || !d.type) {
-        if (filterMode === 'blank') return true;
-        return true; 
-      }
-
+      if (d.type === 'BLANK' || !d.type) return true; // Allow blanks
       if (filterMode === 'product') {
         return d.type === 'PRODUCT' && d.productConfig?.productId === filterProductId;
       }
-
-      if (filterMode === 'blank') {
-        return false;
-      }
-
       return true;
     });
   }, [designs, filterMode, filterProductId]);
 
 
   const handleSelectDesign = (design) => {
-    // SCENARIO 1: Merge (e.g., Adding a saved sticker to the current shirt)
-    console.log('Selected design:', design);
-    if (filterMode === 'product' && (design.type === 'BLANK' || !design.type)) {
-      const targetUrl = `/design?product=${filterProductId}&color=${filterColor || ''}&size=${filterSize || ''}`;
-
-      navigate(targetUrl, {
-        state: {
-          mergeDesign: design,
-          previousState: location.state
-        }
-      });
-    } 
-    // SCENARIO 2: Load a Saved Product Design (Restore Context)
-    else if (design.type === 'PRODUCT' && design.productConfig) {
-        const { productId, variantColor, variantSize } = design.productConfig;
-        
-        // ✅ FIX: Build URL params so Editor initializes in Product Mode
-        const params = new URLSearchParams();
-        if (productId) params.set('product', productId);
-        if (variantColor) params.set('color', variantColor);
-        if (variantSize) params.set('size', variantSize);
-        
-        navigate(`/design?${params.toString()}`, { state: { designToLoad: design } });
-    }
-    // SCENARIO 3: Standard Load (Blank Design)
-    else {
-      navigate('/design', { state: { designToLoad: design } });
-    }
+    // We only pass the ID now. The Editor will handle the fetching.
+    navigate(`/design?designId=${design.id}`);
   };
 
   const handleDelete = async (userId, designId) => {
@@ -87,57 +51,25 @@ export default function SavedDesignsPage() {
         <div className="back-btn" onClick={() => navigate(-1)}>
           <FaArrowLeft />
         </div>
-        <h2>
-          {filterMode === 'product' ? 'Select Design to Load or Merge' : 'Your Saved Designs'}
-        </h2>
+        <h2>{filterMode === 'product' ? 'Select Design' : 'Your Saved Designs'}</h2>
 
         {loading ? (
           <div className="spinner"></div>
         ) : (
-          <>
-            {filteredDesigns.length === 0 && <p>No matching designs found.</p>}
-
-            <div className="design-grid">
-              {filteredDesigns.map((design) => {
-                const isMergeable = filterMode === 'product' && design.type === 'BLANK';
-
-                return (
-                  <div key={design.id} className="design-card">
-                    <div className="design-image-wrapper">
-                      <img
-                        src={design.imageData}
-                        alt={design.name}
-                        width={150}
-                        onClick={() => handleSelectDesign(design)}
-                      />
-                      {isMergeable && (
-                        <div className="merge-badge">Add to Current</div>
-                      )}
-                    </div>
-
-                    <div className="overlay-icons">
-                      <button
-                        className="icon edit"
-                        title={isMergeable ? "Add to current design" : "Load design"}
-                        onClick={() => handleSelectDesign(design)}
-                      >
-                        {isMergeable ? <FaPlus /> : <FaEdit />}
-                      </button>
-                      <button
-                        className="icon delete"
-                        title='Delete Design'
-                        onClick={() => handleDelete(userId, design.id)}
-                      >
-                        <FaTrash/>
-                      </button>
-                    </div>
-
-                    <p>{design.name || 'Untitled'}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </>
+          <div className="design-grid">
+            {filteredDesigns.map((design) => (
+              <div key={design.id} className="design-card">
+                <div className="design-image-wrapper">
+                  <img src={design.imageData} alt={design.name} width={150} onClick={() => handleSelectDesign(design)} />
+                </div>
+                <div className="overlay-icons">
+                  <button className="icon edit" onClick={() => handleSelectDesign(design)}><FaEdit /></button>
+                  <button className="icon delete" onClick={() => handleDelete(userId, design.id)}><FaTrash/></button>
+                </div>
+                <p>{design.name || 'Untitled'}</p>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </>
