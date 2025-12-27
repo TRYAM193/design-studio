@@ -187,7 +187,7 @@ export default function EditorPanel() {
     useEffect(() => {
         if (productData.canvas_size) {
             const area = productData.canvas_size;
-            print(area)
+            console.log(area)
             setCanvasDims({ width: area.width || 4500, height: area.height || 5400 });
         }
     }, [productData, currentView]);
