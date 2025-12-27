@@ -2,67 +2,48 @@ import { db as firestore } from '@/firebase';
 import { doc, setDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 
-// --- HELPER: Clean JSON ---
-function removeUndefined(obj) {
-  if (Array.isArray(obj)) {
-    return obj.map(removeUndefined);
-  } else if (obj && typeof obj === 'object') {
-    const cleaned = {};
-    for (const key in obj) {
-      if (obj[key] !== undefined) {
-        cleaned[key] = removeUndefined(obj[key]);
-      }
-    }
-    return cleaned;
-  }
-  return obj;
-}
-
-// --- HELPER: Build Data Object ---
-const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew, thumbnailDataUrl) => {
-  // Use the passed clean thumbnail, or fallback to canvas capture
-  const imageData = thumbnailDataUrl || canvas.toDataURL({ format: "png", multiplier: 0.5 });
+// --- HELPER: Build Data Object (Redux Version) ---
+const buildDesignDoc = (id, currentObjects, viewStates, productData, currentView, isNew, thumbnailDataUrl) => {
   const now = Date.now();
-  let designDoc = {};
+  
+  // 1. Merge Current View Objects into ViewStates
+  // We clean the objects to ensure no undefined values or border objects slip in
+  const cleanObjects = (currentObjects || []).filter(obj => 
+    obj.id !== 'print-area-border' && obj.customId !== 'print-area-border'
+  );
 
-  // 1. Clean the current view's objects (remove border object from JSON)
-  const currentJSON = removeUndefined(canvas.toJSON());
-  if (currentJSON.objects) {
-    currentJSON.objects = currentJSON.objects.filter(obj => 
-      obj.customId !== 'print-area-border' && obj.id !== 'print-area-border'
-    );
-  }
+  const finalViewStates = {
+    ...viewStates,
+    [currentView]: cleanObjects
+  };
+
+  let designDoc = {};
 
   if (productData && productData.productId) {
     // === PRODUCT MODE ===
-    // This is where "Back" view is saved even if currently on "Front"
-    const allViewsJSON = {
-      ...viewStates,           // Previous views (hydrated from load)
-      [currentView]: currentJSON // Current active view
-    };
-
     designDoc = {
       type: 'PRODUCT',
-      canvasJSON: JSON.stringify(allViewsJSON),
+      // We save the raw Redux arrays, NOT the Fabric Canvas JSON
+      canvasData: finalViewStates, 
       productConfig: {
         productId: productData.productId,
-        variantColor: productData.color || productData.variantColor,
-        variantSize: productData.size || productData.variantSize, // ✅ Save Size
-        activeView: currentView,
-        printAreas: productData.print_areas
+        variantColor: productData.color || null,
+        variantSize: productData.size || null, // ✅ Using the passed URL data
+        activeView: currentView || 'front',
+        printAreas: productData.print_areas || {}
       }
     };
   } else {
     // === BLANK MODE ===
     designDoc = {
       type: 'BLANK',
-      canvasJSON: currentJSON,
+      canvasData: cleanObjects, // Just the array for single view
       productConfig: null
     };
   }
 
   designDoc.id = id;
-  designDoc.imageData = imageData;
+  designDoc.imageData = thumbnailDataUrl; // We expect Editor to pass the clean snapshot
   designDoc.updatedAt = now;
 
   if (isNew) {
@@ -70,17 +51,18 @@ const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew,
     designDoc.createdAt = now;
   }
   
-  return designDoc;
+  // JSON.parse(JSON.stringify) is a dirty but effective way to strip undefineds
+  return JSON.parse(JSON.stringify(designDoc));
 };
 
 // --- SAVE NEW ---
-export const saveNewDesign = async (userId, canvas, productData, viewStates, currentView, setSaving, thumbnailDataUrl) => {
-  if (!canvas || !userId) return;
+export const saveNewDesign = async (userId, currentObjects, viewStates, productData, currentView, setSaving, thumbnailDataUrl) => {
+  if (!userId) return;
   setSaving(true);
 
   try {
     const newDesignId = uuidv4();
-    const designDoc = buildDesignDoc(newDesignId, canvas, productData, viewStates, currentView, true, thumbnailDataUrl);
+    const designDoc = buildDesignDoc(newDesignId, currentObjects, viewStates, productData, currentView, true, thumbnailDataUrl);
 
     const designRef = doc(firestore, `users/${userId}/designs`, newDesignId);
     await setDoc(designRef, designDoc);
@@ -95,14 +77,13 @@ export const saveNewDesign = async (userId, canvas, productData, viewStates, cur
 };
 
 // --- OVERWRITE ---
-export const overwriteDesign = async (userId, designId, canvas, productData, viewStates, currentView, setSaving, thumbnailDataUrl) => {
-  if (!canvas || !designId) return;
+export const overwriteDesign = async (userId, designId, currentObjects, viewStates, productData, currentView, setSaving, thumbnailDataUrl) => {
+  if (!designId) return;
   setSaving(true);
 
   try {
-    const designDoc = buildDesignDoc(designId, canvas, productData, viewStates, currentView, false, thumbnailDataUrl);
+    const designDoc = buildDesignDoc(designId, currentObjects, viewStates, productData, currentView, false, thumbnailDataUrl);
     
-    // We strictly use setDoc with merge: true to avoid deleting fields we don't know about
     const designRef = doc(firestore, `users/${userId}/designs`, designId);
     await setDoc(designRef, designDoc, { merge: true });
 
@@ -114,7 +95,6 @@ export const overwriteDesign = async (userId, designId, canvas, productData, vie
     setSaving(false);
   }
 };
-
 // --- EXPORT JSON (Temp) ---
 export const handleSaveTemp = (canvas) => {
   if (!canvas) return;
