@@ -78,7 +78,6 @@ export default function CanvasEditor({
   productId,
   activeView,
 }) {
-  console.log(productId)
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const isSyncingRef = useRef(false);
@@ -182,7 +181,7 @@ export default function CanvasEditor({
       }
     });
     
-    if (productId) {
+    if (productId && canvas.width > 0 && canvas.height > 0) {
       console.log('running')
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
