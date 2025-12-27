@@ -500,7 +500,8 @@ export default function EditorPanel() {
                     brandDisplay={BrandDisplay}
                     fabricCanvas={fabricCanvas}
                     productId={productId}
-                    
+                    urlColor={urlColor}
+                    urlSize={urlSize}
                 />
 
                 {activePanel && (
