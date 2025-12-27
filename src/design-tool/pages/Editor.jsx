@@ -494,7 +494,7 @@ export default function EditorPanel() {
                         setSelectedId={setSelectedId}
                         fabricCanvas={fabricCanvas}
                         printDimensions={canvasDims}
-                        productId={productData.productId}
+                        productId={productData.id}
                         activeView={currentView}
                     />
                 </main>
