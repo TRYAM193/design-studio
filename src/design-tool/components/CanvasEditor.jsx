@@ -204,6 +204,7 @@ export default function CanvasEditor({
         });
         canvas.add(visualBorder);
         canvas.bringObjectToFront(visualBorder);
+        canvas.requestRenderAll();
       }
 
 
