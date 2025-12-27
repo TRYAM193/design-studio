@@ -100,6 +100,59 @@ export default function EditorPanel() {
     // ✅ Initialize dims directly from default or product data logic
     const [canvasDims, setCanvasDims] = useState();
 
+    const getCleanDataURL = () => {
+        if (!fabricCanvas) return null;
+
+        const originalBg = fabricCanvas.backgroundColor;
+        const originalClip = fabricCanvas.clipPath;
+
+        // Hide background/border logic similar to your capture function
+        if (productData.title?.includes("Mug")) {
+            fabricCanvas.backgroundColor = "#FFFFFF";
+        } else {
+            fabricCanvas.backgroundColor = null;
+        }
+        fabricCanvas.clipPath = null;
+
+        const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
+        let wasBorderVisible = false;
+        if (borderObj) {
+            wasBorderVisible = borderObj.visible;
+            borderObj.visible = false;
+        }
+
+        fabricCanvas.renderAll();
+
+        // Capture
+        const dataUrl = fabricCanvas.toDataURL({
+            format: 'png',
+            quality: 0.8,
+            multiplier: 0.5, // Smaller thumbnail
+            enableRetinaScaling: false
+        });
+
+        // Restore
+        fabricCanvas.backgroundColor = originalBg;
+        fabricCanvas.clipPath = originalClip;
+        if (borderObj) borderObj.visible = wasBorderVisible;
+        fabricCanvas.renderAll();
+
+        return dataUrl;
+    };
+
+    // 2. Handle Successful Save
+    const handleSaveSuccess = (savedId) => {
+        if (savedId && savedId !== editingDesignId) {
+            console.log("Design Saved! Switching to ID:", savedId);
+            setEditingDesignId(savedId);
+
+            // Update URL without reloading page
+            const newUrl = new URL(window.location);
+            newUrl.searchParams.set('designId', savedId);
+            window.history.replaceState({}, '', newUrl);
+        }
+    };
+
     useEffect(() => {
         async function initEditor() {
             if (!productId) return;
@@ -152,7 +205,7 @@ export default function EditorPanel() {
         window.addEventListener('resize', calculateScale);
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView])
-    
+
 
     const dataURLtoBlob = (dataURL) => {
         const arr = dataURL.split(',');
