@@ -8,74 +8,49 @@ export default function SaveDesignButton({
   userId, 
   editingDesignId, 
   className,
-  // New Props
   productData, 
   viewStates, 
-  currentView 
+  currentView,
+  onGetSnapshot, // 🆕 Function to get clean image
+  onSaveSuccess  // 🆕 Function to update parent state
 }) {
   const [saving, setSaving] = useState(false);
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const classNames = className + ' text-button';
 
-  const getCleanDataURL = () => {
-        if (!fabricCanvas) return null;
+  const performSave = async (isOverwrite) => {
+    // 1. Get Clean Snapshot from Editor
+    let thumbnail = null;
+    if (onGetSnapshot) {
+        thumbnail = await onGetSnapshot(); // This returns a DataURL string
+    }
 
-        const originalBg = fabricCanvas.backgroundColor;
-        const originalClip = fabricCanvas.clipPath;
+    let result;
+    if (isOverwrite && editingDesignId) {
+       result = await overwriteDesign(
+           userId, editingDesignId, canvas, productData, viewStates, currentView, setSaving, thumbnail
+       );
+    } else {
+       result = await saveNewDesign(
+           userId, canvas, productData, viewStates, currentView, setSaving, thumbnail
+       );
+    }
 
-        // Hide background/border logic similar to your capture function
-        if (productData.title?.includes("Mug")) {
-            fabricCanvas.backgroundColor = "#FFFFFF";
-        } else {
-            fabricCanvas.backgroundColor = null;
-        }
-        fabricCanvas.clipPath = null;
-
-        const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
-        let wasBorderVisible = false;
-        if (borderObj) {
-            wasBorderVisible = borderObj.visible;
-            borderObj.visible = false;
-        }
-
-        fabricCanvas.renderAll();
-        
-        // Capture
-        const dataUrl = fabricCanvas.toDataURL({
-            format: 'png',
-            quality: 0.8,
-            multiplier: 0.5, // Smaller thumbnail
-            enableRetinaScaling: false
-        });
-
-        // Restore
-        fabricCanvas.backgroundColor = originalBg;
-        fabricCanvas.clipPath = originalClip;
-        if (borderObj) borderObj.visible = wasBorderVisible;
-        fabricCanvas.renderAll();
-
-        return dataUrl;
-    };
+    if (result && result.success) {
+        // 2. Notify Parent (Editor.jsx) to update URL and State
+        if (onSaveSuccess) onSaveSuccess(result.id);
+    }
+  };
 
   const handleSaveClick = () => {
     if (!canvas) return;
     if (!editingDesignId) {
       // New Design -> Save directly
-      saveNewDesign(userId, canvas, productData, viewStates, currentView, setSaving);
+      performSave(false);
     } else {
       // Existing Design -> Ask user
       setShowSavePrompt(true);
     }
-  };
-
-  const handleOverwrite = async () => {
-    await overwriteDesign(userId, editingDesignId, canvas, productData, viewStates, currentView, setSaving);
-    setShowSavePrompt(false);
-  };
-
-  const handleSaveCopy = async () => {
-    await saveNewDesign(userId, canvas, productData, viewStates, currentView, setSaving);
-    setShowSavePrompt(false);
   };
 
   return (
@@ -88,8 +63,14 @@ export default function SaveDesignButton({
       <SavePromptModal
         open={showSavePrompt}
         onClose={() => setShowSavePrompt(false)}
-        onSaveCopy={handleSaveCopy}
-        onOverwrite={handleOverwrite}
+        onSaveCopy={() => {
+            setShowSavePrompt(false);
+            performSave(false); // Force new ID
+        }}
+        onOverwrite={() => {
+            setShowSavePrompt(false);
+            performSave(true); // Overwrite existing
+        }}
       />
     </>
   );
