@@ -1,7 +1,7 @@
 // src/design-tool/components/SaveDesignButton.jsx
 import React, { useState } from 'react';
 // ✅ Import both functions
-import { saveNewDesign, overwriteDesign } from '../saveDesign'; 
+import { saveNewDesign, overwriteDesign } from '../utils/saveDesign'; 
 import SavePromptModal from './SavePromptModal';
 import { FiSave } from 'react-icons/fi';
 import { Button } from "@/components/ui/button";
