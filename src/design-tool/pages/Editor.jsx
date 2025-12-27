@@ -390,7 +390,6 @@ export default function EditorPanel() {
                         printDimensions={canvasDims}
                         productId={productData.productId}
                         activeView={currentView}
-                        // Note: Removed old 'load' props, handled by Editor now
                     />
                 </main>
 
