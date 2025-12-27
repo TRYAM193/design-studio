@@ -4,15 +4,18 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  /* Reduced opacity as requested (0.45 -> 0.25) */
+  width: 100vw;  /* Force full viewport width */
+  height: 100vh; /* Force full viewport height */
+  
+  /* Reduced opacity as requested */
   background: rgba(0, 0, 0, 0.25);
-  /* Added blur for a modern "glass" feel */
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px); /* Adds the glass blur effect */
+  
+  /* Flex centering */
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: center;     /* Centers vertically */
+  justify-content: center; /* Centers horizontally */
+  
   z-index: 2000;
   animation: fadeIn 0.2s ease-out;
 }
@@ -21,16 +24,23 @@
   background: white;
   padding: 30px;
   width: 380px;
-  border-radius: 16px; /* Softer corners */
+  border-radius: 16px;
   text-align: center;
   position: relative;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Softer, larger shadow */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   color: #333;
+  
+  /* Backup centering if flex fails */
+  margin: auto; 
+  
   display: flex;
   flex-direction: column;
   gap: 15px;
-  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy pop effect */
+  
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
+/* ... (Keep the rest of your styles for buttons/inputs below) ... */
 
 .modal-box h3 {
   margin: 0;
@@ -46,7 +56,6 @@
   line-height: 1.5;
 }
 
-/* Input Field Styling */
 .save-name-input {
   width: 100%;
   padding: 10px 12px;
@@ -55,7 +64,7 @@
   font-size: 14px;
   outline: none;
   transition: border-color 0.2s;
-  box-sizing: border-box; /* Fix padding issues */
+  box-sizing: border-box;
 }
 
 .save-name-input:focus {
@@ -63,15 +72,13 @@
   box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
-/* Action Buttons Container */
 .modal-actions {
   display: flex;
-  justify-content: flex-end; /* Align buttons to right usually looks better, or space-between */
+  justify-content: flex-end;
   gap: 10px;
   margin-top: 10px;
 }
 
-/* Choice Buttons (Update vs Copy) */
 .choice-btn {
   display: flex;
   align-items: center;
@@ -113,7 +120,6 @@
   color: #888;
 }
 
-/* Standard Buttons */
 .btn {
   padding: 8px 16px;
   border-radius: 6px;
@@ -164,7 +170,6 @@
   color: #333;
 }
 
-/* Animations */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
