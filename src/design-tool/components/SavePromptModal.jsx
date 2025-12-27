@@ -43,7 +43,7 @@ export default function SavePromptModal({
     onConfirm(designName, isCopy);
   };
 
-  const modalContent =  (
+  const modalContent = (
     <div className="modal-overlay">
       <div className="modal-content" style={{ width: '400px' }}>
         <h3 className="mb-4 text-lg font-bold">
