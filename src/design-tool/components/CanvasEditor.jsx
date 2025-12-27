@@ -345,7 +345,7 @@ export default function CanvasEditor({
         // ✨ FIX STARTS HERE: Handle View Switching for Saved Designs ✨
         
         // 1. Check if the saved design specifically requested a view (e.g., 'back')
-        const targetView = payload.activeView || 'front';
+        const targetView = activeView || 'front';
         
         // 2. If we are replacing (not merging) and the view is different, switch it.
         if (!isMerge && setCurrentView && targetView !== activeView) {
