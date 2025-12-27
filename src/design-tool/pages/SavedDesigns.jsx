@@ -14,12 +14,14 @@ export default function SavedDesignsPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { filterMode, filterProductId } = location.state || {};
+  const { filterMode, filterProductId, filterColor, filterSize } = location.state || {};
 
   const filteredDesigns = useMemo(() => {
     if (!filterMode) return designs;
     return designs.filter(d => {
-      if (d.type === 'BLANK' || !d.type) return true; // Allow blanks
+      // Allow Blank designs to appear in Product Mode (for merging)
+      if (d.type === 'BLANK' || !d.type) return true; 
+
       if (filterMode === 'product') {
         return d.type === 'PRODUCT' && d.productConfig?.productId === filterProductId;
       }
@@ -29,8 +31,28 @@ export default function SavedDesignsPage() {
 
 
   const handleSelectDesign = (design) => {
-    // We only pass the ID now. The Editor will handle the fetching.
-    navigate(`/design?designId=${design.id}`);
+    // SCENARIO 1: MERGE (Add Saved Blank/Sticker to Current Product Context)
+    // We check if we are in 'product' mode AND the selected design is a BLANK/Template
+    if (filterMode === 'product' && (design.type === 'BLANK' || !design.type)) {
+      
+      // Construct the URL to keep the user in the same Product Context
+      const params = new URLSearchParams();
+      if (filterProductId) params.set('product', filterProductId);
+      if (filterColor) params.set('color', filterColor);
+      if (filterSize) params.set('size', filterSize);
+
+      // Navigate back to Editor, passing the ID to merge
+      navigate(`/design?${params.toString()}`, {
+        state: {
+          mergeDesignId: design.id
+        }
+      });
+    } 
+    // SCENARIO 2: LOAD (Full Replace)
+    else {
+      // Just navigate with ID. Editor will fetch and replace everything.
+      navigate(`/design?designId=${design.id}`);
+    }
   };
 
   const handleDelete = async (userId, designId) => {
@@ -51,25 +73,58 @@ export default function SavedDesignsPage() {
         <div className="back-btn" onClick={() => navigate(-1)}>
           <FaArrowLeft />
         </div>
-        <h2>{filterMode === 'product' ? 'Select Design' : 'Your Saved Designs'}</h2>
+        <h2>
+          {filterMode === 'product' ? 'Select Design to Load or Merge' : 'Your Saved Designs'}
+        </h2>
 
         {loading ? (
           <div className="spinner"></div>
         ) : (
-          <div className="design-grid">
-            {filteredDesigns.map((design) => (
-              <div key={design.id} className="design-card">
-                <div className="design-image-wrapper">
-                  <img src={design.imageData} alt={design.name} width={150} onClick={() => handleSelectDesign(design)} />
-                </div>
-                <div className="overlay-icons">
-                  <button className="icon edit" onClick={() => handleSelectDesign(design)}><FaEdit /></button>
-                  <button className="icon delete" onClick={() => handleDelete(userId, design.id)}><FaTrash/></button>
-                </div>
-                <p>{design.name || 'Untitled'}</p>
-              </div>
-            ))}
-          </div>
+          <>
+            {filteredDesigns.length === 0 && <p>No matching designs found.</p>}
+
+            <div className="design-grid">
+              {filteredDesigns.map((design) => {
+                // Check if this card represents a Mergeable item (Blank in Product Mode)
+                const isMergeable = filterMode === 'product' && (design.type === 'BLANK' || !design.type);
+
+                return (
+                  <div key={design.id} className="design-card">
+                    <div className="design-image-wrapper">
+                      <img
+                        src={design.imageData}
+                        alt={design.name}
+                        width={150}
+                        onClick={() => handleSelectDesign(design)}
+                      />
+                      {isMergeable && (
+                        <div className="merge-badge">Add to Current</div>
+                      )}
+                    </div>
+
+                    <div className="overlay-icons">
+                      <button
+                        className="icon edit"
+                        title={isMergeable ? "Add to current design" : "Load design"}
+                        onClick={() => handleSelectDesign(design)}
+                      >
+                        {isMergeable ? <FaPlus /> : <FaEdit />}
+                      </button>
+                      <button
+                        className="icon delete"
+                        title='Delete Design'
+                        onClick={() => handleDelete(userId, design.id)}
+                      >
+                        <FaTrash/>
+                      </button>
+                    </div>
+
+                    <p>{design.name || 'Untitled'}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </>
