@@ -182,7 +182,6 @@ export default function CanvasEditor({
     });
     
     if (productId && canvas.width > 0 && canvas.height > 0) {
-      console.log('running')
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       const leftPos = centerX - printWidth / 2;
@@ -195,10 +194,11 @@ export default function CanvasEditor({
         height: scaledHeight,
         absolutePositioned: true,
       });
-
+      
       canvas.clipPath = clipRect;
-
+      
       if (scaledHeight && scaledWidth) {
+        console.log('running')
         const visualBorder = new fabric.Rect({
           left: leftPos,
           top: topPos,
