@@ -583,6 +583,13 @@ export default function EditorPanel() {
                         </>
                     ) : (
                         <div className="p-5">
+                            <div className="mobile-panel-header">
+                                <span className="mobile-panel-title">Product Colors</span>
+                                {/* Using FiChevronDown to signify 'pull down' / collapse */}
+                                <button onClick={() => setShowColorPanel(false)} className="mobile-close-btn">
+                                    <FiChevronDown size={24} />
+                                </button>
+                            </div>
                             {productData.id && productData.options?.colors?.length > 0 ? (
                                 <>
                                     <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
