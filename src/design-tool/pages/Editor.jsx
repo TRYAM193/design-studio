@@ -152,9 +152,10 @@ export default function EditorPanel() {
     }, [productData, currentView]);
 
     const addObj = () => {
-        const ids = canvas
+        const ids = canvasObjects.map(obj => obj.id);
 
         const newObjs = fabricCanvas.getObjects().map((obj, i) => {
+            if ()
             const commonProps = {
                 left: obj.left,
                 top: obj.top,
