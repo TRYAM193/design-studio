@@ -247,7 +247,7 @@ export default function CanvasEditor({
     const handleLoad = () => {
       const payload = location.state.designToLoad || location.state.mergeDesign;
       const isMerge = location.state.mergeDesign;
-
+      
       if (!payload) return;
 
       let parsedJSON = payload.canvasJSON || payload.canvasData;
