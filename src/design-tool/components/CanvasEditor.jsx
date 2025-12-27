@@ -246,8 +246,8 @@ export default function CanvasEditor({
 
     const handleLoad = () => {
       const payload = location.state.designToLoad || location.state.mergeDesign;
-      const isMerge = location.state.mergeDesign;
-      
+      const isMerge = !!location.state.mergeDesign;
+
       if (!payload) return;
 
       let parsedJSON = payload.canvasJSON || payload.canvasData;
@@ -265,7 +265,7 @@ export default function CanvasEditor({
         });
       };
 
-      // --- Sync to Redux ---
+      // --- Sync to Redux Helper ---
       const syncToRedux = () => {
         setTimeout(() => {
           const newObjs = fabricCanvas.getObjects().map((obj) => {
@@ -306,102 +306,92 @@ export default function CanvasEditor({
             console.log('Redux Synced after Load/Merge');
           }
           fabricCanvas.requestRenderAll();
-        }, 100);
+        }, 150); // Increased timeout slightly to ensure render finishes
       };
 
       // -----------------------------------------------------------
-      // CASE A: PRODUCT DESIGN (Replace Full Context)
+      // PREPARE OBJECTS FOR LOADING/MERGING
       // -----------------------------------------------------------
+      const targetView = payload.activeView || 'front';
+      
+      // If we are NOT merging (replacing), switch the view if needed
+      if (!isMerge && setCurrentView && targetView !== activeView) {
+          setCurrentView(targetView);
+      }
+
+      // Determine which objects to grab (Handle { front: [...], back: [...] } structure vs simple array)
+      let dataToLoad = parsedJSON;
+      if (parsedJSON[targetView] && parsedJSON[targetView].objects) {
+          dataToLoad = parsedJSON[targetView];
+      }
+
+      // Extract objects array safely
+      let incomingObjects = dataToLoad.objects || (Array.isArray(dataToLoad) ? dataToLoad : []);
+      incomingObjects = filterBorders(incomingObjects);
+
+      // Assign New IDs to prevent conflicts
+      incomingObjects.forEach(obj => {
+        const newId = uuidv4();
+        obj.id = newId;
+        obj.customId = newId;
+      });
+
+      // -----------------------------------------------------------
+      // EXECUTE: PRODUCT RESET vs MERGE vs REPLACE
+      // -----------------------------------------------------------
+
+      // 1. PRODUCT RESET
       if (payload.type === 'PRODUCT' && payload.productConfig && !isMerge) {
         if (setProductData) {
-          setProductData(prev => ({
-            ...prev,
-            productId: payload.productConfig.productId,
-            options: { ...prev.options, colors: [payload.productConfig.variantColor] }
-          }));
+            setProductData(prev => ({
+                ...prev,
+                productId: payload.productConfig.productId,
+                options: { ...prev.options, colors: [payload.productConfig.variantColor] }
+            }));
         }
         if (setCanvasBg) setCanvasBg(payload.productConfig.variantColor);
         if (setViewStates) setViewStates(parsedJSON);
 
-        const activeViewKey = payload.productConfig.activeView || 'front';
-        if (setCurrentView) setCurrentView(activeViewKey);
-
-        const activeViewJSON = parsedJSON[activeViewKey];
-        if (activeViewJSON) {
-          if (activeViewJSON.objects) {
-            activeViewJSON.objects = filterBorders(activeViewJSON.objects);
-          }
-          fabricCanvas.loadFromJSON(activeViewJSON, () => {
+        // Load objects via Fabric
+        const finalJSON = { ...dataToLoad, objects: incomingObjects };
+        fabricCanvas.loadFromJSON(finalJSON, () => {
             fabricCanvas.renderAll();
             syncToRedux();
-          });
-        }
-      }
-      // -----------------------------------------------------------
-      // CASE B: MERGE / BLANK / SAVED DESIGN
-      // -----------------------------------------------------------
-      else {
-        // ✨ FIX STARTS HERE: Handle View Switching for Saved Designs ✨
-        
-        // 1. Check if the saved design specifically requested a view (e.g., 'back')
-        const targetView = activeView || 'front';
-        
-        // 2. If we are replacing (not merging) and the view is different, switch it.
-        if (!isMerge && setCurrentView && targetView !== activeView) {
-            setCurrentView(targetView);
-        }
-
-        // 3. Handle Multi-View JSON (if JSON contains {front:..., back:...})
-        // If parsedJSON has the specific key for the target view, use that object data.
-        let dataToLoad = parsedJSON;
-        if (parsedJSON[targetView] && parsedJSON[targetView].objects) {
-            dataToLoad = parsedJSON[targetView];
-        }
-
-        let incomingObjects = dataToLoad.objects || (Array.isArray(dataToLoad) ? dataToLoad : []);
-        incomingObjects = filterBorders(incomingObjects);
-
-        // Assign New IDs
-        incomingObjects.forEach(obj => {
-          const newId = uuidv4();
-          obj.id = newId;
-          obj.customId = newId;
         });
+      }
+      // 2. MERGE (APPEND TO EXISTING)
+      else if (isMerge) {
+        if (incomingObjects.length === 0) return;
 
-        if (isMerge) {
-          const currentJSON = fabricCanvas.toJSON(['customId', 'id', 'lockMovementX', 'lockMovementY', 'textEffect']);
-          
-          let savedClipPath = null;
-          if (currentJSON.clipPath) {
-            savedClipPath = currentJSON.clipPath;
-            delete currentJSON.clipPath;
-          }
-
-          currentJSON.objects = filterBorders(currentJSON.objects);
-          const combinedObjects = [...currentJSON.objects, ...incomingObjects];
-          currentJSON.objects = combinedObjects;
-
-          if (savedClipPath) currentJSON.clipPath = savedClipPath;
-
-          fabricCanvas.loadFromJSON(currentJSON, () => {
-            fabricCanvas.renderAll();
+        // Use enlivenObjects to create instances without wiping the canvas
+        fabric.util.enlivenObjects(incomingObjects, (enlivenedObjects) => {
+            enlivenedObjects.forEach((obj) => {
+                fabricCanvas.add(obj);
+                // Optional: Center merged objects if desired
+                // obj.center(); 
+            });
+            fabricCanvas.requestRenderAll();
             syncToRedux();
-          });
+        }, '');
+      }
+      // 3. REPLACE (SAVED DESIGN / BLANK)
+      else {
+        // Construct a clean JSON to replace the canvas content
+        // We preserve the background if the incoming JSON has it, otherwise keep current? 
+        // Usually, a replace should follow the incoming JSON exactly.
+        
+        let finalJSON = {};
+        if (dataToLoad.objects || Array.isArray(dataToLoad)) {
+             // If dataToLoad was just the object array or had objects, use our processed array
+             finalJSON = { ...dataToLoad, objects: incomingObjects };
         } else {
-          // Pure Replace
-          let finalJSON = {};
-          if (dataToLoad.objects) {
-             finalJSON = { ...dataToLoad }; // keep other props like background
-             finalJSON.objects = incomingObjects;
-          } else {
              finalJSON = { objects: incomingObjects };
-          }
-
-          fabricCanvas.loadFromJSON(finalJSON, () => {
-            fabricCanvas.renderAll();
-            syncToRedux();
-          });
         }
+
+        fabricCanvas.loadFromJSON(finalJSON, () => {
+          fabricCanvas.renderAll();
+          syncToRedux();
+        });
       }
     };
 
