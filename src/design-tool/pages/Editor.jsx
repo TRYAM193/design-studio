@@ -156,6 +156,9 @@ export default function EditorPanel() {
     const addObj = () => {
         const seenIds = new Set();
         console.log(fabricCanvas?.getObjects())
+        setTimeout(() => {
+
+        })
 
         const newObjs = fabricCanvas.getObjects().reduce((acc, obj, i) => {
             // Extraction of common properties
