@@ -157,6 +157,7 @@ export default function EditorPanel() {
     const addObj = () => {
         // 1. Track IDs encountered in this batch to prevent duplicates
         const seenIds = new Set();
+        console
 
         const newObjs = fabricCanvas.getObjects().reduce((acc, obj, i) => {
             // Extraction of common properties
