@@ -288,8 +288,6 @@ export default function EditorPanel() {
                 // 3. Revive objects from JSON
                 fabric.util.enlivenObjects(objectsToLoad, (enlivenedObjects) => {
                     enlivenedObjects.forEach((obj) => {
-                        // OPTIONAL: Offset slightly so they don't stack exactly on top?
-                        // obj.set({ left: obj.left + 20, top: obj.top + 20 });
 
                         // Important: Regenerate ID to prevent sync conflicts
                         obj.set('id', uuidv4());
