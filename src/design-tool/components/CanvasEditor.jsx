@@ -181,7 +181,7 @@ export default function CanvasEditor({
       }
     });
     
-    if (productId && canvas.width > 0 && canvas.height > 0) {
+    if (productId) {
       console.log('running')
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
