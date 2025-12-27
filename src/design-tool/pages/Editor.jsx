@@ -5,9 +5,9 @@ import CanvasEditor from '../components/CanvasEditor';
 import Text from '../functions/text';
 import updateObject from '../functions/update';
 import removeObject from '../functions/remove';
-import SaveDesignButton from '../components/SaveDesignButton'; // Ensure this uses new logic
+import SaveDesignButton from '../components/SaveDesignButton';
 import RightSidebarTabs from '../components/RightSidebarTabs';
-import { undo, redo, setCanvasObjects, setHistory } from '../redux/canvasSlice'; // Added setCanvasObjects
+import { undo, redo, setCanvasObjects, setHistory } from '../redux/canvasSlice';
 import { store } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation, useSearchParams } from 'react-router';
@@ -19,7 +19,15 @@ import { doc, getDoc } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle } from 'react-icons/fi';
+import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX } from 'react-icons/fi';
+
+// --- HELPER: UUID Generator ---
+const uuidv4 = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
 
 const COLOR_MAP = {
     "White": "#FFFFFF", "Natural": "#F3E5AB", "Soft Cream": "#F5F5DC", "Sand": "#C2B280", "Silver": "#C0C0C0",
@@ -43,7 +51,7 @@ export default function EditorPanel() {
     const dispatch = useDispatch();
     const navigation = useNavigate();
     const location = useLocation();
-    const [searchParams, setSearchParams] = useSearchParams(); // Use setter to update URL
+    const [searchParams, setSearchParams] = useSearchParams();
     const { user } = useAuth();
     const userId = user?.uid;
 
@@ -58,13 +66,11 @@ export default function EditorPanel() {
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
 
-    // ✅ LOAD FROM URL PARAMS (These are our Single Source of Truth for New Designs)
     const urlProductId = searchParams.get('product');
     const urlColor = searchParams.get('color');
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
 
-    
     const [productData, setProductData] = useState({
         title: "Custom Design",
         category: "Apparel",
@@ -75,8 +81,7 @@ export default function EditorPanel() {
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
     const [viewStates, setViewStates] = useState({});
-    const [isActive, setIsActive] = useState(false);
-    // ... (keep designTextures, refs, etc. same as before) ...
+    
     const [designTextures, setDesignTextures] = useState({
         front: { blob: null, url: null },
         back: { blob: null, url: null },
@@ -89,17 +94,11 @@ export default function EditorPanel() {
     const { addText, addHeading, addSubheading } = Text(setSelectedId, setActiveTool);
     const [activePanel, setActivePanel] = useState('text');
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
-    
-    if(urlColor && !canvasBg) {
-        fabricCanvas.backgroundColor = COLOR_MAP[urlColor] || urlColor;
-        fabricCanvas.renderAll();
-    }
-    // ✅ 1. FETCH PRODUCT DATA (Base)
+
+    // ✅ 1. FETCH PRODUCT DATA
     useEffect(() => {
         async function initProduct() {
-            // Priority: Design Config > URL Param
             const pid = currentDesign?.productConfig?.productId || urlProductId;
-
             if (!pid) return;
 
             try {
@@ -112,8 +111,7 @@ export default function EditorPanel() {
                         print_areas: data.print_areas || { front: { width: 4500, height: 5400 } },
                         options: data.options || { colors: [] }
                     });
-
-                    // Initialize Color: Saved Design > URL Param > Default
+                    
                     const savedColor = currentDesign?.productConfig?.variantColor;
                     const initialColor = savedColor || urlColor || (data.options?.colors?.[0] || "White");
                     setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
@@ -123,46 +121,37 @@ export default function EditorPanel() {
             }
         }
         initProduct();
-    }, [urlProductId, currentDesign]); // Re-run if design loads
+    }, [urlProductId, currentDesign]);
 
-    // ✅ 2. FETCH SAVED DESIGN (Redux Loader)
+    // ✅ 2. LOAD DESIGN (Full Replace)
     useEffect(() => {
         if (!urlDesignId || !userId) return;
-
-        // Prevent double loading
         if (editingDesignId === urlDesignId) return;
 
         async function loadDesign() {
             try {
                 const designRef = doc(db, `users/${userId}/designs`, urlDesignId);
                 const designSnap = await getDoc(designRef);
-
+                
                 if (designSnap.exists()) {
                     const design = designSnap.data();
                     setCurrentDesign(design);
                     setEditingDesignId(design.id);
 
-                    // A. PRODUCT MODE
                     if (design.type === 'PRODUCT' && design.productConfig) {
-                        // 1. Set View States (Hydrate Redux Arrays)
-                        const savedStates = design.canvasData || {}; // Changed from canvasJSON
+                        const savedStates = design.canvasData || {};
                         setViewStates(savedStates);
 
-                        // 2. Set Current View
                         const activeView = design.productConfig.activeView || 'front';
                         setCurrentView(activeView);
 
-                        // 3. Dispatch IMMEDIATE Redux Update
-                        // This replaces "loadFromJSON" in CanvasEditor
                         const activeObjects = savedStates[activeView] || [];
                         dispatch(setCanvasObjects(activeObjects));
-                    }
-                    // B. BLANK MODE
+                    } 
                     else {
                         const objects = design.canvasData || [];
                         dispatch(setCanvasObjects(objects));
                     }
-                    console.log("Design Loaded via Redux:", design.id);
                 }
             } catch (e) {
                 console.error("Error loading design", e);
@@ -171,28 +160,76 @@ export default function EditorPanel() {
         loadDesign();
     }, [urlDesignId, userId, dispatch]);
 
+    // ✅ 3. MERGE DESIGN (Append to Current)
+    useEffect(() => {
+        const mergeId = location.state?.mergeDesignId;
+        if (!mergeId || !userId) return;
 
-    // ✅ 3. URL SYNC (Ensure URL always matches state for Save)
+        async function mergeDesign() {
+            try {
+                // 1. Fetch
+                const designRef = doc(db, `users/${userId}/designs`, mergeId);
+                const designSnap = await getDoc(designRef);
+                
+                if (designSnap.exists()) {
+                    const design = designSnap.data();
+                    
+                    // 2. Extract Objects (Assuming we merge BLANK designs which are arrays)
+                    // If it's a product design, we technically could grab 'front', but usually merge is for templates
+                    let newObjects = Array.isArray(design.canvasData) 
+                        ? design.canvasData 
+                        : (design.canvasData?.front || []);
+
+                    if (newObjects.length > 0) {
+                        // 3. Assign New IDs (Deep Clone & Re-ID)
+                        const objectsToAdd = newObjects.map(obj => ({
+                            ...obj,
+                            id: uuidv4(),
+                            customId: uuidv4(),
+                            // Optional: Offset slightly so they don't stack directly on top if same pos
+                            props: {
+                                ...obj.props,
+                                left: (obj.props.left || 0) + 20,
+                                top: (obj.props.top || 0) + 20
+                            }
+                        }));
+
+                        // 4. Append to Redux
+                        // We get current state from store directly to ensure freshness
+                        const currentObjects = store.getState().canvas.present;
+                        dispatch(setCanvasObjects([...currentObjects, ...objectsToAdd]));
+                        
+                        console.log("Merged objects:", objectsToAdd.length);
+                    }
+                }
+            } catch (e) {
+                console.error("Error merging design", e);
+            } finally {
+                // 5. Cleanup State so we don't re-merge on refresh
+                window.history.replaceState({}, document.title);
+            }
+        }
+        mergeDesign();
+    }, [location.state, userId, dispatch]);
+
+    // ✅ 4. URL SYNC
     useEffect(() => {
         if (currentDesign?.productConfig) {
-            // If we loaded a design, ensure URL params match (so refresh works)
             const params = new URLSearchParams(searchParams);
             const { productId, variantColor, variantSize } = currentDesign.productConfig;
-
+            
             if (productId && params.get('product') !== productId) params.set('product', productId);
             if (variantColor && params.get('color') !== variantColor) params.set('color', variantColor);
             if (variantSize && params.get('size') !== variantSize) params.set('size', variantSize);
-
+            
             setSearchParams(params, { replace: true });
         }
     }, [currentDesign, setSearchParams]);
 
-
-    // ... (Keep existing Canvas Dims & Scaling logic) ...
+    // ... (Keep Dims, Scaling, Snapshot Logic) ...
     useEffect(() => {
-        if (productData.canvas_size) {
-            const area = productData.canvas_size;
-            console.log(area)
+        if (productData.print_areas && productData.print_areas[currentView]) {
+            const area = productData.print_areas[currentView];
             setCanvasDims({ width: area.width || 4500, height: area.height || 5400 });
         }
     }, [productData, currentView]);
@@ -200,8 +237,8 @@ export default function EditorPanel() {
     useEffect(() => {
         function calculateScale() {
             if (!containerRef.current) return;
-            const realWidth = productData.canvas_size?.[currentView]?.width || 4500;
-            const realHeight = productData.canvas_size?.[currentView]?.height || 5400;
+            const realWidth = productData.print_areas?.[currentView]?.width || 4500;
+            const realHeight = productData.print_areas?.[currentView]?.height || 5400;
             const availableWidth = containerRef.current.clientWidth;
             const availableHeight = containerRef.current.clientHeight;
             const widthRatio = (availableWidth * 0.85) / realWidth;
@@ -213,8 +250,6 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
-
-    // ... (Keep Snapshot Logic) ...
     const getCleanDataURL = () => {
         if (!fabricCanvas) return null;
         const originalBg = fabricCanvas.backgroundColor;
@@ -225,70 +260,60 @@ export default function EditorPanel() {
         const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
         let wasBorderVisible = false;
         if (borderObj) { wasBorderVisible = borderObj.visible; borderObj.visible = false; }
-
+        
         fabricCanvas.renderAll();
         const dataUrl = fabricCanvas.toDataURL({ format: 'png', quality: 0.8, multiplier: 0.5, enableRetinaScaling: false });
-
+        
         fabricCanvas.backgroundColor = originalBg;
         fabricCanvas.clipPath = originalClip;
         if (borderObj) borderObj.visible = wasBorderVisible;
         fabricCanvas.renderAll();
         return dataUrl;
     };
-
-    // Capture function for Preview/View Switch
+    
     const captureCurrentCanvas = () => {
-        const url = getCleanDataURL();
-        if (!url) return null;
-
-        // Convert to blob for 3D preview
-        const arr = url.split(',');
-        const mime = arr[0].match(/:(.*?);/)[1];
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) { u8arr[n] = bstr.charCodeAt(n); }
-        const blob = new Blob([u8arr], { type: mime });
-        return { blob, url: URL.createObjectURL(blob) };
+         const url = getCleanDataURL();
+         if(!url) return null;
+         const arr = url.split(',');
+         const mime = arr[0].match(/:(.*?);/)[1];
+         const bstr = atob(arr[1]);
+         let n = bstr.length;
+         const u8arr = new Uint8Array(n);
+         while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+         const blob = new Blob([u8arr], { type: mime });
+         return { blob, url: URL.createObjectURL(blob) };
     }
 
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
-        // 1. Save current view state
         const currentSnapshot = captureCurrentCanvas();
-        if (currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
+        if(currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
 
-        const currentCanvasState = store.getState().canvas.present; // Save REDUX ARRAY
+        const currentCanvasState = store.getState().canvas.present;
         setViewStates(prev => ({ ...prev, [currentView]: currentCanvasState }));
 
-        // 2. Switch
         setCurrentView(newView);
 
-        // 3. Load next view state
         const nextObjects = viewStates[newView] || [];
-        dispatch(setCanvasObjects(nextObjects)); // This triggers CanvasEditor to draw
-        dispatch(setHistory({ past: [], present: nextObjects, future: [] })); // Reset Undo/Redo for new view
+        dispatch(setCanvasObjects(nextObjects));
+        dispatch(setHistory({ past: [], present: nextObjects, future: [] }));
     };
-
-    // ... (Keep Color Change, Preview Generation, Add to Cart) ...
+    
     const handleColorChange = (colorName) => {
         const hex = COLOR_MAP[colorName] || colorName;
-        fabricCanvas.backgroundColor = hex;
-        fabricCanvas.renderAll();
         setCanvasBg(hex);
-        setIsActive(true);
     };
 
     const handleGeneratePreview = () => {
-        if (!fabricCanvas) return;
-        setIsGeneratingPreview(true);
-        setTimeout(() => {
+         if (!fabricCanvas) return;
+         setIsGeneratingPreview(true);
+         setTimeout(() => {
             const currentSnapshot = captureCurrentCanvas();
             setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
             setIsPreviewOpen(true);
             setIsGeneratingPreview(false);
-        }, 50);
+         }, 50);
     };
 
     const handleAddToCart = async () => {
@@ -328,13 +353,11 @@ export default function EditorPanel() {
                     urlColor={urlColor || currentDesign?.productConfig?.variantColor}
                     urlSize={urlSize || currentDesign?.productConfig?.variantSize}
                 />
-
-                {/* ... Sidebar ... */}
+                
                 {activePanel && <ContextualSidebar activePanel={activePanel} setActivePanel={setActivePanel} addText={addText} addHeading={addHeading} addSubheading={addSubheading} />}
 
                 <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
-
-                    {/* View Switcher */}
+                    
                     {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
                             {Object.keys(productData.print_areas).map(view => (
@@ -351,34 +374,27 @@ export default function EditorPanel() {
                             <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={future.length === 0}><FiRotateCw size={18} /></button>
                         </div>
                         <div className="control-group divider">
-                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)}><FiTrash2 size={18} /></button>
+                             <button className="top-bar-button danger" onClick={() => removeObject(selectedId)}><FiTrash2 size={18} /></button>
                         </div>
                         {selectedId && !showProperties && (
-                            <button className="top-bar-button accent phone-only" onClick={() => setShowProperties(true)}><FiSettings size={18} /> Edit</button>
+                             <button className="top-bar-button accent phone-only" onClick={() => setShowProperties(true)}><FiSettings size={18} /> Edit</button>
                         )}
                         <div className="control-group">
                             {fabricCanvas && (
                                 <SaveDesignButton
-                                    // 🚀 Updated Save Logic
-                                    // We pass Redux State (canvasObjects) directly!
-                                    canvas={store.getState().canvas} // This is actually handled inside saveDesign.js via props, but we pass current canvasObjects in props below
+                                    canvas={store.getState().canvas}
                                     userId={userId}
                                     editingDesignId={editingDesignId}
                                     className="top-bar-button"
                                     currentView={currentView}
                                     viewStates={viewStates}
-
-                                    // 🚀 CRITICAL: Passing URL/Design Data explicitly
                                     productData={{
                                         productId: urlProductId || currentDesign?.productConfig?.productId,
-                                        color: urlColor || currentDesign?.productConfig?.variantColor, // Using URL/State Data
-                                        size: urlSize || currentDesign?.productConfig?.variantSize,   // Using URL/State Data
+                                        color: urlColor || currentDesign?.productConfig?.variantColor,
+                                        size: urlSize || currentDesign?.productConfig?.variantSize,
                                         print_areas: productData.print_areas
                                     }}
-
-                                    // We pass the RAW REDUX ARRAY for the current view
-                                    currentObjects={canvasObjects}
-
+                                    currentObjects={canvasObjects} 
                                     onGetSnapshot={getCleanDataURL}
                                     onSaveSuccess={handleSaveSuccess}
                                 />
@@ -391,18 +407,17 @@ export default function EditorPanel() {
 
                     <CanvasEditor
                         setFabricCanvas={setFabricCanvas}
-                        canvasObjects={canvasObjects} // Redux Source of Truth
+                        canvasObjects={canvasObjects}
                         selectedId={selectedId}
                         setActiveTool={setActiveTool}
                         setSelectedId={setSelectedId}
                         fabricCanvas={fabricCanvas}
                         printDimensions={canvasDims}
-                        productId={productData.id}
+                        productId={productData.productId}
                         activeView={currentView}
                     />
                 </main>
 
-                {/* ... Right Sidebar & Modals ... */}
                 <aside className={`right-panel ${showProperties || !selectedId ? 'active' : ''}`}>
                     {selectedId ? (
                         <>
@@ -414,31 +429,13 @@ export default function EditorPanel() {
                         </>
                     ) : (
                         <div className="p-5">
-                            {productData.id && productData.options?.colors?.length > 0 ? (
-                                <>
-                                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
-                                    <div className="grid grid-cols-4 gap-3">
-                                        {productData.options.colors.map((color) => {
-                                            const hex = COLOR_MAP[color] || "#ccc";
-                                            const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
-                                            return (
-                                                <button
-                                                    key={color}
-                                                    onClick={() => handleColorChange(color)}
-                                                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}`}
-                                                    style={{ backgroundColor: hex }}
-                                                    title={color}
-                                                >
-                                                    {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} /></span>}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <p className="text-xs text-slate-400 mt-4 leading-relaxed">Visualize your design on different fabric colors.</p>
-                                </>
-                            ) : (
-                                <div className="text-center text-slate-400 py-10">Select an element to edit properties.</div>
-                            )}
+                             {productData.options?.colors?.length > 0 && (
+                                 <div className="grid grid-cols-4 gap-3">
+                                     {productData.options.colors.map(color => (
+                                         <button key={color} onClick={() => handleColorChange(color)} className={`w-10 h-10 rounded-full border-2 ${canvasBg.toLowerCase() === (COLOR_MAP[color]||color).toLowerCase() ? "border-indigo-600" : ""}`} style={{ backgroundColor: COLOR_MAP[color] || color }} title={color}></button>
+                                     ))}
+                                 </div>
+                             )}
                         </div>
                     )}
                 </aside>
