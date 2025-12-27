@@ -64,7 +64,7 @@ export default function EditorPanel() {
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
 
-    if(urlColor){
+    if(urlColor && ){
         fabricCanvas.backgroundColor = COLOR_MAP[urlColor] || urlColor;
         fabricCanvas.renderAll();
     }
