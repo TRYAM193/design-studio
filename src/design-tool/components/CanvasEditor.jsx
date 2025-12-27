@@ -217,10 +217,8 @@ export default function CanvasEditor({
         // console.log('added border')
       }
     } else {
-          // console.log('running')
-      // canvas.clipPath = null;
+      canvas.clipPath = null;
     }
-console.log(canvas.clipPath)
     canvas.requestRenderAll();
     window.dispatchEvent(new Event('resize_menu_update'));
 
