@@ -194,8 +194,8 @@ export default function EditorPanel() {
     useEffect(() => {
         function calculateScale() {
             if (!containerRef.current) return;
-            const realWidth = productData.print_areas?.[currentView]?.width || 4500;
-            const realHeight = productData.print_areas?.[currentView]?.height || 5400;
+            const realWidth = productData.canvas_size?.[currentView]?.width || 4500;
+            const realHeight = productData.canvas_size?.[currentView]?.height || 5400;
             const availableWidth = containerRef.current.clientWidth;
             const availableHeight = containerRef.current.clientHeight;
             const widthRatio = (availableWidth * 0.85) / realWidth;
