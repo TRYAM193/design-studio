@@ -106,7 +106,7 @@ export default function EditorPanel() {
 
     useEffect(() => {
         if (!selectedId) {
-             setShowColorPanel(true);
+            setShowColorPanel(true);
         }
     }, [selectedId]);
 
@@ -581,7 +581,8 @@ export default function EditorPanel() {
                     />
                 </main>
 
-                <aside className={`right-panel ${showProperties || !selectedId ? 'active' : ''}`}>
+                {/* Change this line: */}
+                <aside className={`right-panel ${(selectedId ? showProperties : showColorPanel) ? 'active' : ''}`}>
                     {selectedId ? (
                         <>
                             <div className="mobile-panel-header">
