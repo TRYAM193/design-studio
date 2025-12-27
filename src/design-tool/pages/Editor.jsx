@@ -204,78 +204,103 @@ export default function EditorPanel() {
 
             let parsedJSON = payload.canvasJSON;
             if (typeof parsedJSON === 'string') {
-                try { parsedJSON = JSON.parse(parsedJSON); } catch (e) { console.error("JSON Parse Error", e); return; }
+                try { parsedJSON = JSON.parse(parsedJSON); } catch(e) { console.error("JSON Parse Error", e); return; }
             }
-            console.log(parsedJSON)
 
             // ---------------------------------------------------------
             // CASE A: PRODUCT DESIGN (Replace Full Context)
             // ---------------------------------------------------------
             if (payload.type === 'PRODUCT' && payload.productConfig && !isMerge) {
-                // 1. Set Product Data
+                // ... (Your existing Product Load Logic) ...
                 setProductData(prev => ({
                     ...prev,
                     productId: payload.productConfig.productId,
                     options: { ...prev.options, colors: [payload.productConfig.variantColor] }
                 }));
                 setCanvasBg(payload.productConfig.variantColor);
-
-                // 2. Set View States
-                setViewStates(parsedJSON);
-
-                // 3. Load Active View
+                setViewStates(parsedJSON); 
                 const activeView = payload.productConfig.activeView || 'front';
                 setCurrentView(activeView);
 
                 const activeViewJSON = parsedJSON[activeView];
                 if (activeViewJSON) {
-                    // Strip border before loading
+                    // Filter system objects before loading to prevent duplication
                     if (activeViewJSON.objects) {
                         activeViewJSON.objects = activeViewJSON.objects.filter(o => o.id !== 'print-area-border');
                     }
-
                     fabricCanvas.loadFromJSON(activeViewJSON, () => {
                         fabricCanvas.renderAll();
-                        // Sync specific objects to Redux
                         addObj(activeViewJSON.objects || []);
-                        setLoadTimestamp(Date.now());
+                        setLoadTimestamp(Date.now()); 
                     });
                 }
-            }
+            } 
             // ---------------------------------------------------------
-            // CASE B: BLANK DESIGN (Merge into Current View)
+            // CASE B: MERGE / BLANK DESIGN
             // ---------------------------------------------------------
             else {
-                // 1. Extract Objects from Blank Design
+                // 1. Get Objects from Incoming Design
                 let incomingObjects = parsedJSON.objects || (Array.isArray(parsedJSON) ? parsedJSON : []);
-
-                // 2. Filter out artifacts (borders)
+                
+                // 2. Clean Incoming: Remove any borders it might have
                 incomingObjects = incomingObjects.filter(obj => obj.id !== 'print-area-border');
 
-                if (isMerge) {
-                    // --- MERGE: Combine Current + New ---
+                // 3. Assign New IDs to Incoming
+                incomingObjects.forEach(obj => {
+                    const newId = uuidv4();
+                    obj.id = newId;
+                    obj.customId = newId;
+                });
 
-                    // A. Get Current State (Preserve Background/Dims)
+                if (isMerge) {
+                    // --- MERGE LOGIC (The "Save Variable" Strategy) ---
+                    
+                    // A. Get Current JSON
                     const currentJSON = fabricCanvas.toJSON(['customId', 'id']);
 
-                    // B. Filter Current Objects (Remove existing border)
-                    const currentObjects = currentJSON.objects.filter(obj => obj.customId !== 'print-area-border');
+                    // B. EXTRACT CLIPPATH (Save in variable)
+                    let savedClipPath = null;
+                    if (currentJSON.clipPath) {
+                        savedClipPath = currentJSON.clipPath;
+                        delete currentJSON.clipPath; // Remove from merge base
+                    }
 
-                    // C. Combine Lists
-                    const combinedObjects = [...currentObjects, ...incomingObjects];
+                    // C. EXTRACT BORDER (Save in variable)
+                    let savedBorder = null;
+                    const borderIndex = currentJSON.objects.findIndex(obj => obj.id === 'print-area-border');
+                    if (borderIndex > -1) {
+                        savedBorder = currentJSON.objects[borderIndex];
+                        currentJSON.objects.splice(borderIndex, 1); // Remove from merge base
+                    }
+
+                    // D. COMBINE Remaining Current + New Objects
+                    const combinedObjects = [...currentJSON.objects, ...incomingObjects];
                     currentJSON.objects = combinedObjects;
 
-                    // D. Load Combined State
+                    // E. RE-ADD BORDER (At the end/top)
+                    if (savedBorder) {
+                        currentJSON.objects.push(savedBorder);
+                    }
+
+                    // F. RE-ADD CLIPPATH
+                    if (savedClipPath) {
+                        currentJSON.clipPath = savedClipPath;
+                    }
+
+                    // G. LOAD Final State
                     fabricCanvas.loadFromJSON(currentJSON, () => {
                         fabricCanvas.renderAll();
-                        // Sync FULL combined list to Redux
-                        addObj(combinedObjects);
+                        
+                        // Sync ONLY the user objects (Filter border out for Redux)
+                        // We filter it here so Redux doesn't manage the border
+                        const objectsForRedux = combinedObjects.filter(obj => obj.id !== 'print-area-border');
+                        addObj(objectsForRedux);
+                        
                         setLoadTimestamp(Date.now());
                     });
 
                 } else {
-                    // --- REPLACE: Load just the blank design ---
-                    // (But keep it simple: Blank designs usually don't have product backgrounds)
+                    // --- REPLACE LOGIC ---
                     parsedJSON.objects = incomingObjects;
                     fabricCanvas.loadFromJSON(parsedJSON, () => {
                         fabricCanvas.renderAll();
@@ -287,12 +312,9 @@ export default function EditorPanel() {
         };
 
         handleLoad();
-
-        // Cleanup navigation state
         window.history.replaceState({}, document.title);
 
     }, [location.state, fabricCanvas]);
-
     console.log(fabricCanvas?.getActiveObject())
 
     const dataURLtoBlob = (dataURL) => {
