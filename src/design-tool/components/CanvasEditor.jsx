@@ -256,7 +256,7 @@ export default function CanvasEditor({
     });
     
     canvas.add(visualBorder);
-    canvas.bringObject(visualBorder);
+    canvas.bringObjectToFront(visualBorder);
     canvas.requestRenderAll();
     
     // Force a re-fit to ensure it looks good immediately
