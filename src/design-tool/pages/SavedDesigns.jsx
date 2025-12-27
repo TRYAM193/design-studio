@@ -14,18 +14,38 @@ export default function SavedDesignsPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Retrieve context passed from Editor
   const { filterMode, filterProductId, filterColor, filterSize } = location.state || {};
 
   const filteredDesigns = useMemo(() => {
+    // If no filter mode (e.g., accessed from Dashboard), show everything
     if (!filterMode) return designs;
-    return designs.filter(d => {
-      // Allow Blank designs to appear in Product Mode (for merging)
-      if (d.type === 'BLANK' || !d.type) return true; 
 
-      if (filterMode === 'product') {
-        return d.type === 'PRODUCT' && d.productConfig?.productId === filterProductId;
+    return designs.filter(d => {
+      const isBlankType = d.type === 'BLANK' || !d.type; // Treat legacy (undefined type) as Blank
+      const isProductType = d.type === 'PRODUCT';
+
+      // --- CONSTRAINT 1: User is in BLANK Design Mode ---
+      // Show ONLY Blank designs. Hide all Product designs.
+      if (filterMode === 'blank') {
+        return isBlankType;
       }
-      return true;
+
+      // --- CONSTRAINT 2: User is in PRODUCT Design Mode ---
+      // Show matching Product designs AND all Blank designs (templates)
+      if (filterMode === 'product') {
+        // Always show blanks (so they can be merged/loaded)
+        if (isBlankType) return true;
+
+        // For products, only show if IDs match
+        if (isProductType) {
+          return d.productConfig?.productId === filterProductId;
+        }
+        
+        return false; // Hide mismatched products
+      }
+
+      return true; // Fallback
     });
   }, [designs, filterMode, filterProductId]);
 
