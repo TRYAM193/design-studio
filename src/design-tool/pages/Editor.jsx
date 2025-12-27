@@ -65,6 +65,7 @@ export default function EditorPanel() {
 
     const productId = searchParams.get('product') || currentDesign?.productConfig?.productId;
     const urlColor = searchParams.get('color') || currentDesign?.productConfig?.variantColor;
+    
 
     const [productData, setProductData] = useState({
         title: "Custom Design",
