@@ -291,8 +291,8 @@ export default function EditorPanel() {
 
     // ... (Keep existing Scale, Dims, Snapshot Logic) ...
     useEffect(() => {
-        if (productData.canvas_size) {
-            const area = productData.canvas_size;
+        if (productData.print_areas && productData.print_areas[currentView]) {
+            const area = productData.print_areas[currentView];
             setCanvasDims({ width: area.width || 4500, height: area.height || 5400 });
         }
     }, [productData, currentView]);
@@ -494,7 +494,7 @@ export default function EditorPanel() {
                         setSelectedId={setSelectedId}
                         fabricCanvas={fabricCanvas}
                         printDimensions={canvasDims}
-                        productId={productData.id}
+                        productId={productData.productId}
                         activeView={currentView}
                     />
                 </main>
