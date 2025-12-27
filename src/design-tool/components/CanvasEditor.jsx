@@ -188,7 +188,7 @@ export default function CanvasEditor({
       });
 
       canvas.clipPath = clipRect;
-      if ()
+      if (scaledHeight && scaledWidth) {
       const visualBorder = new fabric.Rect({
         left: leftPos,
         top: topPos,
@@ -202,6 +202,7 @@ export default function CanvasEditor({
         evented: false,
         customId: 'print-area-border'
       });
+    }
 
       canvas.add(visualBorder);
       canvas.bringObjectToFront(visualBorder);
