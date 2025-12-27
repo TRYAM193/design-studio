@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
-import * as fabric from 'fabric';
 import CanvasEditor from '../components/CanvasEditor';
 import Text from '../functions/text';
 import updateObject from '../functions/update';
@@ -82,12 +81,9 @@ export default function EditorPanel() {
     const [currentView, setCurrentView] = useState("front");
     const [viewStates, setViewStates] = useState({});
     
-    // Track Refs for Cleanup/Backup
+    // Track Current View in Ref for Cleanup
     const currentViewRef = useRef(currentView);
-    const viewStatesRef = useRef(viewStates);
-
     useEffect(() => { currentViewRef.current = currentView; }, [currentView]);
-    useEffect(() => { viewStatesRef.current = viewStates; }, [viewStates]);
 
     const [designTextures, setDesignTextures] = useState({
         front: { blob: null, url: null },
@@ -102,23 +98,15 @@ export default function EditorPanel() {
     const [activePanel, setActivePanel] = useState('text');
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
 
-    // ✅ SESSION BACKUP: Save Full State on Unmount
+    // ✅ SESSION BACKUP: Save State on Unmount (Navigating Away)
     useEffect(() => {
         return () => {
             const state = store.getState().canvas.present;
-            const view = currentViewRef.current;
-            const storedViewStates = viewStatesRef.current;
-
-            // Update the viewState for the current view before saving
-            const finalViewStates = {
-                ...storedViewStates,
-                [view]: state
-            };
-
-            if (state.length > 0 || Object.keys(finalViewStates).length > 0) {
+            // Only backup if we have content or are in a specific view state
+            if (state.length > 0 || currentViewRef.current !== 'front') {
                 sessionStorage.setItem('editor_backup', JSON.stringify({
-                    view: view,
-                    viewStates: finalViewStates, // Save ALL views
+                    objects: state,
+                    view: currentViewRef.current,
                     timestamp: Date.now()
                 }));
             }
@@ -155,80 +143,61 @@ export default function EditorPanel() {
 
 
     // ✅ 2. UNIFIED LOAD & MERGE LOGIC
+    // This effect handles: Fresh Loads, Merges, and Session Restoration
     useEffect(() => {
+        // Prevent running if no user
         if (!userId) return;
 
         const mergeId = location.state?.mergeDesignId;
         const isMerge = !!mergeId;
 
-        // --- SCENARIO A: MERGING ---
+        // --- SCENARIO A: MERGING (Appending to Current) ---
         if (isMerge) {
             async function performMerge() {
-                // 1. RESTORE FULL SESSION
+                // 1. RESTORE SESSION (Fixes "Wiping out objects" & "Wrong View")
                 const backupJSON = sessionStorage.getItem('editor_backup');
-                let targetView = 'front'; // Fallback
-                
                 if (backupJSON) {
                     const backup = JSON.parse(backupJSON);
                     
-                    if (Date.now() - backup.timestamp < 3600000) { // 1 Hour Expiry
-                        // Restore View Logic
-                        if (backup.view) {
-                            targetView = backup.view;
-                            setCurrentView(targetView);
-                        }
-
-                        // Restore Other Views Logic
-                        if (backup.viewStates) {
-                            setViewStates(backup.viewStates);
-                            
-                            // Restore Current View Objects
-                            const restoredObjects = backup.viewStates[targetView] || [];
-                            dispatch(setCanvasObjects(restoredObjects));
-                            
-                            console.log(`Session Restored: View=${targetView}, Objects=${restoredObjects.length}`);
+                    // Only restore if the backup is recent (e.g., < 10 mins old)
+                    if (Date.now() - backup.timestamp < 600000) {
+                        if (backup.view) setCurrentView(backup.view);
+                        if (backup.objects) {
+                            dispatch(setCanvasObjects(backup.objects));
+                            console.log("Session Restored for Merge:", backup.view);
                         }
                     }
-                    // IMPORTANT: Do NOT removeItem immediately to support StrictMode
+                    sessionStorage.removeItem('editor_backup'); // Clear after use
                 }
 
-                // 2. FETCH & APPEND MERGE DESIGN
+                // 2. FETCH MERGE DESIGN
                 try {
                     const designRef = doc(db, `users/${userId}/designs`, mergeId);
                     const designSnap = await getDoc(designRef);
-                    
                     if (designSnap.exists()) {
                         const design = designSnap.data();
                         
+                        // Extract objects (usually merging templates/blanks)
                         let newObjects = Array.isArray(design.canvasData) 
                             ? design.canvasData 
-                            : (design.canvasData?.front || []); // Handle weird saves
+                            : (design.canvasData?.front || []);
 
                         if (newObjects.length > 0) {
+                            // Re-ID objects to avoid conflicts
                             const objectsToAdd = newObjects.map(obj => ({
                                 ...obj,
                                 id: uuidv4(),
                                 customId: uuidv4(),
                                 props: {
                                     ...obj.props,
-                                    left: (obj.props.left || 0) + 30,
+                                    left: (obj.props.left || 0) + 30, // Offset slightly
                                     top: (obj.props.top || 0) + 30
                                 }
                             }));
 
-                            // Use store.getState() to get the objects we JUST restored + new ones
-                            // We wait a tick to ensure dispatch has processed if needed, though Redux is sync
+                            // APPEND to Redux (get latest state directly)
                             const currentObjects = store.getState().canvas.present;
-                            
-                            // Merge
-                            const merged = [...currentObjects, ...objectsToAdd];
-                            dispatch(setCanvasObjects(merged));
-
-                            // Update ViewStates immediately to prevent loss on switch
-                            setViewStates(prev => ({
-                                ...prev,
-                                [targetView]: merged
-                            }));
+                            dispatch(setCanvasObjects([...currentObjects, ...objectsToAdd]));
                         }
                     }
                 } catch (e) {
@@ -240,7 +209,7 @@ export default function EditorPanel() {
             performMerge();
         }
 
-        // --- SCENARIO B: LOADING (Full Replace) ---
+        // --- SCENARIO B: LOADING (Full Replace from DB) ---
         else if (urlDesignId && editingDesignId !== urlDesignId) {
             async function loadDesign() {
                 try {
@@ -291,8 +260,8 @@ export default function EditorPanel() {
 
     // ... (Keep existing Scale, Dims, Snapshot Logic) ...
     useEffect(() => {
-        if (productData.print_areas && productData.print_areas[currentView]) {
-            const area = productData.print_areas[currentView];
+        if (productData.canvas_size) {
+            const area = productData.canvas_size
             setCanvasDims({ width: area.width || 4500, height: area.height || 5400 });
         }
     }, [productData, currentView]);
@@ -394,8 +363,11 @@ export default function EditorPanel() {
         }
     };
     
+    // Add Handler for Navigating to Saved Designs (Passing state)
+    // IMPORTANT: You need to pass this or call this when clicking "Templates" button
     const navigateToTemplates = () => {
         const params = new URLSearchParams(searchParams);
+        // Add flags so SavedDesigns knows we are coming from Product mode
         navigation('/dashboard/templates', { 
             state: { 
                 filterMode: 'product',
@@ -420,7 +392,7 @@ export default function EditorPanel() {
                     activePanel={activePanel}
                     onSelectTool={(tool) => {
                         if (tool === 'templates') {
-                            navigateToTemplates();
+                            navigateToTemplates(); // Use our custom navigator
                         } else {
                             setActivePanel(prev => prev === tool ? null : tool);
                         }
@@ -494,7 +466,7 @@ export default function EditorPanel() {
                         setSelectedId={setSelectedId}
                         fabricCanvas={fabricCanvas}
                         printDimensions={canvasDims}
-                        productId={productData.productId}
+                        productId={productData.id}
                         activeView={currentView}
                     />
                 </main>
