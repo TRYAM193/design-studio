@@ -128,5 +128,6 @@ export default function SavePromptModal({
         )}
       </div>
     </div>
+    return ReactDOM.createPortal(modalContent, document.body);
   );
 }
