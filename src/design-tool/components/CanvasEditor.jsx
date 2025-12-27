@@ -61,7 +61,7 @@ export default function CanvasEditor({
   fabricCanvas,
   setEditingDesignId,
   setCurrentDesign,
-  printDimensions,
+  printDimensions = { width: 4500, height: 5400 },
   productId,
   activeView
 }) {
@@ -80,7 +80,7 @@ export default function CanvasEditor({
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
-  const [containerSize, setContainerSize] = useState();
+  const [containerSize, setContainerSize] = useState({ width: 800, height: 800 });
 
   // Add this helper or calculate inside your component
   const calculateScaledSize = (originalWidth, originalHeight) => {
@@ -173,7 +173,8 @@ export default function CanvasEditor({
       }
     });
 
-    if (productId) {
+    // Check if canvas dimensions are valid (non-zero) before applying clip path
+    if (productId && canvas.width > 0 && canvas.height > 0) {
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       const leftPos = centerX - printWidth / 2;
