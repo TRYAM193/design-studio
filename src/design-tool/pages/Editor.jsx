@@ -309,15 +309,7 @@ export default function EditorPanel() {
             incomingObjects = incomingObjects.filter(obj => obj.id !== 'print-area-border');
 
             if (incomingObjects.length > 0) {
-                // 2. Regenerate IDs to prevent conflicts
-                incomingObjects.forEach((obj, index) => {
-                    const newId = `${Date.now()}_merged_${index}_${Math.random().toString(36).substr(2, 9)}`;
-                    obj.id = newId;
-                    obj.customId = newId;
-                });
 
-                // 3. Get CURRENT Canvas State (Preserves Product Background & ClipPath)
-                // We use the CURRENT canvas as the base, so the T-Shirt mask stays correct.
                 const currentJson = fabricCanvas.toJSON(['customId', 'id']); // Include custom props
 
                 // 4. Combine: Current Objects + Filtered Incoming Objects
