@@ -238,7 +238,7 @@ export default function CanvasEditor({
     const updateEvent = new Event('resize_menu_update');
     window.dispatchEvent(updateEvent);
 
-  }, [printWidth, printHeight, act]);
+  }, [printWidth, printHeight, activeView]);
 
   // ✅ 3. LOAD & MERGE DESIGN LOGIC
   useEffect(() => {
