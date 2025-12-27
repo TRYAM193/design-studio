@@ -155,7 +155,7 @@ export default function EditorPanel() {
         const ids = canvasObjects.map(obj => obj.id);
 
         const newObjs = fabricCanvas.getObjects().map((obj, i) => {
-            if (ids.includes(obj.id)) return ;  
+            if (ids.includes(obj.id)) continue;
             const commonProps = {
                 left: obj.left,
                 top: obj.top,
