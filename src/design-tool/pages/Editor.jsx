@@ -23,10 +23,10 @@ import { Loader2 } from "lucide-react";
 import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle } from 'react-icons/fi';
 
 const uuidv4 = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+    });
 };
 
 const COLOR_MAP = {
@@ -82,7 +82,7 @@ export default function EditorPanel() {
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
     const [viewStates, setViewStates] = useState({});
-    
+
     // Track Refs for Cleanup/Backup
     const currentViewRef = useRef(currentView);
     const viewStatesRef = useRef(viewStates);
@@ -111,7 +111,7 @@ export default function EditorPanel() {
             // 1. Fetch full design data (in case the list item is partial, or to get fresh data)
             const designRef = doc(db, `users/${userId}/designs`, designItem.id);
             const designSnap = await getDoc(designRef);
-            
+
             if (!designSnap.exists()) return;
             const designData = designSnap.data();
 
@@ -122,8 +122,8 @@ export default function EditorPanel() {
             // --- SCENARIO A: MERGE (Blank/Universal Design) ---
             if (isBlank) {
                 console.log("Merging blank design...");
-                const incomingObjects = Array.isArray(designData.canvasData) 
-                    ? designData.canvasData 
+                const incomingObjects = Array.isArray(designData.canvasData)
+                    ? designData.canvasData
                     : (designData.canvasData?.front || []);
 
                 if (incomingObjects.length > 0) {
@@ -132,52 +132,52 @@ export default function EditorPanel() {
                         ...obj,
                         id: uuidv4(),
                         customId: uuidv4(),
-                        props: { 
-                            ...obj.props, 
-                            left: (obj.props.left || 0) + 20, 
-                            top: (obj.props.top || 0) + 20 
+                        props: {
+                            ...obj.props,
+                            left: (obj.props.left || 0) + 20,
+                            top: (obj.props.top || 0) + 20
                         }
                     }));
 
                     // Append to current canvas objects
                     const currentObjects = store.getState().canvas.present;
                     const combinedObjects = [...currentObjects, ...newObjects];
-                    
+
                     dispatch(setCanvasObjects(combinedObjects));
                     // Optional: Close sidebar after merge
                     // setActivePanel(null); 
                 }
             }
-            
+
             // --- SCENARIO B: REPLACE (Product Specific Design) ---
             else if (isProduct) {
                 // Double check it matches current product to be safe
                 if (designData.productConfig?.productId === (urlProductId || productData.id)) {
-                     console.log("Replacing with saved product design...");
-                     
-                     // Restore Product Configuration
-                     setCurrentDesign(designData);
-                     setEditingDesignId(designData.id);
-                     
-                     // Restore Views
-                     const savedStates = designData.canvasData || {};
-                     setViewStates(savedStates);
-                     
-                     // Set Active View
-                     const activeView = designData.productConfig.activeView || 'front';
-                     setCurrentView(activeView);
-                     
-                     // Load Objects for that view
-                     const activeObjects = savedStates[activeView] || [];
-                     dispatch(setCanvasObjects(activeObjects));
-                     
-                     // Update URL to match this design
-                     setSearchParams(prev => {
+                    console.log("Replacing with saved product design...");
+
+                    // Restore Product Configuration
+                    setCurrentDesign(designData);
+                    setEditingDesignId(designData.id);
+
+                    // Restore Views
+                    const savedStates = designData.canvasData || {};
+                    setViewStates(savedStates);
+
+                    // Set Active View
+                    const activeView = designData.productConfig.activeView || 'front';
+                    setCurrentView(activeView);
+
+                    // Load Objects for that view
+                    const activeObjects = savedStates[activeView] || [];
+                    dispatch(setCanvasObjects(activeObjects));
+
+                    // Update URL to match this design
+                    setSearchParams(prev => {
                         prev.set('designId', designData.id);
                         return prev;
-                     });
+                    });
 
-                     setActivePanel(null); // Close sidebar on full replace
+                    setActivePanel(null); // Close sidebar on full replace
                 }
             }
 
@@ -207,8 +207,8 @@ export default function EditorPanel() {
         sessionStorage.setItem('merge_context', JSON.stringify(backupData));
 
         // 4. Navigate
-        navigation('/dashboard/templates', { 
-            state: { 
+        navigation('/dashboard/templates', {
+            state: {
                 filterMode: 'product',
                 filterProductId: productData.productId,
                 filterColor: canvasBg,
@@ -233,7 +233,7 @@ export default function EditorPanel() {
                         print_areas: data.print_areas || { front: { width: 4500, height: 5400 } },
                         options: data.options || { colors: [] }
                     });
-                    
+
                     const savedColor = currentDesign?.productConfig?.variantColor;
                     const initialColor = savedColor || urlColor || (data.options?.colors?.[0] || "White");
                     setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
@@ -258,7 +258,7 @@ export default function EditorPanel() {
             async function performMerge() {
                 // 1. THAW: Restore Context from Storage
                 const contextJSON = sessionStorage.getItem('merge_context');
-                
+
                 // Defaults if restore fails
                 let targetView = 'front';
                 let currentViewObjects = [];
@@ -275,7 +275,7 @@ export default function EditorPanel() {
                             currentViewObjects = fullHistory[targetView] || [];
                         }
                     } catch (e) { console.error("Restore failed", e); }
-                    
+
                     // Clean up storage so we don't restore old data later
                     sessionStorage.removeItem('merge_context');
                 }
@@ -288,13 +288,13 @@ export default function EditorPanel() {
                     if (designSnap.exists()) {
                         const design = designSnap.data();
                         const raw = Array.isArray(design.canvasData) ? design.canvasData : (design.canvasData?.front || []);
-                        
+
                         if (raw.length > 0) {
                             incomingObjects = raw.map(obj => ({
-                                ...obj, 
-                                id: uuidv4(), 
+                                ...obj,
+                                id: uuidv4(),
                                 customId: uuidv4(),
-                                props: { ...obj.props, left: (obj.props.left||0)+30, top: (obj.props.top||0)+30 }
+                                props: { ...obj.props, left: (obj.props.left || 0) + 30, top: (obj.props.top || 0) + 30 }
                             }));
                         }
                     }
@@ -302,7 +302,7 @@ export default function EditorPanel() {
 
                 // 3. COMBINE (InMemory)
                 const finalObjectsForView = [...currentViewObjects, ...incomingObjects];
-                
+
                 // Update the history with the merged result
                 const finalHistory = {
                     ...fullHistory,
@@ -311,7 +311,7 @@ export default function EditorPanel() {
 
                 // 4. APPLY ATOMICALLY
                 console.log(`Merging on ${targetView}: ${currentViewObjects.length} existing + ${incomingObjects.length} new`);
-                
+
                 setCurrentView(targetView); // Force correct view
                 setViewStates(finalHistory); // Restore full history (Front, etc.)
                 dispatch(setCanvasObjects(finalObjectsForView)); // Render current view
@@ -328,7 +328,7 @@ export default function EditorPanel() {
                 try {
                     const designRef = doc(db, `users/${userId}/designs`, urlDesignId);
                     const designSnap = await getDoc(designRef);
-                    
+
                     if (designSnap.exists()) {
                         const design = designSnap.data();
                         setCurrentDesign(design);
@@ -337,7 +337,7 @@ export default function EditorPanel() {
                         if (design.type === 'PRODUCT' && design.productConfig) {
                             const savedStates = design.canvasData || {};
                             setViewStates(savedStates);
-                            
+
                             const activeView = design.productConfig.activeView || 'front';
                             setCurrentView(activeView);
 
@@ -361,12 +361,12 @@ export default function EditorPanel() {
         if (currentDesign?.productConfig) {
             const params = new URLSearchParams(searchParams);
             const { productId, variantColor, variantSize } = currentDesign.productConfig;
-            
+
             let changed = false;
             if (productId && params.get('product') !== productId) { params.set('product', productId); changed = true; }
             if (variantColor && params.get('color') !== variantColor) { params.set('color', variantColor); changed = true; }
             if (variantSize && params.get('size') !== variantSize) { params.set('size', variantSize); changed = true; }
-            
+
             if (changed) setSearchParams(params, { replace: true });
         }
     }, [currentDesign, setSearchParams]);
@@ -405,35 +405,35 @@ export default function EditorPanel() {
         const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
         let wasBorderVisible = false;
         if (borderObj) { wasBorderVisible = borderObj.visible; borderObj.visible = false; }
-        
+
         fabricCanvas.renderAll();
         const dataUrl = fabricCanvas.toDataURL({ format: 'png', quality: 0.8, multiplier: 0.5, enableRetinaScaling: false });
-        
+
         fabricCanvas.backgroundColor = originalBg;
         fabricCanvas.clipPath = originalClip;
         if (borderObj) borderObj.visible = wasBorderVisible;
         fabricCanvas.renderAll();
         return dataUrl;
     };
-    
+
     const captureCurrentCanvas = () => {
-         const url = getCleanDataURL();
-         if(!url) return null;
-         const arr = url.split(',');
-         const mime = arr[0].match(/:(.*?);/)[1];
-         const bstr = atob(arr[1]);
-         let n = bstr.length;
-         const u8arr = new Uint8Array(n);
-         while (n--) { u8arr[n] = bstr.charCodeAt(n); }
-         const blob = new Blob([u8arr], { type: mime });
-         return { blob, url: URL.createObjectURL(blob) };
+        const url = getCleanDataURL();
+        if (!url) return null;
+        const arr = url.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+        const blob = new Blob([u8arr], { type: mime });
+        return { blob, url: URL.createObjectURL(blob) };
     }
 
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
         const currentSnapshot = captureCurrentCanvas();
-        if(currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
+        if (currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
 
         const currentCanvasState = store.getState().canvas.present;
         setViewStates(prev => ({ ...prev, [currentView]: currentCanvasState }));
@@ -444,21 +444,21 @@ export default function EditorPanel() {
         dispatch(setCanvasObjects(nextObjects));
         dispatch(setHistory({ past: [], present: nextObjects, future: [] }));
     };
-    
+
     const handleColorChange = (colorName) => {
         const hex = COLOR_MAP[colorName] || colorName;
         setCanvasBg(hex);
     };
 
     const handleGeneratePreview = () => {
-         if (!fabricCanvas) return;
-         setIsGeneratingPreview(true);
-         setTimeout(() => {
+        if (!fabricCanvas) return;
+        setIsGeneratingPreview(true);
+        setTimeout(() => {
             const currentSnapshot = captureCurrentCanvas();
             setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
             setIsPreviewOpen(true);
             setIsGeneratingPreview(false);
-         }, 50);
+        }, 50);
     };
 
     const handleAddToCart = async () => {
@@ -505,12 +505,12 @@ export default function EditorPanel() {
                     urlColor={urlColor || currentDesign?.productConfig?.variantColor}
                     urlSize={urlSize || currentDesign?.productConfig?.variantSize}
                 />
-                
+
                 {activePanel && <ContextualSidebar activePanel={activePanel} setActivePanel={setActivePanel} addText={addText} addHeading={addHeading} addSubheading={addSubheading} productId={urlProductId || currentDesign?.productConfig?.productId}
-                        handleLoadSavedDesign={handleLoadSavedDesign} />}
+                    handleLoadSavedDesign={handleLoadSavedDesign} />}
 
                 <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
-                    
+
                     {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
                             {Object.keys(productData.print_areas).map(view => (
@@ -527,10 +527,10 @@ export default function EditorPanel() {
                             <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={future.length === 0}><FiRotateCw size={18} /></button>
                         </div>
                         <div className="control-group divider">
-                             <button className="top-bar-button danger" onClick={() => removeObject(selectedId)}><FiTrash2 size={18} /></button>
+                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)}><FiTrash2 size={18} /></button>
                         </div>
                         {selectedId && !showProperties && (
-                             <button className="top-bar-button accent phone-only" onClick={() => setShowProperties(true)}><FiSettings size={18} /> Edit</button>
+                            <button className="top-bar-button accent phone-only" onClick={() => setShowProperties(true)}><FiSettings size={18} /> Edit</button>
                         )}
                         <div className="control-group">
                             {fabricCanvas && (
@@ -547,7 +547,7 @@ export default function EditorPanel() {
                                         size: urlSize || currentDesign?.productConfig?.variantSize,
                                         print_areas: productData.print_areas
                                     }}
-                                    currentObjects={canvasObjects} 
+                                    currentObjects={canvasObjects}
                                     onGetSnapshot={getCleanDataURL}
                                     onSaveSuccess={handleSaveSuccess}
                                 />
