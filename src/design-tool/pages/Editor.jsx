@@ -252,13 +252,6 @@ export default function EditorPanel() {
                 // 2. Filter out artifacts (borders)
                 incomingObjects = incomingObjects.filter(obj => obj.id !== 'print-area-border');
 
-                // 3. Assign New Unique IDs (Prevent Conflicts)
-                incomingObjects.forEach(obj => {
-                    const newId = uuidv4();
-                    obj.id = newId;
-                    obj.customId = newId;
-                });
-
                 if (isMerge) {
                     // --- MERGE: Combine Current + New ---
 
