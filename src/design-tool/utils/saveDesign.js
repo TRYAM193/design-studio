@@ -29,6 +29,7 @@ const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew)
     // 1. Get current canvas JSON
     const currentJSON = removeUndefined(canvas.toJSON());
     if (currentJSON.objects) {
+      currentJSON
         currentJSON.objects = currentJSON.objects.filter(obj => obj.customId !== 'print-area-border');
     }
     
