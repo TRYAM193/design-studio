@@ -1,74 +1,80 @@
+// src/design-tool/components/SaveDesignButton.jsx
 import React, { useState } from 'react';
+import { saveDesign } from '../utils/saveDesign';
 import SavePromptModal from './SavePromptModal';
-import { saveNewDesign, overwriteDesign } from '../utils/saveDesign';
-import { FiSave, FiRotateCw } from 'react-icons/fi';
+import { FiSave } from 'react-icons/fi';
+import { Button } from "@/components/ui/button";
 
 export default function SaveDesignButton({ 
-  userId, 
-  editingDesignId, 
-  className,
-  productData, 
-  viewStates, 
-  currentView,
-  currentObjects, // ✅ NEW: Receiving Redux Array directly
-  onGetSnapshot, 
-  onSaveSuccess 
+  canvas, userId, editingDesignId, currentDesignName, currentView, viewStates, productData, onGetSnapshot, onSaveSuccess 
 }) {
-  const [saving, setSaving] = useState(false);
-  const [showSavePrompt, setShowSavePrompt] = useState(false);
-  const classNames = className + ' text-button';
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const performSave = async (isOverwrite) => {
-    let thumbnail = null;
-    if (onGetSnapshot) thumbnail = await onGetSnapshot();
-
-    let result;
-    if (isOverwrite && editingDesignId) {
-       result = await overwriteDesign(
-           userId, 
-           editingDesignId, 
-           currentObjects, // Passing Redux
-           viewStates, 
-           productData, 
-           currentView, 
-           setSaving, 
-           thumbnail
-       );
-    } else {
-       result = await saveNewDesign(
-           userId, 
-           currentObjects, // Passing Redux
-           viewStates, 
-           productData, 
-           currentView, 
-           setSaving, 
-           thumbnail
-       );
-    }
-
-    if (result && result.success && onSaveSuccess) {
-        onSaveSuccess(result.id);
-    }
-  };
+  // Logic: 
+  // If editingDesignId exists -> Modal shows "Update" vs "Copy"
+  // If null -> Modal shows Input only
 
   const handleSaveClick = () => {
-    if (!currentObjects) return; // Guard
-    if (!editingDesignId) performSave(false);
-    else setShowSavePrompt(true);
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmSave = async (name, saveAsCopy) => {
+    setIsSaving(true);
+    try {
+        const snapshot = onGetSnapshot ? onGetSnapshot() : null;
+        
+        // Prepare current state
+        const currentCanvasObjects = canvas.present;
+        const finalViewStates = {
+            ...viewStates,
+            [currentView]: currentCanvasObjects
+        };
+
+        // DETERMINISTIC ID LOGIC:
+        // If saveAsCopy is TRUE -> Pass null (Create New)
+        // If saveAsCopy is FALSE -> Pass editingDesignId (Update Existing)
+        const targetDesignId = saveAsCopy ? null : editingDesignId;
+
+        const savedId = await saveDesign({
+            userId,
+            designId: targetDesignId, 
+            canvasObjects: currentCanvasObjects,
+            viewStates: finalViewStates,
+            previewImage: snapshot,
+            productConfig: {
+                productId: productData.productId,
+                variantColor: productData.color,
+                variantSize: productData.size
+            },
+            name: name
+        });
+
+        if (onSaveSuccess) onSaveSuccess(savedId);
+        setIsModalOpen(false);
+    } catch (error) {
+        console.error("Save failed:", error);
+        alert("Failed to save design");
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   return (
     <>
-      <button onClick={handleSaveClick} disabled={saving} className={classNames}>
-        {saving ? <FiRotateCw size={20} className="icon-spin" /> : <FiSave size={20} />}
-        <span>Save</span>
-      </button>
+      <Button onClick={handleSaveClick} variant="outline" size="sm" className="gap-2">
+        <FiSave size={16} />
+        Save
+      </Button>
 
-      <SavePromptModal
-        open={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
-        onSaveCopy={() => { setShowSavePrompt(false); performSave(false); }}
-        onOverwrite={() => { setShowSavePrompt(false); performSave(true); }}
+      <SavePromptModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onConfirm={handleConfirmSave}
+        isSaving={isSaving}
+        // ✅ Pass Context to Modal
+        isExistingDesign={!!editingDesignId}
+        currentName={currentDesignName}
       />
     </>
   );
