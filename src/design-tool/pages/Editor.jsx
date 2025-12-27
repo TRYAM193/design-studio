@@ -157,94 +157,94 @@ export default function EditorPanel() {
         const seenIds = new Set();
         setTimeout(() => {
             console.log(fabricCanvas?.getObjects())
+
+
+            const newObjs = fabricCanvas.getObjects().reduce((acc, obj, i) => {
+                // Extraction of common properties
+                const commonProps = {
+                    left: obj.left,
+                    top: obj.top,
+                    angle: obj.angle,
+                    fill: obj.fill,
+                    opacity: obj.opacity,
+                    shadowBlur: obj.shadowBlur || 0,
+                    shadowOffsetX: obj.shadowOffsetX || 0,
+                    shadowOffsetY: obj.shadowOffsetY || 0,
+                    shadowColor: obj.shadowColor || '',
+                    stroke: obj.stroke,
+                    strokeWidth: obj.strokeWidth,
+                    scaleX: obj.scaleX || 1,
+                    scaleY: obj.scaleY || 1,
+                    lockMovementX: obj.lockMovementX,
+                    lockMovementY: obj.lockMovementY,
+                };
+
+                let specificProps = {};
+
+                if (obj.type === 'image') {
+                    specificProps = {
+                        width: obj.width,
+                        height: obj.height,
+                        cropX: obj.cropX,
+                        cropY: obj.cropY,
+                    };
+                }
+                else if (['text', 'textbox', 'i-text', 'circle-text'].includes(obj.type) || obj.textEffect === 'circle') {
+                    specificProps = {
+                        text: obj.text,
+                        fontSize: obj.fontSize,
+                        fontFamily: obj.fontFamily,
+                        charSpacing: obj.charSpacing,
+                        textAlign: obj.textAlign,
+                        textStyle: obj.textStyle,
+                        textEffect: obj.textEffect,
+                        effectValue: obj.effectValue,
+                    };
+                }
+                else {
+                    specificProps = {
+                        width: obj.width,
+                        height: obj.height,
+                        radius: obj.radius,
+                        rx: obj.rx,
+                        ry: obj.ry,
+                    };
+                }
+
+                // 2. ID Handling Constraint
+                // Check if the object has a valid ID, or fallback to generation
+                let finalId = obj.customId || obj.id;
+
+                // CRITICAL: If this ID has already been seen in this loop (duplicate!), generate a new one.
+                if (!finalId || seenIds.has(finalId)) {
+                    // Generate a new unique ID
+                    finalId = `${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
+
+                    // Update the actual canvas object so it stays in sync with Redux
+                    obj.set('customId', finalId);
+                    obj.set('id', finalId);
+                }
+
+                // Mark this ID as taken
+                seenIds.add(finalId);
+
+                // 3. Add to the accumulator (Filter logic essentially happens here by controlling what we push)
+                acc.push({
+                    id: finalId,
+                    type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+                    ...(obj.type === 'image' && { src: obj.src }),
+                    props: { ...commonProps, ...specificProps }
+                });
+
+                return acc;
+            }, []); // Initialize with empty array
+
+            // Dispatch the clean, unique list to Redux
+            if (newObjs) {
+                console.log("Syncing to Redux:", newObjs);
+                store.dispatch(setCanvasObjects(newObjs));
+            }
         }, 100)
-
-
-        const newObjs = fabricCanvas.getObjects().reduce((acc, obj, i) => {
-            // Extraction of common properties
-            const commonProps = {
-                left: obj.left,
-                top: obj.top,
-                angle: obj.angle,
-                fill: obj.fill,
-                opacity: obj.opacity,
-                shadowBlur: obj.shadowBlur || 0,
-                shadowOffsetX: obj.shadowOffsetX || 0,
-                shadowOffsetY: obj.shadowOffsetY || 0,
-                shadowColor: obj.shadowColor || '',
-                stroke: obj.stroke,
-                strokeWidth: obj.strokeWidth,
-                scaleX: obj.scaleX || 1,
-                scaleY: obj.scaleY || 1,
-                lockMovementX: obj.lockMovementX,
-                lockMovementY: obj.lockMovementY,
-            };
-
-            let specificProps = {};
-
-            if (obj.type === 'image') {
-                specificProps = {
-                    width: obj.width,
-                    height: obj.height,
-                    cropX: obj.cropX,
-                    cropY: obj.cropY,
-                };
-            }
-            else if (['text', 'textbox', 'i-text', 'circle-text'].includes(obj.type) || obj.textEffect === 'circle') {
-                specificProps = {
-                    text: obj.text,
-                    fontSize: obj.fontSize,
-                    fontFamily: obj.fontFamily,
-                    charSpacing: obj.charSpacing,
-                    textAlign: obj.textAlign,
-                    textStyle: obj.textStyle,
-                    textEffect: obj.textEffect,
-                    effectValue: obj.effectValue,
-                };
-            }
-            else {
-                specificProps = {
-                    width: obj.width,
-                    height: obj.height,
-                    radius: obj.radius,
-                    rx: obj.rx,
-                    ry: obj.ry,
-                };
-            }
-
-            // 2. ID Handling Constraint
-            // Check if the object has a valid ID, or fallback to generation
-            let finalId = obj.customId || obj.id;
-
-            // CRITICAL: If this ID has already been seen in this loop (duplicate!), generate a new one.
-            if (!finalId || seenIds.has(finalId)) {
-                // Generate a new unique ID
-                finalId = `${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
-                
-                // Update the actual canvas object so it stays in sync with Redux
-                obj.set('customId', finalId);
-                obj.set('id', finalId);
-            }
-            
-            // Mark this ID as taken
-            seenIds.add(finalId);
-
-            // 3. Add to the accumulator (Filter logic essentially happens here by controlling what we push)
-            acc.push({
-                id: finalId,
-                type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
-                ...(obj.type === 'image' && { src: obj.src }),
-                props: { ...commonProps, ...specificProps }
-            });
-
-            return acc;
-        }, []); // Initialize with empty array
-
-        // Dispatch the clean, unique list to Redux
-        if (newObjs) {
-            console.log("Syncing to Redux:", newObjs);
-            store.dispatch(setCanvasObjects(newObjs));
-        }
     }
 
     // 🟩 UPDATED LOADING LOGIC
@@ -260,7 +260,7 @@ export default function EditorPanel() {
 
             let parsedData = designToLoad.canvasJSON;
             if (typeof parsedData === 'string') {
-                 try { parsedData = JSON.parse(parsedData); } catch(e) {}
+                try { parsedData = JSON.parse(parsedData); } catch (e) { }
             }
 
             // Handle Product vs Blank
@@ -271,8 +271,8 @@ export default function EditorPanel() {
                     options: { ...prev.options, colors: [designToLoad.productConfig.variantColor] }
                 }));
                 setCanvasBg(designToLoad.productConfig.variantColor);
-                setViewStates(parsedData); 
-                
+                setViewStates(parsedData);
+
                 const activeView = designToLoad.productConfig.activeView || 'front';
                 setCurrentView(activeView);
 
@@ -298,7 +298,7 @@ export default function EditorPanel() {
 
             let incomingJson = mergeDesign.canvasJSON;
             if (typeof incomingJson === 'string') {
-                try { incomingJson = JSON.parse(incomingJson); } catch(e) {}
+                try { incomingJson = JSON.parse(incomingJson); } catch (e) { }
             }
 
             // 1. Get Objects from the Incoming Design
@@ -323,10 +323,10 @@ export default function EditorPanel() {
                 // 5. Load the Combined State
                 fabricCanvas.loadFromJSON(currentJson, () => {
                     fabricCanvas.renderAll();
-                    
+
                     // 6. Sync Redux (Now guaranteed to run after full render)
                     addObj();
-                    
+
                     // 7. Cleanup
                     window.history.replaceState({}, document.title);
                 });
