@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'; // Added useMemo
 import useUserDesigns from '../hooks/useUserDesigns';
 import { useNavigate, useLocation } from 'react-router'; // Added useLocation
 import { FaEdit, FaTrash, FaArrowLeft, FaPlus } from 'react-icons/fa';
+import { FiTrash } from 'react-icons/fi';
 import { db as firestore } from "@/firebase";
 import { doc, deleteDoc } from "firebase/firestore";
 import { useAuth } from '@/hooks/use-auth';
