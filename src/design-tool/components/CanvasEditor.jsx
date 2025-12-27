@@ -2,15 +2,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import * as fabric from 'fabric';
-import WebFont from 'webfontloader';
 import StraightText from '../objectAdders/straightText';
 import CircleText from '../objectAdders/CircleText';
 import updateObject from '../functions/update';
 import { store } from '../redux/store';
 import { setCanvasObjects } from '../redux/canvasSlice';
-import { useLocation } from 'react-router';
-import { doc, getDoc } from 'firebase/firestore';
-import { db as firestore } from '@/firebase';
 import { FabricImage } from 'fabric';
 import updateExisting from '../utils/updateExisting';
 import FloatingMenu from './FloatingMenu';
@@ -88,7 +84,6 @@ export default function CanvasEditor({
   const [initialized, setInitialized] = useState(false);
   const wrapperRef = useRef(null);
   const canvasObjects = useSelector((state) => state.canvas.present);
-  const location = useLocation();
   const previousStatesRef = useRef(new Map());
   const dispatch = useDispatch();
 
