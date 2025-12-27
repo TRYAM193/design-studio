@@ -533,7 +533,7 @@ export default function EditorPanel() {
                             <button className="top-bar-button accent phone-only" onClick={() => setShowProperties(true)}><FiSettings size={18} /> Edit</button>
                         )}
                         {!selectedId && !showColorPanel && (
-                             <button className="top-bar-button accent phone-only" onClick={() => setShowColorPanel(true)}><FiSettings size={18} /> Colors</button>
+                            <button className="top-bar-button accent phone-only" onClick={() => setShowColorPanel(true)}><FiSettings size={18} /> Colors</button>
                         )}
                         <div className="control-group">
                             {fabricCanvas && (
