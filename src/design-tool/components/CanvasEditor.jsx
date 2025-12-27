@@ -240,14 +240,13 @@ export default function CanvasEditor({
 
   }, [printWidth, printHeight, activeView]);
 
-  // ✅ 3. LOAD & MERGE DESIGN LOGIC
  // ✅ 3. LOAD & MERGE DESIGN LOGIC
   useEffect(() => {
     if (!location.state || !fabricCanvas) return;
 
     const handleLoad = () => {
       const payload = location.state.designToLoad || location.state.mergeDesign;
-      const isMerge = !!location.state.mergeDesign;
+      const isMerge = location.state.mergeDesign;
 
       if (!payload) return;
 
