@@ -120,10 +120,10 @@ export default function SavedDesignsPage() {
                       </button>
                       <button
                         className="icon delete"
-                        title='Delete'
+                        title='Delete Design'
                         onClick={() => handleDelete(userId, design.id)}
                       >
-                        <FiTrash/>
+                        <FaTrash/>
                       </button>
                     </div>
 
