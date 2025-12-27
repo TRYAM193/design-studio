@@ -154,18 +154,10 @@ export default function EditorPanel() {
 
     // ✅ FIX: Use reduce to ensure Unique IDs and prevent Redux duplicates
     // ✅ FIX: addObj now accepts a list to Sync specific objects only
-    const addObj = (objectsFromJSON = null) => {
-        // 1. Decide Source: Use passed list (clean JSON) or live Canvas
-        const sourceObjects = objectsFromJSON || fabricCanvas.getObjects();
+    const addObj = (objectsList) => {
+        if (!objectsList || !Array.isArray(objectsList)) return;
 
-        const seenIds = new Set();
-
-        const newObjs = sourceObjects.reduce((acc, obj, i) => {
-            // A. Skip System Objects (Double check)
-            if (obj.id === 'print-area-border') return acc;
-
-            // B. Property Extraction 
-            // (Works for both Fabric Instances and JSON Objects as properties are top-level)
+        const formattedObjects = objectsList.map((obj) => {
             const commonProps = {
                 left: obj.left, top: obj.top, angle: obj.angle, fill: obj.fill,
                 opacity: obj.opacity, shadowBlur: obj.shadowBlur || 0,
@@ -176,45 +168,25 @@ export default function EditorPanel() {
             };
 
             let specificProps = {};
-            // Handle Type Differences (JSON 'rect' vs Instance 'rect')
             const type = obj.type;
 
             if (type === 'image') {
-                specificProps = { width: obj.width, height: obj.height, cropX: obj.cropX, cropY: obj.cropY, src: obj.src };
+                 specificProps = { width: obj.width, height: obj.height, cropX: obj.cropX, cropY: obj.cropY, src: obj.src };
             } else if (['text', 'textbox', 'i-text', 'circle-text'].includes(type) || obj.textEffect === 'circle') {
-                specificProps = { text: obj.text, fontSize: obj.fontSize, fontFamily: obj.fontFamily, charSpacing: obj.charSpacing, textAlign: obj.textAlign, textStyle: obj.textStyle, textEffect: obj.textEffect, effectValue: obj.effectValue };
+                 specificProps = { text: obj.text, fontSize: obj.fontSize, fontFamily: obj.fontFamily, charSpacing: obj.charSpacing, textAlign: obj.textAlign, textStyle: obj.textStyle, textEffect: obj.textEffect, effectValue: obj.effectValue };
             } else {
-                specificProps = { width: obj.width, height: obj.height, radius: obj.radius, rx: obj.rx, ry: obj.ry };
+                 specificProps = { width: obj.width, height: obj.height, radius: obj.radius, rx: obj.rx, ry: obj.ry };
             }
 
-            // C. ID Conflict Check
-            let finalId = obj.customId || obj.id;
-            if (!finalId || seenIds.has(finalId)) {
-                finalId = `${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
-                // If it's a live Fabric object, update it. 
-                // If it's a JSON object, updating properties doesn't hurt.
-                if (typeof obj.set === 'function') {
-                    obj.set('customId', finalId);
-                    obj.set('id', finalId);
-                } else {
-                    obj.customId = finalId;
-                    obj.id = finalId;
-                }
-            }
-            seenIds.add(finalId);
-
-            acc.push({
-                id: finalId,
+            return {
+                id: obj.customId || obj.id, 
                 type: obj.textEffect === 'circle' ? 'circle-text' : type,
                 ...(type === 'image' && { src: obj.src }),
                 props: { ...commonProps, ...specificProps }
-            });
-            return acc;
-        }, []);
+            };
+        });
 
-        if (newObjs) {
-            store.dispatch(setCanvasObjects(newObjs));
-        }
+        store.dispatch(setCanvasObjects(formattedObjects));
     };
 
 
