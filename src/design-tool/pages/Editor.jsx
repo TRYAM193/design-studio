@@ -197,7 +197,7 @@ export default function EditorPanel() {
                         // 4. Append to Redux
                         // We get current state from store directly to ensure freshness
                         
-                        dispatch(setCanvasObjects([...canvasOjets, ...objectsToAdd]));
+                        dispatch(setCanvasObjects([...canvasObjects, ...objectsToAdd]));
                         
                         console.log("Merged objects:", objectsToAdd.length);
                     }
