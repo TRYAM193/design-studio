@@ -430,6 +430,8 @@ export default function EditorPanel() {
                                         color: canvasBg,
                                         print_areas: productData.print_areas
                                     }}
+                                    onGetSnapshot={getCleanDataURL}
+                                    onSaveSuccess={handleSaveSuccess}
                                 />
                             )}
                             <Button
