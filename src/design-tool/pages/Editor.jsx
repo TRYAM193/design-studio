@@ -98,7 +98,7 @@ export default function EditorPanel() {
     const [activePanel, setActivePanel] = useState('text');
 
     // ✅ Initialize dims directly from default or product data logic
-    const [canvasDims, setCanvasDims] = useState({ width: 300, height: 400 });
+    const [canvasDims, setCanvasDims] = useState();
 
     useEffect(() => {
         async function initEditor() {
