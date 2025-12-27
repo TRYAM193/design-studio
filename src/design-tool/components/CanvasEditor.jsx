@@ -1,5 +1,5 @@
 // src/design-tool/components/CanvasEditor.jsx
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import * as fabric from 'fabric';
 import WebFont from 'webfontloader';
@@ -12,10 +12,21 @@ import { useLocation } from 'react-router';
 import { doc, getDoc } from 'firebase/firestore';
 import { db as firestore } from '@/firebase';
 import { FabricImage } from 'fabric';
-import updateExisting from '../utils/updateExisting'
+import updateExisting from '../utils/updateExisting';
 import FloatingMenu from './FloatingMenu';
 import { handleCanvasAction } from '../utils/canvasActions';
 import ShapeAdder from '../objectAdders/Shapes';
+
+// --- HELPERS ---
+
+// Simple UUID generator to avoid external dependencies if not installed
+const uuidv4 = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0,
+      v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
 
 const extractFontsFromJSON = (json) => {
   const fonts = new Set();
@@ -31,11 +42,15 @@ const extractFontsFromJSON = (json) => {
   return Array.from(fonts);
 };
 
+// Extend toObject to include custom properties
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
     return toObject.call(
       this,
-      (propertiesToInclude || []).concat(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue', 'selectable', 'lockMovementX', 'lockMovementY'])
+      (propertiesToInclude || []).concat([
+        'customId', 'textStyle', 'textEffect', 'radius', 'effectValue',
+        'selectable', 'lockMovementX', 'lockMovementY'
+      ])
     );
   };
 })(fabric.Object.prototype.toObject);
@@ -63,7 +78,12 @@ export default function CanvasEditor({
   setCurrentDesign,
   printDimensions = { width: 4500, height: 5400 },
   productId,
-  activeView
+  activeView,
+  // Optional setters if parent component manages product state
+  setProductData,
+  setCanvasBg,
+  setViewStates,
+  setCurrentView
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
@@ -80,23 +100,22 @@ export default function CanvasEditor({
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
-  const [containerSize, setContainerSize] = useState({ width: 800, height: 800 });
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  // Add this helper or calculate inside your component
+  // --- SCALING & MENU POSITIONING ---
+
   const calculateScaledSize = (originalWidth, originalHeight) => {
-    // Use window.innerWidth or your specific container's width
     const currentScreenWidth = window.innerWidth;
-    const referenceWidth = 1707;
-    // Your specific logic: dimension * current / 1024
+    const referenceWidth = 1707; // Base reference width
     const scaleFactor = currentScreenWidth / referenceWidth;
 
     return {
       width: originalWidth * scaleFactor,
       height: originalHeight * scaleFactor,
-      scaleFactor: scaleFactor // Keep this if you need to scale objects inside too
+      scaleFactor: scaleFactor
     };
   };
-  // This removes reliance on viewport coordinates, fixing the "far away" issue.
+
   const updateMenuPosition = () => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
@@ -105,9 +124,7 @@ export default function CanvasEditor({
 
     if (activeObj) {
       const objectCenter = activeObj.getCenterPoint();
-
       setMenuPosition({
-        // Since the canvas scales 1:1 with the container now, we can use object coordinates directly
         left: objectCenter.x,
         top: objectCenter.y - (activeObj.getScaledHeight() / 2) - 60
       });
@@ -129,7 +146,8 @@ export default function CanvasEditor({
   const { width: printWidth, height: printHeight } = printDimensions;
   const { width: scaledWidth, height: scaledHeight } = calculateScaledSize(printWidth, printHeight);
 
-  // ✅ A. Initialize Canvas & Handle Responsive Sizing
+
+  // ✅ 1. INITIALIZE CANVAS & RESIZE OBSERVER
   useEffect(() => {
     let canvas = fabricCanvasRef.current;
     if (!canvas) {
@@ -162,24 +180,26 @@ export default function CanvasEditor({
     return () => { };
   }, []);
 
-  // ✅ B. HANDLE PRINT AREA MASK (ClipPath) & BORDER
+  // ✅ 2. HANDLE PRINT AREA MASK (ClipPath) & BORDER
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
+    // Remove existing border first
     canvas.getObjects().forEach((obj) => {
-      if (obj.id === 'print-area-border') {
+      if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') {
         canvas.remove(obj);
       }
     });
 
-    // Check if canvas dimensions are valid (non-zero) before applying clip path
+    // Only apply mask if canvas has valid dimensions
     if (productId && canvas.width > 0 && canvas.height > 0) {
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       const leftPos = centerX - printWidth / 2;
       const topPos = centerY - printHeight / 2;
 
+      // Create Clip Path
       const clipRect = new fabric.Rect({
         left: leftPos,
         top: topPos,
@@ -189,6 +209,8 @@ export default function CanvasEditor({
       });
 
       canvas.clipPath = clipRect;
+
+      // Add Visual Dashed Border
       if (scaledHeight && scaledWidth) {
         const visualBorder = new fabric.Rect({
           left: leftPos,
@@ -201,14 +223,12 @@ export default function CanvasEditor({
           strokeDashArray: [5, 5],
           selectable: false,
           evented: false,
-          customId: 'print-area-border'
+          customId: 'print-area-border',
+          id: 'print-area-border'
         });
         canvas.add(visualBorder);
         canvas.bringObjectToFront(visualBorder);
-        canvas.requestRenderAll();
       }
-
-
     } else {
       canvas.clipPath = null;
     }
@@ -218,214 +238,160 @@ export default function CanvasEditor({
     const updateEvent = new Event('resize_menu_update');
     window.dispatchEvent(updateEvent);
 
-  }, [printWidth, printHeight]);
+  }, [printWidth, printHeight, productId, containerSize, fabricCanvas, activeView]);
 
-  // 🟩 Load Saved Designs
+  // ✅ 3. LOAD & MERGE DESIGN LOGIC
   useEffect(() => {
-    if (location.state?.designToLoad && fabricCanvas) {
-      const design = location.state.designToLoad;
-      setCurrentDesign(design);
+    if (!location.state || !fabricCanvas) return;
 
-      if (design.id) setEditingDesignId(design.id);
-      else setEditingDesignId(null)
+    const handleLoad = () => {
+      const payload = location.state.designToLoad || location.state.mergeDesign;
+      const isMerge = !!location.state.mergeDesign;
 
-      let parsedData;
-      let jsonContent = design.canvasJSON || design.canvasData;
+      if (!payload) return;
 
-      if (jsonContent) {
-        parsedData = typeof jsonContent === 'string' ? JSON.parse(jsonContent) : jsonContent;
+      let parsedJSON = payload.canvasJSON || payload.canvasData;
+      if (typeof parsedJSON === 'string') {
+        try { parsedJSON = JSON.parse(parsedJSON); } catch (e) { console.error("JSON Parse Error", e); return; }
       }
 
-      if (parsedData) {
-        const fontsToLoad = extractFontsFromJSON(parsedData);
+      // --- Filter out Borders (Real & Ghosts) ---
+      const filterBorders = (objects) => {
+        if (!Array.isArray(objects)) return [];
+        return objects.filter(obj => {
+          if (obj.id === 'print-area-border' || obj.customId === 'print-area-border') return false;
+          // Filter "Ghost" Borders (Old saves)
+          if (obj.type === 'rect' && obj.strokeDashArray && obj.fill === 'transparent' && !obj.selectable) return false;
+          return true;
+        });
+      };
 
-        const loadCanvasData = () => {
-          fabricCanvas.loadFromJSON(parsedData, () => {
-            // Redux Sync will handle the rest
-          });
+      // --- Sync to Redux (Helper) ---
+      const syncToRedux = () => {
+        setTimeout(() => {
+          const newObjs = fabricCanvas.getObjects().map((obj, i) => {
+            if (obj.customId === 'print-area-border') return null;
 
-          setTimeout(() => {
-            const newObjs = fabricCanvas.getObjects().map((obj, i) => {
-              const commonProps = {
-                left: obj.left,
-                top: obj.top,
-                angle: obj.angle,
-                fill: obj.fill,
-                opacity: obj.opacity,
-                shadowBlur: obj.shadowBlur || 0,
-                shadowOffsetX: obj.shadowOffsetX || 0,
-                shadowOffsetY: obj.shadowOffsetY || 0,
-                shadowColor: obj.shadowColor || '',
-                stroke: obj.stroke,
-                strokeWidth: obj.strokeWidth,
-                scaleX: obj.scaleX || 1,
-                scaleY: obj.scaleY || 1,
-                lockMovementX: obj.lockMovementX,
-                lockMovementY: obj.lockMovementY,
+            const commonProps = {
+              left: obj.left, top: obj.top, angle: obj.angle, fill: obj.fill,
+              opacity: obj.opacity, shadowBlur: obj.shadowBlur || 0,
+              shadowOffsetX: obj.shadowOffsetX || 0, shadowOffsetY: obj.shadowOffsetY || 0,
+              shadowColor: obj.shadowColor || '', stroke: obj.stroke,
+              strokeWidth: obj.strokeWidth, scaleX: obj.scaleX || 1, scaleY: obj.scaleY || 1,
+              lockMovementX: obj.lockMovementX, lockMovementY: obj.lockMovementY,
+            };
+
+            let specificProps = {};
+            if (obj.type === 'image') {
+              specificProps = { width: obj.width, height: obj.height, cropX: obj.cropX, cropY: obj.cropY };
+            } else if (['text', 'textbox', 'i-text', 'circle-text'].includes(obj.type) || obj.textEffect === 'circle') {
+              specificProps = {
+                text: obj.text, fontSize: obj.fontSize, fontFamily: obj.fontFamily,
+                charSpacing: obj.charSpacing, textAlign: obj.textAlign,
+                textStyle: obj.textStyle, textEffect: obj.textEffect, effectValue: obj.effectValue,
               };
-
-              let specificProps = {};
-
-              if (obj.type === 'image') {
-                specificProps = {
-                  width: obj.width,
-                  height: obj.height,
-                  cropX: obj.cropX,
-                  cropY: obj.cropY,
-                };
-              }
-              else if (['text', 'textbox', 'i-text', 'circle-text'].includes(obj.type) || obj.textEffect === 'circle') {
-                specificProps = {
-                  text: obj.text,
-                  fontSize: obj.fontSize,
-                  fontFamily: obj.fontFamily,
-                  charSpacing: obj.charSpacing,
-                  textAlign: obj.textAlign,
-                  textStyle: obj.textStyle,
-                  textEffect: obj.textEffect,
-                  effectValue: obj.effectValue,
-                };
-              }
-              else {
-                specificProps = {
-                  width: obj.width,
-                  height: obj.height,
-                  radius: obj.radius,
-                  rx: obj.rx,
-                  ry: obj.ry,
-                };
-              }
-
-              return {
-                id: obj.customId || Date.now() + i,
-                type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
-                ...(obj.type === 'image' && { src: obj.src }),
-                props: { ...commonProps, ...specificProps }
-              };
-            });
-            if (newObjs) {
-              store.dispatch(setCanvasObjects(newObjs))
-              console.log('Redux Synced')
+            } else {
+              specificProps = { width: obj.width, height: obj.height, radius: obj.radius, rx: obj.rx, ry: obj.ry };
             }
-            fabricCanvas.requestRenderAll();
-          }, 100);
-        };
 
-        if (fontsToLoad.length > 0) {
-          WebFont.load({
-            google: { families: fontsToLoad },
-            active: () => {
-              console.log("Fonts loaded for new design.");
-              loadCanvasData();
-            },
-            inactive: loadCanvasData
+            return {
+              id: obj.customId || uuidv4(),
+              type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+              ...(obj.type === 'image' && { src: obj.src }),
+              props: { ...commonProps, ...specificProps }
+            };
+          }).filter(Boolean);
+
+          if (newObjs.length > 0) {
+            dispatch(setCanvasObjects(newObjs));
+            console.log('Redux Synced after Load/Merge');
+          }
+          fabricCanvas.requestRenderAll();
+        }, 100);
+      };
+
+      // CASE A: PRODUCT DESIGN (Replace Full Context)
+      if (payload.type === 'PRODUCT' && payload.productConfig && !isMerge) {
+        if (setProductData) {
+          setProductData(prev => ({
+            ...prev,
+            productId: payload.productConfig.productId,
+            options: { ...prev.options, colors: [payload.productConfig.variantColor] }
+          }));
+        }
+        if (setCanvasBg) setCanvasBg(payload.productConfig.variantColor);
+        if (setViewStates) setViewStates(parsedJSON);
+
+        const activeViewKey = payload.productConfig.activeView || 'front';
+        if (setCurrentView) setCurrentView(activeViewKey);
+
+        const activeViewJSON = parsedJSON[activeViewKey];
+        if (activeViewJSON) {
+          if (activeViewJSON.objects) {
+            activeViewJSON.objects = filterBorders(activeViewJSON.objects);
+          }
+          fabricCanvas.loadFromJSON(activeViewJSON, () => {
+            fabricCanvas.renderAll();
+            syncToRedux();
+          });
+        }
+      }
+      // CASE B: MERGE / BLANK DESIGN
+      else {
+        let incomingObjects = parsedJSON.objects || (Array.isArray(parsedJSON) ? parsedJSON : []);
+        incomingObjects = filterBorders(incomingObjects);
+
+        // Assign New IDs for incoming objects
+        incomingObjects.forEach(obj => {
+          const newId = uuidv4();
+          obj.id = newId;
+          obj.customId = newId;
+        });
+
+        if (isMerge) {
+          const currentJSON = fabricCanvas.toJSON(['customId', 'id', 'lockMovementX', 'lockMovementY', 'textEffect']);
+          
+          let savedClipPath = null;
+          if (currentJSON.clipPath) {
+            savedClipPath = currentJSON.clipPath;
+            delete currentJSON.clipPath;
+          }
+
+          currentJSON.objects = filterBorders(currentJSON.objects);
+          const combinedObjects = [...currentJSON.objects, ...incomingObjects];
+          currentJSON.objects = combinedObjects;
+
+          if (savedClipPath) currentJSON.clipPath = savedClipPath;
+
+          fabricCanvas.loadFromJSON(currentJSON, () => {
+            fabricCanvas.renderAll();
+            syncToRedux();
           });
         } else {
-          loadCanvasData();
-        }
-      }
-    }
-  }, [location.state, fabricCanvas]);
+          // Pure Replace (Blank or Saved Design)
+          if (parsedJSON.objects) parsedJSON.objects = incomingObjects;
+          else parsedJSON = { objects: incomingObjects };
 
-  // 🟩 Load from Persistence
-  useEffect(() => {
-    if (!fabricCanvas || !initialized) return;
-
-    const loadDesign = async () => {
-      let designToLoad = null;
-      let designId = null;
-
-      try {
-        const sessionData = sessionStorage.getItem('editingDesign');
-        if (sessionData) {
-          designToLoad = JSON.parse(sessionData);
-          sessionStorage.removeItem('editingDesign');
-        }
-      } catch (e) { console.warn(e); }
-
-      if (!designToLoad) {
-        try {
-          const localData = localStorage.getItem('editingDesign');
-          if (localData) {
-            designToLoad = JSON.parse(localData);
-            localStorage.removeItem('editingDesign');
-          }
-        } catch (e) { console.warn(e); }
-      }
-
-      if (!designToLoad) {
-        const urlParams = new URLSearchParams(window.location.search);
-        designId = urlParams.get('designId');
-      }
-
-      if (!designToLoad && !designId) {
-        designId = getCookie('editingDesignId');
-        if (designId) {
-          document.cookie = 'editingDesignId=; path=/; max-age=0';
-        }
-      }
-
-      if (!designToLoad && designId) {
-        try {
-          const designRef = doc(firestore, `users/test-user-123/designs`, designId);
-          const designSnap = await getDoc(designRef);
-          if (designSnap.exists()) {
-            designToLoad = { id: designId, ...designSnap.data() };
-          }
-        } catch (e) { console.error(e); }
-      }
-
-      if (designToLoad) {
-        setCurrentDesign(designToLoad);
-        setEditingDesignId(designToLoad.id);
-
-        if (designToLoad.canvasJSON) {
-          const parsedData = typeof designToLoad.canvasJSON === 'string'
-            ? JSON.parse(designToLoad.canvasJSON)
-            : designToLoad.canvasJSON;
-
-          const fontsToLoad = extractFontsFromJSON(parsedData);
-
-          const loadCanvasPersistence = () => {
-            fabricCanvas.loadFromJSON(designToLoad.canvasJSON, () => {
-              setTimeout(() => {
-                fabricCanvas.requestRenderAll();
-                fabricCanvas.getObjects().forEach(obj => {
-                  const state = store.getState();
-                  const currentObjs = state.canvas.present;
-                  if (!currentObjs.find(o => o.id === obj.customId)) {
-                  }
-                });
-              }, 90);
-            });
-          };
-
-          if (fontsToLoad.length > 0) {
-            WebFont.load({
-              google: { families: fontsToLoad },
-              active: () => {
-                console.log("Fonts loaded from persistence.");
-                loadCanvasPersistence();
-              },
-              inactive: loadCanvasPersistence
-            });
-          } else {
-            loadCanvasPersistence();
-          }
+          fabricCanvas.loadFromJSON(parsedJSON, () => {
+            fabricCanvas.renderAll();
+            syncToRedux();
+          });
         }
       }
     };
-    loadDesign();
-  }, [fabricCanvas, initialized]);
 
-  // 🟩 Handle Selection Events
+    handleLoad();
+    window.history.replaceState({}, document.title);
+
+  }, [location.state, fabricCanvas]); // Removed duplicate dependency
+
+  // ✅ 4. HANDLE SELECTION EVENTS
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
     const handleSelection = (e) => {
       if (isSyncingRef.current) return;
-
       const selected = e.selected?.[0];
       if (selected) {
         setSelectedId(selected.customId);
@@ -465,7 +431,7 @@ export default function CanvasEditor({
     };
   }, [fabricCanvas, setSelectedId, setActiveTool]);
 
-  // 🟩 Handle Modifications
+  // ✅ 5. HANDLE MODIFICATIONS
   useEffect(() => {
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
@@ -479,12 +445,11 @@ export default function CanvasEditor({
 
       const type = obj.type ? obj.type.toLowerCase() : '';
 
+      // Handle Group Selection Modification
       if (type === 'activeselection') {
         const children = [...obj.getObjects()];
-
         setTimeout(() => {
           fabricCanvas.discardActiveObject();
-
           const present = store.getState().canvas.present;
           let updatedPresent = present.map((o) => JSON.parse(JSON.stringify(o)));
           let hasChanges = false;
@@ -497,7 +462,6 @@ export default function CanvasEditor({
               const newFontSize = child.fontSize * child.scaleX;
               child.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
               child.setCoords();
-
               updatedPresent[index].props = {
                 ...updatedPresent[index].props,
                 fontSize: newFontSize,
@@ -519,28 +483,23 @@ export default function CanvasEditor({
             }
             hasChanges = true;
           });
-          if (hasChanges) {
-            store.dispatch(setCanvasObjects(updatedPresent));
-          }
+          if (hasChanges) store.dispatch(setCanvasObjects(updatedPresent));
 
           if (children.length > 0) {
-            const sel = new fabric.ActiveSelection(children, {
-              canvas: fabricCanvas,
-            });
+            const sel = new fabric.ActiveSelection(children, { canvas: fabricCanvas });
             fabricCanvas.setActiveObject(sel);
             fabricCanvas.requestRenderAll();
           }
         }, 0);
-
         return;
       }
 
+      // Handle Single Object Modification
       if (type === 'text' || type === 'textbox') {
         const newFontSize = obj.fontSize * obj.scaleX;
         obj.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
         obj.setCoords();
         fabricCanvas.renderAll();
-
         updateObject(obj.customId, {
           fontSize: newFontSize,
           left: obj.left,
@@ -567,7 +526,7 @@ export default function CanvasEditor({
     };
   }, []);
 
-  // 🟩 Sync Redux state → Fabric
+  // ✅ 6. SYNC REDUX STATE → FABRIC
   useEffect(() => {
     if (!initialized) return;
     const fabricCanvas = fabricCanvasRef.current;
@@ -591,9 +550,7 @@ export default function CanvasEditor({
       const currentString = JSON.stringify(objData);
       const previousString = previousStatesRef.current.get(objData.id);
 
-      if (currentString === previousString) {
-        return;
-      }
+      if (currentString === previousString) return;
 
       let existing = fabricObjects.find((o) => o.customId === objData.id);
 
@@ -603,20 +560,12 @@ export default function CanvasEditor({
         if (existing && existing.type === objData.type && !isCircle) {
           existing.set(objData.props);
           existing.setCoords();
-        }
-        else {
+        } else {
           if (existing) fabricCanvas.remove(existing);
-
           let newObj;
-          if (isCircle) {
-            newObj = CircleText(objData);
-          }
-          else if (shapes.includes(objData.type)) {
-            newObj = ShapeAdder(objData);
-          }
-          else if (objData.type === 'text') {
-            newObj = StraightText(objData);
-          }
+          if (isCircle) newObj = CircleText(objData);
+          else if (shapes.includes(objData.type)) newObj = ShapeAdder(objData);
+          else if (objData.type === 'text') newObj = StraightText(objData);
 
           if (newObj) {
             newObj.customId = objData.id;
@@ -629,11 +578,8 @@ export default function CanvasEditor({
         if (!existing && !fabricCanvas.getObjects().some(obj => obj.customId === objData.id)) {
           try {
             const newObj = await FabricImage.fromURL(objData.src, { ...objData.props });
-            newObj.set({
-              customId: objData.id
-            })
+            newObj.set({ customId: objData.id });
             fabricCanvas.add(newObj);
-            console.log('Image added', objData, canvasObjects)
           } catch (err) {
             console.error("Error loading image:", err);
           }
@@ -647,18 +593,16 @@ export default function CanvasEditor({
 
     const reduxIds = new Set(canvasObjects.map(o => o.id));
     fabricObjects.forEach((obj) => {
-      // ✅ PROTECT BORDER FROM REDUX DELETE LOOP
-      if (obj.customId === 'print-area-border') return;
-
+      if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') return;
       if (!reduxIds.has(obj.customId)) {
         fabricCanvas.remove(obj);
         previousStatesRef.current.delete(obj.customId);
       }
     });
 
+    // Re-order Z-index
     const currentFabricObjects = fabricCanvas.getObjects();
     let fabricObjectsArray = fabricCanvas._objects;
-
     canvasObjects.forEach((reduxObj, index) => {
       const fabricObj = currentFabricObjects.find((obj) => obj.customId === reduxObj.id);
       if (fabricObj) {
@@ -671,7 +615,6 @@ export default function CanvasEditor({
 
     if (selectedIds.length > 0) {
       const objectsToSelect = fabricCanvas.getObjects().filter(obj => selectedIds.includes(obj.customId));
-
       if (objectsToSelect.length > 1) {
         const selection = new fabric.ActiveSelection(objectsToSelect, { canvas: fabricCanvas });
         fabricCanvas.setActiveObject(selection);
@@ -681,7 +624,6 @@ export default function CanvasEditor({
     }
 
     fabricCanvas.requestRenderAll();
-
     setTimeout(() => {
       updateMenuPosition();
       isSyncingRef.current = false;
@@ -700,7 +642,6 @@ export default function CanvasEditor({
   };
 
   return (
-    // ✅ ADDED position: relative to wrapper to localize menu coordinates
     <div ref={wrapperRef} id="canvas-wrapper" className="relative w-full h-full">
       <canvas ref={canvasRef} id="canvas" />
 
