@@ -48,7 +48,8 @@ export default function SavedDesignsPage() {
   const handleSelectDesign = (design) => {
     // SCENARIO: We are in Product Mode AND loading a Blank Design
     if (filterMode === 'product' && (design.type === 'BLANK' || !design.type)) {
-       // MERGE MODE: Pass back as 'designToMerge'
+       const targetUrl = `/design?product=${filterProductId}&color=${filterColor || ''}`;
+       
        navigate('/design', { 
            state: { 
                mergeDesign: design, // Special flag for Editor.jsx
