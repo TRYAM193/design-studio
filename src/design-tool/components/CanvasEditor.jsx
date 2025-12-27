@@ -19,7 +19,6 @@ import ShapeAdder from '../objectAdders/Shapes';
 
 // --- HELPERS ---
 
-// Simple UUID generator to avoid external dependencies if not installed
 const uuidv4 = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
     const r = (Math.random() * 16) | 0,
@@ -32,13 +31,25 @@ const extractFontsFromJSON = (json) => {
   const fonts = new Set();
   const data = typeof json === 'string' ? JSON.parse(json) : json;
 
-  if (data.objects) {
-    data.objects.forEach((obj) => {
+  // Handle both single view and multi-view JSON structures
+  const scanObjects = (objs) => {
+    if (!objs) return;
+    objs.forEach((obj) => {
       if (obj.fontFamily && obj.fontFamily !== 'Times New Roman' && obj.fontFamily !== 'Arial') {
         fonts.add(obj.fontFamily);
       }
     });
+  };
+
+  if (data.objects) {
+    scanObjects(data.objects);
+  } else {
+    // Check for multi-view structure (front, back, etc.)
+    Object.values(data).forEach(view => {
+      if (view && view.objects) scanObjects(view.objects);
+    });
   }
+  
   return Array.from(fonts);
 };
 
@@ -54,13 +65,6 @@ fabric.Object.prototype.toObject = (function (toObject) {
     );
   };
 })(fabric.Object.prototype.toObject);
-
-function getCookie(name) {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop().split(';').shift();
-  return null;
-}
 
 const isDifferent = (val1, val2) => {
   if (typeof val1 === 'number' && typeof val2 === 'number') {
@@ -79,7 +83,6 @@ export default function CanvasEditor({
   printDimensions = { width: 4500, height: 5400 },
   productId,
   activeView,
-  // Optional setters if parent component manages product state
   setProductData,
   setCanvasBg,
   setViewStates,
@@ -103,10 +106,9 @@ export default function CanvasEditor({
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   // --- SCALING & MENU POSITIONING ---
-
   const calculateScaledSize = (originalWidth, originalHeight) => {
     const currentScreenWidth = window.innerWidth;
-    const referenceWidth = 1707; // Base reference width
+    const referenceWidth = 1707; 
     const scaleFactor = currentScreenWidth / referenceWidth;
 
     return {
@@ -146,8 +148,7 @@ export default function CanvasEditor({
   const { width: printWidth, height: printHeight } = printDimensions;
   const { width: scaledWidth, height: scaledHeight } = calculateScaledSize(printWidth, printHeight);
 
-
-  // ✅ 1. INITIALIZE CANVAS & RESIZE OBSERVER
+  // ✅ 1. INITIALIZE CANVAS
   useEffect(() => {
     let canvas = fabricCanvasRef.current;
     if (!canvas) {
@@ -180,26 +181,23 @@ export default function CanvasEditor({
     return () => { };
   }, []);
 
-  // ✅ 2. HANDLE PRINT AREA MASK (ClipPath) & BORDER
+  // ✅ 2. HANDLE PRINT AREA MASK & BORDER
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
-    // Remove existing border first
     canvas.getObjects().forEach((obj) => {
       if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') {
         canvas.remove(obj);
       }
     });
 
-    // Only apply mask if canvas has valid dimensions
     if (productId && canvas.width > 0 && canvas.height > 0) {
       const centerX = canvas.width / 2;
       const centerY = canvas.height / 2;
       const leftPos = centerX - printWidth / 2;
       const topPos = centerY - printHeight / 2;
 
-      // Create Clip Path
       const clipRect = new fabric.Rect({
         left: leftPos,
         top: topPos,
@@ -210,7 +208,6 @@ export default function CanvasEditor({
 
       canvas.clipPath = clipRect;
 
-      // Add Visual Dashed Border
       if (scaledHeight && scaledWidth) {
         const visualBorder = new fabric.Rect({
           left: leftPos,
@@ -234,13 +231,11 @@ export default function CanvasEditor({
     }
 
     canvas.requestRenderAll();
-
-    const updateEvent = new Event('resize_menu_update');
-    window.dispatchEvent(updateEvent);
+    window.dispatchEvent(new Event('resize_menu_update'));
 
   }, [printWidth, printHeight, activeView]);
 
- // ✅ 3. LOAD & MERGE DESIGN LOGIC
+ // ✅ 3. LOAD & MERGE DESIGN LOGIC (FIXED)
   useEffect(() => {
     if (!location.state || !fabricCanvas) return;
 
@@ -303,33 +298,49 @@ export default function CanvasEditor({
 
           if (newObjs.length > 0) {
             dispatch(setCanvasObjects(newObjs));
-            console.log('Redux Synced after Load/Merge');
           }
           fabricCanvas.requestRenderAll();
-        }, 150); // Increased timeout slightly to ensure render finishes
+        }, 150);
       };
+
+      // -----------------------------------------------------------
+      // FIX A: DETERMINE TARGET VIEW (Don't force 'Front' for Blank)
+      // -----------------------------------------------------------
+      // If it's a BLANK design, stay on the current view.
+      // If it's a PRODUCT design, go to the saved view (e.g., Front).
+      const isBlank = payload.type === 'BLANK' || !payload.type;
+      const targetView = isBlank ? activeView : (payload.productConfig?.activeView || 'front');
+      
+      // Only switch view if it's a PRODUCT load and different from current
+      if (!isMerge && !isBlank && setCurrentView && targetView !== activeView) {
+          setCurrentView(targetView);
+      }
+
+      // -----------------------------------------------------------
+      // FIX B: HYDRATE ALL VIEW STATES (Prevent Data Loss)
+      // -----------------------------------------------------------
+      // If we are loading a full product design, we must tell Editor.jsx about 
+      // the views we AREN'T currently seeing (e.g. Back), so they don't get deleted on Save.
+      if (!isMerge && payload.type === 'PRODUCT' && setViewStates) {
+          setViewStates(parsedJSON); 
+      }
 
       // -----------------------------------------------------------
       // PREPARE OBJECTS FOR LOADING/MERGING
       // -----------------------------------------------------------
-      const targetView = payload.activeView || 'front';
-      
-      // If we are NOT merging (replacing), switch the view if needed
-      if (!isMerge && setCurrentView && targetView !== activeView) {
-          setCurrentView(targetView);
-      }
-
-      // Determine which objects to grab (Handle { front: [...], back: [...] } structure vs simple array)
+      // Check if JSON has specific view data (e.g. { front: {}, back: {} })
       let dataToLoad = parsedJSON;
       if (parsedJSON[targetView] && parsedJSON[targetView].objects) {
           dataToLoad = parsedJSON[targetView];
+      } else if (parsedJSON.objects) {
+          // Standard structure
+          dataToLoad = parsedJSON;
       }
 
-      // Extract objects array safely
       let incomingObjects = dataToLoad.objects || (Array.isArray(dataToLoad) ? dataToLoad : []);
       incomingObjects = filterBorders(incomingObjects);
 
-      // Assign New IDs to prevent conflicts
+      // Assign New IDs
       incomingObjects.forEach(obj => {
         const newId = uuidv4();
         obj.id = newId;
@@ -337,7 +348,7 @@ export default function CanvasEditor({
       });
 
       // -----------------------------------------------------------
-      // EXECUTE: PRODUCT RESET vs MERGE vs REPLACE
+      // EXECUTE LOAD
       // -----------------------------------------------------------
 
       // 1. PRODUCT RESET
@@ -350,8 +361,7 @@ export default function CanvasEditor({
             }));
         }
         if (setCanvasBg) setCanvasBg(payload.productConfig.variantColor);
-        if (setViewStates) setViewStates(parsedJSON);
-
+        
         // Load objects via Fabric
         const finalJSON = { ...dataToLoad, objects: incomingObjects };
         fabricCanvas.loadFromJSON(finalJSON, () => {
@@ -359,30 +369,21 @@ export default function CanvasEditor({
             syncToRedux();
         });
       }
-      // 2. MERGE (APPEND TO EXISTING)
+      // 2. MERGE
       else if (isMerge) {
         if (incomingObjects.length === 0) return;
-
-        // Use enlivenObjects to create instances without wiping the canvas
         fabric.util.enlivenObjects(incomingObjects, (enlivenedObjects) => {
             enlivenedObjects.forEach((obj) => {
                 fabricCanvas.add(obj);
-                // Optional: Center merged objects if desired
-                // obj.center(); 
             });
             fabricCanvas.requestRenderAll();
             syncToRedux();
         }, '');
       }
-      // 3. REPLACE (SAVED DESIGN / BLANK)
+      // 3. REPLACE (SAVED BLANK / TEMPLATE)
       else {
-        // Construct a clean JSON to replace the canvas content
-        // We preserve the background if the incoming JSON has it, otherwise keep current? 
-        // Usually, a replace should follow the incoming JSON exactly.
-        
         let finalJSON = {};
         if (dataToLoad.objects || Array.isArray(dataToLoad)) {
-             // If dataToLoad was just the object array or had objects, use our processed array
              finalJSON = { ...dataToLoad, objects: incomingObjects };
         } else {
              finalJSON = { objects: incomingObjects };
@@ -460,7 +461,6 @@ export default function CanvasEditor({
 
       const type = obj.type ? obj.type.toLowerCase() : '';
 
-      // Handle Group Selection Modification
       if (type === 'activeselection') {
         const children = [...obj.getObjects()];
         setTimeout(() => {
@@ -509,7 +509,6 @@ export default function CanvasEditor({
         return;
       }
 
-      // Handle Single Object Modification
       if (type === 'text' || type === 'textbox') {
         const newFontSize = obj.fontSize * obj.scaleX;
         obj.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
