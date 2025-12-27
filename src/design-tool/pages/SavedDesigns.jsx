@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react'; // Added useMemo
+import React, { useMemo } from 'react';
 import useUserDesigns from '../hooks/useUserDesigns';
-import { useNavigate, useLocation } from 'react-router'; // Added useLocation
+import { useNavigate, useLocation } from 'react-router';
 import { FaEdit, FaTrash, FaArrowLeft, FaPlus } from 'react-icons/fa';
-import { FiTrash } from 'react-icons/fi';
 import { db as firestore } from "@/firebase";
 import { doc, deleteDoc } from "firebase/firestore";
 import { useAuth } from '@/hooks/use-auth';
@@ -15,27 +14,21 @@ export default function SavedDesignsPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 1. Get Context from Navigation State
   const { filterMode, filterProductId, filterColor, filterSize } = location.state || {};
 
-  // 2. Filter Designs Logic
   const filteredDesigns = useMemo(() => {
-    if (!filterMode) return designs; // Show all if accessed directly
+    if (!filterMode) return designs;
 
     return designs.filter(d => {
-      // Rule 1: Always show Blank designs
-      if (d.type === 'BLANK' || !d.type) { // assume untyped are blank
+      if (d.type === 'BLANK' || !d.type) {
         if (filterMode === 'blank') return true;
-        // If in product mode, we allow blanks too (to merge)
-        return true;
+        return true; 
       }
 
-      // Rule 2: If Product Mode, show ONLY matching products
       if (filterMode === 'product') {
         return d.type === 'PRODUCT' && d.productConfig?.productId === filterProductId;
       }
 
-      // Rule 3: If Blank Mode, HIDE Products
       if (filterMode === 'blank') {
         return false;
       }
@@ -45,20 +38,32 @@ export default function SavedDesignsPage() {
   }, [designs, filterMode, filterProductId]);
 
 
-  // 3. Handle Load vs Merge
   const handleSelectDesign = (design) => {
-    // SCENARIO: We are in Product Mode AND loading a Blank Design
+    // SCENARIO 1: Merge (e.g., Adding a saved sticker to the current shirt)
     if (filterMode === 'product' && (design.type === 'BLANK' || !design.type)) {
       const targetUrl = `/design?product=${filterProductId}&color=${filterColor || ''}&size=${filterSize || ''}`;
 
       navigate(targetUrl, {
         state: {
-          mergeDesign: design, // Special flag for Editor.jsx
-          previousState: location.state // Keep context if needed
+          mergeDesign: design,
+          previousState: location.state
         }
       });
-    } else {
-      // STANDARD LOAD (Replace)
+    } 
+    // SCENARIO 2: Load a Saved Product Design (Restore Context)
+    else if (design.type === 'PRODUCT' && design.productConfig) {
+        const { productId, variantColor, variantSize } = design.productConfig;
+        
+        // ✅ FIX: Build URL params so Editor initializes in Product Mode
+        const params = new URLSearchParams();
+        if (productId) params.set('product', productId);
+        if (variantColor) params.set('color', variantColor);
+        if (variantSize) params.set('size', variantSize);
+        
+        navigate(`/design?${params.toString()}`, { state: { designToLoad: design } });
+    }
+    // SCENARIO 3: Standard Load (Blank Design)
+    else {
       navigate('/design', { state: { designToLoad: design } });
     }
   };
@@ -104,7 +109,6 @@ export default function SavedDesignsPage() {
                         width={150}
                         onClick={() => handleSelectDesign(design)}
                       />
-                      {/* Visual hint for merging */}
                       {isMergeable && (
                         <div className="merge-badge">Add to Current</div>
                       )}
