@@ -153,6 +153,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config }) 
         geometry={nodes[meshName].geometry}
         material={nodes[meshName].material}
         frustumCulled={false}
+        color={color} 
       >
         <meshStandardMaterial color={color} roughness={0.7} />
         {tex && decalProps && <CalibrationDecal texture={tex} {...decalProps} />}

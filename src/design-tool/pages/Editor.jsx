@@ -588,8 +588,6 @@ export default function EditorPanel() {
                     selectedColor={canvasBg}
                 />
             </div>
-
-            {/* 🗑️ REMOVED SLIDERS UI BLOCK HERE */}
         </div>
     );
 }

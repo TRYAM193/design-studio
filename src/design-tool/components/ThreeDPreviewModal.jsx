@@ -13,7 +13,7 @@ export function ThreeDPreviewModal({
     isSaving,
     productId,
     productData = {},
-    selectedColor = "#FFFFFF" 
+    selectedColor
 }) {
     const has3D = !!productData.model3d;
     const mockups = productData.mockups || {};
