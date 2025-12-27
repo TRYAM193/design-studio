@@ -298,7 +298,6 @@ export default function EditorPanel() {
 
                     // 4. Render and Save
                     fabricCanvas.requestRenderAll();
-                    // dispatch(setCanvasObjects(...)); // Sync Redux
 
                     // Clean up state so we don't re-merge on refresh
                     window.history.replaceState({}, document.title);
