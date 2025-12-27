@@ -30,7 +30,7 @@ const buildDesignDoc = (id, canvas, productData, viewStates, currentView, isNew)
     const currentJSON = removeUndefined(canvas.toJSON());
     if (currentJSON.objects) {
       console.log('Before removing border:', currentJSON.objects);
-        currentJSON.objects = currentJSON.objects.filter(obj => obj.customId !== 'print-area-border');
+      currentJSON.objects = currentJSON.objects.filter(obj => obj.customId !== 'print-area-border');
     }
     
     // 2. Merge with stored views (Front + Back + etc.)
