@@ -151,11 +151,13 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
+    // ✅ FIX: Use reduce to ensure Unique IDs and prevent Redux duplicates
     const addObj = () => {
-        const ids = canvasObjects.map(obj => obj.id);
+        // 1. Track IDs encountered in this batch to prevent duplicates
+        const seenIds = new Set();
 
-        const newObjs = fabricCanvas.getObjects().map((obj, i) => {
-            if (ids.includes(obj.id)) return;
+        const newObjs = fabricCanvas.getObjects().reduce((acc, obj, i) => {
+            // Extraction of common properties
             const commonProps = {
                 left: obj.left,
                 top: obj.top,
@@ -206,13 +208,35 @@ export default function EditorPanel() {
                 };
             }
 
-            return {
-                id: obj.customId || Date.now() + i,
+            // 2. ID Handling Constraint
+            // Check if the object has a valid ID, or fallback to generation
+            let finalId = obj.customId || obj.id;
+
+            // CRITICAL: If this ID has already been seen in this loop (duplicate!), generate a new one.
+            if (!finalId || seenIds.has(finalId)) {
+                // Generate a new unique ID
+                finalId = `${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                // Update the actual canvas object so it stays in sync with Redux
+                obj.set('customId', finalId);
+                obj.set('id', finalId);
+            }
+            
+            // Mark this ID as taken
+            seenIds.add(finalId);
+
+            // 3. Add to the accumulator (Filter logic essentially happens here by controlling what we push)
+            acc.push({
+                id: finalId,
                 type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
                 ...(obj.type === 'image' && { src: obj.src }),
                 props: { ...commonProps, ...specificProps }
-            };
-        });
+            });
+
+            return acc;
+        }, []); // Initialize with empty array
+
+        // Dispatch the clean, unique list to Redux
         if (newObjs) {
             store.dispatch(setCanvasObjects(newObjs));
         }
