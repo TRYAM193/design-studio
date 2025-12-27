@@ -25,7 +25,8 @@ export default function MainToolbar({
     brandDisplay, 
     fabricCanvas,
     productId, // <--- Receive this from Editor.jsx
-    urlColor
+    urlColor,
+    urlSize
 }) {
 
     // ✅ NEW: Handle navigation with context
@@ -35,6 +36,7 @@ export default function MainToolbar({
                 filterMode: productId ? 'product' : 'blank', 
                 filterProductId: productId,
                 filterColor: urlColor
+                Filter
             } 
         });
     };
