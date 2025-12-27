@@ -35,8 +35,8 @@ export default function MainToolbar({
             state: { 
                 filterMode: productId ? 'product' : 'blank', 
                 filterProductId: productId,
-                filterColor: urlColor
-                Filter
+                filterColor: urlColor,
+                filterSize: urlSize
             } 
         });
     };
