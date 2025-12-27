@@ -506,7 +506,8 @@ export default function EditorPanel() {
                     urlSize={urlSize || currentDesign?.productConfig?.variantSize}
                 />
                 
-                {activePanel && <ContextualSidebar activePanel={activePanel} setActivePanel={setActivePanel} addText={addText} addHeading={addHeading} addSubheading={addSubheading} />}
+                {activePanel && <ContextualSidebar activePanel={activePanel} setActivePanel={setActivePanel} addText={addText} addHeading={addHeading} addSubheading={addSubheading} productId={urlProductId || currentDesign?.productConfig?.productId}
+                        handleLoadSavedDesign={handleLoadSavedDesign} />}
 
                 <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
                     
