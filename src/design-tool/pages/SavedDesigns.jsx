@@ -117,7 +117,7 @@ export default function SavedDesignsPage() {
                         >
                            {isMergeable ? <FaPlus /> : <FaEdit />}
                         </button>
-                        <FaTrash
+                        <FiTrash
                           className="icon delete"
                           onClick={() => handleDelete(userId, design.id)}
                         />
