@@ -1,3 +1,4 @@
+// src/design-tool/components/MainToolbar.jsx
 import React from 'react';
 import ImageHandler from './Image';
 import {
@@ -15,7 +16,6 @@ const ToolButton = ({ icon: Icon, label, isActive, onClick }) => (
     </button>
 );
 
-// ✅ ADDED productId prop
 export default function MainToolbar({ 
     activePanel, 
     onSelectTool, 
@@ -24,21 +24,14 @@ export default function MainToolbar({
     navigation, 
     brandDisplay, 
     fabricCanvas,
-    productId, // <--- Receive this from Editor.jsx
+    productId,
     urlColor,
     urlSize
 }) {
 
-    // ✅ NEW: Handle navigation with context
+    // ✅ UPDATED: Switch tool state instead of navigating
     const handleSavedDesignsClick = () => {
-        navigation('/design/saved', { 
-            state: { 
-                filterMode: productId ? 'product' : 'blank', 
-                filterProductId: productId,
-                filterColor: urlColor,
-                filterSize: urlSize
-            } 
-        });
+        onSelectTool('saved');
     };
 
     return (
@@ -47,8 +40,8 @@ export default function MainToolbar({
 
             <button
                 title="Saved Designs"
-                onClick={handleSavedDesignsClick} // <--- Use new handler
-                className="tool-button-wrapper saved-designs-link"
+                onClick={handleSavedDesignsClick} 
+                className={`tool-button-wrapper saved-designs-link ${activePanel === 'saved' ? 'active' : ''}`}
             >
                 <FiFolder size={24} />
                 <span>Saved</span>
@@ -62,6 +55,7 @@ export default function MainToolbar({
                 isActive={activePanel === 'text'}
                 onClick={() => onSelectTool('text')}
             />
+            {/* ... Rest of the existing toolbar code ... */}
             <ImageHandler
                 setSelectedId={setSelectedId}
                 setActiveTool={onSelectTool}
