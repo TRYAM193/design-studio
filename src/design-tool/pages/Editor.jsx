@@ -338,6 +338,8 @@ export default function EditorPanel() {
 
     }, [location.state, fabricCanvas]);
 
+    console.log(fabricCanvas)
+
     const dataURLtoBlob = (dataURL) => {
         const arr = dataURL.split(',');
         const mime = arr[0].match(/:(.*?);/)[1];
