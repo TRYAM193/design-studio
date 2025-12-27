@@ -70,7 +70,7 @@ export default function EditorPanel() {
         print_areas: { front: { width: 4500, height: 5400 } },
         options: { colors: [] }
     });
-    console.log("Product Data:", productData);
+
     const [canvasBg, setCanvasBg] = useState("#FFFFFF");
     const [currentView, setCurrentView] = useState("front");
     const [viewStates, setViewStates] = useState({});
