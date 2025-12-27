@@ -65,7 +65,7 @@ export default function EditorPanel() {
 
     const productId = searchParams.get('product') || currentDesign?.productConfig?.productId;
     const urlColor = searchParams.get('color') || currentDesign?.productConfig?.variantColor;
-    
+    const urlSize = searchParams.get('size') || currentDesign?.productConfig?.variantSize;
 
     const [productData, setProductData] = useState({
         title: "Custom Design",
@@ -500,6 +500,7 @@ export default function EditorPanel() {
                     brandDisplay={BrandDisplay}
                     fabricCanvas={fabricCanvas}
                     productId={productId}
+                    
                 />
 
                 {activePanel && (
