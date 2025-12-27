@@ -411,7 +411,6 @@ export default function EditorPanel() {
                                  <div className="grid grid-cols-4 gap-3">
                                      {productData.options.colors.map(color => (
                                          <button key={color} onClick={() => handleColorChange(color)} className={`w-10 h-10 rounded-full border-2 ${canvasBg.toLowerCase() === (COLOR_MAP[color]||color).toLowerCase() ? "border-indigo-600" : ""}`} style={{ backgroundColor: COLOR_MAP[color] || color }} title={color}>
-                                            {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} /></span>}
                                          </button>
                                      ))}
                                  </div>
