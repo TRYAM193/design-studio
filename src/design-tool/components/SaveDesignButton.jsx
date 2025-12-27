@@ -1,6 +1,7 @@
 // src/design-tool/components/SaveDesignButton.jsx
 import React, { useState } from 'react';
-import { saveDesign } from '../utils/saveDesign';
+// ✅ Import both functions
+import { saveNewDesign, overwriteDesign } from '../saveDesign'; 
 import SavePromptModal from './SavePromptModal';
 import { FiSave } from 'react-icons/fi';
 import { Button } from "@/components/ui/button";
@@ -11,52 +12,50 @@ export default function SaveDesignButton({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Logic: 
-  // If editingDesignId exists -> Modal shows "Update" vs "Copy"
-  // If null -> Modal shows Input only
-
   const handleSaveClick = () => {
     setIsModalOpen(true);
   };
 
   const handleConfirmSave = async (name, saveAsCopy) => {
-    setIsSaving(true);
-    try {
-        const snapshot = onGetSnapshot ? onGetSnapshot() : null;
-        
-        // Prepare current state
-        const currentCanvasObjects = canvas.present;
-        const finalViewStates = {
-            ...viewStates,
-            [currentView]: currentCanvasObjects
-        };
+    // 1. Capture Snapshot
+    const snapshot = onGetSnapshot ? onGetSnapshot() : null;
+    let result;
 
-        // DETERMINISTIC ID LOGIC:
-        // If saveAsCopy is TRUE -> Pass null (Create New)
-        // If saveAsCopy is FALSE -> Pass editingDesignId (Update Existing)
-        const targetDesignId = saveAsCopy ? null : editingDesignId;
+    // 2. Decide: New vs Overwrite
+    // IF it's a "Save As Copy" OR there is no existing ID -> CREATE NEW
+    if (saveAsCopy || !editingDesignId) {
+       result = await saveNewDesign(
+         userId,
+         canvas.present,
+         viewStates,
+         productData,
+         currentView,
+         setIsSaving,
+         snapshot,
+         name // Pass Name
+       );
+    } 
+    // ELSE -> OVERWRITE EXISTING
+    else {
+       result = await overwriteDesign(
+         userId,
+         editingDesignId,
+         canvas.present,
+         viewStates,
+         productData,
+         currentView,
+         setIsSaving,
+         snapshot,
+         name // Pass Name (allows renaming while overwriting)
+       );
+    }
 
-        const savedId = await saveDesign({
-            userId,
-            designId: targetDesignId, 
-            canvasObjects: currentCanvasObjects,
-            viewStates: finalViewStates,
-            previewImage: snapshot,
-            productConfig: {
-                productId: productData.productId,
-                variantColor: productData.color,
-                variantSize: productData.size
-            },
-            name: name
-        });
-
-        if (onSaveSuccess) onSaveSuccess(savedId);
+    // 3. Handle Result
+    if (result && result.success) {
+        if (onSaveSuccess) onSaveSuccess(result.id);
         setIsModalOpen(false);
-    } catch (error) {
-        console.error("Save failed:", error);
+    } else {
         alert("Failed to save design");
-    } finally {
-        setIsSaving(false);
     }
   };
 
@@ -72,7 +71,6 @@ export default function SaveDesignButton({
         onClose={() => setIsModalOpen(false)} 
         onConfirm={handleConfirmSave}
         isSaving={isSaving}
-        // ✅ Pass Context to Modal
         isExistingDesign={!!editingDesignId}
         currentName={currentDesignName}
       />
