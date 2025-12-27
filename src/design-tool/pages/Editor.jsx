@@ -1,7 +1,7 @@
 // src/design-tool/pages/Editor.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
-import { v4 as uuidv4 } from 'uuid';
+import * as fabric from 'fabric';
 import CanvasEditor from '../components/CanvasEditor';
 import Text from '../functions/text';
 import updateObject from '../functions/update';
@@ -99,7 +99,6 @@ export default function EditorPanel() {
 
     // ✅ Initialize dims directly from default or product data logic
     const [canvasDims, setCanvasDims] = useState({ width: 300, height: 400 });
-    const [loadTimestamp, setLoadTimestamp] = useState(0);
 
     useEffect(() => {
         async function initEditor() {
@@ -123,6 +122,7 @@ export default function EditorPanel() {
         }
         initEditor();
     }, [productId]);
+    console.log(canvasObjects);
 
     // ✅ Effect: Sync canvasDims with Product DB Data when view or product changes
     useEffect(() => {
@@ -154,168 +154,186 @@ export default function EditorPanel() {
     }, [productData, currentView]);
 
     // ✅ FIX: Use reduce to ensure Unique IDs and prevent Redux duplicates
-    // ✅ FIX: addObj now accepts a list to Sync specific objects only
-    const addObj = (objectsList) => {
-        if (!objectsList || !Array.isArray(objectsList)) return;
+    const addObj = () => {
+        // 1. Track IDs encountered in this batch to prevent duplicates
+        const seenIds = new Set();
 
-        const formattedObjects = objectsList.map((obj) => {
+        const newObjs = fabricCanvas.getObjects().reduce((acc, obj, i) => {
+            // Extraction of common properties
             const commonProps = {
-                left: obj.left, top: obj.top, angle: obj.angle, fill: obj.fill,
-                opacity: obj.opacity, shadowBlur: obj.shadowBlur || 0,
-                shadowOffsetX: obj.shadowOffsetX || 0, shadowOffsetY: obj.shadowOffsetY || 0,
-                shadowColor: obj.shadowColor || '', stroke: obj.stroke,
-                strokeWidth: obj.strokeWidth, scaleX: obj.scaleX || 1, scaleY: obj.scaleY || 1,
-                lockMovementX: obj.lockMovementX, lockMovementY: obj.lockMovementY,
+                left: obj.left,
+                top: obj.top,
+                angle: obj.angle,
+                fill: obj.fill,
+                opacity: obj.opacity,
+                shadowBlur: obj.shadowBlur || 0,
+                shadowOffsetX: obj.shadowOffsetX || 0,
+                shadowOffsetY: obj.shadowOffsetY || 0,
+                shadowColor: obj.shadowColor || '',
+                stroke: obj.stroke,
+                strokeWidth: obj.strokeWidth,
+                scaleX: obj.scaleX || 1,
+                scaleY: obj.scaleY || 1,
+                lockMovementX: obj.lockMovementX,
+                lockMovementY: obj.lockMovementY,
             };
 
             let specificProps = {};
-            const type = obj.type;
 
-            if (type === 'image') {
-                specificProps = { width: obj.width, height: obj.height, cropX: obj.cropX, cropY: obj.cropY, src: obj.src };
-            } else if (['text', 'textbox', 'i-text', 'circle-text'].includes(type) || obj.textEffect === 'circle') {
-                specificProps = { text: obj.text, fontSize: obj.fontSize, fontFamily: obj.fontFamily, charSpacing: obj.charSpacing, textAlign: obj.textAlign, textStyle: obj.textStyle, textEffect: obj.textEffect, effectValue: obj.effectValue };
-            } else {
-                specificProps = { width: obj.width, height: obj.height, radius: obj.radius, rx: obj.rx, ry: obj.ry };
+            if (obj.type === 'image') {
+                specificProps = {
+                    width: obj.width,
+                    height: obj.height,
+                    cropX: obj.cropX,
+                    cropY: obj.cropY,
+                };
+            }
+            else if (['text', 'textbox', 'i-text', 'circle-text'].includes(obj.type) || obj.textEffect === 'circle') {
+                specificProps = {
+                    text: obj.text,
+                    fontSize: obj.fontSize,
+                    fontFamily: obj.fontFamily,
+                    charSpacing: obj.charSpacing,
+                    textAlign: obj.textAlign,
+                    textStyle: obj.textStyle,
+                    textEffect: obj.textEffect,
+                    effectValue: obj.effectValue,
+                };
+            }
+            else {
+                specificProps = {
+                    width: obj.width,
+                    height: obj.height,
+                    radius: obj.radius,
+                    rx: obj.rx,
+                    ry: obj.ry,
+                };
             }
 
-            return {
-                id: obj.customId || obj.id,
-                type: obj.textEffect === 'circle' ? 'circle-text' : type,
-                ...(type === 'image' && { src: obj.src }),
+            // 2. ID Handling Constraint
+            // Check if the object has a valid ID, or fallback to generation
+            let finalId = obj.customId || obj.id;
+
+            // CRITICAL: If this ID has already been seen in this loop (duplicate!), generate a new one.
+            if (!finalId || seenIds.has(finalId)) {
+                // Generate a new unique ID
+                finalId = `${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`;
+                
+                // Update the actual canvas object so it stays in sync with Redux
+                obj.set('customId', finalId);
+                obj.set('id', finalId);
+            }
+            
+            // Mark this ID as taken
+            seenIds.add(finalId);
+
+            // 3. Add to the accumulator (Filter logic essentially happens here by controlling what we push)
+            acc.push({
+                id: finalId,
+                type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+                ...(obj.type === 'image' && { src: obj.src }),
                 props: { ...commonProps, ...specificProps }
-            };
-        });
-        console.log(formattedObjects)
+            });
 
-        store.dispatch(setCanvasObjects(formattedObjects));
-    };
+            return acc;
+        }, []); // Initialize with empty array
 
+        // Dispatch the clean, unique list to Redux
+        if (newObjs) {
+            store.dispatch(setCanvasObjects(newObjs));
+        }
+    }
 
-    // ✅ FIX: Merge with Strict Border Deduplication
+    // 🟩 UPDATED LOADING LOGIC
     useEffect(() => {
-        if (!location.state || !fabricCanvas) return;
+        // Helper to process the loaded data
+        const handleLoadDesign = (design) => {
+            setCurrentDesign(design);
+            setEditingDesignId(design.id);
 
-        const handleLoad = () => {
-            const payload = location.state.designToLoad || location.state.mergeDesign;
-            const isMerge = !!location.state.mergeDesign;
+            let parsedData = design.canvasJSON;
+            if (typeof parsedData === 'string') parsedData = JSON.parse(parsedData);
 
-            if (!payload) return;
-
-            let parsedJSON = payload.canvasJSON;
-            if (typeof parsedJSON === 'string') {
-                try { parsedJSON = JSON.parse(parsedJSON); } catch(e) { console.error("JSON Parse Error", e); return; }
-            }
-
-            // ---------------------------------------------------------
-            // CASE A: PRODUCT DESIGN (Replace Full Context)
-            // ---------------------------------------------------------
-            if (payload.type === 'PRODUCT' && payload.productConfig && !isMerge) {
-                // ... (Your existing Product Load Logic) ...
+            // CHECK: Is this a Product Design (multi-view) or Blank (single)?
+            if (design.type === 'PRODUCT' && design.productConfig) {
+                // 1. Load Product Configuration
                 setProductData(prev => ({
                     ...prev,
-                    productId: payload.productConfig.productId,
-                    options: { ...prev.options, colors: [payload.productConfig.variantColor] }
+                    productId: design.productConfig.productId,
+                    options: { ...prev.options, colors: [design.productConfig.variantColor] } // visuals
                 }));
-                setCanvasBg(payload.productConfig.variantColor);
-                setViewStates(parsedJSON); 
-                const activeView = payload.productConfig.activeView || 'front';
+                setCanvasBg(design.productConfig.variantColor);
+
+                // 2. Hydrate View States (CRITICAL FOR OVERWRITING)
+                // We store ALL views in memory so we don't lose them when saving
+                setViewStates(parsedData);
+
+                // 3. Load the Active View onto Canvas
+                const activeView = design.productConfig.activeView || 'front';
                 setCurrentView(activeView);
 
-                const activeViewJSON = parsedJSON[activeView];
-                if (activeViewJSON) {
-                    // Filter system objects before loading to prevent duplication
-                    if (activeViewJSON.objects) {
-                        activeViewJSON.objects = activeViewJSON.objects.filter(o => o.id !== 'print-area-border');
-                    }
-                    fabricCanvas.loadFromJSON(activeViewJSON, () => {
+                // Load specifically the active view's JSON
+                if (parsedData[activeView]) {
+                    fabricCanvas.loadFromJSON(parsedData[activeView], () => {
                         fabricCanvas.renderAll();
-                        addObj(activeViewJSON.objects || []);
-                        setLoadTimestamp(Date.now()); 
+                        addObj(); // Sync Redux
                     });
                 }
-            } 
-            // ---------------------------------------------------------
-            // CASE B: MERGE / BLANK DESIGN
-            // ---------------------------------------------------------
-            else {
-                // 1. Get Objects from Incoming Design
-                let incomingObjects = parsedJSON.objects || (Array.isArray(parsedJSON) ? parsedJSON : []);
-                
-                // 2. Clean Incoming: Remove any borders it might have
-                incomingObjects = incomingObjects.filter(obj => obj.id !== 'print-area-border');
 
-                // 3. Assign New IDs to Incoming
-                incomingObjects.forEach(obj => {
-                    const newId = uuidv4();
-                    obj.id = newId;
-                    obj.customId = newId;
+            } else {
+                // --- BLANK DESIGN HANDLING ---
+                // Just load the JSON directly
+                fabricCanvas.loadFromJSON(parsedData, () => {
+                    fabricCanvas.renderAll();
+                    addObj(); // Sync Redux
                 });
-
-                if (isMerge) {
-                    // --- MERGE LOGIC (The "Save Variable" Strategy) ---
-                    
-                    // A. Get Current JSON
-                    const currentJSON = fabricCanvas.toJSON(['customId', 'id']);
-
-                    // B. EXTRACT CLIPPATH (Save in variable)
-                    let savedClipPath = null;
-                    if (currentJSON.clipPath) {
-                        savedClipPath = currentJSON.clipPath;
-                        delete currentJSON.clipPath; // Remove from merge base
-                    }
-
-                    // C. EXTRACT BORDER (Save in variable)
-                    let savedBorder = null;
-                    const borderIndex = currentJSON.objects.findIndex(obj => obj.id === 'print-area-border');
-                    if (borderIndex > -1) {
-                        savedBorder = currentJSON.objects[borderIndex];
-                        currentJSON.objects.splice(borderIndex, 1); // Remove from merge base
-                    }
-
-                    // D. COMBINE Remaining Current + New Objects
-                    const combinedObjects = [...currentJSON.objects, ...incomingObjects];
-                    currentJSON.objects = combinedObjects;
-
-                    // E. RE-ADD BORDER (At the end/top)
-                    if (savedBorder) {
-                        currentJSON.objects.push(savedBorder);
-                    }
-
-                    // F. RE-ADD CLIPPATH
-                    if (savedClipPath) {
-                        currentJSON.clipPath = savedClipPath;
-                    }
-
-                    // G. LOAD Final State
-                    fabricCanvas.loadFromJSON(currentJSON, () => {
-                        fabricCanvas.renderAll();
-                        
-                        // Sync ONLY the user objects (Filter border out for Redux)
-                        // We filter it here so Redux doesn't manage the border
-                        const objectsForRedux = combinedObjects.filter(obj => obj.id !== 'print-area-border');
-                        addObj(objectsForRedux);
-                        
-                        setLoadTimestamp(Date.now());
-                    });
-
-                } else {
-                    // --- REPLACE LOGIC ---
-                    parsedJSON.objects = incomingObjects;
-                    fabricCanvas.loadFromJSON(parsedJSON, () => {
-                        fabricCanvas.renderAll();
-                        addObj(incomingObjects);
-                        setLoadTimestamp(Date.now());
-                    });
-                }
             }
         };
 
-        handleLoad();
-        window.history.replaceState({}, document.title);
+        // 1. Check Location State (Coming from Dashboard)
+        if (location.state?.designToLoad && fabricCanvas) {
+            handleLoadDesign(location.state.designToLoad);
+        }
 
+        if (location.state?.mergeDesign) {
+            const { mergeDesign } = location.state;
+            console.log("Merging design:", mergeDesign);
+
+            // 1. Get the JSON data
+            let jsonData = mergeDesign.canvasJSON;
+            if (typeof jsonData === 'string') {
+                try { jsonData = JSON.parse(jsonData); }
+                catch (e) { console.error("Bad JSON", e); return; }
+            }
+
+            // If it's a BLANK design (which it should be), objects are in jsonData.objects
+            const objectsToLoad = jsonData.objects || [];
+
+            if (objectsToLoad.length > 0) {
+                // 2. Deselect current objects
+                // fabricCanvas.discardActiveObject();
+
+                // 3. Revive objects from JSON
+                fabric.util.enlivenObjects(objectsToLoad, (enlivenedObjects) => {
+                    enlivenedObjects.forEach((obj) => {
+
+                        // Important: Regenerate ID to prevent sync conflicts
+                        obj.set('id', uuidv4());
+                        obj.set('customId', uuidv4());
+
+                        fabricCanvas.add(obj);
+                    });
+
+                    // 4. Render and Save
+                    addObj();
+                    fabricCanvas.requestRenderAll();
+
+                    // Clean up state so we don't re-merge on refresh
+                    window.history.replaceState({}, document.title);
+                }, 'fabric');
+            }
+        }
     }, [location.state, fabricCanvas]);
-    console.log(fabricCanvas?.getActiveObject())
 
     const dataURLtoBlob = (dataURL) => {
         const arr = dataURL.split(',');
