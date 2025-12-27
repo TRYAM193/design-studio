@@ -94,7 +94,7 @@ export default function EditorPanel() {
         async function initProduct() {
             // Priority: Design Config > URL Param
             const pid = currentDesign?.productConfig?.productId || urlProductId;
-            
+
             if (!pid) return;
 
             try {
@@ -107,7 +107,7 @@ export default function EditorPanel() {
                         print_areas: data.print_areas || { front: { width: 4500, height: 5400 } },
                         options: data.options || { colors: [] }
                     });
-                    
+
                     // Initialize Color: Saved Design > URL Param > Default
                     const savedColor = currentDesign?.productConfig?.variantColor;
                     const initialColor = savedColor || urlColor || (data.options?.colors?.[0] || "White");
@@ -123,7 +123,7 @@ export default function EditorPanel() {
     // ✅ 2. FETCH SAVED DESIGN (Redux Loader)
     useEffect(() => {
         if (!urlDesignId || !userId) return;
-        
+
         // Prevent double loading
         if (editingDesignId === urlDesignId) return;
 
@@ -131,7 +131,7 @@ export default function EditorPanel() {
             try {
                 const designRef = doc(db, `users/${userId}/designs`, urlDesignId);
                 const designSnap = await getDoc(designRef);
-                
+
                 if (designSnap.exists()) {
                     const design = designSnap.data();
                     setCurrentDesign(design);
@@ -151,7 +151,7 @@ export default function EditorPanel() {
                         // This replaces "loadFromJSON" in CanvasEditor
                         const activeObjects = savedStates[activeView] || [];
                         dispatch(setCanvasObjects(activeObjects));
-                    } 
+                    }
                     // B. BLANK MODE
                     else {
                         const objects = design.canvasData || [];
@@ -173,11 +173,11 @@ export default function EditorPanel() {
             // If we loaded a design, ensure URL params match (so refresh works)
             const params = new URLSearchParams(searchParams);
             const { productId, variantColor, variantSize } = currentDesign.productConfig;
-            
+
             if (productId && params.get('product') !== productId) params.set('product', productId);
             if (variantColor && params.get('color') !== variantColor) params.set('color', variantColor);
             if (variantSize && params.get('size') !== variantSize) params.set('size', variantSize);
-            
+
             setSearchParams(params, { replace: true });
         }
     }, [currentDesign, setSearchParams]);
@@ -220,31 +220,31 @@ export default function EditorPanel() {
         const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
         let wasBorderVisible = false;
         if (borderObj) { wasBorderVisible = borderObj.visible; borderObj.visible = false; }
-        
+
         fabricCanvas.renderAll();
         const dataUrl = fabricCanvas.toDataURL({ format: 'png', quality: 0.8, multiplier: 0.5, enableRetinaScaling: false });
-        
+
         fabricCanvas.backgroundColor = originalBg;
         fabricCanvas.clipPath = originalClip;
         if (borderObj) borderObj.visible = wasBorderVisible;
         fabricCanvas.renderAll();
         return dataUrl;
     };
-    
+
     // Capture function for Preview/View Switch
     const captureCurrentCanvas = () => {
-         const url = getCleanDataURL();
-         if(!url) return null;
-         
-         // Convert to blob for 3D preview
-         const arr = url.split(',');
-         const mime = arr[0].match(/:(.*?);/)[1];
-         const bstr = atob(arr[1]);
-         let n = bstr.length;
-         const u8arr = new Uint8Array(n);
-         while (n--) { u8arr[n] = bstr.charCodeAt(n); }
-         const blob = new Blob([u8arr], { type: mime });
-         return { blob, url: URL.createObjectURL(blob) };
+        const url = getCleanDataURL();
+        if (!url) return null;
+
+        // Convert to blob for 3D preview
+        const arr = url.split(',');
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+        const blob = new Blob([u8arr], { type: mime });
+        return { blob, url: URL.createObjectURL(blob) };
     }
 
     const handleSwitchView = async (newView) => {
@@ -252,7 +252,7 @@ export default function EditorPanel() {
 
         // 1. Save current view state
         const currentSnapshot = captureCurrentCanvas();
-        if(currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
+        if (currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
 
         const currentCanvasState = store.getState().canvas.present; // Save REDUX ARRAY
         setViewStates(prev => ({ ...prev, [currentView]: currentCanvasState }));
@@ -265,7 +265,7 @@ export default function EditorPanel() {
         dispatch(setCanvasObjects(nextObjects)); // This triggers CanvasEditor to draw
         dispatch(setHistory({ past: [], present: nextObjects, future: [] })); // Reset Undo/Redo for new view
     };
-    
+
     // ... (Keep Color Change, Preview Generation, Add to Cart) ...
     const handleColorChange = (colorName) => {
         const hex = COLOR_MAP[colorName] || colorName;
@@ -274,14 +274,14 @@ export default function EditorPanel() {
     };
 
     const handleGeneratePreview = () => {
-         if (!fabricCanvas) return;
-         setIsGeneratingPreview(true);
-         setTimeout(() => {
+        if (!fabricCanvas) return;
+        setIsGeneratingPreview(true);
+        setTimeout(() => {
             const currentSnapshot = captureCurrentCanvas();
             setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
             setIsPreviewOpen(true);
             setIsGeneratingPreview(false);
-         }, 50);
+        }, 50);
     };
 
     const handleAddToCart = async () => {
@@ -321,12 +321,12 @@ export default function EditorPanel() {
                     urlColor={urlColor || currentDesign?.productConfig?.variantColor}
                     urlSize={urlSize || currentDesign?.productConfig?.variantSize}
                 />
-                
+
                 {/* ... Sidebar ... */}
                 {activePanel && <ContextualSidebar activePanel={activePanel} setActivePanel={setActivePanel} addText={addText} addHeading={addHeading} addSubheading={addSubheading} />}
 
                 <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
-                    
+
                     {/* View Switcher */}
                     {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
@@ -344,10 +344,10 @@ export default function EditorPanel() {
                             <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={future.length === 0}><FiRotateCw size={18} /></button>
                         </div>
                         <div className="control-group divider">
-                             <button className="top-bar-button danger" onClick={() => removeObject(selectedId)}><FiTrash2 size={18} /></button>
+                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)}><FiTrash2 size={18} /></button>
                         </div>
                         {selectedId && !showProperties && (
-                             <button className="top-bar-button accent phone-only" onClick={() => setShowProperties(true)}><FiSettings size={18} /> Edit</button>
+                            <button className="top-bar-button accent phone-only" onClick={() => setShowProperties(true)}><FiSettings size={18} /> Edit</button>
                         )}
                         <div className="control-group">
                             {fabricCanvas && (
@@ -360,7 +360,7 @@ export default function EditorPanel() {
                                     className="top-bar-button"
                                     currentView={currentView}
                                     viewStates={viewStates}
-                                    
+
                                     // 🚀 CRITICAL: Passing URL/Design Data explicitly
                                     productData={{
                                         productId: urlProductId || currentDesign?.productConfig?.productId,
@@ -368,10 +368,10 @@ export default function EditorPanel() {
                                         size: urlSize || currentDesign?.productConfig?.variantSize,   // Using URL/State Data
                                         print_areas: productData.print_areas
                                     }}
-                                    
+
                                     // We pass the RAW REDUX ARRAY for the current view
-                                    currentObjects={canvasObjects} 
-                                    
+                                    currentObjects={canvasObjects}
+
                                     onGetSnapshot={getCleanDataURL}
                                     onSaveSuccess={handleSaveSuccess}
                                 />
