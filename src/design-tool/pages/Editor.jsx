@@ -122,7 +122,6 @@ export default function EditorPanel() {
         }
         initEditor();
     }, [productId]);
-    console.log(canvasObjects);
 
     // ✅ Effect: Sync canvasDims with Product DB Data when view or product changes
     useEffect(() => {
