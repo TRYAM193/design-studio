@@ -309,7 +309,7 @@ export default function EditorPanel() {
 
             if (objectsToLoad.length > 0) {
                 // 2. Deselect current objects
-                fabricCanvas.discardActiveObject();
+                // fabricCanvas.discardActiveObject();
 
                 // 3. Revive objects from JSON
                 fabric.util.enlivenObjects(objectsToLoad, (enlivenedObjects) => {
