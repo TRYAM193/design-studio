@@ -200,7 +200,7 @@ export default function CanvasEditor({
         strokeDashArray: [5, 5],
         selectable: false,
         evented: false,
-        id: 'print-area-border'
+        customId: 'print-area-border'
       });
 
       canvas.add(visualBorder);
