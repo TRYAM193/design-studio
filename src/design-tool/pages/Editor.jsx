@@ -219,97 +219,180 @@ export default function EditorPanel() {
 
 
     // ✅ FIX: Merge with Strict Border Deduplication
-    useEffect(() => {
+   useEffect(() => {
         if (!location.state || !fabricCanvas) return;
 
-        // --- SCENARIO 1: STANDARD LOAD (Replace Everything) ---
-        if (location.state.designToLoad) {
-            const { designToLoad } = location.state;
-            setCurrentDesign(designToLoad);
-            setEditingDesignId(designToLoad.id);
+        const handleLoad = async () => {
+            // 1. Determine Input Data
+            const payload = location.state.designToLoad || location.state.mergeDesign;
+            const isMerge = !!location.state.mergeDesign;
+            
+            if (!payload) return;
 
-            let parsedData = designToLoad.canvasJSON;
-            if (typeof parsedData === 'string') {
-                try { parsedData = JSON.parse(parsedData); } catch (e) { }
+            // 2. Parse JSON
+            let parsedJSON = payload.canvasJSON;
+            if (typeof parsedJSON === 'string') {
+                try { parsedJSON = JSON.parse(parsedJSON); } catch(e) { console.error("JSON Error", e); return; }
             }
 
-            // Handle Product vs Blank
-            if (designToLoad.type === 'PRODUCT' && designToLoad.productConfig) {
+            // ---------------------------------------------------------
+            // CASE A: PRODUCT DESIGN (Multi-View) -> REPLACE EVERYTHING
+            // ---------------------------------------------------------
+            if (payload.type === 'PRODUCT' && payload.productConfig && !isMerge) {
+                console.log("Loading Product Design...");
+
+                // 1. Setup Environment (Colors, Product Data)
                 setProductData(prev => ({
                     ...prev,
-                    productId: designToLoad.productConfig.productId,
-                    options: { ...prev.options, colors: [designToLoad.productConfig.variantColor] }
+                    productId: payload.productConfig.productId,
+                    options: { ...prev.options, colors: [payload.productConfig.variantColor] }
                 }));
-                setCanvasBg(designToLoad.productConfig.variantColor);
-                setViewStates(parsedData);
-
-                const activeView = designToLoad.productConfig.activeView || 'front';
+                setCanvasBg(payload.productConfig.variantColor);
+                
+                // 2. Load View States (Front, Back, etc.)
+                setViewStates(parsedJSON); 
+                
+                // 3. Load Active View
+                const activeView = payload.productConfig.activeView || 'front';
                 setCurrentView(activeView);
 
-                if (parsedData[activeView]) {
-                    fabricCanvas.loadFromJSON(parsedData[activeView], () => {
+                const activeViewJSON = parsedJSON[activeView];
+                if (activeViewJSON) {
+                    // Filter Border before loading
+                    if (activeViewJSON.objects) {
+                        activeViewJSON.objects = activeViewJSON.objects.filter(o => o.id !== 'print-area-border');
+                    }
+
+                    // Load Visuals
+                    fabricCanvas.loadFromJSON(activeViewJSON, () => {
                         fabricCanvas.renderAll();
-                        addObj(parsedData.objects);
+                        // Sync Redux
+                        addObj(activeViewJSON.objects || []);
+                        setLoadTimestamp(Date.now()); // Trigger border refresh
                     });
                 }
-            } else {
-                // Blank Design
-                fabricCanvas.loadFromJSON(parsedData, () => {
-                    fabricCanvas.renderAll();
-                    addObj();
-                });
-            }
-        }
+            } 
+            // ---------------------------------------------------------
+            // CASE B: BLANK/SINGLE DESIGN -> MERGE OR LOAD
+            // ---------------------------------------------------------
+            else {
+                // Get Objects List (Handle standard JSON or direct Array)
+                let incomingObjects = parsedJSON.objects || (Array.isArray(parsedJSON) ? parsedJSON : []);
+                
+                // 1. Clean Data (Remove Borders)
+                incomingObjects = incomingObjects.filter(obj => obj.id !== 'print-area-border');
 
-        // --- SCENARIO 2: MERGE LOAD (Append Objects to Current) ---
-        if (location.state.mergeDesign) {
-            const { mergeDesign } = location.state;
-            console.log("Merging Design:", mergeDesign);
+                if (isMerge) {
+                    console.log("Merging Blank Design into Current View...");
 
-            let incomingJson = mergeDesign.canvasJSON;
-            if (typeof incomingJson === 'string') {
-                try { incomingJson = JSON.parse(incomingJson); } catch (e) { }
-            }
+                    // 2. MERGE LOGIC: Enliven & Append (No toJSON!)
+                    
+                    // A. Assign New IDs (Avoid conflicts)
+                    incomingObjects.forEach(obj => {
+                        const newId = uuidv4();
+                        obj.id = newId;
+                        obj.customId = newId;
+                    });
 
-            // 1. Prepare Incoming Objects (Exclude ANY existing borders)
-            let incomingObjects = incomingJson.objects || (Array.isArray(incomingJson) ? incomingJson : []);
-            incomingObjects = incomingObjects.filter(obj => obj.id !== 'print-area-border');
+                    // B. Add Visuals to Canvas (Preserves existing objects)
+                    import('fabric').then(({ fabric }) => {
+                        fabric.util.enlivenObjects(incomingObjects, (enlivened) => {
+                            enlivened.forEach(obj => {
+                                fabricCanvas.add(obj); // Add to canvas
+                            });
+                            fabricCanvas.requestRenderAll();
 
-            if (incomingObjects.length > 0) {
-                // 2. Regenerate IDs for incoming items
-                // incomingObjects.forEach((obj, index) => {
-                //     const newId = `${Date.now()}_merged_${index}_${Math.random().toString(36).substr(2, 9)}`;
-                //     obj.id = newId;
-                //     obj.customId = newId;
-                // });
+                            // C. Update Redux (Current + New)
+                            const currentReduxState = store.getState().canvas.present;
+                            
+                            // Format new objects to Redux shape locally
+                            // (We use a temporary call to addObj logic or manually format)
+                            // To keep it simple, we can pass the COMBINED list to addObj
+                            // But addObj expects objects with .left, .top. 
+                            // 'enlivened' has these. 'currentReduxState' does NOT (it has .props).
+                            
+                            // Better Strategy: Let's trust Redux State for existing, and format new ones.
+                            const formattedNewObjects = enlivened.map(obj => ({
+                                id: obj.customId,
+                                type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+                                ...(obj.type === 'image' && { src: obj.src }),
+                                props: {
+                                    left: obj.left, top: obj.top, angle: obj.angle, fill: obj.fill,
+                                    opacity: obj.opacity, shadowBlur: obj.shadowBlur||0, 
+                                    scaleX: obj.scaleX||1, scaleY: obj.scaleY||1,
+                                    // ... add other necessary props ...
+                                    // (For brevity, ensure all props from addObj map are here)
+                                    width: obj.width, height: obj.height, 
+                                    text: obj.text, fontSize: obj.fontSize, fontFamily: obj.fontFamily,
+                                    // ...
+                                }
+                            }));
+                            
+                            // However, since addObj is robust, let's just use it on the CANVAS objects
+                            // This is safe now because we just added them and we know what's there.
+                            // OR to be strictly "Simpler":
+                            // Just pass [ ...fabricCanvas.getObjects() ] to addObj? 
+                            // No, user said "don't read canvas".
+                            
+                            // CORRECT PATH: Pass the enlivened objects to addObj, but addObj needs to APPEND.
+                            // Since addObj replaces, we must construct the full list.
+                            
+                            // Let's use the `fabricCanvas.getObjects()` just this once because we know we just populated it correctly?
+                            // User: "see you are passing this also const currentJson... this would create duplicate"
+                            
+                            // OK, Cleanest Way:
+                            // We have `incomingObjects` (JSON). We have `currentReduxState`.
+                            // We can format `incomingObjects` to Redux format directly.
+                            
+                            // Let's modify addObj to handle the "Append" logic or do it here?
+                            // Doing it here is clearer.
+                            
+                            // 1. Format Incoming
+                            const newReduxObjs = incomingObjects.map(obj => ({
+                                id: obj.customId,
+                                type: obj.textEffect === 'circle' ? 'circle-text' : obj.type,
+                                ...(obj.type === 'image' && { src: obj.src }),
+                                props: {
+                                    left: obj.left, top: obj.top, angle: obj.angle, fill: obj.fill,
+                                    opacity: obj.opacity, 
+                                    scaleX: obj.scaleX || 1, scaleY: obj.scaleY || 1,
+                                    width: obj.width, height: obj.height,
+                                    text: obj.text, fontSize: obj.fontSize, fontFamily: obj.fontFamily,
+                                    charSpacing: obj.charSpacing, textAlign: obj.textAlign,
+                                    textStyle: obj.textStyle, textEffect: obj.textEffect, 
+                                    effectValue: obj.effectValue,
+                                    cropX: obj.cropX, cropY: obj.cropY,
+                                    radius: obj.radius, rx: obj.rx, ry: obj.ry,
+                                    stroke: obj.stroke, strokeWidth: obj.strokeWidth,
+                                    shadowBlur: obj.shadowBlur, shadowColor: obj.shadowColor,
+                                    shadowOffsetX: obj.shadowOffsetX, shadowOffsetY: obj.shadowOffsetY,
+                                    lockMovementX: obj.lockMovementX, lockMovementY: obj.lockMovementY
+                                }
+                            }));
 
-                // 3. Get CURRENT Canvas State
-                // We must grab 'id' to identify the border
-                const currentJson = fabricCanvas.toJSON(['customId', 'id']);
+                            // 2. Append to Current State
+                            const finalReduxList = [...currentReduxState, ...newReduxObjs];
+                            store.dispatch(setCanvasObjects(finalReduxList));
 
-                // 🛑 CRITICAL FIX: Find and Preserve ONLY ONE Border
-                const existingBorder = currentJson.objects.find(obj => obj.id === 'print-area-border');
+                        }, 'fabric');
+                    });
 
-                // Remove ALL borders from the base list to start clean
-                currentJson.objects = currentJson.objects.filter(obj => obj.id !== 'print-area-border');
-
-                // 4. Combine: Clean Current + New Objects
-                currentJson.objects = [...currentJson.objects, ...incomingObjects];
-
-                // 5. Re-inject EXACTLY ONE Border (if it existed)
-                // This prevents 'CanvasEditor' from creating a duplicate, because we restore the original.
-                if (existingBorder) {
-                    currentJson.objects.push(existingBorder);
+                } else {
+                    // 3. STANDARD LOAD: Replace Current View
+                    parsedJSON.objects = incomingObjects; // filtered list
+                    fabricCanvas.loadFromJSON(parsedJSON, () => {
+                        fabricCanvas.renderAll();
+                        addObj(incomingObjects); // Sync only what we loaded
+                        setLoadTimestamp(Date.now());
+                    });
                 }
-
-                // 6. Load the Combined State
-                fabricCanvas.loadFromJSON(currentJson, () => {
-                    fabricCanvas.renderAll();
-                    addObj(); // Sync Redux
-                    window.history.replaceState({}, document.title);
-                });
             }
-        }
+        };
+
+        handleLoad();
+        
+        // Cleanup
+        window.history.replaceState({}, document.title);
 
     }, [location.state, fabricCanvas]);
 
