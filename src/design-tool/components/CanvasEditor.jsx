@@ -1,371 +1,477 @@
 // src/design-tool/components/CanvasEditor.jsx
+import React, { useEffect, useRef, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import * as fabric from 'fabric';
+import StraightText from '../objectAdders/straightText';
+import CircleText from '../objectAdders/CircleText';
+import updateObject from '../functions/update';
+import { store } from '../redux/store';
+import { setCanvasObjects } from '../redux/canvasSlice';
+import { FabricImage } from 'fabric';
+import updateExisting from '../utils/updateExisting';
+import FloatingMenu from './FloatingMenu';
+import { handleCanvasAction } from '../utils/canvasActions';
+import ShapeAdder from '../objectAdders/Shapes';
 
-import React, { useEffect, useRef, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import * as fabric from "fabric";
-import { FabricImage } from "fabric";
+// --- HELPERS ---
 
-import StraightText from "../objectAdders/straightText";
-import CircleText from "../objectAdders/CircleText";
-import ShapeAdder from "../objectAdders/Shapes";
+const uuidv4 = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0,
+      v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
 
-import updateObject from "../functions/update";
-import updateExisting from "../utils/updateExisting";
-import { setCanvasObjects } from "../redux/canvasSlice";
-import { store } from "../redux/store";
-import FloatingMenu from "./FloatingMenu";
-import { handleCanvasAction } from "../utils/canvasActions";
+const extractFontsFromJSON = (json) => {
+  const fonts = new Set();
+  const data = typeof json === 'string' ? JSON.parse(json) : json;
 
-const MOBILE_BREAKPOINT = 768;
-const shapes = [
-  "rect", "circle", "triangle", "star", "pentagon", "hexagon",
-  "line", "arrow", "diamond", "trapezoid", "heart", "lightning", "bubble"
-];
+  // Handle both single view and multi-view JSON structures
+  const scanObjects = (objs) => {
+    if (!objs) return;
+    objs.forEach((obj) => {
+      if (obj.fontFamily && obj.fontFamily !== 'Times New Roman' && obj.fontFamily !== 'Arial') {
+        fonts.add(obj.fontFamily);
+      }
+    });
+  };
+
+  if (data.objects) {
+    scanObjects(data.objects);
+  } else {
+    // Check for multi-view structure (front, back, etc.)
+    Object.values(data).forEach(view => {
+      if (view && view.objects) scanObjects(view.objects);
+    });
+  }
+  
+  return Array.from(fonts);
+};
+
+// Extend toObject to include custom properties
+fabric.Object.prototype.toObject = (function (toObject) {
+  return function (propertiesToInclude) {
+    return toObject.call(
+      this,
+      (propertiesToInclude || []).concat([
+        'customId', 'textStyle', 'textEffect', 'radius', 'effectValue',
+        'selectable', 'lockMovementX', 'lockMovementY'
+      ])
+    );
+  };
+})(fabric.Object.prototype.toObject);
+
+const isDifferent = (val1, val2) => {
+  if (typeof val1 === 'number' && typeof val2 === 'number') {
+    return Math.abs(val1 - val2) > 0.1;
+  }
+  return val1 !== val2;
+};
 
 export default function CanvasEditor({
   setActiveTool,
   setSelectedId,
   setFabricCanvas,
+  fabricCanvas,
   printDimensions,
-  activeView
+  productId,
+  activeView,
 }) {
   const canvasRef = useRef(null);
-  const wrapperRef = useRef(null);
   const fabricCanvasRef = useRef(null);
-  const syncingRef = useRef(false);
-
-  const dispatch = useDispatch();
+  const isSyncingRef = useRef(false);
+  const [initialized, setInitialized] = useState(false);
+  const wrapperRef = useRef(null);
   const canvasObjects = useSelector((state) => state.canvas.present);
+  const previousStatesRef = useRef(new Map());
+  const dispatch = useDispatch();
 
   const [menuPosition, setMenuPosition] = useState(null);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [locked, setLocked] = useState(false);
+  const [selectedObjectLocked, setSelectedObjectLocked] = useState(false);
+  const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
+  const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
-  const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  /* -------------------------------------------------- */
-  /* INITIALIZE CANVAS                                  */
-  /* -------------------------------------------------- */
+  // --- SCALING & MENU POSITIONING ---
+  const calculateScaledSize = (originalWidth, originalHeight) => {
+    const currentScreenWidth = window.innerWidth;
+    const referenceWidth = 1707; 
+    const scaleFactor = currentScreenWidth / referenceWidth;
+
+    return {
+      width: originalWidth * scaleFactor,
+      height: originalHeight * scaleFactor,
+      scaleFactor: scaleFactor
+    };
+  };
+
+  const updateMenuPosition = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    const activeObj = canvas.getActiveObject();
+
+    if (activeObj) {
+      const objectCenter = activeObj.getCenterPoint();
+      setMenuPosition({
+        left: objectCenter.x,
+        top: objectCenter.y - (activeObj.getScaledHeight() / 2) - 60
+      });
+
+      if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
+        const ids = activeObj.getObjects().map(o => o.customId);
+        setSelectedObjectUUIDs(ids);
+        setSelectedObjectLocked(activeObj.getObjects().some(o => o.lockMovementX));
+      } else {
+        setSelectedObjectUUIDs([activeObj.customId]);
+        setSelectedObjectLocked(activeObj.lockMovementX === true);
+      }
+    } else {
+      setMenuPosition(null);
+      setSelectedObjectUUIDs([]);
+    }
+  };
+
+  const { width: printWidth, height: printHeight } = printDimensions;
+  const { width: scaledWidth, height: scaledHeight } = calculateScaledSize(printWidth, printHeight);
+
+  // ✅ 1. INITIALIZE CANVAS
   useEffect(() => {
-    if (fabricCanvasRef.current) return;
-
-    const canvas = new fabric.Canvas(canvasRef.current, {
-      backgroundColor: "#f3f4f6",
-      preserveObjectStacking: true,
-      selection: !isMobile
-    });
-
-    // Touch improvements
-    canvas.perPixelTargetFind = true;
-    canvas.targetFindTolerance = 10;
-
-    // Mobile handles
-    if (isMobile) {
-      fabric.Object.prototype.cornerSize = 26;
-      fabric.Object.prototype.touchCornerSize = 40;
-      fabric.Object.prototype.transparentCorners = false;
+    let canvas = fabricCanvasRef.current;
+    if (!canvas) {
+      canvas = new fabric.Canvas(canvasRef.current, {
+        backgroundColor: '#ffffff',
+        selection: true,
+        controlsAboveOverlay: true,
+        preserveObjectStacking: true,
+      });
+      fabricCanvasRef.current = canvas;
+      setFabricCanvas(canvas);
+      setInitialized(true);
     }
 
-    fabricCanvasRef.current = canvas;
-    setFabricCanvas(canvas);
-
-    return () => canvas.dispose();
-  }, []);
-
-  /* -------------------------------------------------- */
-  /* RESIZE + CENTER CLIP PATH                          */
-  /* -------------------------------------------------- */
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !wrapperRef.current || !printDimensions?.width) return;
-
-    const resize = () => {
-      const { clientWidth, clientHeight } = wrapperRef.current;
-      canvas.setDimensions({ width: clientWidth, height: clientHeight });
-
-      const padding = isMobile ? 20 : 60;
-      const scale = Math.min(
-        (clientWidth - padding) / printDimensions.width,
-        (clientHeight - padding) / printDimensions.height
-      );
-
-      const offsetX =
-        (clientWidth - printDimensions.width * scale) / 2;
-      const offsetY =
-        (clientHeight - printDimensions.height * scale) / 2;
-
-      canvas.setViewportTransform([
-        scale, 0, 0, scale, offsetX, offsetY
-      ]);
-
-      canvas.requestRenderAll();
+    const resizeCanvas = () => {
+      if (wrapperRef.current && canvas) {
+        const { clientWidth, clientHeight } = wrapperRef.current;
+        canvas.setDimensions({ width: clientWidth, height: clientHeight });
+        canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        setContainerSize({ width: clientWidth, height: clientHeight });
+        canvas.requestRenderAll();
+      }
     };
 
-    resize();
-    const ro = new ResizeObserver(resize);
-    ro.observe(wrapperRef.current);
+    const ro = new ResizeObserver(() => resizeCanvas());
+    if (wrapperRef.current) ro.observe(wrapperRef.current);
 
-    return () => ro.disconnect();
-  }, [printDimensions, activeView]);
+    resizeCanvas();
 
-  /* -------------------------------------------------- */
-  /* CLIP PATH (CENTERED)                               */
-  /* -------------------------------------------------- */
+    return () => { };
+  }, []);
+
+  // ✅ 2. HANDLE PRINT AREA MASK & BORDER
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !printDimensions?.width) return;
-
-    // Remove old border
-    canvas.getObjects().forEach(o => {
-      if (o.customId === "print-area-border") canvas.remove(o);
+    if (!canvas) return;
+    
+    canvas.getObjects().forEach((obj) => {
+      if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') {
+        canvas.remove(obj);
+      }
     });
+    
+    if (productId && canvas.width > 0 && canvas.height > 0) {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const leftPos = centerX - scaledWidth / 2;
+      const topPos = centerY - scaledHeight / 2;
 
-    // ClipPath (always at origin, viewport handles centering)
-    canvas.clipPath = new fabric.Rect({
-      left: 0,
-      top: 0,
-      width: printDimensions.width,
-      height: printDimensions.height,
-      absolutePositioned: true
-    });
-
-    // Visual border
-    const border = new fabric.Rect({
-      left: 0,
-      top: 0,
-      width: printDimensions.width,
-      height: printDimensions.height,
-      fill: "#ffffff",
-      stroke: "rgba(0,0,0,0.25)",
-      strokeWidth: 3,
-      strokeDashArray: [8, 8],
-      selectable: false,
-      evented: false,
-      customId: "print-area-border"
-    });
-
-    canvas.add(border);
-    canvas.sendObjectToBack(border);
+      const clipRect = new fabric.Rect({
+        left: leftPos,
+        top: topPos,
+        width: scaledWidth,
+        height: scaledHeight,
+        absolutePositioned: true,
+      });
+      
+      canvas.clipPath = clipRect;
+      
+      if (scaledHeight && scaledWidth) {
+        const visualBorder = new fabric.Rect({
+          left: leftPos,
+          top: topPos,
+          width: scaledWidth,
+          height: scaledHeight,
+          fill: 'transparent',
+          stroke: 'rgba(0,0,0,0.3)',
+          strokeWidth: 2,
+          strokeDashArray: [5, 5],
+          selectable: false,
+          evented: false,
+          customId: 'print-area-border',
+          id: 'print-area-border'
+        });
+        canvas.add(visualBorder);
+        canvas.bringObjectToFront(visualBorder);
+        // console.log('added border')
+      }
+    } else {
+      canvas.clipPath = null;
+    }
     canvas.requestRenderAll();
-  }, [printDimensions, activeView]);
+    window.dispatchEvent(new Event('resize_menu_update'));
 
-  /* -------------------------------------------------- */
-  /* SELECTION HANDLING                                 */
-  /* -------------------------------------------------- */
+  }, [printDimensions, activeView, window.innerWidth]);
+
+  // ✅ 4. HANDLE SELECTION EVENTS
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
 
-    const updateMenu = () => {
-      const obj = canvas.getActiveObject();
-      if (!obj) {
-        setMenuPosition(null);
-        setSelectedIds([]);
-        return;
-      }
-
-      const vpt = canvas.viewportTransform;
-      const center = obj.getCenterPoint();
-
-      const x = center.x * vpt[0] + vpt[4];
-      const y = center.y * vpt[3] + vpt[5];
-
-      setMenuPosition({ left: x, top: y - 60 });
-
-      if (obj.type === "activeselection") {
-        const ids = obj.getObjects().map(o => o.customId);
-        setSelectedIds(ids);
-        setLocked(obj.getObjects().some(o => o.lockMovementX));
-      } else {
-        setSelectedIds([obj.customId]);
-        setLocked(obj.lockMovementX);
+    const handleSelection = (e) => {
+      if (isSyncingRef.current) return;
+      const selected = e.selected?.[0];
+      if (selected) {
+        setSelectedId(selected.customId);
+        setActiveTool(selected.textEffect === 'circle' ? 'circle-text' : selected.type);
+        updateMenuPosition();
       }
     };
 
-    canvas.on("selection:created", updateMenu);
-    canvas.on("selection:updated", updateMenu);
-    canvas.on("selection:cleared", () => {
-      setMenuPosition(null);
-      setSelectedIds([]);
-      setActiveTool(null);
+    const handleCleared = () => {
+      if (isSyncingRef.current) return;
       setSelectedId(null);
-    });
+      setActiveTool(null);
+      setMenuPosition(null);
+    };
 
-    canvas.on("object:moving", updateMenu);
-    canvas.on("object:scaling", updateMenu);
-    canvas.on("object:rotating", updateMenu);
+    const handleMoving = () => {
+      if (isSyncingRef.current) return;
+      updateMenuPosition();
+    };
+
+    canvas.on('selection:created', handleSelection);
+    canvas.on('selection:updated', handleSelection);
+    canvas.on('selection:cleared', handleCleared);
+    canvas.on('object:moving', handleMoving);
+    canvas.on('object:scaling', handleMoving);
+    canvas.on('object:rotating', handleMoving);
+    canvas.on('object:modified', handleMoving);
 
     return () => {
-      canvas.off("selection:created", updateMenu);
-      canvas.off("selection:updated", updateMenu);
-      canvas.off("selection:cleared");
-      canvas.off("object:moving", updateMenu);
-      canvas.off("object:scaling", updateMenu);
-      canvas.off("object:rotating", updateMenu);
+      canvas.off('selection:created', handleSelection);
+      canvas.off('selection:updated', handleSelection);
+      canvas.off('selection:cleared', handleCleared);
+      canvas.off('object:moving', handleMoving);
+      canvas.off('object:scaling', handleMoving);
+      canvas.off('object:rotating', handleMoving);
+      canvas.off('object:modified', handleMoving);
     };
-  }, []);
+  }, [fabricCanvas, setSelectedId, setActiveTool]);
 
-  /* -------------------------------------------------- */
-  /* OBJECT MODIFIED → REDUX SYNC                       */
-  /* -------------------------------------------------- */
+  // ✅ 5. HANDLE MODIFICATIONS
   useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    const fabricCanvas = fabricCanvasRef.current;
+    if (!fabricCanvas) return;
 
     const handleObjectModified = (e) => {
-      if (syncingRef.current) return;
+      if (isSyncingRef.current) return;
+      updateMenuPosition();
 
-      const obj = e.target;
+      let obj = e.target;
       if (!obj) return;
 
-      // 🔹 MULTI SELECTION
-      if (obj.type === "activeselection") {
-        const objects = obj.getObjects();
+      const type = obj.type ? obj.type.toLowerCase() : '';
 
-        objects.forEach(child => {
-          if (!child.customId) return;
+      if (type === 'activeselection') {
+        const children = [...obj.getObjects()];
+        setTimeout(() => {
+          fabricCanvas.discardActiveObject();
+          const present = store.getState().canvas.present;
+          let updatedPresent = present.map((o) => JSON.parse(JSON.stringify(o)));
+          let hasChanges = false;
 
-          // Normalize text scaling
-          if (child.type === "text" || child.type === "textbox") {
-            const newFontSize = child.fontSize * child.scaleX;
-            child.set({
-              fontSize: newFontSize,
-              scaleX: 1,
-              scaleY: 1
-            });
-            child.setCoords();
+          children.forEach((child) => {
+            const index = updatedPresent.findIndex((o) => o.id === child.customId);
+            if (index === -1) return;
 
-            updateObject(child.customId, {
-              fontSize: newFontSize,
-              left: child.left,
-              top: child.top,
-              angle: child.angle
-            });
-          } else {
-            updateObject(child.customId, {
-              left: child.left,
-              top: child.top,
-              angle: child.angle,
-              scaleX: child.scaleX,
-              scaleY: child.scaleY
-            });
+            if (child.type === 'text' || child.type === 'textbox' || child.customType === 'text') {
+              const newFontSize = child.fontSize * child.scaleX;
+              child.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
+              child.setCoords();
+              updatedPresent[index].props = {
+                ...updatedPresent[index].props,
+                fontSize: newFontSize,
+                left: child.left,
+                top: child.top,
+                angle: child.angle,
+                scaleX: 1,
+                scaleY: 1
+              };
+            } else {
+              updatedPresent[index].props = {
+                ...updatedPresent[index].props,
+                left: child.left,
+                top: child.top,
+                angle: child.angle,
+                scaleX: child.scaleX,
+                scaleY: child.scaleY,
+              };
+            }
+            hasChanges = true;
+          });
+          if (hasChanges) store.dispatch(setCanvasObjects(updatedPresent));
+
+          if (children.length > 0) {
+            const sel = new fabric.ActiveSelection(children, { canvas: fabricCanvas });
+            fabricCanvas.setActiveObject(sel);
+            fabricCanvas.requestRenderAll();
           }
-        });
-
-        canvas.requestRenderAll();
+        }, 0);
         return;
       }
 
-      // 🔹 SINGLE OBJECT
-      if (obj.customId) {
-        if (obj.type === "text" || obj.type === "textbox") {
-          const newFontSize = obj.fontSize * obj.scaleX;
-
-          obj.set({
-            fontSize: newFontSize,
-            scaleX: 1,
-            scaleY: 1
-          });
-          obj.setCoords();
-
-          updateObject(obj.customId, {
-            fontSize: newFontSize,
-            left: obj.left,
-            top: obj.top,
-            angle: obj.angle
-          });
-        } else {
-          updateObject(obj.customId, {
-            left: obj.left,
-            top: obj.top,
-            angle: obj.angle,
-            scaleX: obj.scaleX,
-            scaleY: obj.scaleY,
-            width: obj.width,
-            height: obj.height
-          });
-        }
+      if (type === 'text' || type === 'textbox') {
+        const newFontSize = obj.fontSize * obj.scaleX;
+        obj.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
+        obj.setCoords();
+        fabricCanvas.renderAll();
+        updateObject(obj.customId, {
+          fontSize: newFontSize,
+          left: obj.left,
+          top: obj.top,
+          angle: obj.angle,
+        });
+        return;
       }
+
+      updateObject(obj.customId, {
+        left: obj.left,
+        top: obj.top,
+        angle: obj.angle,
+        scaleX: obj.scaleX,
+        scaleY: obj.scaleY,
+        width: obj.width,
+        height: obj.height,
+      });
     };
 
-    canvas.on("object:modified", handleObjectModified);
-
+    fabricCanvas.on('object:modified', handleObjectModified);
     return () => {
-      canvas.off("object:modified", handleObjectModified);
+      fabricCanvas.off('object:modified', handleObjectModified);
     };
   }, []);
 
-
-  /* -------------------------------------------------- */
-  /* FABRIC ← REDUX SYNC                                */
-  /* -------------------------------------------------- */
+  // ✅ 6. SYNC REDUX STATE → FABRIC
   useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!initialized) return;
+    const fabricCanvas = fabricCanvasRef.current;
+    if (!fabricCanvas) return;
 
-    syncingRef.current = true;
-    const fabricObjects = canvas.getObjects();
+    let selectedIds = [];
+    const activeObject = fabricCanvas.getActiveObject();
+    const isMultiSelect = activeObject && activeObject.type?.toLowerCase() === 'activeselection';
 
-    canvasObjects.forEach(async (obj) => {
-      let existing = fabricObjects.find(o => o.customId === obj.id);
+    if (isMultiSelect) {
+      selectedIds = activeObject.getObjects().map(o => o.customId);
+      fabricCanvas.discardActiveObject();
+    } else if (activeObject) {
+      selectedIds = [activeObject.customId];
+    }
 
-      if (obj.type === "image") {
-        if (!existing) {
-          const img = await FabricImage.fromURL(obj.src, obj.props);
-          img.customId = obj.id;
-          canvas.add(img);
+    isSyncingRef.current = true;
+    const fabricObjects = fabricCanvas.getObjects();
+
+    canvasObjects.forEach(async (objData) => {
+      const currentString = JSON.stringify(objData);
+      const previousString = previousStatesRef.current.get(objData.id);
+
+      if (currentString === previousString) return;
+
+      let existing = fabricObjects.find((o) => o.customId === objData.id);
+
+      if (objData.type === 'text' || shapes.includes(objData.type)) {
+        const isCircle = objData.props.textEffect === 'circle';
+
+        if (existing && existing.type === objData.type && !isCircle) {
+          existing.set(objData.props);
+          existing.setCoords();
         } else {
-          updateExisting(existing, obj);
+          if (existing) fabricCanvas.remove(existing);
+          let newObj;
+          if (isCircle) newObj = CircleText(objData);
+          else if (shapes.includes(objData.type)) newObj = ShapeAdder(objData);
+          else if (objData.type === 'text') newObj = StraightText(objData);
+
+          if (newObj) {
+            newObj.customId = objData.id;
+            fabricCanvas.add(newObj);
+          }
         }
-        return;
       }
 
-      if (obj.type === "text") {
-        if (!existing) {
-          const text = obj.props.textEffect === "circle"
-            ? CircleText(obj)
-            : StraightText(obj);
-          text.customId = obj.id;
-          canvas.add(text);
-        } else {
-          existing.set(obj.props);
+      if (objData.type === 'image') {
+        if (!existing && !fabricCanvas.getObjects().some(obj => obj.customId === objData.id)) {
+          try {
+            const newObj = await FabricImage.fromURL(objData.src, { ...objData.props });
+            newObj.set({ customId: objData.id });
+            fabricCanvas.add(newObj);
+          } catch (err) {
+            console.error("Error loading image:", err);
+          }
+        } else if (existing) {
+          updateExisting(existing, objData, isDifferent);
         }
-        return;
       }
 
-      if (shapes.includes(obj.type)) {
-        if (!existing) {
-          const shape = ShapeAdder(obj);
-          shape.customId = obj.id;
-          canvas.add(shape);
-        } else {
-          existing.set(obj.props);
+      previousStatesRef.current.set(objData.id, currentString);
+    });
+
+    const reduxIds = new Set(canvasObjects.map(o => o.id));
+    fabricObjects.forEach((obj) => {
+      if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') return;
+      if (!reduxIds.has(obj.customId)) {
+        fabricCanvas.remove(obj);
+        previousStatesRef.current.delete(obj.customId);
+      }
+    });
+
+    // Re-order Z-index
+    const currentFabricObjects = fabricCanvas.getObjects();
+    let fabricObjectsArray = fabricCanvas._objects;
+    canvasObjects.forEach((reduxObj, index) => {
+      const fabricObj = currentFabricObjects.find((obj) => obj.customId === reduxObj.id);
+      if (fabricObj) {
+        const currentIndex = fabricObjectsArray.indexOf(fabricObj);
+        if (currentIndex !== index) {
+          fabricCanvas.moveObjectTo(fabricObj, index);
         }
       }
     });
 
-    // Remove deleted
-    fabricObjects.forEach(o => {
-      if (
-        o.customId &&
-        !canvasObjects.some(c => c.id === o.customId) &&
-        o.customId !== "print-area-border"
-      ) {
-        canvas.remove(o);
+    if (selectedIds.length > 0) {
+      const objectsToSelect = fabricCanvas.getObjects().filter(obj => selectedIds.includes(obj.customId));
+      if (objectsToSelect.length > 1) {
+        const selection = new fabric.ActiveSelection(objectsToSelect, { canvas: fabricCanvas });
+        fabricCanvas.setActiveObject(selection);
+      } else if (objectsToSelect.length === 1) {
+        fabricCanvas.setActiveObject(objectsToSelect[0]);
       }
-    });
+    }
 
-    canvas.requestRenderAll();
-    syncingRef.current = false;
-  }, [canvasObjects]);
+    fabricCanvas.requestRenderAll();
+    setTimeout(() => {
+      updateMenuPosition();
+      isSyncingRef.current = false;
+    }, 50);
 
-  /* -------------------------------------------------- */
-  /* MENU ACTIONS                                       */
-  /* -------------------------------------------------- */
+  }, [canvasObjects, initialized]);
+
   const onMenuAction = (action) => {
     handleCanvasAction(
       action,
-      selectedIds,
+      selectedObjectUUIDs,
       store.getState().canvas.present,
       dispatch,
       setCanvasObjects
@@ -373,14 +479,14 @@ export default function CanvasEditor({
   };
 
   return (
-    <div ref={wrapperRef} className="relative w-full h-full">
-      <canvas ref={canvasRef} />
+    <div ref={wrapperRef} id="canvas-wrapper" className="relative w-full h-full">
+      <canvas ref={canvasRef} id="canvas" />
 
-      {menuPosition && selectedIds.length > 0 && (
+      {menuPosition && selectedObjectUUIDs.length > 0 && (
         <FloatingMenu
           position={menuPosition}
           onAction={onMenuAction}
-          isLocked={locked}
+          isLocked={selectedObjectLocked}
         />
       )}
     </div>
