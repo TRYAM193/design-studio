@@ -2,7 +2,7 @@
 import React from 'react';
 import ImageHandler from './Image';
 import {
-    FiType, FiImage, FiZap, FiSquare, FiTool, FiFolder
+    FiType, FiImage, FiCpu, FiSquare, FiTool, FiFolder
 } from 'react-icons/fi';
 
 const ToolButton = ({ icon: Icon, label, isActive, onClick }) => (
@@ -72,7 +72,7 @@ export default function MainToolbar({
                 onClick={() => onSelectTool('shapes')}
             />
             <ToolButton
-                icon={FiZap}
+                icon={FiCpu}
                 label="AI"
                 isActive={activePanel === 'ai'}
                 onClick={() => onSelectTool('ai')}
