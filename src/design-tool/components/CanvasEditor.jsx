@@ -218,8 +218,8 @@ export default function CanvasEditor({
 
     resizeCanvas();
 
-    return () => { ro.di };
-  }, []);
+    return () => { ro.disconnect(); };
+  }, [printDimensions]);
 
   // ✅ 2. HANDLE PRINT AREA MASK & BORDER
   useEffect(() => {
