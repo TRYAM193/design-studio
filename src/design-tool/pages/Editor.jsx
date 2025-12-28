@@ -406,7 +406,7 @@ export default function EditorPanel() {
         const originalBg = fabricCanvas.backgroundColor;
         const originalClip = fabricCanvas.clipPath;
         if (productData.title?.includes("Mug")) fabricCanvas.backgroundColor = "#FFFFFF";
-        else fabricCanvas.backgroundColor = null;
+        // else fabricCanvas.backgroundColor = null;
         fabricCanvas.clipPath = null;
         const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
         let wasBorderVisible = false;
