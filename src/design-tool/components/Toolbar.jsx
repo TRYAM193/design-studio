@@ -161,6 +161,8 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
       // Sync local state
       setBorderRadius(object.props.rx || object.props.radius || 0);
       setCircleRadius(object.props.radius || 150);
+      setArcAngle(object.props.arcAngle || 120); // Sync Arc Angle
+      setFlagVelocity(object.props.flagVelocity || 50);
     }
   }, [object]);
 
