@@ -257,7 +257,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
             <span>{Math.round(posAdjust.y * 100)}</span>
           </div>
           <input 
-            type="range" min="-0.3" max="0.3" step="0.01" 
+            type="range" min="-10" max="10" step="0.01" 
             value={posAdjust.y}
             onChange={(e) => setPosAdjust(p => ({ ...p, y: parseFloat(e.target.value) }))}
             style={{ width: "100%", cursor: "pointer" }}
