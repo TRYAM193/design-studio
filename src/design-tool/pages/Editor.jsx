@@ -402,25 +402,55 @@ export default function EditorPanel() {
     }, [productData, currentView]);
 
     const getCleanDataURL = () => {
-        if (!fabricCanvas) return null;
-        const originalBg = fabricCanvas.backgroundColor;
-        const originalClip = fabricCanvas.clipPath;
-        if (productData.title?.includes("Mug")) fabricCanvas.backgroundColor = "#FFFFFF";
-        else fabricCanvas.backgroundColor = null;
-        fabricCanvas.clipPath = null;
-        const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
-        let wasBorderVisible = false;
-        if (borderObj) { wasBorderVisible = borderObj.visible; borderObj.visible = false; }
+    if (!fabricCanvas) return null;
 
-        fabricCanvas.renderAll();
-        const dataUrl = fabricCanvas.toDataURL({ format: 'png', quality: 0.8, multiplier: 0.5, enableRetinaScaling: false });
+    const originalBg = fabricCanvas.backgroundColor;
+    const originalClip = fabricCanvas.clipPath;
+    const originalVpt = fabricCanvas.viewportTransform; // Save current zoom/pan
 
-        fabricCanvas.backgroundColor = originalBg;
-        fabricCanvas.clipPath = originalClip;
-        if (borderObj) borderObj.visible = wasBorderVisible;
-        fabricCanvas.renderAll();
-        return dataUrl;
-    };
+    // 1. Prepare Canvas for Export
+    // If it's a mug, we might want white background, otherwise transparent for T-shirts
+    if (productData.title?.includes("Mug")) {
+        fabricCanvas.backgroundColor = "#FFFFFF";
+    } else {
+        fabricCanvas.backgroundColor = null;
+    }
+    
+    fabricCanvas.clipPath = null;
+    
+    // Hide the border guide if it exists
+    const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
+    let wasBorderVisible = false;
+    if (borderObj) { 
+        wasBorderVisible = borderObj.visible; 
+        borderObj.visible = false; 
+    }
+
+    // 2. Calculate the "Standardization" Multiplier
+    // We want the output to be 2400px wide regardless of screen size.
+    const TARGET_WIDTH = 2400; 
+    const currentWidth = fabricCanvas.width; // This is the logical width
+    const multiplier = TARGET_WIDTH / currentWidth;
+
+    // 3. Render & Export
+    fabricCanvas.renderAll();
+    
+    const dataUrl = fabricCanvas.toDataURL({ 
+        format: 'png', 
+        quality: 1,           // Max quality
+        multiplier: multiplier, // <--- DYNAMIC SCALING
+        enableRetinaScaling: true 
+    });
+
+    // 4. Restore Canvas State
+    fabricCanvas.backgroundColor = originalBg;
+    fabricCanvas.clipPath = originalClip;
+    if (originalVpt) fabricCanvas.setViewportTransform(originalVpt); // Restore zoom
+    if (borderObj) borderObj.visible = wasBorderVisible;
+    fabricCanvas.requestRenderAll();
+
+    return dataUrl;
+};
 
     const captureCurrentCanvas = () => {
         const url = getCleanDataURL();
