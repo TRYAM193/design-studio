@@ -163,7 +163,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
   const [isRemovingBg, setIsRemovingBg] = useState(false);
 
   const handleRemoveBackground = async () => {
-    if ()
+    if (!object || type !== 'image' || !fabricCanvas) return;
   }
 
 
