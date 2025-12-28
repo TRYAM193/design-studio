@@ -162,6 +162,8 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
   const colorCommitTimer = useRef(null);
   const [isRemovingBg, setIsRemovingBg] = useState(false);
 
+  const 
+
 
   useEffect(() => {
     if (object && object.props) {
