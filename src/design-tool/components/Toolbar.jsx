@@ -721,6 +721,9 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
               </>
             )}
           </button>
+          <p style={{ fontSize: '10px', color: '#666', marginTop: '5px', textAlign: 'center' }}>
+            *First time may take a moment to load AI models.
+          </p>
         </div>
       )}
     </div>
