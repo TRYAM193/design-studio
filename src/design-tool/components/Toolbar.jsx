@@ -11,6 +11,7 @@ import {
   getArrowPoints, getDiamondPoints, getTrapezoidPoints, getLightningPoints
 } from '../utils/shapeUtils';
 import { useRef } from 'react';
+import { processBackgroundRemoval } from '../utils/imageUtils';
 
 
 const FONT_OPTIONS = ['Arial', 'Verdana', 'Tahoma', 'Georgia', 'Times New Roman', 'Courier New'];
