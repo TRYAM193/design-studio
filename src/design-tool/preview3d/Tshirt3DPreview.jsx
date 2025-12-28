@@ -159,8 +159,8 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
           meshName={m.back}
           tex={backTex}
           decalProps={{
-            x: B.x, y: finalBack.y, z: finalBack.z,
-            scale: finalBack.scale,
+            x: backPos.x, y: backPos.y, z: backPos.z,
+            scale: backPos.scale,
             rotation: [0, Math.PI, 0]
           }}
         />
