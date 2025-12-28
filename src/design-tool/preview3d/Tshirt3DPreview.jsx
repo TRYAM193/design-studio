@@ -33,8 +33,8 @@ const MODEL_CONFIGS = {
     position: [0, -1.5, 0],
     cameraZ: 2.5,
     meshes: { front: "FRONT", back: "BACK", straps: "STRAPS" },
-    frontDecal: { x: 0, y: 1.22, z: -0.13, scaleX: 4, scaleY: 4 },
-    backDecal: { x: 0, y: 1.22, z: 0.13, scaleX: 4, scaleY: 4 },
+    frontDecal: { x: 0, y: 1.2, z: -0.13, scaleX: 4, scaleY: 4 },
+    backDecal: { x: 0, y: 1.2, z: 0.13, scaleX: 4, scaleY: 4 },
     decalDepth: 0.6
   }
 };
