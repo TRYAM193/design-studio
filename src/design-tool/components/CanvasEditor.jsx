@@ -170,9 +170,6 @@ export default function CanvasEditor({
     }
   };
 
-  const { width: printWidth, height: printHeight } = printDimensions;
-  const { width: scaledWidth, height: scaledHeight } = calculateScaledSize(printWidth, printHeight);
-
   // ✅ 1. INITIALIZE CANVAS
   useEffect(() => {
     let canvas = fabricCanvasRef.current;
