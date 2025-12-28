@@ -410,6 +410,7 @@ export default function CanvasEditor({
       ref={wrapperRef} 
       id="canvas-wrapper" 
       className="relative w-full h-full flex items-center justify-center bg-slate-100 overflow-hidden"
+      style={{ touchAction: 'none' }}
     >
       <canvas ref={canvasRef} id="canvas" />
 
