@@ -1,7 +1,5 @@
 // src/data/initialProducts.ts
 
-import { ca } from "date-fns/locale";
-
 export const INITIAL_PRODUCTS = [
   // =========================================
   // 👕 MEN'S COLLECTION
