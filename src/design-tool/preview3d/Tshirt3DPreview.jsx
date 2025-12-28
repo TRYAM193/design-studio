@@ -291,7 +291,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
             <span>{current.y}</span>
           </div>
           <input 
-            type="range" min="-0.3" max="10" step="0.01" 
+            type="range" min="-10" max="10" step="0.1" 
             value={current.y}
             onChange={(e) => updateAdjustment('y', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
