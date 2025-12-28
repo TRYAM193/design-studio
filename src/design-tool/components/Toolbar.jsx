@@ -180,7 +180,9 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
       const fabricObj = fabricCanvas.getObjects().find((o) => o.customId === id);
 
       if(fabricObj) {
-        const imgElement = new FabricImage();
+        const imgElement = new FabricImage(newImageUrl,{
+          
+        });
     }
   }
 
