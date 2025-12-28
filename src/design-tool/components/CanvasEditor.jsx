@@ -101,16 +101,39 @@ export default function CanvasEditor({
   });
 
   // --- SCALING & MENU POSITIONING ---
-  const calculateScaledSize = (originalWidth, originalHeight) => {
-    const currentScreenWidth = window.innerWidth;
-    const referenceWidth = 1707; 
-    const scaleFactor = currentScreenWidth / referenceWidth;
+  const fitDesignToScreen = (canvas, containerWidth, containerHeight) => {
+    if (!canvas || !printDimensions.width) return;
 
-    return {
-      width: originalWidth * scaleFactor,
-      height: originalHeight * scaleFactor,
-      scaleFactor: scaleFactor
-    };
+    const padding = containerWidth < 768 ? 20 : 60; // Less padding on mobile
+    const availWidth = containerWidth - padding;
+    const availHeight = containerHeight - padding;
+
+    // Calculate Zoom to fit the Print Area into the Container
+    const scaleX = availWidth / printDimensions.width;
+    const scaleY = availHeight / printDimensions.height;
+    const zoom = Math.min(scaleX, scaleY);
+
+    // Center the content
+    const centerX = (containerWidth - printDimensions.width * zoom) / 2;
+    const centerY = (containerHeight - printDimensions.height * zoom) / 2;
+
+    // Apply Transform: [scaleX, skewY, skewX, scaleY, translateX, translateY]
+    canvas.setViewportTransform([zoom, 0, 0, zoom, centerX, centerY]);
+    
+    // Update Control Handles size based on zoom (Inverse scaling)
+    // This makes sure handles remain touchable even if zoom is small
+    const controlSize = containerWidth < 768 ? 24 : 12; // Big handles on mobile
+    fabric.Object.prototype.set({
+        cornerSize: controlSize / zoom, 
+        transparentCorners: false,
+        cornerColor: '#ffffff',
+        cornerStrokeColor: '#333333',
+        borderColor: '#4f46e5',
+        borderScaleFactor: 2 / zoom, // Thicker borders when zoomed out
+        touchCornerSize: 40 / zoom, // Hit area for touch
+    });
+    
+    canvas.requestRenderAll();
   };
 
   const updateMenuPosition = () => {
