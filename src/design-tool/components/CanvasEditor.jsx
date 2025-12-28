@@ -48,7 +48,7 @@ export default function CanvasEditor({
   setSelectedId,
   setFabricCanvas,
   fabricCanvas,
-  printDimensions, // Comes from productData.canvas_size (e.g., 420x560)
+  printDimensions,
   productId,
   activeView,
 }) {
@@ -66,40 +66,33 @@ export default function CanvasEditor({
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
-  // ✅ 1. Determine Logical Canvas Size (The "Real" Size)
+  // ✅ 1. Determine Logical Canvas Size
   const getLogicalSize = () => {
     if (productId && printDimensions?.width && printDimensions?.height) {
       return { width: printDimensions.width, height: printDimensions.height };
     }
-    // Default size if no product selected
     return { width: 800, height: 930 };
   };
 
-  // ✅ 2. RESIZE & CENTER LOGIC (The "Fit" Size)
+  // ✅ 2. RESIZE & CENTER LOGIC
   const fitCanvasToScreen = (canvas, containerW, containerH) => {
     if (!canvas) return;
 
     const { width: targetW, height: targetH } = getLogicalSize();
     
-    // Calculate Padding
     const padding = containerW < 768 ? 20 : 50;
     const availW = containerW - padding;
     const availH = containerH - padding;
 
-    // Calculate Zoom to fit the Logical Size into Available Screen Space
     const scale = Math.min(1, availW / targetW, availH / targetH);
 
-    // Apply Dimensions & Zoom
-    // We resize the canvas element to match the Scaled Size
     canvas.setDimensions({
         width: targetW * scale,
         height: targetH * scale
     });
 
-    // We set Zoom so internal coordinates (e.g. 420px) map to the scaled pixels
     canvas.setZoom(scale);
 
-    // Update Control Handles to stay touchable
     const controlSize = containerW < 768 ? 24 : 12;
     fabric.Object.prototype.set({
         cornerSize: controlSize / scale,
@@ -118,8 +111,8 @@ export default function CanvasEditor({
     const activeObj = canvas.getActiveObject();
 
     if (activeObj) {
-      // Calculate screen coordinates relative to canvas DOM element
-      const vpt = canvas.getViewportTransform();
+      // ✅ FIX: Access viewportTransform property directly in Fabric v6
+      const vpt = canvas.viewportTransform; 
       const objectCenter = activeObj.getCenterPoint();
       
       const screenX = objectCenter.x * vpt[0] + vpt[4];
@@ -150,7 +143,7 @@ export default function CanvasEditor({
     let canvas = fabricCanvasRef.current;
     if (!canvas) {
       canvas = new fabric.Canvas(canvasRef.current, {
-        backgroundColor: '#ffffff', // White Paper Background
+        backgroundColor: '#ffffff',
         selection: true,
         controlsAboveOverlay: true,
         preserveObjectStacking: true,
@@ -159,8 +152,6 @@ export default function CanvasEditor({
       setFabricCanvas(canvas);
       setInitialized(true);
 
-      // --- ADD SHADOW STYLE TO CANVAS CONTAINER ---
-      // This makes it look like a paper sheet
       if (canvas.wrapperEl) {
           canvas.wrapperEl.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
           canvas.wrapperEl.style.border = "1px solid #e2e8f0";
@@ -171,8 +162,8 @@ export default function CanvasEditor({
           if (opt.e.touches && opt.e.touches.length === 2) {
               const activeObj = canvas.getActiveObject();
               
-              // CASE A: RESIZE OBJECT (Pinch on Object)
               if (activeObj) {
+                  // RESIZE OBJECT
                   if (opt.self.state === 'start') {
                       activeObj._startScaleX = activeObj.scaleX;
                       activeObj._startScaleY = activeObj.scaleY;
@@ -187,23 +178,17 @@ export default function CanvasEditor({
                   }
                   opt.e.preventDefault();
                   opt.e.stopPropagation();
-              } 
-              
-              // CASE B: ZOOM PAPER (Pinch on Background)
-              else {
+              } else {
+                  // ZOOM PAPER
                   if (opt.self.state === 'start') {
                       canvas._startZoom = canvas.getZoom();
                   } else if (opt.self.state === 'change') {
-                      // Calculate new zoom
                       let newZoom = canvas._startZoom * opt.self.scale;
-                      
-                      // Clamp limits
                       if (newZoom > 5) newZoom = 5;
                       if (newZoom < 0.2) newZoom = 0.2;
 
                       const { width: logicalW, height: logicalH } = getLogicalSize();
                       
-                      // Update Dimensions & Zoom together to keep it valid
                       canvas.setDimensions({
                           width: logicalW * newZoom,
                           height: logicalH * newZoom
@@ -228,7 +213,7 @@ export default function CanvasEditor({
     resizeCanvas();
 
     return () => ro.disconnect();
-  }, [printDimensions, productId]); // Re-run when product changes dimensions
+  }, [printDimensions, productId]); 
 
   // ✅ 4. SELECTION EVENTS
   useEffect(() => {
@@ -267,7 +252,11 @@ export default function CanvasEditor({
 
     return () => {
       canvas.off('selection:created', handleSelection);
-      // ... cleanup ...
+      canvas.off('selection:updated', handleSelection);
+      canvas.off('selection:cleared', handleCleared);
+      canvas.off('object:moving', handleMoving);
+      canvas.off('object:scaling', handleMoving);
+      canvas.off('object:rotating', handleMoving);
       canvas.off('object:modified', handleMoving);
     };
   }, [fabricCanvas, setSelectedId, setActiveTool]);
@@ -343,7 +332,6 @@ export default function CanvasEditor({
 
       let existing = fabricObjects.find((o) => o.customId === objData.id);
 
-      // --- TEXT & SHAPES ---
       if (['text', 'textbox', 'i-text'].includes(objData.type) || shapes.includes(objData.type)) {
         const isCircle = objData.props.textEffect === 'circle';
         if (existing && existing.type === objData.type && !isCircle) {
@@ -363,7 +351,6 @@ export default function CanvasEditor({
         }
       }
 
-      // --- IMAGES ---
       if (objData.type === 'image') {
          if (!existing && !fabricCanvas.getObjects().some(obj => obj.customId === objData.id)) {
             try {
@@ -379,7 +366,6 @@ export default function CanvasEditor({
       previousStatesRef.current.set(objData.id, currentString);
     });
 
-    // Cleanup Orphans
     const reduxIds = new Set(canvasObjects.map(o => o.id));
     fabricObjects.forEach((obj) => {
       if (!reduxIds.has(obj.customId)) {
@@ -388,7 +374,6 @@ export default function CanvasEditor({
       }
     });
 
-    // Restore Selection
     if (selectedIds.length > 0) {
       const objectsToSelect = fabricCanvas.getObjects().filter(obj => selectedIds.includes(obj.customId));
       if (objectsToSelect.length > 1) {
@@ -417,7 +402,6 @@ export default function CanvasEditor({
     );
   };
 
-  // ✅ CSS: Flex Center Wrapper
   return (
     <div 
       ref={wrapperRef} 
