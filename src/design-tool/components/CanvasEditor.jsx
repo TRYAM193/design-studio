@@ -206,6 +206,97 @@ export default function CanvasEditor({
   }, []);
 
   /* -------------------------------------------------- */
+/* OBJECT MODIFIED → REDUX SYNC                       */
+/* -------------------------------------------------- */
+useEffect(() => {
+  const canvas = fabricCanvasRef.current;
+  if (!canvas) return;
+
+  const handleObjectModified = (e) => {
+    if (syncingRef.current) return;
+
+    const obj = e.target;
+    if (!obj) return;
+
+    // 🔹 MULTI SELECTION
+    if (obj.type === "activeselection") {
+      const objects = obj.getObjects();
+
+      objects.forEach(child => {
+        if (!child.customId) return;
+
+        // Normalize text scaling
+        if (child.type === "text" || child.type === "textbox") {
+          const newFontSize = child.fontSize * child.scaleX;
+          child.set({
+            fontSize: newFontSize,
+            scaleX: 1,
+            scaleY: 1
+          });
+          child.setCoords();
+
+          updateObject(child.customId, {
+            fontSize: newFontSize,
+            left: child.left,
+            top: child.top,
+            angle: child.angle
+          });
+        } else {
+          updateObject(child.customId, {
+            left: child.left,
+            top: child.top,
+            angle: child.angle,
+            scaleX: child.scaleX,
+            scaleY: child.scaleY
+          });
+        }
+      });
+
+      canvas.requestRenderAll();
+      return;
+    }
+
+    // 🔹 SINGLE OBJECT
+    if (obj.customId) {
+      if (obj.type === "text" || obj.type === "textbox") {
+        const newFontSize = obj.fontSize * obj.scaleX;
+
+        obj.set({
+          fontSize: newFontSize,
+          scaleX: 1,
+          scaleY: 1
+        });
+        obj.setCoords();
+
+        updateObject(obj.customId, {
+          fontSize: newFontSize,
+          left: obj.left,
+          top: obj.top,
+          angle: obj.angle
+        });
+      } else {
+        updateObject(obj.customId, {
+          left: obj.left,
+          top: obj.top,
+          angle: obj.angle,
+          scaleX: obj.scaleX,
+          scaleY: obj.scaleY,
+          width: obj.width,
+          height: obj.height
+        });
+      }
+    }
+  };
+
+  canvas.on("object:modified", handleObjectModified);
+
+  return () => {
+    canvas.off("object:modified", handleObjectModified);
+  };
+}, []);
+
+
+  /* -------------------------------------------------- */
   /* FABRIC ← REDUX SYNC                                */
   /* -------------------------------------------------- */
   useEffect(() => {
