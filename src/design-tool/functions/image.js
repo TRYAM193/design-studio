@@ -8,8 +8,8 @@ export default function addImage(obj) {
   const newImage = {
     id: obj.customId,
     type: 'image',
-    src: obj.getSrc(),
     props: {
+      src: obj.getSrc(),
       left: obj.left,
       top: obj.top,
       width: obj.width,
