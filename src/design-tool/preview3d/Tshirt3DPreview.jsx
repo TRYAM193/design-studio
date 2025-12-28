@@ -288,10 +288,10 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowUp size={12}/> Vertical (Y)</span>
-            <span>{Math.round(current.y)}</span>
+            <span>{current.y}</span>
           </div>
           <input 
-            type="range" min="-0.3" max="0.3" step="0.01" 
+            type="range" min="-0.3" max="10" step="0.01" 
             value={current.y}
             onChange={(e) => updateAdjustment('y', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
