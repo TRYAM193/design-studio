@@ -51,7 +51,7 @@ export default function CircleText(objData) {
       // ✅ USE USER ANGLE
       totalAngle = (obj.arcAngle * Math.PI) / 180;
       // Center the arc at -90 degrees (Top) -- but we will invert logic later
-      startAngle = Math.PI / 2 - (totalAngle / 2);
+      startAngle = -Math.PI / 2 - (totalAngle / 2);
       isInverted = true;
       break;
     case 'circle':
