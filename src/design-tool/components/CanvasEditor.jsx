@@ -209,7 +209,7 @@ export default function CanvasEditor({
       });
       
       canvas.add(visualBorder);
-      // canvas.sendObjectToBack(visualBorder); // Keep it behind objects
+      canvas.sendObjectToBack(visualBorder); // Keep it behind objects
     } else {
       canvas.clipPath = null;
     }
