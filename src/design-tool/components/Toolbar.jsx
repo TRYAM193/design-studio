@@ -178,6 +178,9 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
       const newImageUrl = await processBackgroundRemoval(currentSrc);
 
       const fabricObj = fabricCanvas.getObjects().find((o) => o.customId === id);
+
+      if(fabricObj) {
+        const 
     }
   }
 
