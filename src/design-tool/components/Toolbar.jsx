@@ -117,10 +117,10 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
 
   if (isSpecialEffect) {
     const mergedProps = { ...currentLiveProps, ...updates };
-    
+
     // Re-generate the entire group with new props
     const newGroup = CircleText({ id: id, props: mergedProps });
-    
+
     // Replace on canvas while keeping position/layer
     const index = fabricCanvas.getObjects().indexOf(existing);
     fabricCanvas.remove(existing);
@@ -179,527 +179,528 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
 
       const fabricObj = fabricCanvas.getObjects().find((o) => o.customId === id);
 
-      if(fabricObj) {
+      if (fabricObj) {
         const imgElement = new Image();
         imgElement.src = newImageUrl;
         imgElement.onload = () => {
           fabricObj.setElement(imgElement);
           fabricObj.setCoords();
           fabricCanvas.requestRenderAll();
+        }
+      }
     }
-  }
 
 
-  useEffect(() => {
-    if (object && object.props) {
-      setLiveProps(object.props);
-      // Sync local state
-      setBorderRadius(object.props.rx || object.props.radius || 0);
-      setCircleRadius(object.props.radius || 150);
-      setArcAngle(object.props.arcAngle || 120); // Sync Arc Angle
-      setFlagVelocity(object.props.flagVelocity || 50);
-    }
-  }, [object]);
+      useEffect(() => {
+      if (object && object.props) {
+        setLiveProps(object.props);
+        // Sync local state
+        setBorderRadius(object.props.rx || object.props.radius || 0);
+        setCircleRadius(object.props.radius || 150);
+        setArcAngle(object.props.arcAngle || 120); // Sync Arc Angle
+        setFlagVelocity(object.props.flagVelocity || 50);
+      }
+    }, [object]);
 
-  // --- HANDLERS ---
+    // --- HANDLERS ---
 
-  const handleApplyFont = (fontName) => {
-    if (!fontName || isFontLoading) return;
+    const handleApplyFont = (fontName) => {
+      if (!fontName || isFontLoading) return;
 
-    if (FONT_OPTIONS.includes(fontName) || fontName === originalFontFamily) {
+      if (FONT_OPTIONS.includes(fontName) || fontName === originalFontFamily) {
+        liveUpdateFabric(fabricCanvas, id, { fontFamily: fontName }, liveProps, object);
+        handleUpdateAndHistory('fontFamily', fontName);
+        return;
+      }
+
+      setIsFontLoading(true);
       liveUpdateFabric(fabricCanvas, id, { fontFamily: fontName }, liveProps, object);
-      handleUpdateAndHistory('fontFamily', fontName);
-      return;
-    }
 
-    setIsFontLoading(true);
-    liveUpdateFabric(fabricCanvas, id, { fontFamily: fontName }, liveProps, object);
+      WebFont.load({
+        google: { families: [fontName] },
+        fontactive: (familyName) => {
+          setIsFontLoading(false);
+          handleUpdateAndHistory('fontFamily', familyName);
+        },
+        fontinactive: (familyName) => {
+          setIsFontLoading(false);
+          alert(`Failed to load font: ${familyName}. Please check the spelling.`);
+          setLiveProps(prev => ({ ...prev, fontFamily: originalFontFamily }));
+          liveUpdateFabric(fabricCanvas, id, { fontFamily: originalFontFamily }, liveProps, object);
+          handleUpdateAndHistory('fontFamily', originalFontFamily);
+        },
+        timeout: 3000
+      });
+    };
 
-    WebFont.load({
-      google: { families: [fontName] },
-      fontactive: (familyName) => {
-        setIsFontLoading(false);
-        handleUpdateAndHistory('fontFamily', familyName);
-      },
-      fontinactive: (familyName) => {
-        setIsFontLoading(false);
-        alert(`Failed to load font: ${familyName}. Please check the spelling.`);
-        setLiveProps(prev => ({ ...prev, fontFamily: originalFontFamily }));
-        liveUpdateFabric(fabricCanvas, id, { fontFamily: originalFontFamily }, liveProps, object);
-        handleUpdateAndHistory('fontFamily', originalFontFamily);
-      },
-      timeout: 3000
-    });
-  };
+    const handleUrlPaste = () => {
+      const fontName = extractFontNameFromUrl(googleFontUrl);
+      if (fontName) {
+        setLiveProps(prev => ({ ...prev, fontFamily: fontName }));
+        setGoogleFontUrl('');
+        setShowFontUrlInput(false);
+        handleApplyFont(fontName);
+      } else {
+        alert('Could not extract a valid font name from the link.');
+      }
+    };
 
-  const handleUrlPaste = () => {
-    const fontName = extractFontNameFromUrl(googleFontUrl);
-    if (fontName) {
-      setLiveProps(prev => ({ ...prev, fontFamily: fontName }));
-      setGoogleFontUrl('');
-      setShowFontUrlInput(false);
-      handleApplyFont(fontName);
-    } else {
-      alert('Could not extract a valid font name from the link.');
-    }
-  };
+    // ✅ SAVES TO HISTORY (Redux)
+    // Call this onMouseUp (sliders), onBlur (inputs), or onClick (buttons)
+    const handleUpdateAndHistory = (key, value) => {
+      const updates = { [key]: value };
+      const shadowKeys = ['shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY'];
 
-  // ✅ SAVES TO HISTORY (Redux)
-  // Call this onMouseUp (sliders), onBlur (inputs), or onClick (buttons)
-  const handleUpdateAndHistory = (key, value) => {
-    const updates = { [key]: value };
-    const shadowKeys = ['shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY'];
+      if (shadowKeys.includes(key)) {
+        updateObject(id, updates);
+        const mergedProps = { ...liveProps, [key]: value };
+        const shadowObject = createFabricShadow(
+          mergedProps.shadowColor,
+          mergedProps.shadowBlur,
+          mergedProps.shadowOffsetX,
+          mergedProps.shadowOffsetY
+        );
+        updateObject(id, { shadow: shadowObject });
+        return;
+      }
 
-    if (shadowKeys.includes(key)) {
       updateObject(id, updates);
-      const mergedProps = { ...liveProps, [key]: value };
-      const shadowObject = createFabricShadow(
-        mergedProps.shadowColor,
-        mergedProps.shadowBlur,
-        mergedProps.shadowOffsetX,
-        mergedProps.shadowOffsetY
-      );
-      updateObject(id, { shadow: shadowObject });
-      return;
-    }
+    };
 
-    updateObject(id, updates);
-  };
+    // ✅ VISUAL ONLY (Fabric)
+    // Call this onChange (sliders/color) for smooth updates
+    const handleLiveUpdate = (key, value) => {
+      setLiveProps(prev => ({ ...prev, [key]: value }));
+      liveUpdateFabric(fabricCanvas, id, { [key]: value }, liveProps, object);
+    };
 
-  // ✅ VISUAL ONLY (Fabric)
-  // Call this onChange (sliders/color) for smooth updates
-  const handleLiveUpdate = (key, value) => {
-    setLiveProps(prev => ({ ...prev, [key]: value }));
-    liveUpdateFabric(fabricCanvas, id, { [key]: value }, liveProps, object);
-  };
+    const toggleTextStyle = (style) => {
+      let propKey, nextValue;
+      const currentProps = object?.props || {};
 
-  const toggleTextStyle = (style) => {
-    let propKey, nextValue;
-    const currentProps = object?.props || {};
+      if (style === 'underline') {
+        propKey = 'underline';
+        nextValue = !currentProps.underline;
+      } else if (style === 'italic') {
+        propKey = 'fontStyle';
+        nextValue = currentProps.fontStyle === 'italic' ? 'normal' : 'italic';
+      } else if (style === 'bold') {
+        propKey = 'fontWeight';
+        nextValue = currentProps.fontWeight === 'bold' ? 'normal' : 'bold';
+      } else {
+        return;
+      }
+      handleUpdateAndHistory(propKey, nextValue);
+    };
 
-    if (style === 'underline') {
-      propKey = 'underline';
-      nextValue = !currentProps.underline;
-    } else if (style === 'italic') {
-      propKey = 'fontStyle';
-      nextValue = currentProps.fontStyle === 'italic' ? 'normal' : 'italic';
-    } else if (style === 'bold') {
-      propKey = 'fontWeight';
-      nextValue = currentProps.fontWeight === 'bold' ? 'normal' : 'bold';
-    } else {
-      return;
-    }
-    handleUpdateAndHistory(propKey, nextValue);
-  };
+    const applyTextEffect = (effectType) => {
+      let updates = { textEffect: effectType };
+      if (effectType === 'circle') {
+        updates.radius = circleRadius;
+      } else if (['arc-up', 'arc-down'].includes(effectType)) {
+        updates.radius = circleRadius;
+        updates.arcAngle = arcAngle;
+      } else if (effectType === 'flag') {
+        updates.flagVelocity = flagVelocity;
+      } else if (effectType === 'none') {
+        updates.path = null;
+      }
+      updateObject(id, updates);
+    };
 
-  const applyTextEffect = (effectType) => {
-    let updates = { textEffect: effectType };
-    if (effectType === 'circle') {
-      updates.radius = circleRadius;
-    } else if (['arc-up', 'arc-down'].includes(effectType)) {
-      updates.radius = circleRadius;
-      updates.arcAngle = arcAngle;
-    } else if (effectType === 'flag') {
-      updates.flagVelocity = flagVelocity;
-    } else if (effectType === 'none') {
-      updates.path = null;
-    }
-    updateObject(id, updates);
-  };
+    const handleColorChange = (key, value) => {
+      // 🔹 live update (Fabric only)
+      setLiveProps(prev => ({ ...prev, [key]: value }));
+      liveUpdateFabric(fabricCanvas, id, { [key]: value }, liveProps, object);
 
-  const handleColorChange = (key, value) => {
-    // 🔹 live update (Fabric only)
-    setLiveProps(prev => ({ ...prev, [key]: value }));
-    liveUpdateFabric(fabricCanvas, id, { [key]: value }, liveProps, object);
+      // 🔹 clear previous commit
+      if (colorCommitTimer.current) {
+        clearTimeout(colorCommitTimer.current);
+      }
 
-    // 🔹 clear previous commit
-    if (colorCommitTimer.current) {
-      clearTimeout(colorCommitTimer.current);
-    }
-
-    // 🔹 commit AFTER user stops changing color
-    colorCommitTimer.current = setTimeout(() => {
-      handleUpdateAndHistory(key, value);
-    }, 300); // 250–400ms feels perfect
-  };
+      // 🔹 commit AFTER user stops changing color
+      colorCommitTimer.current = setTimeout(() => {
+        handleUpdateAndHistory(key, value);
+      }, 300); // 250–400ms feels perfect
+    };
 
 
-  // --- RENDER ---
-  if (!object) {
-    return (
-      <div className="property-panel-message">
-        <p>Select an object on the canvas to edit its properties.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="property-panel-content">
-      <h2 className="property-panel-title">
-        {type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ')} Properties
-      </h2>
-
-      {/* ================= TEXT PROPERTIES ================= */}
-      {isTextObject && (
-        <div className="property-group">
-          <h3 className="property-group-title">Text Content & Style</h3>
-
-          <div className="control-row full-width">
-            <textarea
-              className="text-input"
-              rows="3"
-              value={liveProps.text || ''}
-              onChange={(e) => handleUpdateAndHistory('text', e.target.value)}
-              placeholder="Enter your text here"
-              style={{ color: '#000000' }}
-            />
-          </div>
-
-          <h3 className="property-group-subtitle">Formatting</h3>
-          <div className="control-row-buttons" style={{ marginBottom: '15px', display: type === 'circle-text' ? 'none' : 'flex' }}>
-            <button className={`style-button ${liveProps.fontWeight === 'bold' ? 'active' : ''}`} onClick={() => toggleTextStyle('bold')} title="Bold"><FiBold size={16} /></button>
-            <button className={`style-button ${liveProps.fontStyle === 'italic' ? 'active' : ''}`} onClick={() => toggleTextStyle('italic')} title="Italic"><FiItalic size={16} /></button>
-            <button className={`style-button ${liveProps.underline ? 'active' : ''}`} onClick={() => toggleTextStyle('underline')} title="Underline"><FiUnderline size={16} /></button>
-          </div>
-
-          {/* Text Effects */}
-          <h3 className="property-group-subtitle">Text Effects</h3>
-          <div className="control-row-buttons">
-            <button className={`style-button ${currentEffect === 'straight' ? 'active' : ''}`} onClick={() => applyTextEffect('straight')} title="Straight"><FiSlash size={16} /></button>
-            <button className={`style-button ${currentEffect === 'circle' ? 'active' : ''}`} onClick={() => applyTextEffect('circle')} title="Circle"><FiCircle size={16} /></button>
-            <button className={`style-button ${currentEffect === 'arc-up' ? 'active' : ''}`} onClick={() => applyTextEffect('arc-up')} title="Arc Up"><FiSmile size={16} /></button>
-            <button className={`style-button ${currentEffect === 'arc-down' ? 'active' : ''}`} onClick={() => applyTextEffect('arc-down')} title="Arc Down"><FiFrown size={16} /></button>
-            <button className={`style-button ${currentEffect === 'flag' ? 'active' : ''}`} onClick={() => applyTextEffect('flag')} title="Flag"><FiFlag size={16} /></button>
-          </div>
-
-          {['circle', 'arc-up', 'arc-down'].includes(currentEffect) && (
-            <div className="control-row full-width">
-              <div className="control-row">
-                <label className="control-label">Radius (Curvature)</label>
-                <span style={{ fontSize: '12px', color: '#666' }}>{circleRadius}</span>
-              </div>
-              <input
-                type="range"
-                className="slider-input"
-                min="10" max="600" step="10"
-                value={circleRadius}
-                onInput={(e) => setCircleRadius(Number(e.target.value))}
-                onChange={(e) => handleLiveUpdate('radius', Number(e.target.value))} // ✅ Added Live Update
-                onMouseUp={(e) => updateObject(id, { radius: Number(e.target.value) })}
-              />
-            </div>
-          )}
-
-          {/* ✅ ARC ANGLE SLIDER (Only for Arc Up/Down) */}
-          {['arc-up', 'arc-down'].includes(currentEffect) && (
-            <div className="control-row full-width">
-              <div className="control-row">
-                <label className="control-label">Arc Angle (Spread)</label>
-                <span style={{ fontSize: '12px', color: '#666' }}>{arcAngle}°</span>
-              </div>
-              <input
-                type="range"
-                className="slider-input"
-                min="10" max="360" step="5"
-                value={arcAngle}
-                onInput={(e) => setArcAngle(Number(e.target.value))}
-                onChange={(e) => handleLiveUpdate('arcAngle', Number(e.target.value))} // ✅ Added Live Update
-                onMouseUp={(e) => updateObject(id, { arcAngle: Number(e.target.value) })}
-              />
-            </div>
-          )}
-
-          {/* ✅ FLAG PROPS (Keep properties for Flag) */}
-          {currentEffect === 'flag' && (
-            <div className="control-row full-width">
-              <div className="control-row">
-                <label className="control-label">Wave Velocity</label>
-                <span style={{ fontSize: '12px', color: '#666' }}>{flagVelocity}</span>
-              </div>
-              <input
-                type="range"
-                className="slider-input"
-                min="0" max="100" step="1"
-                value={flagVelocity}
-                onInput={(e) => setFlagVelocity(Number(e.target.value))}
-                onChange={(e) => handleLiveUpdate('flagVelocity', Number(e.target.value))} // ✅ Added Live Update
-                onMouseUp={(e) => updateObject(id, { flagVelocity: Number(e.target.value) })}
-              />
-            </div>
-          )}
-          {/* FONT FAMILY SECTION */}
-          <h3 className="property-group-subtitle">Font Family</h3>
-          <div className="control-row full-width font-control-group">
-            <input
-              type="text"
-              className="text-input font-input"
-              value={liveProps.fontFamily || ''}
-              onChange={(e) => handleLiveUpdate('fontFamily', e.target.value)}
-              placeholder="Enter font name (e.g., Roboto)"
-              disabled={isFontLoading}
-              style={{ color: '#000000' }}
-            />
-            <div className="font-link-helper">
-              <button
-                className="style-button primary-button apply small-button apply-button"
-                onClick={() => handleApplyFont(liveProps.fontFamily)}
-                disabled={!liveProps.fontFamily || isFontLoading}
-              >
-                {isFontLoading ? <FiLoader size={16} className="icon-spin" /> : 'Apply'}
-              </button>
-              <button className="style-button" onClick={() => setShowFontUrlInput(prev => !prev)} disabled={isFontLoading}><FiSearch size={16} /></button>
-              <a href="https://fonts.google.com/" target="_blank" rel="noopener noreferrer" className="style-button external-link-button"><FiExternalLink size={16} /></a>
-            </div>
-          </div>
-
-          {showFontUrlInput && (
-            <div className="control-row full-width font-url-input-group">
-              <p className="font-helper-text">Paste the full Google Fonts **link** or **@import** statement:</p>
-              <textarea
-                rows="2"
-                className="text-input"
-                value={googleFontUrl}
-                onChange={(e) => setGoogleFontUrl(e.target.value)}
-                placeholder="e.g., https://fonts.googleapis.com/css2?family=Roboto..."
-
-              />
-              <button
-                className="primary-button small-button"
-                onClick={handleUrlPaste}
-                disabled={!googleFontUrl.trim()}
-              >
-                Extract & Apply
-              </button>
-            </div>
-          )}
-
-          <h3 className="property-group-subtitle" style={{ marginTop: '15px' }}>System Presets</h3>
-          <div className="control-row full-width">
-            <select
-              className="font-select"
-              value={liveProps.fontFamily || 'Arial'}
-              onChange={(e) => handleUpdateAndHistory('fontFamily', e.target.value)}
-              disabled={isFontLoading}
-            >
-              {FONT_OPTIONS.map(font => <option key={font} value={font}>{font}</option>)}
-            </select>
-          </div>
-
-          <div className="control-row">
-            <label className="control-label">Font Size</label>
-            <input type="number" className="number-input small" value={Math.round(liveProps.fontSize || 0)} onChange={(e) => handleLiveUpdate('fontSize', Number(e.target.value))} onBlur={(e) => handleUpdateAndHistory('fontSize', Number(e.target.value))} />
-          </div>
-          <input type="range" className="slider-input" min="10" max="200" value={liveProps.fontSize || 0} onChange={(e) => handleLiveUpdate('fontSize', Number(e.target.value))} onMouseUp={(e) => handleUpdateAndHistory('fontSize', Number(e.target.value))} />
-
-          <div className="control-row">
-            <label className="control-label">Text Color</label>
-            <input type="color" className="color-input" value={liveProps.fill || '#000000'} onChange={(e) => handleColorChange('fill', e.target.value)} />
-          </div>
-
-          <h3 className="property-group-title">Outline</h3>
-          <div className="control-row">
-            <label className="control-label">Color</label>
-            <input type="color" className="color-input" value={liveProps.stroke || '#000000'} onChange={(e) => handleColorChange('stroke', e.target.value)} />
-          </div>
-          <div className="control-row">
-            <label className="control-label">Width</label>
-            <input type="number" className="number-input small" value={Math.round(liveProps.strokeWidth || 0)} onChange={(e) => handleLiveUpdate('strokeWidth', Number(e.target.value))} onBlur={(e) => handleUpdateAndHistory('strokeWidth', Number(e.target.value))} />
-          </div>
-          <input type="range" className="slider-input" min="0" max="10" step="0.5" value={liveProps.strokeWidth || 0} onChange={(e) => handleLiveUpdate('strokeWidth', Number(e.target.value))} onMouseUp={(e) => handleUpdateAndHistory('strokeWidth', Number(e.target.value))} />
+    // --- RENDER ---
+    if (!object) {
+      return (
+        <div className="property-panel-message">
+          <p>Select an object on the canvas to edit its properties.</p>
         </div>
-      )}
+      );
+    }
 
-      {/* ================= SHAPE PROPERTIES ================= */}
-      {isShapeObject && (
-        <div className="property-group">
-          <h3 className="property-group-title">Shape Style</h3>
+    return (
+      <div className="property-panel-content">
+        <h2 className="property-panel-title">
+          {type.charAt(0).toUpperCase() + type.slice(1).replace('-', ' ')} Properties
+        </h2>
 
-          {/* Fill Color (Skip for lines) */}
-          {type !== 'line' && (
+        {/* ================= TEXT PROPERTIES ================= */}
+        {isTextObject && (
+          <div className="property-group">
+            <h3 className="property-group-title">Text Content & Style</h3>
+
+            <div className="control-row full-width">
+              <textarea
+                className="text-input"
+                rows="3"
+                value={liveProps.text || ''}
+                onChange={(e) => handleUpdateAndHistory('text', e.target.value)}
+                placeholder="Enter your text here"
+                style={{ color: '#000000' }}
+              />
+            </div>
+
+            <h3 className="property-group-subtitle">Formatting</h3>
+            <div className="control-row-buttons" style={{ marginBottom: '15px', display: type === 'circle-text' ? 'none' : 'flex' }}>
+              <button className={`style-button ${liveProps.fontWeight === 'bold' ? 'active' : ''}`} onClick={() => toggleTextStyle('bold')} title="Bold"><FiBold size={16} /></button>
+              <button className={`style-button ${liveProps.fontStyle === 'italic' ? 'active' : ''}`} onClick={() => toggleTextStyle('italic')} title="Italic"><FiItalic size={16} /></button>
+              <button className={`style-button ${liveProps.underline ? 'active' : ''}`} onClick={() => toggleTextStyle('underline')} title="Underline"><FiUnderline size={16} /></button>
+            </div>
+
+            {/* Text Effects */}
+            <h3 className="property-group-subtitle">Text Effects</h3>
+            <div className="control-row-buttons">
+              <button className={`style-button ${currentEffect === 'straight' ? 'active' : ''}`} onClick={() => applyTextEffect('straight')} title="Straight"><FiSlash size={16} /></button>
+              <button className={`style-button ${currentEffect === 'circle' ? 'active' : ''}`} onClick={() => applyTextEffect('circle')} title="Circle"><FiCircle size={16} /></button>
+              <button className={`style-button ${currentEffect === 'arc-up' ? 'active' : ''}`} onClick={() => applyTextEffect('arc-up')} title="Arc Up"><FiSmile size={16} /></button>
+              <button className={`style-button ${currentEffect === 'arc-down' ? 'active' : ''}`} onClick={() => applyTextEffect('arc-down')} title="Arc Down"><FiFrown size={16} /></button>
+              <button className={`style-button ${currentEffect === 'flag' ? 'active' : ''}`} onClick={() => applyTextEffect('flag')} title="Flag"><FiFlag size={16} /></button>
+            </div>
+
+            {['circle', 'arc-up', 'arc-down'].includes(currentEffect) && (
+              <div className="control-row full-width">
+                <div className="control-row">
+                  <label className="control-label">Radius (Curvature)</label>
+                  <span style={{ fontSize: '12px', color: '#666' }}>{circleRadius}</span>
+                </div>
+                <input
+                  type="range"
+                  className="slider-input"
+                  min="10" max="600" step="10"
+                  value={circleRadius}
+                  onInput={(e) => setCircleRadius(Number(e.target.value))}
+                  onChange={(e) => handleLiveUpdate('radius', Number(e.target.value))} // ✅ Added Live Update
+                  onMouseUp={(e) => updateObject(id, { radius: Number(e.target.value) })}
+                />
+              </div>
+            )}
+
+            {/* ✅ ARC ANGLE SLIDER (Only for Arc Up/Down) */}
+            {['arc-up', 'arc-down'].includes(currentEffect) && (
+              <div className="control-row full-width">
+                <div className="control-row">
+                  <label className="control-label">Arc Angle (Spread)</label>
+                  <span style={{ fontSize: '12px', color: '#666' }}>{arcAngle}°</span>
+                </div>
+                <input
+                  type="range"
+                  className="slider-input"
+                  min="10" max="360" step="5"
+                  value={arcAngle}
+                  onInput={(e) => setArcAngle(Number(e.target.value))}
+                  onChange={(e) => handleLiveUpdate('arcAngle', Number(e.target.value))} // ✅ Added Live Update
+                  onMouseUp={(e) => updateObject(id, { arcAngle: Number(e.target.value) })}
+                />
+              </div>
+            )}
+
+            {/* ✅ FLAG PROPS (Keep properties for Flag) */}
+            {currentEffect === 'flag' && (
+              <div className="control-row full-width">
+                <div className="control-row">
+                  <label className="control-label">Wave Velocity</label>
+                  <span style={{ fontSize: '12px', color: '#666' }}>{flagVelocity}</span>
+                </div>
+                <input
+                  type="range"
+                  className="slider-input"
+                  min="0" max="100" step="1"
+                  value={flagVelocity}
+                  onInput={(e) => setFlagVelocity(Number(e.target.value))}
+                  onChange={(e) => handleLiveUpdate('flagVelocity', Number(e.target.value))} // ✅ Added Live Update
+                  onMouseUp={(e) => updateObject(id, { flagVelocity: Number(e.target.value) })}
+                />
+              </div>
+            )}
+            {/* FONT FAMILY SECTION */}
+            <h3 className="property-group-subtitle">Font Family</h3>
+            <div className="control-row full-width font-control-group">
+              <input
+                type="text"
+                className="text-input font-input"
+                value={liveProps.fontFamily || ''}
+                onChange={(e) => handleLiveUpdate('fontFamily', e.target.value)}
+                placeholder="Enter font name (e.g., Roboto)"
+                disabled={isFontLoading}
+                style={{ color: '#000000' }}
+              />
+              <div className="font-link-helper">
+                <button
+                  className="style-button primary-button apply small-button apply-button"
+                  onClick={() => handleApplyFont(liveProps.fontFamily)}
+                  disabled={!liveProps.fontFamily || isFontLoading}
+                >
+                  {isFontLoading ? <FiLoader size={16} className="icon-spin" /> : 'Apply'}
+                </button>
+                <button className="style-button" onClick={() => setShowFontUrlInput(prev => !prev)} disabled={isFontLoading}><FiSearch size={16} /></button>
+                <a href="https://fonts.google.com/" target="_blank" rel="noopener noreferrer" className="style-button external-link-button"><FiExternalLink size={16} /></a>
+              </div>
+            </div>
+
+            {showFontUrlInput && (
+              <div className="control-row full-width font-url-input-group">
+                <p className="font-helper-text">Paste the full Google Fonts **link** or **@import** statement:</p>
+                <textarea
+                  rows="2"
+                  className="text-input"
+                  value={googleFontUrl}
+                  onChange={(e) => setGoogleFontUrl(e.target.value)}
+                  placeholder="e.g., https://fonts.googleapis.com/css2?family=Roboto..."
+
+                />
+                <button
+                  className="primary-button small-button"
+                  onClick={handleUrlPaste}
+                  disabled={!googleFontUrl.trim()}
+                >
+                  Extract & Apply
+                </button>
+              </div>
+            )}
+
+            <h3 className="property-group-subtitle" style={{ marginTop: '15px' }}>System Presets</h3>
+            <div className="control-row full-width">
+              <select
+                className="font-select"
+                value={liveProps.fontFamily || 'Arial'}
+                onChange={(e) => handleUpdateAndHistory('fontFamily', e.target.value)}
+                disabled={isFontLoading}
+              >
+                {FONT_OPTIONS.map(font => <option key={font} value={font}>{font}</option>)}
+              </select>
+            </div>
+
             <div className="control-row">
-              <label className="control-label">Fill Color</label>
+              <label className="control-label">Font Size</label>
+              <input type="number" className="number-input small" value={Math.round(liveProps.fontSize || 0)} onChange={(e) => handleLiveUpdate('fontSize', Number(e.target.value))} onBlur={(e) => handleUpdateAndHistory('fontSize', Number(e.target.value))} />
+            </div>
+            <input type="range" className="slider-input" min="10" max="200" value={liveProps.fontSize || 0} onChange={(e) => handleLiveUpdate('fontSize', Number(e.target.value))} onMouseUp={(e) => handleUpdateAndHistory('fontSize', Number(e.target.value))} />
+
+            <div className="control-row">
+              <label className="control-label">Text Color</label>
+              <input type="color" className="color-input" value={liveProps.fill || '#000000'} onChange={(e) => handleColorChange('fill', e.target.value)} />
+            </div>
+
+            <h3 className="property-group-title">Outline</h3>
+            <div className="control-row">
+              <label className="control-label">Color</label>
+              <input type="color" className="color-input" value={liveProps.stroke || '#000000'} onChange={(e) => handleColorChange('stroke', e.target.value)} />
+            </div>
+            <div className="control-row">
+              <label className="control-label">Width</label>
+              <input type="number" className="number-input small" value={Math.round(liveProps.strokeWidth || 0)} onChange={(e) => handleLiveUpdate('strokeWidth', Number(e.target.value))} onBlur={(e) => handleUpdateAndHistory('strokeWidth', Number(e.target.value))} />
+            </div>
+            <input type="range" className="slider-input" min="0" max="10" step="0.5" value={liveProps.strokeWidth || 0} onChange={(e) => handleLiveUpdate('strokeWidth', Number(e.target.value))} onMouseUp={(e) => handleUpdateAndHistory('strokeWidth', Number(e.target.value))} />
+          </div>
+        )}
+
+        {/* ================= SHAPE PROPERTIES ================= */}
+        {isShapeObject && (
+          <div className="property-group">
+            <h3 className="property-group-title">Shape Style</h3>
+
+            {/* Fill Color (Skip for lines) */}
+            {type !== 'line' && (
+              <div className="control-row">
+                <label className="control-label">Fill Color</label>
+                <input
+                  type="color"
+                  className="color-input"
+                  value={liveProps.fill || '#000000'}
+                  onChange={(e) => handleColorChange('fill', e.target.value)}
+                />
+              </div>
+            )}
+
+            <div className="control-row">
+              <label className="control-label">{type === 'line' ? 'Line Color' : 'Border Color'}</label>
               <input
                 type="color"
                 className="color-input"
-                value={liveProps.fill || '#000000'}
-                onChange={(e) => handleColorChange('fill', e.target.value)}
+                value={liveProps.stroke || '#000000'}
+                onChange={(e) => handleColorChange('stroke', e.target.value)}
               />
             </div>
-          )}
-
-          <div className="control-row">
-            <label className="control-label">{type === 'line' ? 'Line Color' : 'Border Color'}</label>
+            <div className="control-row">
+              <label className="control-label">{type === 'line' ? 'Thickness' : 'Border Width'}</label>
+              <input
+                type="number"
+                className="number-input small"
+                value={Math.round(liveProps.strokeWidth || 0)}
+                onChange={(e) => handleLiveUpdate('strokeWidth', Number(e.target.value))}
+                onBlur={(e) => handleUpdateAndHistory('strokeWidth', Number(e.target.value))}
+              />
+            </div>
             <input
-              type="color"
-              className="color-input"
-              value={liveProps.stroke || '#000000'}
-              onChange={(e) => handleColorChange('stroke', e.target.value)}
+              type="range"
+              className="slider-input"
+              min="0" max={type === 'line' ? 50 : 20} step="1"
+              value={liveProps.strokeWidth || 0}
+              onChange={(e) => handleLiveUpdate('strokeWidth', Number(e.target.value))}
+              onMouseUp={(e) => handleUpdateAndHistory('strokeWidth', Number(e.target.value))}
             />
+
+            {/* 🆕 UNIVERSAL BORDER RADIUS SLIDER */}
+            {supportsBorderRadius && (
+              <>
+                <div className="control-row" style={{ marginTop: '15px' }}>
+                  <label className="control-label">Corner Radius</label>
+                  <span style={{ fontSize: '12px', color: '#666' }}>{Math.round(borderRadius)}</span>
+                </div>
+                <input
+                  type="range"
+                  className="slider-input"
+                  min="0"
+                  max={effectiveType === 'rect' ? 100 : 40} // Limit radius for complex shapes
+                  step="1"
+                  value={borderRadius}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setBorderRadius(val);
+
+                    // Handle Rect vs Other Shapes
+                    if (effectiveType === 'rect') {
+                      setLiveProps(prev => ({ ...prev, rx: val, ry: val }));
+                      liveUpdateFabric(fabricCanvas, id, { rx: val, ry: val }, liveProps, object);
+                    } else {
+                      setLiveProps(prev => ({ ...prev, radius: val }));
+                      liveUpdateFabric(fabricCanvas, id, { radius: val }, liveProps, object);
+                    }
+                  }}
+                  onMouseUp={(e) => {
+                    const val = Number(e.target.value);
+                    const key = effectiveType === 'rect' ? 'rx' : 'radius';
+                    // Save to Redux History
+                    updateObject(id, { [key]: val, ...(effectiveType === 'rect' ? { ry: val } : {}) });
+                  }}
+                />
+              </>
+            )}
           </div>
+        )}
+
+        {/* ================= GENERAL PROPERTIES ================= */}
+        <div className="property-group">
+          <h3 className="property-group-title">General Appearance</h3>
           <div className="control-row">
-            <label className="control-label">{type === 'line' ? 'Thickness' : 'Border Width'}</label>
+            <label className="control-label">Opacity</label>
             <input
               type="number"
               className="number-input small"
-              value={Math.round(liveProps.strokeWidth || 0)}
-              onChange={(e) => handleLiveUpdate('strokeWidth', Number(e.target.value))}
-              onBlur={(e) => handleUpdateAndHistory('strokeWidth', Number(e.target.value))}
+              value={Math.round((liveProps.opacity || object.props.opacity || 0) * 100)}
+              onChange={(e) => handleLiveUpdate('opacity', Number(e.target.value) / 100)}
+              onBlur={(e) => handleUpdateAndHistory('opacity', Number(e.target.value) / 100)}
             />
           </div>
           <input
             type="range"
             className="slider-input"
-            min="0" max={type === 'line' ? 50 : 20} step="1"
-            value={liveProps.strokeWidth || 0}
-            onChange={(e) => handleLiveUpdate('strokeWidth', Number(e.target.value))}
-            onMouseUp={(e) => handleUpdateAndHistory('strokeWidth', Number(e.target.value))}
-          />
-
-          {/* 🆕 UNIVERSAL BORDER RADIUS SLIDER */}
-          {supportsBorderRadius && (
-            <>
-              <div className="control-row" style={{ marginTop: '15px' }}>
-                <label className="control-label">Corner Radius</label>
-                <span style={{ fontSize: '12px', color: '#666' }}>{Math.round(borderRadius)}</span>
-              </div>
-              <input
-                type="range"
-                className="slider-input"
-                min="0"
-                max={effectiveType === 'rect' ? 100 : 40} // Limit radius for complex shapes
-                step="1"
-                value={borderRadius}
-                onChange={(e) => {
-                  const val = Number(e.target.value);
-                  setBorderRadius(val);
-
-                  // Handle Rect vs Other Shapes
-                  if (effectiveType === 'rect') {
-                    setLiveProps(prev => ({ ...prev, rx: val, ry: val }));
-                    liveUpdateFabric(fabricCanvas, id, { rx: val, ry: val }, liveProps, object);
-                  } else {
-                    setLiveProps(prev => ({ ...prev, radius: val }));
-                    liveUpdateFabric(fabricCanvas, id, { radius: val }, liveProps, object);
-                  }
-                }}
-                onMouseUp={(e) => {
-                  const val = Number(e.target.value);
-                  const key = effectiveType === 'rect' ? 'rx' : 'radius';
-                  // Save to Redux History
-                  updateObject(id, { [key]: val, ...(effectiveType === 'rect' ? { ry: val } : {}) });
-                }}
-              />
-            </>
-          )}
-        </div>
-      )}
-
-      {/* ================= GENERAL PROPERTIES ================= */}
-      <div className="property-group">
-        <h3 className="property-group-title">General Appearance</h3>
-        <div className="control-row">
-          <label className="control-label">Opacity</label>
-          <input
-            type="number"
-            className="number-input small"
+            min="0" max="100" step="1"
             value={Math.round((liveProps.opacity || object.props.opacity || 0) * 100)}
             onChange={(e) => handleLiveUpdate('opacity', Number(e.target.value) / 100)}
-            onBlur={(e) => handleUpdateAndHistory('opacity', Number(e.target.value) / 100)}
-          />
-        </div>
-        <input
-          type="range"
-          className="slider-input"
-          min="0" max="100" step="1"
-          value={Math.round((liveProps.opacity || object.props.opacity || 0) * 100)}
-          onChange={(e) => handleLiveUpdate('opacity', Number(e.target.value) / 100)}
-          onMouseUp={(e) => handleUpdateAndHistory('opacity', Number(e.target.value) / 100)}
-        />
-      </div>
-
-      {/* ================= SHADOW EFFECT ================= */}
-      <div className="property-group">
-        <h3 className="property-group-title">Shadow Effect</h3>
-
-        <div className="control-row">
-          <label className="control-label">Shadow Color</label>
-          <input
-            type="color"
-            className="color-input"
-            value={liveProps.shadowColor || '#000000'}
-            onChange={(e) => handleColorChange('shadowColor', e.target.value)}
+            onMouseUp={(e) => handleUpdateAndHistory('opacity', Number(e.target.value) / 100)}
           />
         </div>
 
-        <div className="control-row">
-          <label className="control-label">Blur</label>
-          <input
-            type="number"
-            className="number-input small"
-            value={Math.round(liveProps.shadowBlur || 0)}
-            onChange={(e) => handleLiveUpdate('shadowBlur', Number(e.target.value), object)}
-            onBlur={(e) => handleUpdateAndHistory('shadowBlur', Number(e.target.value))}
-          />
-        </div>
-        <input
-          type="range"
-          className="slider-input"
-          min="0"
-          max="50"
-          step="1"
-          value={liveProps.shadowBlur || 0}
-          onInput={(e) => handleLiveUpdate('shadowBlur', Number(e.target.value), object)}
-          onMouseUp={(e) => handleUpdateAndHistory('shadowBlur', Number(e.target.value))}
-        />
-
-        <div className="control-row">
-          <label className="control-label">Offset X</label>
-          <input
-            type="number"
-            className="number-input small"
-            value={Math.round(liveProps.shadowOffsetX || 0)}
-            onChange={(e) => handleLiveUpdate('shadowOffsetX', Number(e.target.value), object)}
-            onBlur={(e) => handleUpdateAndHistory('shadowOffsetX', Number(e.target.value))}
-          />
-        </div>
-        <input
-          type="range"
-          className="slider-input"
-          min="-10"
-          max="10"
-          step="1"
-          value={liveProps.shadowOffsetX || 0}
-          onInput={(e) => handleLiveUpdate('shadowOffsetX', Number(e.target.value), object)}
-          onMouseUp={(e) => handleUpdateAndHistory('shadowOffsetX', Number(e.target.value))}
-        />
-
-        <div className="control-row">
-          <label className="control-label">Offset Y</label>
-          <input
-            type="number"
-            className="number-input small"
-            value={Math.round(liveProps.shadowOffsetY || 0)}
-            onChange={(e) => handleLiveUpdate('shadowOffsetY', Number(e.target.value), object)}
-            onBlur={(e) => handleUpdateAndHistory('shadowOffsetY', Number(e.target.value))}
-          />
-        </div>
-        <input
-          type="range"
-          className="slider-input"
-          min="-10"
-          max="10"
-          step="1"
-          value={liveProps.shadowOffsetY || 0}
-          onInput={(e) => handleLiveUpdate('shadowOffsetY', Number(e.target.value), object)}
-          onMouseUp={(e) => handleUpdateAndHistory('shadowOffsetY', Number(e.target.value))}
-        />
-      </div>
-
-      {type === 'image' && (
+        {/* ================= SHADOW EFFECT ================= */}
         <div className="property-group">
-          <button className="primary-button full-width">Remove Background (AI)</button>
+          <h3 className="property-group-title">Shadow Effect</h3>
+
+          <div className="control-row">
+            <label className="control-label">Shadow Color</label>
+            <input
+              type="color"
+              className="color-input"
+              value={liveProps.shadowColor || '#000000'}
+              onChange={(e) => handleColorChange('shadowColor', e.target.value)}
+            />
+          </div>
+
+          <div className="control-row">
+            <label className="control-label">Blur</label>
+            <input
+              type="number"
+              className="number-input small"
+              value={Math.round(liveProps.shadowBlur || 0)}
+              onChange={(e) => handleLiveUpdate('shadowBlur', Number(e.target.value), object)}
+              onBlur={(e) => handleUpdateAndHistory('shadowBlur', Number(e.target.value))}
+            />
+          </div>
+          <input
+            type="range"
+            className="slider-input"
+            min="0"
+            max="50"
+            step="1"
+            value={liveProps.shadowBlur || 0}
+            onInput={(e) => handleLiveUpdate('shadowBlur', Number(e.target.value), object)}
+            onMouseUp={(e) => handleUpdateAndHistory('shadowBlur', Number(e.target.value))}
+          />
+
+          <div className="control-row">
+            <label className="control-label">Offset X</label>
+            <input
+              type="number"
+              className="number-input small"
+              value={Math.round(liveProps.shadowOffsetX || 0)}
+              onChange={(e) => handleLiveUpdate('shadowOffsetX', Number(e.target.value), object)}
+              onBlur={(e) => handleUpdateAndHistory('shadowOffsetX', Number(e.target.value))}
+            />
+          </div>
+          <input
+            type="range"
+            className="slider-input"
+            min="-10"
+            max="10"
+            step="1"
+            value={liveProps.shadowOffsetX || 0}
+            onInput={(e) => handleLiveUpdate('shadowOffsetX', Number(e.target.value), object)}
+            onMouseUp={(e) => handleUpdateAndHistory('shadowOffsetX', Number(e.target.value))}
+          />
+
+          <div className="control-row">
+            <label className="control-label">Offset Y</label>
+            <input
+              type="number"
+              className="number-input small"
+              value={Math.round(liveProps.shadowOffsetY || 0)}
+              onChange={(e) => handleLiveUpdate('shadowOffsetY', Number(e.target.value), object)}
+              onBlur={(e) => handleUpdateAndHistory('shadowOffsetY', Number(e.target.value))}
+            />
+          </div>
+          <input
+            type="range"
+            className="slider-input"
+            min="-10"
+            max="10"
+            step="1"
+            value={liveProps.shadowOffsetY || 0}
+            onInput={(e) => handleLiveUpdate('shadowOffsetY', Number(e.target.value), object)}
+            onMouseUp={(e) => handleUpdateAndHistory('shadowOffsetY', Number(e.target.value))}
+          />
         </div>
-      )}
-    </div>
-  );
-}
+
+        {type === 'image' && (
+          <div className="property-group">
+            <button className="primary-button full-width">Remove Background (AI)</button>
+          </div>
+        )}
+      </div>
+    );
+  }
