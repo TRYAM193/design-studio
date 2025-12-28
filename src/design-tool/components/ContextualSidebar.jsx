@@ -1,5 +1,5 @@
 // src/components/ContextualSidebar.jsx
-import React from 'react';
+import React,{useState} from 'react';
 import ShapesSidebar from './ShapesSidebar';
 import { FiType, FiCircle, FiSunrise, FiFlag } from 'react-icons/fi';
 import SidebarSavedList from './SidebarSavedList';
@@ -26,6 +26,8 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
     alignItems: 'center',
     gap: '5px'
   };
+
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   switch (activePanel) {
     case 'saved':  // <--- ADD THIS CASE
