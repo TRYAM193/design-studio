@@ -3,9 +3,10 @@ import React, { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Decal, Center, Environment } from "@react-three/drei";
-import { ArrowUp, ArrowRight, Maximize2, RotateCcw, Box } from "lucide-react"; 
+import { ArrowUp, ArrowRight, Maximize2, RotateCcw, Box, Layers } from "lucide-react"; 
 
 // --- 1. CONFIGURATION ---
+// You can update these base values later as mentioned
 const MODEL_CONFIGS = {
   "t-shirt": {
     scale: 0.8,
@@ -17,7 +18,7 @@ const MODEL_CONFIGS = {
       leftSleeve: "Sleeves_Node",
       rightSleeve: "Sleeves_Node001",
     },
-    frontDecal: { x: 0, y: 1.2, z: 0, scale: 0.6 },
+    frontDecal: { x: 0, y: 0.12, z: 0.5, scale: 0.5 },
     backDecal: { x: 0, y: 0.12, z: -0.5, scale: 0.5 }
   },
   "mug": {
@@ -71,22 +72,15 @@ function CameraRig({ z }) {
   return null;
 }
 
-// ✅ MODIFIED: Renders Decal + Visual Axis Helper
 function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
   if (!texture) return null;
   return (
     <>
-      {/* 1. The Actual Texture Projection */}
       <Decal position={[x, y, z]} rotation={rotation} scale={[scale, scale, 1.5]} debug={false}>
         <meshBasicMaterial map={texture} transparent depthTest={true} depthWrite={false} polygonOffset polygonOffsetFactor={-4} />
       </Decal>
-
-      {/* 2. Visual Axis & Bounds Box */}
       <group position={[x, y, z]} rotation={rotation} scale={[scale, scale, scale]}>
-        {/* RGB Axes (X=Red, Y=Green, Z=Blue) */}
         <axesHelper args={[1.2]} />
-        
-        {/* Yellow Wireframe Box to show bounds */}
         <mesh>
           <boxGeometry args={[1, 1, 0.2]} />
           <meshBasicMaterial wireframe color="yellow" transparent opacity={0.5} />
@@ -97,7 +91,7 @@ function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
 }
 
 // --- 3. DYNAMIC MODEL ---
-function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, posAdjust, scaleAdjust }) {
+function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, adjustments }) {
   const { nodes } = useGLTF(modelUrl);
   const m = config.meshes;
 
@@ -106,18 +100,20 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, po
   const leftTex = useDesignTexture(textures?.leftSleeve || textures?.left);
   const rightTex = useDesignTexture(textures?.rightSleeve || textures?.right);
 
-  // ✅ HELPER: Updated to include Z
-  const getFinalPos = (base) => {
-    return {
-      x: base.x + posAdjust.x,
-      y: base.y + posAdjust.y,
-      z: base.z + posAdjust.z, // 🔥 Added Z adjustment
-      scale: base.scale * scaleAdjust
-    };
-  };
+  // ✅ SEPARATE LOGIC FOR FRONT AND BACK
+  const finalFront = useMemo(() => ({
+    x: frontPos.x + adjustments.front.x,
+    y: frontPos.y + adjustments.front.y,
+    z: frontPos.z + adjustments.front.z,
+    scale: frontPos.scale * adjustments.front.scale
+  }), [frontPos, adjustments.front]);
 
-  const finalFront = getFinalPos(frontPos);
-  const finalBack = getFinalPos(backPos);
+  const finalBack = useMemo(() => ({
+    x: backPos.x + adjustments.back.x,
+    y: backPos.y + adjustments.back.y,
+    z: backPos.z + adjustments.back.z,
+    scale: backPos.scale * adjustments.back.scale
+  }), [backPos, adjustments.back]);
 
   const RenderPart = ({ meshName, tex, decalProps }) => {
     if (!nodes || !nodes[meshName]) return null;
@@ -145,6 +141,8 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, po
 
   return (
     <group position={config.position} scale={config.scale} dispose={null}>
+      
+      {/* Front Logic */}
       <RenderPart
         meshName={m.front}
         tex={frontTex}
@@ -155,6 +153,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, po
         }}
       />
 
+      {/* Back Logic */}
       {!config.fullWrap && (
         <RenderPart
           meshName={m.back}
@@ -183,17 +182,37 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
   const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
   const [cameraZ] = useState(config.cameraZ || 2.5);
   
+  // Base positions from Config
   const [frontPos] = useState(config.frontDecal || { x: 0, y: 0, z: 0.5, scale: 0.5 });
   const [backPos] = useState(config.backDecal || { x: 0, y: 0, z: -0.5, scale: 0.5 });
 
-  // ✅ LOCAL STATE: Added Z
-  const [posAdjust, setPosAdjust] = useState({ x: 0, y: 0, z: 0 }); 
-  const [scaleAdjust, setScaleAdjust] = useState(1);
+  // ✅ STATE: Independent adjustments for Front and Back
+  const [editSide, setEditSide] = useState("front"); // 'front' | 'back'
+  const [adjustments, setAdjustments] = useState({
+    front: { x: 0, y: 0, z: 0, scale: 1 },
+    back: { x: 0, y: 0, z: 0, scale: 1 }
+  });
 
-  const resetAdjustments = () => {
-    setPosAdjust({ x: 0, y: 0, z: 0 });
-    setScaleAdjust(1);
+  // Helper to update the current side's adjustment
+  const updateAdjustment = (key, value) => {
+    setAdjustments(prev => ({
+      ...prev,
+      [editSide]: {
+        ...prev[editSide],
+        [key]: parseFloat(value)
+      }
+    }));
   };
+
+  const resetCurrentSide = () => {
+    setAdjustments(prev => ({
+      ...prev,
+      [editSide]: { x: 0, y: 0, z: 0, scale: 1 }
+    }));
+  };
+
+  // Get current values for sliders
+  const current = adjustments[editSide];
 
   if (!modelUrl) return <div>No 3D Model URL provided</div>;
 
@@ -216,23 +235,22 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
             frontPos={frontPos}
             backPos={backPos}
             config={config}
-            posAdjust={posAdjust}
-            scaleAdjust={scaleAdjust}
+            adjustments={adjustments} // Pass full object
           />
         </Center>
 
         <OrbitControls enablePan={false} minPolarAngle={0} maxPolarAngle={Math.PI} />
       </Canvas>
 
-      {/* ✅ UI CONTROLS OVERLAY */}
+      {/* ✅ UI CONTROLS */}
       <div 
         style={{
           position: "absolute",
           bottom: "20px",
           right: "20px",
-          width: "220px",
-          backgroundColor: "rgba(20, 20, 20, 0.8)",
-          backdropFilter: "blur(8px)",
+          width: "240px",
+          backgroundColor: "rgba(20, 20, 20, 0.9)",
+          backdropFilter: "blur(10px)",
           padding: "16px",
           borderRadius: "12px",
           border: "1px solid rgba(255,255,255,0.1)",
@@ -245,8 +263,24 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
           <span style={{ fontSize: "12px", fontWeight: "600", color: "#ccc" }}>3D ALIGNMENT</span>
-          <button onClick={resetAdjustments} style={{ background: "none", border: "none", color: "#888", cursor: "pointer" }} title="Reset">
+          <button onClick={resetCurrentSide} style={{ background: "none", border: "none", color: "#888", cursor: "pointer" }} title="Reset Side">
             <RotateCcw size={14} />
+          </button>
+        </div>
+
+        {/* SIDE SELECTOR */}
+        <div style={{ display: "flex", background: "#333", borderRadius: "6px", padding: "2px", marginBottom: "8px" }}>
+          <button 
+            onClick={() => setEditSide("front")} 
+            style={{ flex: 1, padding: "6px", borderRadius: "4px", border: "none", background: editSide === "front" ? "#555" : "transparent", color: "white", fontSize: "11px", cursor: "pointer" }}
+          >
+            Front
+          </button>
+          <button 
+            onClick={() => setEditSide("back")} 
+            style={{ flex: 1, padding: "6px", borderRadius: "4px", border: "none", background: editSide === "back" ? "#555" : "transparent", color: "white", fontSize: "11px", cursor: "pointer" }}
+          >
+            Back
           </button>
         </div>
 
@@ -254,12 +288,12 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowUp size={12}/> Vertical (Y)</span>
-            <span>{posAdjust.y}</span>
+            <span>{Math.round(current.y * 100)}</span>
           </div>
           <input 
-            type="range" min="-10" max="10" step="0.01" 
-            value={posAdjust.y}
-            onChange={(e) => setPosAdjust(p => ({ ...p, y: parseFloat(e.target.value) }))}
+            type="range" min="-0.3" max="0.3" step="0.01" 
+            value={current.y}
+            onChange={(e) => updateAdjustment('y', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
           />
         </div>
@@ -268,12 +302,12 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowRight size={12}/> Horizontal (X)</span>
-            <span>{posAdjust.x}</span>
+            <span>{Math.round(current.x * 100)}</span>
           </div>
           <input 
-            type="range" min="-10" max="10" step="0.1" 
-            value={posAdjust.x}
-            onChange={(e) => setPosAdjust(p => ({ ...p, x: parseFloat(e.target.value) }))}
+            type="range" min="-0.2" max="0.2" step="0.01" 
+            value={current.x}
+            onChange={(e) => updateAdjustment('x', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
           />
         </div>
@@ -282,12 +316,12 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Box size={12}/> Depth (Z)</span>
-            <span>{posAdjust.z }</span>
+            <span>{Math.round(current.z * 100)}</span>
           </div>
           <input 
-            type="range" min="-10" max="10" step="0.01" 
-            value={posAdjust.z}
-            onChange={(e) => setPosAdjust(p => ({ ...p, z: parseFloat(e.target.value) }))}
+            type="range" min="-0.2" max="0.2" step="0.01" 
+            value={current.z}
+            onChange={(e) => updateAdjustment('z', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
           />
         </div>
@@ -296,12 +330,12 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Maximize2 size={12}/> Scale</span>
-            <span>{scaleAdjust.toFixed(2)}x</span>
+            <span>{current.scale.toFixed(2)}x</span>
           </div>
           <input 
             type="range" min="0.5" max="2.5" step="0.1" 
-            value={scaleAdjust}
-            onChange={(e) => setScaleAdjust(parseFloat(e.target.value))}
+            value={current.scale}
+            onChange={(e) => updateAdjustment('scale', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
           />
         </div>
