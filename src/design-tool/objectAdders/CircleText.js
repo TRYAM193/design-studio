@@ -133,7 +133,8 @@ export default function CircleText(objData) {
     text: obj.text,
     fontSize: obj.fontSize,
     fontFamily: obj.fontFamily,
-    fill: obj.color
+    fill: obj.color,
+    scaleX
   });
 
   return group;
