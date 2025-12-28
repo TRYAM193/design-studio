@@ -254,7 +254,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowUp size={12}/> Vertical (Y)</span>
-            <span>{Math.round(posAdjust.y)}</span>
+            <span>{posAdjust.y}</span>
           </div>
           <input 
             type="range" min="-10" max="10" step="0.01" 
