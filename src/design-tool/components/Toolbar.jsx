@@ -168,7 +168,8 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
     const currentSrc = object.src || ''
 
     if (!currentSrc) {
-      alert('No ')
+      alert('No image source found!')
+      return
     }
   }
 
