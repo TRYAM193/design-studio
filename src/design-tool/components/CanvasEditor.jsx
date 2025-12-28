@@ -308,6 +308,10 @@ export default function CanvasEditor({
       setSelectedId(null);
       setActiveTool(null);
       setMenuPosition(null);
+
+      if (window.innerWidth < 768 && wrapperRef.current) {
+          fitDesignToScreen(canvas, wrapperRef.current.clientWidth, wrapperRef.current.clientHeight);
+      }
     };
 
     const handleMoving = () => {
