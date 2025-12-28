@@ -192,8 +192,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     print_area_2d: {
-      front: { top: 24, left: 9, width: 84, height: 50 },
-      back: { top: 24, left: 9, width: 84, height: 50 }
+      front: { top: 29, left: 32.5, width: 35, height: 39 },
+      back: { top: 29, left: 32.5, width: 35, height: 39 }
     },
 
     options: {
@@ -297,7 +297,7 @@ export const INITIAL_PRODUCTS = [
     },
 
     print_area_2d: {
-     front: { top: 32, left: 33.5, width: 33.5, height: 24.5 },
+      front: { top: 32, left: 33.5, width: 33.5, height: 24.5 },
       back: { top: 40, left: 35, width: 32, height: 29 }
     },
 
