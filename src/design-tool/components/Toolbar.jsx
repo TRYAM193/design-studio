@@ -261,11 +261,10 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
     let updates = { textEffect: effectType };
     if (effectType === 'circle') {
       updates.radius = circleRadius;
-    }else if (['arc-up', 'arc-down'].includes(effectType)) {
+    } else if (['arc-up', 'arc-down'].includes(effectType)) {
       updates.radius = circleRadius;
       updates.arcAngle = arcAngle;
-    }
-    if (effectType === 'flag') {
+    } else if (effectType === 'flag') {
       updates.flagVelocity = flagVelocity;
     } else if (effectType === 'none') {
       updates.path = null;
