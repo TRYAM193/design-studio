@@ -147,9 +147,8 @@ export default function CanvasEditor({
       // ---------------------------------------------------------
       // 🔥 NEW: PINCH-TO-RESIZE (Object) vs PINCH-TO-ZOOM (Canvas)
       // ---------------------------------------------------------
-      canvas.on('touch:gesture', function(opt) {
+     canvas.on('touch:gesture', function(opt) {
           if (opt.e.touches && opt.e.touches.length === 2) {
-              
               const activeObj = canvas.getActiveObject();
               
               // CASE A: Object Selected -> Resize Object
