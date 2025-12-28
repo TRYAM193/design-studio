@@ -23,32 +23,6 @@ const uuidv4 = () => {
   });
 };
 
-const extractFontsFromJSON = (json) => {
-  const fonts = new Set();
-  const data = typeof json === 'string' ? JSON.parse(json) : json;
-
-  // Handle both single view and multi-view JSON structures
-  const scanObjects = (objs) => {
-    if (!objs) return;
-    objs.forEach((obj) => {
-      if (obj.fontFamily && obj.fontFamily !== 'Times New Roman' && obj.fontFamily !== 'Arial') {
-        fonts.add(obj.fontFamily);
-      }
-    });
-  };
-
-  if (data.objects) {
-    scanObjects(data.objects);
-  } else {
-    // Check for multi-view structure (front, back, etc.)
-    Object.values(data).forEach(view => {
-      if (view && view.objects) scanObjects(view.objects);
-    });
-  }
-  
-  return Array.from(fonts);
-};
-
 // Extend toObject to include custom properties
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
@@ -74,7 +48,7 @@ export default function CanvasEditor({
   setSelectedId,
   setFabricCanvas,
   fabricCanvas,
-  printDimensions,
+  printDimensions, // This is your canvas_size (e.g., width: 420, height: 560)
   productId,
   activeView,
 }) {
@@ -92,19 +66,40 @@ export default function CanvasEditor({
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  // ✅ Store the calculated layout for the clip path
+  const [layout, setLayout] = useState({ width: 0, height: 0, left: 0, top: 0, scale: 1 });
 
-  // --- SCALING & MENU POSITIONING ---
-  const calculateScaledSize = (originalWidth, originalHeight) => {
-    const currentScreenWidth = window.innerWidth;
-    const referenceWidth = 1707; 
-    const scaleFactor = currentScreenWidth / referenceWidth;
+  // ✅ HELPER: Calculate Layout to Center ClipPath
+  const calculateLayout = (containerW, containerH) => {
+    if (!printDimensions.width || !printDimensions.height) return;
 
-    return {
-      width: originalWidth * scaleFactor,
-      height: originalHeight * scaleFactor,
-      scaleFactor: scaleFactor
-    };
+    // Responsive Padding (less on mobile, more on desktop)
+    const padding = containerW < 768 ? 30 : 60;
+    
+    // Available space
+    const availW = containerW - padding;
+    const availH = containerH - padding;
+
+    // Determine Scale: Fit printDimensions into Available Space
+    // We use Math.min(1, ...) to ensure it never scales UP pixelated on HUGE screens, 
+    // but scales DOWN perfectly on mobile.
+    // If you WANT it to scale up on large screens, remove the '1'.
+    const scale = Math.min(1, availW / printDimensions.width, availH / printDimensions.height);
+
+    const finalWidth = printDimensions.width * scale;
+    const finalHeight = printDimensions.height * scale;
+
+    // Center Logic
+    const left = (containerW - finalWidth) / 2;
+    const top = (containerH - finalHeight) / 2;
+
+    setLayout({
+        width: finalWidth,
+        height: finalHeight,
+        left: left,
+        top: top,
+        scale: scale
+    });
   };
 
   const updateMenuPosition = () => {
@@ -115,6 +110,7 @@ export default function CanvasEditor({
 
     if (activeObj) {
       const objectCenter = activeObj.getCenterPoint();
+      // Adjust menu position relative to object center
       setMenuPosition({
         left: objectCenter.x,
         top: objectCenter.y - (activeObj.getScaledHeight() / 2) - 60
@@ -134,15 +130,12 @@ export default function CanvasEditor({
     }
   };
 
-  const { width: printWidth, height: printHeight } = printDimensions;
-  const { width: scaledWidth, height: scaledHeight } = calculateScaledSize(printWidth, printHeight);
-
-  // ✅ 1. INITIALIZE CANVAS
+  // ✅ 1. INITIALIZE CANVAS & RESIZE OBSERVER
   useEffect(() => {
     let canvas = fabricCanvasRef.current;
     if (!canvas) {
       canvas = new fabric.Canvas(canvasRef.current, {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f3f4f6', // Grey background to distinguish the paper area
         selection: true,
         controlsAboveOverlay: true,
         preserveObjectStacking: true,
@@ -157,7 +150,10 @@ export default function CanvasEditor({
         const { clientWidth, clientHeight } = wrapperRef.current;
         canvas.setDimensions({ width: clientWidth, height: clientHeight });
         canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-        setContainerSize({ width: clientWidth, height: clientHeight });
+        
+        // ✅ Recalculate Center Position on Resize
+        calculateLayout(clientWidth, clientHeight);
+        
         canvas.requestRenderAll();
       }
     };
@@ -167,62 +163,61 @@ export default function CanvasEditor({
 
     resizeCanvas();
 
-    return () => { };
-  }, []);
+    return () => ro.disconnect();
+  }, [printDimensions]); // Re-run if product dimensions change
 
-  // ✅ 2. HANDLE PRINT AREA MASK & BORDER
+  // ✅ 2. HANDLE PRINT AREA MASK & BORDER (Using `layout` state)
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
+    // Cleanup old borders
     canvas.getObjects().forEach((obj) => {
       if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') {
         canvas.remove(obj);
       }
     });
     
-    if (productId && canvas.width > 0 && canvas.height > 0) {
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      const leftPos = centerX - scaledWidth / 2;
-      const topPos = centerY - scaledHeight / 2;
-
+    if (productId && layout.width > 0 && layout.height > 0) {
+      // ✅ Create Clip Path (The Printable Area)
+      // Using the calculated Left/Top from `layout` ensures it is centered
       const clipRect = new fabric.Rect({
-        left: leftPos,
-        top: topPos,
-        width: scaledWidth,
-        height: scaledHeight,
+        left: layout.left,
+        top: layout.top,
+        width: layout.width,
+        height: layout.height,
         absolutePositioned: true,
       });
       
       canvas.clipPath = clipRect;
       
-      if (scaledHeight && scaledWidth) {
-        const visualBorder = new fabric.Rect({
-          left: leftPos,
-          top: topPos,
-          width: scaledWidth,
-          height: scaledHeight,
-          fill: 'transparent',
-          stroke: 'rgba(0,0,0,0.3)',
-          strokeWidth: 2,
-          strokeDashArray: [5, 5],
-          selectable: false,
-          evented: false,
-          customId: 'print-area-border',
-          id: 'print-area-border'
-        });
-        canvas.add(visualBorder);
-        canvas.bringObjectToFront(visualBorder);
-        // console.log('added border')
-      }
+      // ✅ Create Visual Border
+      const visualBorder = new fabric.Rect({
+        left: layout.left,
+        top: layout.top,
+        width: layout.width,
+        height: layout.height,
+        fill: '#ffffff', // White paper area
+        stroke: 'rgba(0,0,0,0.1)', // Subtle border
+        strokeWidth: 1,
+        strokeDashArray: [5, 5],
+        selectable: false,
+        evented: false,
+        customId: 'print-area-border',
+        id: 'print-area-border',
+        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.1)', blur: 10 }) // Optional: Shadow for depth
+      });
+      
+      canvas.add(visualBorder);
+      canvas.sendToBack(visualBorder); // Keep it behind objects
     } else {
       canvas.clipPath = null;
     }
+    
     canvas.requestRenderAll();
     window.dispatchEvent(new Event('resize_menu_update'));
 
-  }, [printDimensions, activeView, window.innerWidth]);
+  }, [layout, productId, activeView]); // Update when layout or product changes
 
   // ✅ 4. HANDLE SELECTION EVENTS
   useEffect(() => {
@@ -270,7 +265,7 @@ export default function CanvasEditor({
     };
   }, [fabricCanvas, setSelectedId, setActiveTool]);
 
-  // ✅ 5. HANDLE MODIFICATIONS
+  // ✅ 5. HANDLE MODIFICATIONS (Keep as is)
   useEffect(() => {
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
@@ -296,29 +291,17 @@ export default function CanvasEditor({
             const index = updatedPresent.findIndex((o) => o.id === child.customId);
             if (index === -1) return;
 
-            if (child.type === 'text' || child.type === 'textbox' || child.customType === 'text') {
-              const newFontSize = child.fontSize * child.scaleX;
-              child.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
-              child.setCoords();
-              updatedPresent[index].props = {
-                ...updatedPresent[index].props,
-                fontSize: newFontSize,
-                left: child.left,
-                top: child.top,
-                angle: child.angle,
-                scaleX: 1,
-                scaleY: 1
-              };
-            } else {
-              updatedPresent[index].props = {
+            // Simplified update logic
+             updatedPresent[index].props = {
                 ...updatedPresent[index].props,
                 left: child.left,
                 top: child.top,
                 angle: child.angle,
                 scaleX: child.scaleX,
                 scaleY: child.scaleY,
+                fontSize: (child.type === 'text' || child.type === 'textbox') ? child.fontSize * child.scaleX : undefined
               };
-            }
+              if (child.type === 'text') { updatedPresent[index].props.scaleX = 1; updatedPresent[index].props.scaleY = 1; }
             hasChanges = true;
           });
           if (hasChanges) store.dispatch(setCanvasObjects(updatedPresent));
@@ -332,6 +315,7 @@ export default function CanvasEditor({
         return;
       }
 
+      // Single object update
       if (type === 'text' || type === 'textbox') {
         const newFontSize = obj.fontSize * obj.scaleX;
         obj.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
@@ -363,7 +347,7 @@ export default function CanvasEditor({
     };
   }, []);
 
-  // ✅ 6. SYNC REDUX STATE → FABRIC
+  // ✅ 6. SYNC REDUX STATE → FABRIC (Keep as is)
   useEffect(() => {
     if (!initialized) return;
     const fabricCanvas = fabricCanvasRef.current;
@@ -437,7 +421,6 @@ export default function CanvasEditor({
       }
     });
 
-    // Re-order Z-index
     const currentFabricObjects = fabricCanvas.getObjects();
     let fabricObjectsArray = fabricCanvas._objects;
     canvasObjects.forEach((reduxObj, index) => {
