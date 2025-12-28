@@ -145,7 +145,7 @@ export default function CanvasEditor({
     });
 
     canvas.add(border);
-    canvas.sendToBack(border);
+    border.sendToBack();
     canvas.requestRenderAll();
   }, [printDimensions, activeView]);
 
