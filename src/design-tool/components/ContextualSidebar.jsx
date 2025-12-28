@@ -3,6 +3,8 @@ import React from 'react';
 import ShapesSidebar from './ShapesSidebar';
 import { FiType, FiCircle, FiSunrise, FiFlag } from 'react-icons/fi';
 import SidebarSavedList from './SidebarSavedList';
+import { AiGeneratorModal } from './AiGeneratorModal'; // ✅ Import Modal
+import addImageToCanvas from '../objectAdders/Image';
 
 export default function ContextualSidebar({ activePanel, setActivePanel, addText, addHeading, addSubheading, productId, handleLoadSavedDesign, fabricCanvas,   // ✅ New Prop
   setSelectedId,  // ✅ New Prop
