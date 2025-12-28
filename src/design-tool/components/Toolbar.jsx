@@ -187,7 +187,8 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
           fabricObj.setCoords();
           fabricCanvas.requestRenderAll();
 
-          updateObject(id, { src: newImageUrl})
+          updateObject(id, { src: newImageUrl});
+          setIsRemoving
         }
       }
     }
