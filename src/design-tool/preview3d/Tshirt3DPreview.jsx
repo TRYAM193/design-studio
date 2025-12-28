@@ -102,7 +102,8 @@ function CalibrationDecal({ texture, x, y, z, scale, depth = 0.5, rotation = [0,
   );
 }
 
-// --- 3. DYNAMIC MODEL ---
+// src/design-tool/preview3d/Tshirt3DPreview.jsx (Part of DynamicModel)
+
 function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, adjustments }) {
   const { nodes } = useGLTF(modelUrl);
   const m = config.meshes;
@@ -112,7 +113,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
   const leftTex = useDesignTexture(textures?.leftSleeve || textures?.left);
   const rightTex = useDesignTexture(textures?.rightSleeve || textures?.right);
 
-  // ✅ SEPARATE LOGIC FOR FRONT AND BACK
+  // Calculate final positions (same as before)
   const finalFront = useMemo(() => ({
     x: adjustments.front.x,
     y: adjustments.front.y,
@@ -130,19 +131,52 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
   const RenderPart = ({ meshName, tex, decalProps }) => {
     if (!nodes || !nodes[meshName]) return null;
 
-    // if (config.fullWrap && tex) {
-    //   return (
-    //     <group>
-    //       <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
-    //         <meshStandardMaterial color={color} metalness={0} roughness={0.5} side={THREE.DoubleSide} {...finalFront} />
-    //       </mesh>
-    //       <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
-    //         <meshStandardMaterial color="white" metalness={0} roughness={0.5} map={tex} transparent={false} side={THREE.DoubleSide} />
-    //       </mesh>
-    //     </group>
-    //   );
-    // }
+    // ✅ FIXED FULL WRAP LOGIC
+    if (config.fullWrap && tex) {
+      // 1. Configure Texture to STOP repeating (Fixes "Multiple Objects")
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      
+      // 2. Apply Slider Values to Texture (UV Mapping)
+      if (decalProps) {
+        // Center rotation/scaling
+        tex.center.set(0.5, 0.5); 
+        
+        // SCALE: Inverted logic for UVs (Higher repeat = Smaller image)
+        // We use Math.max to prevent divide by zero errors
+        const s = 1 / Math.max(decalProps.scale, 0.1); 
+        tex.repeat.set(s, s);
 
+        // POSITION: Map X/Y sliders to UV offset
+        // We divide by a factor (e.g., 2) to make the slider sensitivity feel normal
+        tex.offset.set(decalProps.x * -0.5, decalProps.y * 0.5); 
+        
+        tex.needsUpdate = true;
+      }
+
+      return (
+        <group>
+          {/* Inner Mesh (Color) */}
+          <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
+            <meshStandardMaterial color={color} metalness={0} roughness={0.5} side={THREE.DoubleSide} />
+          </mesh>
+          
+          {/* Outer Mesh (Design) */}
+          <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
+            <meshStandardMaterial 
+              color="white" 
+              metalness={0} 
+              roughness={0.5} 
+              map={tex} 
+              transparent={true} // Important for PNG transparency
+              side={THREE.DoubleSide} 
+            />
+          </mesh>
+        </group>
+      );
+    }
+
+    // Standard Decal Logic (For T-Shirts)
     return (
       <mesh geometry={nodes[meshName].geometry} material={nodes[meshName].material} frustumCulled={false} color={color}>
         <meshStandardMaterial color={color} roughness={0.7} />
@@ -153,7 +187,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
 
   return (
     <group position={config.position} scale={config.scale} dispose={null}>
-
+      
       {/* Front Logic */}
       <RenderPart
         meshName={m.front}
