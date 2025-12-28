@@ -66,8 +66,6 @@ export default function CanvasEditor({
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
-  const [layout, setLayout] = useState({ width: 0, height: 0, left: 0, top: 0, scale: 1 });
-
   // ✅ HELPER: Calculate Layout to Center ClipPath
   // ✅ SMART FIT FUNCTION: Centers the (0,0) based design in the view
   const fitDesignToScreen = (canvas, containerW, containerH) => {
@@ -231,29 +229,33 @@ export default function CanvasEditor({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
+    // Remove old borders
     canvas.getObjects().forEach((obj) => {
       if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') {
         canvas.remove(obj);
       }
     });
     
-    if (productId && layout.width > 0 && layout.height > 0) {
+    if (productId && printDimensions.width > 0) {
+      // 1. Create Clip Rect at (0,0) - Matches Design Coordinates
+      // absolutePositioned = false so it scales with the viewport (camera)
       const clipRect = new fabric.Rect({
-        left: layout.left,
-        top: layout.top,
-        width: layout.width,
-        height: layout.height,
-        absolutePositioned: true,
+        left: 0,
+        top: 0,
+        width: printDimensions.width,
+        height: printDimensions.height,
+        absolutePositioned: false, 
       });
       
       canvas.clipPath = clipRect;
       
+      // 2. Create Visual Border at (0,0)
       const visualBorder = new fabric.Rect({
-        left: layout.left,
-        top: layout.top,
-        width: layout.width,
-        height: layout.height,
-        fill: '#ffffff',
+        left: 0,
+        top: 0,
+        width: printDimensions.width,
+        height: printDimensions.height,
+        fill: '#ffffff', // White Paper
         stroke: 'rgba(0,0,0,0.1)',
         strokeWidth: 1,
         strokeDashArray: [5, 5],
@@ -261,11 +263,18 @@ export default function CanvasEditor({
         evented: false,
         customId: 'print-area-border',
         id: 'print-area-border',
-        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.1)', blur: 10 })
+        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.1)', blur: 20 })
       });
       
       canvas.add(visualBorder);
+      // ✅ FIX: Force to Bottom (Index 0) using moveObjectTo
       canvas.moveObjectTo(visualBorder, 0);
+
+      // Re-fit to ensure new dimensions are centered
+      if (wrapperRef.current) {
+          fitDesignToScreen(canvas, wrapperRef.current.clientWidth, wrapperRef.current.clientHeight);
+      }
+
     } else {
       canvas.clipPath = null;
     }
@@ -273,7 +282,7 @@ export default function CanvasEditor({
     canvas.requestRenderAll();
     window.dispatchEvent(new Event('resize_menu_update'));
 
-  }, [layout, productId, activeView]);
+  }, [printDimensions, productId, activeView]);
 
   // ✅ 4. HANDLE SELECTION EVENTS
   useEffect(() => {
