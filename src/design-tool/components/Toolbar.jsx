@@ -176,6 +176,8 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
       setIsRemovingBg(true);
 
       const newImageUrl = await processBackgroundRemoval(currentSrc);
+
+      const fabricObj
     }
   }
 
