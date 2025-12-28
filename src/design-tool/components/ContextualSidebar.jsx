@@ -28,7 +28,12 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
 
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
-  
+  const handleAiImageGenerated = (imageUrl) => {
+    // Add the generated image to the canvas using your existing logic
+    if (imageUrl && fabricCanvas) {
+        addImageToCanvas(imageUrl, setSelectedId, setActiveTool, fabricCanvas);
+    }
+  };
 
   switch (activePanel) {
     case 'saved':  // <--- ADD THIS CASE
