@@ -54,6 +54,8 @@ function useDesignTexture(url) {
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
     loader.load(url, (tex) => {
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.needsUpdate = true;
       setTexture(tex);
