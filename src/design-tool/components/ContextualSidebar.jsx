@@ -4,7 +4,7 @@ import ShapesSidebar from './ShapesSidebar';
 import SidebarSavedList from './SidebarSavedList';
 import { AiGeneratorModal } from './AiGeneratorModal'; // ✅ Import Modal
 import addImageToCanvas from '../objectAdders/Image';
-
+import 
 export default function ContextualSidebar({ activePanel, setActivePanel, addText, addHeading, addSubheading, productId, handleLoadSavedDesign, fabricCanvas,   // ✅ New Prop
   setSelectedId,  // ✅ New Prop
   setActiveTool }) {
