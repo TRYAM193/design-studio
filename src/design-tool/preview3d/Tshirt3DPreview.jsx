@@ -101,9 +101,9 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
 
   // ✅ SEPARATE LOGIC FOR FRONT AND BACK
   const finalFront = useMemo(() => ({
-    x: frontPos.x + adjustments.front.x,
-    y: frontPos.y + adjustments.front.y,
-    z: frontPos.z + adjustments.front.z,
+    x: adjustments.front.x,
+    y: adjustments.front.y,
+    z: adjustments.front.z,
     scale: frontPos.scale * adjustments.front.scale
   }), [frontPos, adjustments.front]);
 
@@ -147,7 +147,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
         tex={frontTex}
         decalProps={{
           x: finalFront.x, y: finalFront.y, z: finalFront.z,
-          scale: adjustments.front.scale,
+          scale: finalFront.scale,
           rotation: [0, 0, 0]
         }}
       />
