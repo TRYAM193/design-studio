@@ -381,14 +381,15 @@ export default function CanvasEditor({
       let existing = fabricObjects.find((o) => o.customId === objData.id);
 
       if (['text', 'textbox', 'i-text'].includes(objData.type) || shapes.includes(objData.type)) {
-        const isCircle = objData.props.textEffect === 'circle';
+        const curvedEffects = ['circle', 'semicircle', 'arc-up', 'arc-down'];
+        const isCurved = curvedEffects.includes(objData.props.textEffect);
         if (existing && existing.type === objData.type && !isCircle) {
           existing.set(objData.props);
           existing.setCoords();
         } else {
           if (existing) fabricCanvas.remove(existing);
           let newObj;
-          if (isCircle) newObj = CircleText(objData);
+          if (isCurved) newObj = CircleText(objData);
           else if (shapes.includes(objData.type)) newObj = ShapeAdder(objData);
           else newObj = StraightText(objData);
           
