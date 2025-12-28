@@ -23,6 +23,8 @@ export default function CircleText(objData) {
     strokeColor: props.stroke || '#000000',
     x: props.left,
     y: props.top,
+    scaleX: props.scaleX || 1, // ✅ ADDED
+    scaleY: props.scaleY || 1, // ✅ ADDED
     angle: props.angle || 0,
     textEffect: props.textEffect || 'circle',
     arcAngle: props.arcAngle || 120, // ✅ GET ARC ANGLE
