@@ -276,11 +276,30 @@ export default function CanvasEditor({
 
     const handleSelection = (e) => {
       if (isSyncingRef.current) return;
+      
       const selected = e.selected?.[0];
       if (selected) {
         setSelectedId(selected.customId);
         setActiveTool(selected.textEffect === 'circle' ? 'circle-text' : selected.type);
         updateMenuPosition();
+
+        // 🔥 SMART FOCUS: On Mobile, Zoom to the object
+        if (window.innerWidth < 768) {
+           const objCenter = selected.getCenterPoint();
+           const zoomLevel = canvas.getZoom() * 1.5; // Zoom in 50% more than current
+           
+           // Animate Viewport to center the object
+           canvas.animate({
+                viewportTransform: [zoomLevel, 0, 0, zoomLevel, 
+                    (canvas.width / 2) - (objCenter.x * zoomLevel), 
+                    (canvas.height / 2) - (objCenter.y * zoomLevel)
+                ]
+           }, {
+               duration: 400,
+               onChange: canvas.renderAll.bind(canvas),
+               easing: fabric.util.ease.easeOutExpo
+           });
+        }
       }
     };
 
