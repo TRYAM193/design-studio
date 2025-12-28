@@ -132,6 +132,11 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
 
       {/* Dynamic Content Area */}
       {FinalContent}
+      <AiGeneratorModal 
+        isOpen={isAiModalOpen} 
+        onClose={() => setIsAiModalOpen(false)} 
+        onImageGenerated={handleAiImageGenerated}
+      />
     </aside>
   );
 }
