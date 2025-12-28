@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   FiBold, FiItalic, FiUnderline, FiSearch, FiExternalLink,
-  FiLoader, FiSlash, FiCircle, FiActivity, FiSunrise, FiFlag
+  FiLoader, FiSlash, FiCircle, FiSmile, FiFrown, FiSunrise, FiFlag
 } from 'react-icons/fi';
 import WebFont from 'webfontloader';
 import CircleText from '../objectAdders/CircleText';
