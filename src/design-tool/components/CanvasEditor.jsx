@@ -136,7 +136,7 @@ export default function CanvasEditor({
 
       setMenuPosition({
         left: screenX,
-        // top: screenY //- (scaledHeight / 2) - 60
+        top: screenY - (scaledHeight / 2) - 60
       });
 
       if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
