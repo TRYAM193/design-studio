@@ -111,11 +111,17 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
     }
   }
 
-  if (existing.textEffect === 'circle') {
-    const mergedProps = { ...currentLiveProps, ...updates };
-    const newGroup = CircleText({ id: id, props: mergedProps });
-    const index = fabricCanvas.getObjects().indexOf(existing);
+  const specialEffects = ['circle', 'semicircle', 'arc-up', 'arc-down', 'flag'];
+  const isSpecialEffect = specialEffects.includes(existing.textEffect) || specialEffects.includes(updates.textEffect);
 
+  if (isSpecialEffect) {
+    const mergedProps = { ...currentLiveProps, ...updates };
+    
+    // Re-generate the entire group with new props
+    const newGroup = CircleText({ id: id, props: mergedProps });
+    
+    // Replace on canvas while keeping position/layer
+    const index = fabricCanvas.getObjects().indexOf(existing);
     fabricCanvas.remove(existing);
     fabricCanvas.add(newGroup);
     if (index > -1) fabricCanvas.moveObjectTo(newGroup, index);
