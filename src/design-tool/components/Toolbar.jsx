@@ -355,6 +355,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
                 min="10" max="600" step="10"
                 value={circleRadius}
                 onInput={(e) => setCircleRadius(Number(e.target.value))}
+                onChange={(e) => handleLiveUpdate('radius', Number(e.target.value))} // ✅ Added Live Update
                 onMouseUp={(e) => updateObject(id, { radius: Number(e.target.value) })}
               />
             </div>
