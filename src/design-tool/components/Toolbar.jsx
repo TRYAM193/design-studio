@@ -165,7 +165,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
   const handleRemoveBackground = async () => {
     if (!object || type !== 'image' || !fabricCanvas || isRemovingBg) return;
 
-    const currentSrc = object.src || ''
+    const currentSrc = object..src || ''
 
     if (!currentSrc) {
       alert('No image source found!')
