@@ -261,8 +261,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
     let updates = { textEffect: effectType };
     if (effectType === 'circle') {
       updates.radius = circleRadius;
-    }
-    if (['arc-up', 'arc-down'].includes(effectType)) {
+    }else if (['arc-up', 'arc-down'].includes(effectType)) {
       updates.radius = circleRadius;
       updates.arcAngle = arcAngle;
     }
