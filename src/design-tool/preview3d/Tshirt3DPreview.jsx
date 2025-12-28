@@ -316,7 +316,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Box size={12}/> Depth (Z)</span>
-            <span>{Math.round(current.z * 100)}</span>
+            <span>{current.z * 100}</span>
           </div>
           <input 
             type="range" min="-10" max="10" step="0.1" 
