@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Decal, Center, Environment } from "@react-three/drei";
-import { ArrowUp, ArrowRight, Maximize2, RotateCcw, Box, Layers, Backpack } from "lucide-react"; 
+import { ArrowUp, ArrowRight, Maximize2, RotateCcw, Box, Layers, Backpack } from "lucide-react";
 
 // --- 1. CONFIGURATION ---
 // You can update these base values later as mentioned
@@ -116,19 +116,19 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
 
   const RenderPart = ({ meshName, tex, decalProps }) => {
     if (!nodes || !nodes[meshName]) return null;
-    
-    if (config.fullWrap && tex) {
-      return (
-        <group>
-          <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
-            <meshStandardMaterial color={color} metalness={0} roughness={0.5} side={THREE.DoubleSide} />
-          </mesh>
-          <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
-            <meshStandardMaterial color="white" metalness={0} roughness={0.5} map={tex} transparent={false} side={THREE.DoubleSide} />
-          </mesh>
-        </group>
-      );
-    }
+
+    // if (config.fullWrap && tex) {
+    //   return (
+    //     <group>
+    //       <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
+    //         <meshStandardMaterial color={color} metalness={0} roughness={0.5} side={THREE.DoubleSide} />
+    //       </mesh>
+    //       <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
+    //         <meshStandardMaterial color="white" metalness={0} roughness={0.5} map={tex} transparent={false} side={THREE.DoubleSide} />
+    //       </mesh>
+    //     </group>
+    //   );
+    // }
 
     return (
       <mesh geometry={nodes[meshName].geometry} material={nodes[meshName].material} frustumCulled={false} color={color}>
@@ -140,7 +140,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
 
   return (
     <group position={config.position} scale={config.scale} dispose={null}>
-      
+
       {/* Front Logic */}
       <RenderPart
         meshName={m.front}
@@ -180,7 +180,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
 export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" }) {
   const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
   const [cameraZ] = useState(config.cameraZ || 2.5);
-  
+
   // Base positions from Config
   const [frontPos] = useState(config.frontDecal || { x: 0, y: 0, z: 0.5, scale: 0.5 });
   const [backPos] = useState(config.backDecal || { x: 0, y: 0, z: -0.5, scale: 0.5 });
@@ -217,7 +217,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", backgroundColor: "#111" }}>
-      
+
       <Canvas fov={45} camera={{ position: [0, 0, cameraZ], near: 0.1, far: 1000 }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 10, 7]} intensity={1} />
@@ -242,7 +242,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
       </Canvas>
 
       {/* ✅ UI CONTROLS */}
-      <div 
+      <div
         style={{
           position: "absolute",
           bottom: "20px",
@@ -269,14 +269,14 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
 
         {/* SIDE SELECTOR */}
         <div style={{ display: "flex", background: "#333", borderRadius: "6px", padding: "2px", marginBottom: "8px" }}>
-          <button 
-            onClick={() => setEditSide("front")} 
+          <button
+            onClick={() => setEditSide("front")}
             style={{ flex: 1, padding: "6px", borderRadius: "4px", border: "none", background: editSide === "front" ? "#555" : "transparent", color: "white", fontSize: "11px", cursor: "pointer" }}
           >
             Front
           </button>
-          <button 
-            onClick={() => setEditSide("back")} 
+          <button
+            onClick={() => setEditSide("back")}
             style={{ flex: 1, padding: "6px", borderRadius: "4px", border: "none", background: editSide === "back" ? "#555" : "transparent", color: "white", fontSize: "11px", cursor: "pointer" }}
           >
             Back
@@ -286,11 +286,11 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         {/* Vertical Slider */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowUp size={12}/> Vertical (Y)</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowUp size={12} /> Vertical (Y)</span>
             <span>{current.y}</span>
           </div>
-          <input 
-            type="range" min="-10" max="10" step="0.1" 
+          <input
+            type="range" min="-10" max="10" step="0.1"
             value={current.y}
             onChange={(e) => updateAdjustment('y', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
@@ -300,11 +300,11 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         {/* Horizontal Slider */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowRight size={12}/> Horizontal (X)</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowRight size={12} /> Horizontal (X)</span>
             <span>{current.x * 100}</span>
           </div>
-          <input 
-            type="range" min="-10" max="10" step="0.1" 
+          <input
+            type="range" min="-10" max="10" step="0.1"
             value={current.x}
             onChange={(e) => updateAdjustment('x', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
@@ -314,11 +314,11 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         {/* Depth Slider */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Box size={12}/> Depth (Z)</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Box size={12} /> Depth (Z)</span>
             <span>{current.z * 100}</span>
           </div>
-          <input 
-            type="range" min="-10" max="10" step="0.1" 
+          <input
+            type="range" min="-10" max="10" step="0.1"
             value={current.z}
             onChange={(e) => updateAdjustment('z', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
@@ -328,11 +328,11 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         {/* Scale Slider */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Maximize2 size={12}/> Scale</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Maximize2 size={12} /> Scale</span>
             <span>{current.scale.toFixed(2)}x</span>
           </div>
-          <input 
-            type="range" min="0.5" max="2.5" step="0.1" 
+          <input
+            type="range" min="0.5" max="2.5" step="0.1"
             value={current.scale}
             onChange={(e) => updateAdjustment('scale', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
