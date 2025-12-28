@@ -80,6 +80,7 @@ export default function CanvasEditor({
 
     const { width: targetW, height: targetH } = getLogicalSize();
     
+    // Less padding on mobile to maximize space
     const padding = containerW < 768 ? 20 : 50;
     const availW = containerW - padding;
     const availH = containerH - padding;
@@ -111,9 +112,8 @@ export default function CanvasEditor({
     const activeObj = canvas.getActiveObject();
 
     if (activeObj) {
-      // ✅ FIX: Access viewportTransform property directly (Fabric v6+)
       const vpt = canvas.viewportTransform; 
-      if (!vpt) return; // Safety check
+      if (!vpt) return;
 
       const objectCenter = activeObj.getCenterPoint();
       
@@ -149,12 +149,13 @@ export default function CanvasEditor({
         selection: true,
         controlsAboveOverlay: true,
         preserveObjectStacking: true,
+        // ✅ Allow touch gestures
+        allowTouchScrolling: false, 
       });
       fabricCanvasRef.current = canvas;
       setFabricCanvas(canvas);
       setInitialized(true);
 
-      // Add shadow to make it look like paper
       if (canvas.wrapperEl) {
           canvas.wrapperEl.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
           canvas.wrapperEl.style.border = "1px solid #e2e8f0";
@@ -162,43 +163,52 @@ export default function CanvasEditor({
 
       // --- PINCH GESTURES ---
       canvas.on('touch:gesture', function(opt) {
-          if (opt.e.touches && opt.e.touches.length === 2) {
-              const activeObj = canvas.getActiveObject();
-              
-              if (activeObj) {
-                  // RESIZE OBJECT
-                  if (opt.self.state === 'start') {
-                      activeObj._startScaleX = activeObj.scaleX;
-                      activeObj._startScaleY = activeObj.scaleY;
-                  } else if (opt.self.state === 'change') {
-                      const newScale = opt.self.scale; 
-                      activeObj.set({
-                          scaleX: activeObj._startScaleX * newScale,
-                          scaleY: activeObj._startScaleY * newScale
-                      });
-                      activeObj.setCoords();
-                      canvas.requestRenderAll();
-                  }
-                  opt.e.preventDefault();
-                  opt.e.stopPropagation();
-              } else {
-                  // ZOOM PAPER
-                  if (opt.self.state === 'start') {
-                      canvas._startZoom = canvas.getZoom();
-                  } else if (opt.self.state === 'change') {
-                      let newZoom = canvas._startZoom * opt.self.scale;
-                      if (newZoom > 5) newZoom = 5;
-                      if (newZoom < 0.2) newZoom = 0.2;
-
-                      const { width: logicalW, height: logicalH } = getLogicalSize();
-                      
-                      canvas.setDimensions({
-                          width: logicalW * newZoom,
-                          height: logicalH * newZoom
-                      });
-                      canvas.setZoom(newZoom);
-                  }
+          // Fabric.js 'touch:gesture' event gives us 'opt.self' which contains gesture info
+          // opt.self.state = 'start' | 'change' | 'end'
+          // opt.self.scale = total scale factor since start
+          
+          const activeObj = canvas.getActiveObject();
+          
+          if (activeObj) {
+              // --- MODE A: RESIZE OBJECT ---
+              if (opt.self.state === 'start') {
+                  activeObj._startScaleX = activeObj.scaleX;
+                  activeObj._startScaleY = activeObj.scaleY;
+              } else if (opt.self.state === 'change') {
+                  const newScale = opt.self.scale; 
+                  activeObj.set({
+                      scaleX: activeObj._startScaleX * newScale,
+                      scaleY: activeObj._startScaleY * newScale
+                  });
+                  activeObj.setCoords();
+                  canvas.requestRenderAll();
               }
+          } else {
+              // --- MODE B: ZOOM PAPER (CANVAS) ---
+              if (opt.self.state === 'start') {
+                  canvas._startZoom = canvas.getZoom();
+              } else if (opt.self.state === 'change') {
+                  let newZoom = canvas._startZoom * opt.self.scale;
+                  
+                  // Limit zoom levels
+                  if (newZoom > 5) newZoom = 5;
+                  if (newZoom < 0.2) newZoom = 0.2;
+
+                  const { width: logicalW, height: logicalH } = getLogicalSize();
+                  
+                  // Update both Canvas Dimensions AND Zoom to keep it crisp
+                  canvas.setDimensions({
+                      width: logicalW * newZoom,
+                      height: logicalH * newZoom
+                  });
+                  canvas.setZoom(newZoom);
+              }
+          }
+          
+          // Prevent browser zooming
+          if (opt.e) {
+            opt.e.preventDefault();
+            opt.e.stopPropagation();
           }
       });
     }
@@ -409,8 +419,10 @@ export default function CanvasEditor({
     <div 
       ref={wrapperRef} 
       id="canvas-wrapper" 
+      // ✅ CRITICAL: touchAction: 'none' disables browser native zoom
+      // allowing Fabric.js to handle the gestures instead.
       className="relative w-full h-full flex items-center justify-center bg-slate-100 overflow-hidden"
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: 'none' }} 
     >
       <canvas ref={canvasRef} id="canvas" />
 
