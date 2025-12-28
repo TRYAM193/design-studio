@@ -172,10 +172,10 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
       return
     }
 
-    try{
+    try {
       setIsRemovingBg(true);
 
-      const 
+      const newImageUrl = await processBackgroundRemoval(currentSrc);
     }
   }
 
