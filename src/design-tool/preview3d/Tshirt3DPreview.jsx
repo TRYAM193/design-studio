@@ -116,7 +116,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
 
   const RenderPart = ({ meshName, tex, decalProps }) => {
     if (!nodes || !nodes[meshName]) return null;
-
+    
     if (config.fullWrap && tex) {
       return (
         <group>
