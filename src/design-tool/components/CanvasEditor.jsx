@@ -218,7 +218,7 @@ export default function CanvasEditor({
 
     resizeCanvas();
 
-    return () => { };
+    return () => { ro.di };
   }, []);
 
   // ✅ 2. HANDLE PRINT AREA MASK & BORDER
