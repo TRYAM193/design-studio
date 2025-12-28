@@ -5,7 +5,7 @@ import {
 } from 'react-icons/fi';
 import WebFont from 'webfontloader';
 import CircleText from '../objectAdders/CircleText';
-import { Path } from 'fabric';
+import { Path, FabricImage } from 'fabric';
 import {
   getStarPoints, getPolygonPoints, getTrianglePoints, getRoundedPathFromPoints,
   getArrowPoints, getDiamondPoints, getTrapezoidPoints, getLightningPoints
