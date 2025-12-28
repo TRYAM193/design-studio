@@ -545,7 +545,9 @@ export default function EditorPanel() {
                 />
 
                 {activePanel && <ContextualSidebar activePanel={activePanel} setActivePanel={setActivePanel} addText={addText} addHeading={addHeading} addSubheading={addSubheading} productId={urlProductId || currentDesign?.productConfig?.productId}
-                    handleLoadSavedDesign={handleLoadSavedDesign} />}
+                    handleLoadSavedDesign={handleLoadSavedDesign} fabricCanvas={fabricCanvas}
+                        setSelectedId={setSelectedId}
+                        setActiveTool={setActiveTool} />}
 
                 <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
 
