@@ -184,7 +184,8 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
         imgElement.src = newImageUrl;
         imgElement.onload = () => {
           fabricObj.setElement(imgElement);
-          fabricObj
+          fabricObj.setCoords();
+          fabricCanvas.requestRenderAll();
     }
   }
 
