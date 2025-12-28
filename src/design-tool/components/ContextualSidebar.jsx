@@ -1,7 +1,6 @@
 // src/components/ContextualSidebar.jsx
-import React,{useState} from 'react';
+import React, { useState } from 'react';
 import ShapesSidebar from './ShapesSidebar';
-import { FiType, FiCircle, FiSunrise, FiFlag } from 'react-icons/fi';
 import SidebarSavedList from './SidebarSavedList';
 import { AiGeneratorModal } from './AiGeneratorModal'; // ✅ Import Modal
 import addImageToCanvas from '../objectAdders/Image';
