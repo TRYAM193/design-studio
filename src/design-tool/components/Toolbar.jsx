@@ -144,6 +144,8 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
   // Unified Radius State (for Rects AND Shapes)
   const [borderRadius, setBorderRadius] = useState(props.rx || props.radius || 0);
   const [circleRadius, setCircleRadius] = useState(props.radius || 150); // Specifically for Text Circle Effect
+  const [arcAngle, setArcAngle] = useState(props.arcAngle || 120); // ✅ NEW: Arc Angle
+  const [flagVelocity, setFlagVelocity] = useState(props.flagVelocity || 50); // ✅ NEW: Flag Prop
 
   const currentEffect = object?.textEffect || props.textEffect || 'none';
   const effectiveType = object?.type || type;
