@@ -2,7 +2,7 @@
 import React from 'react';
 import ImageHandler from './Image';
 import {
-    FiType, FiImage, FiZap, FiSquare, FiTool, FiFolder
+    FiType, FiImage, FiZap, FiSquare, FiTool, FiFolder, FiSmile, FiFrown
 } from 'react-icons/fi';
 
 const ToolButton = ({ icon: Icon, label, isActive, onClick }) => (
