@@ -28,32 +28,28 @@ export default function CircleText(objData) {
     scaleY: props.scaleY || 1,
     textEffect: props.textEffect || 'circle',
     arcAngle: props.arcAngle || 120,
-    flagVelocity: props.flagVelocity || 50, // ✅ GET FLAG VELOCITY
+    flagVelocity: props.flagVelocity || 50, 
     id: objData.id
   };
 
   const chars = obj.text.split('');
-  
-  // ==========================================
-  // 1. CALCULATE POSITIONS (ARC vs FLAG)
-  // ==========================================
-  
   let groupItems = [];
 
-  // --- A. FLAG EFFECT LOGIC ---
+  // ==========================================
+  // 1. FLAG EFFECT (SINE WAVE)
+  // ==========================================
   if (obj.textEffect === 'flag') {
-      const step = obj.fontSize * 0.8 + obj.letterSpacing; // Horizontal spacing
+      const step = obj.fontSize * 0.8 + obj.letterSpacing; 
       const totalWidth = step * (chars.length - 1);
       const startX = -totalWidth / 2;
 
       groupItems = chars.map((char, i) => {
           const charX = startX + (i * step);
-          
-          // Sine Wave Formula: y = A * sin(kx)
-          // Adjust frequency (0.5) based on text length if needed
-          const charY = Math.sin(i * 0.5) * obj.flagVelocity; 
+          // Sine Wave: y = A * sin(kx)
+          // Frequency is fixed (0.5), Amplitude is controlled by velocity
+          const charY = Math.sin(i * 0.5) * (obj.flagVelocity || 0); 
 
-          const fabricChar = new fabric.FabricText(char, {
+          return new fabric.FabricText(char, {
               left: charX,
               top: charY,
               originX: 'center',
@@ -64,35 +60,43 @@ export default function CircleText(objData) {
               fill: obj.color,
               opacity: obj.opacity,
               selectable: false,
-              angle: 0 // Keep upright for simple flag
+              angle: 0
           });
-          return fabricChar;
       });
   } 
   
-  // --- B. ARC / CIRCLE LOGIC ---
+  // ==========================================
+  // 2. ARC / CIRCLE LOGIC
+  // ==========================================
   else {
-      let totalAngle, startAngle, isFrown = false;
+      let totalAngle, startAngle;
+      let rotationOffset = 90; // Default: Bottoms of letters point to center
 
       switch (obj.textEffect) {
         case 'semicircle':
           totalAngle = Math.PI; 
           startAngle = -Math.PI; 
           break;
-        case 'arc-up': // Smile (U)
-          totalAngle = (obj.arcAngle * Math.PI) / 180; 
-          startAngle = -Math.PI / 2 - (totalAngle / 2);
-          break;
-        case 'arc-down': // Frown (n)
+          
+        case 'arc-down': // Frown / Rainbow (n)
+          // Text sits at TOP of circle (-90 degrees)
           totalAngle = (obj.arcAngle * Math.PI) / 180;
-          // For Frown, we start at the same angles but we will position differently
           startAngle = -Math.PI / 2 - (totalAngle / 2);
-          isFrown = true; 
+          rotationOffset = 90; // Standard: Upright at top
           break;
+
+        case 'arc-up': // Smile (u)
+          // Text sits at BOTTOM of circle (+90 degrees)
+          totalAngle = (obj.arcAngle * Math.PI) / 180;
+          startAngle = Math.PI / 2 - (totalAngle / 2);
+          rotationOffset = -90; // Inverted: Bottoms point AWAY from center
+          break;
+
         case 'circle':
         default:
           totalAngle = 2 * Math.PI; 
           startAngle = -Math.PI / 2;
+          rotationOffset = 90;
           break;
       }
 
@@ -108,26 +112,13 @@ export default function CircleText(objData) {
            theta = startAngle + (i * angleStep);
         }
 
-        let charX, charY, charAngle;
+        const charX = obj.radius * Math.cos(theta);
+        const charY = obj.radius * Math.sin(theta);
+        
+        // Calculate rotation based on tangent + offset
+        const charAngle = (theta * 180) / Math.PI + rotationOffset;
 
-        if (isFrown) {
-            // ✅ FIXED ARC DOWN:
-            // Move center "down" relative to text, text curves over it.
-            // We use the same math but flip the Y offset direction
-            charX = obj.radius * Math.cos(theta);
-            charY = -obj.radius * Math.sin(theta); // Flip Y to arch upwards
-            
-            // Rotation: Tangent + 90 + Flip logic
-            // For a frown, letters should fan out top-to-bottom
-            charAngle = (-theta * 180) / Math.PI + 90; 
-        } else {
-            // Standard Smile/Circle
-            charX = obj.radius * Math.cos(theta);
-            charY = obj.radius * Math.sin(theta);
-            charAngle = (theta * 180) / Math.PI + 90; 
-        }
-
-        const fabricChar = new fabric.FabricText(char, {
+        return new fabric.FabricText(char, {
           left: charX,
           top: charY,
           originX: 'center',
@@ -140,12 +131,11 @@ export default function CircleText(objData) {
           selectable: false,
           angle: charAngle,
         });
-        return fabricChar;
       });
   }
 
   // ==========================================
-  // 2. APPLY STYLES (Stroke/Shadow)
+  // 3. APPLY STYLES & GROUP
   // ==========================================
   groupItems.forEach(item => {
       if (obj.shadow) {
@@ -162,9 +152,6 @@ export default function CircleText(objData) {
       }
   });
 
-  // ==========================================
-  // 3. CREATE GROUP
-  // ==========================================
   const group = new fabric.Group(groupItems, {
     left: obj.x,
     top: obj.y,
@@ -178,9 +165,12 @@ export default function CircleText(objData) {
     hasControls: true,
     textEffect: obj.textEffect, 
     customType: 'text',
+    
+    // Persist Props
     radius: obj.radius,
     arcAngle: obj.arcAngle,
-    flagVelocity: obj.flagVelocity, // Save Prop
+    flagVelocity: obj.flagVelocity, 
+    
     text: obj.text,
     fontSize: obj.fontSize,
     fontFamily: obj.fontFamily,
