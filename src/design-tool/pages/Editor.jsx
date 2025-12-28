@@ -402,55 +402,55 @@ export default function EditorPanel() {
     }, [productData, currentView]);
 
     const getCleanDataURL = () => {
-    if (!fabricCanvas) return null;
+        if (!fabricCanvas) return null;
 
-    const originalBg = fabricCanvas.backgroundColor;
-    const originalClip = fabricCanvas.clipPath;
-    const originalVpt = fabricCanvas.viewportTransform; // Save current zoom/pan
+        const originalBg = fabricCanvas.backgroundColor;
+        const originalClip = fabricCanvas.clipPath;
+        const originalVpt = fabricCanvas.viewportTransform; // Save current zoom/pan
 
-    // 1. Prepare Canvas for Export
-    // If it's a mug, we might want white background, otherwise transparent for T-shirts
-    if (productData.title?.includes("Mug")) {
-        fabricCanvas.backgroundColor = "#FFFFFF";
-    } else {
-        fabricCanvas.backgroundColor = null;
-    }
-    
-    fabricCanvas.clipPath = null;
-    
-    // Hide the border guide if it exists
-    const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
-    let wasBorderVisible = false;
-    if (borderObj) { 
-        wasBorderVisible = borderObj.visible; 
-        borderObj.visible = false; 
-    }
+        // 1. Prepare Canvas for Export
+        // If it's a mug, we might want white background, otherwise transparent for T-shirts
+        if (productData.title?.includes("Mug")) {
+            fabricCanvas.backgroundColor = "#FFFFFF";
+        } else {
+            fabricCanvas.backgroundColor = null;
+        }
 
-    // 2. Calculate the "Standardization" Multiplier
-    // We want the output to be 2400px wide regardless of screen size.
-    const TARGET_WIDTH = 2400; 
-    const currentWidth = fabricCanvas.width; // This is the logical width
-    const multiplier = TARGET_WIDTH / currentWidth;
+        fabricCanvas.clipPath = null;
 
-    // 3. Render & Export
-    fabricCanvas.renderAll();
-    
-    const dataUrl = fabricCanvas.toDataURL({ 
-        format: 'png', 
-        quality: 1,           // Max quality
-        multiplier: multiplier, // <--- DYNAMIC SCALING
-        enableRetinaScaling: true 
-    });
+        // Hide the border guide if it exists
+        const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
+        let wasBorderVisible = false;
+        if (borderObj) {
+            wasBorderVisible = borderObj.visible;
+            borderObj.visible = false;
+        }
 
-    // 4. Restore Canvas State
-    fabricCanvas.backgroundColor = originalBg;
-    fabricCanvas.clipPath = originalClip;
-    if (originalVpt) fabricCanvas.setViewportTransform(originalVpt); // Restore zoom
-    if (borderObj) borderObj.visible = wasBorderVisible;
-    fabricCanvas.requestRenderAll();
+        // 2. Calculate the "Standardization" Multiplier
+        // We want the output to be 2400px wide regardless of screen size.
+        const TARGET_WIDTH = 2400;
+        const currentWidth = fabricCanvas.width; // This is the logical width
+        const multiplier = TARGET_WIDTH / currentWidth;
 
-    return dataUrl;
-};
+        // 3. Render & Export
+        fabricCanvas.renderAll();
+
+        const dataUrl = fabricCanvas.toDataURL({
+            format: 'png',
+            quality: 1,           // Max quality
+            multiplier: multiplier, // <--- DYNAMIC SCALING
+            enableRetinaScaling: true
+        });
+
+        // 4. Restore Canvas State
+        fabricCanvas.backgroundColor = originalBg;
+        fabricCanvas.clipPath = originalClip;
+        if (originalVpt) fabricCanvas.setViewportTransform(originalVpt); // Restore zoom
+        if (borderObj) borderObj.visible = wasBorderVisible;
+        fabricCanvas.requestRenderAll();
+
+        return dataUrl;
+    };
 
     const captureCurrentCanvas = () => {
         const url = getCleanDataURL();
@@ -546,8 +546,8 @@ export default function EditorPanel() {
 
                 {activePanel && <ContextualSidebar activePanel={activePanel} setActivePanel={setActivePanel} addText={addText} addHeading={addHeading} addSubheading={addSubheading} productId={urlProductId || currentDesign?.productConfig?.productId}
                     handleLoadSavedDesign={handleLoadSavedDesign} fabricCanvas={fabricCanvas}
-                        setSelectedId={setSelectedId}
-                        setActiveTool={setActiveTool} />}
+                    setSelectedId={setSelectedId}
+                    setActiveTool={setActiveTool} />}
 
                 <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
 
