@@ -186,6 +186,21 @@ export default function CanvasEditor({
       fabricCanvasRef.current = canvas;
       setFabricCanvas(canvas);
       setInitialized(true);
+
+      canvas.on('mouse:wheel', function(opt) {
+          if (opt.e.ctrlKey) { // Zoom
+            const delta = opt.e.deltaY;
+            let zoom = canvas.getZoom();
+            zoom *= 0.999 ** delta;
+            if (zoom > 5) zoom = 5;
+            if (zoom < 0.05) zoom = 0.05;
+            canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
+            opt.e.preventDefault();
+            opt.e.stopPropagation();
+          } else { // Pan
+            // Optional: Implement panning on scroll or leave default
+          }
+      });
     }
 
     const resizeCanvas = () => {
