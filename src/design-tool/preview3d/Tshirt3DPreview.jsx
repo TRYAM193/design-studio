@@ -71,17 +71,28 @@ function CameraRig({ z }) {
   return null;
 }
 
-function CalibrationDecal({ texture, x, y, z, scale, rotation = [0, 0, 0] }) {
+// In src/design-tool/preview3d/Tshirt3DPreview.jsx
+
+function CalibrationDecal({ texture, x, y, z, scale, depth = 0.5, rotation = [0, 0, 0] }) {
   if (!texture) return null;
   return (
     <>
-      <Decal position={[x, y, z]} rotation={rotation} scale={[scale, scale, 1.5]} debug={false}>
-        <meshBasicMaterial map={texture} transparent depthTest={true} depthWrite={false} polygonOffset polygonOffsetFactor={-4} />
+      {/* Use the 'depth' prop here instead of hardcoding 1.5 */}
+      <Decal position={[x, y, z]} rotation={rotation} scale={[scale, scale, depth]} debug={false}>
+        <meshBasicMaterial 
+          map={texture} 
+          transparent 
+          depthTest={true} 
+          depthWrite={false} 
+          polygonOffset 
+          polygonOffsetFactor={-4} 
+        />
       </Decal>
+      {/* Update the helper box to match the new depth */}
       <group position={[x, y, z]} rotation={rotation} scale={[scale, scale, scale]}>
         <axesHelper args={[1.2]} />
         <mesh>
-          <boxGeometry args={[1, 1, 0.2]} />
+          <boxGeometry args={[1, 1, depth / scale]} /> 
           <meshBasicMaterial wireframe color="yellow" transparent opacity={0.5} />
         </mesh>
       </group>
