@@ -302,10 +302,10 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowRight size={12}/> Horizontal (X)</span>
-            <span>{Math.round(current.x * 100)}</span>
+            <span>{current.x * 100}</span>
           </div>
           <input 
-            type="range" min="-0.2" max="0.2" step="0.01" 
+            type="range" min="-10" max="10" step="0.1" 
             value={current.x}
             onChange={(e) => updateAdjustment('x', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
@@ -319,7 +319,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
             <span>{Math.round(current.z * 100)}</span>
           </div>
           <input 
-            type="range" min="-0.2" max="0.2" step="0.01" 
+            type="range" min="-10" max="10" step="0.1" 
             value={current.z}
             onChange={(e) => updateAdjustment('z', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
