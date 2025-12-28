@@ -48,7 +48,7 @@ export default function CanvasEditor({
   setSelectedId,
   setFabricCanvas,
   fabricCanvas,
-  printDimensions, // e.g. { width: 4500, height: 5400 }
+  printDimensions,
   productId,
   activeView,
 }) {
@@ -66,38 +66,31 @@ export default function CanvasEditor({
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
-  // ✅ SMART FIT FUNCTION: Centers the (0,0) based design in the view
-  const fitDesignToScreen = (canvas, containerW, containerH) => {
-    if (!canvas || !printDimensions.width || !printDimensions.height) return;
+  const [layout, setLayout] = useState({ width: 0, height: 0, left: 0, top: 0, scale: 1 });
 
-    // Responsive Padding
-    const padding = containerW < 768 ? 20 : 60;
+  // ✅ HELPER: Calculate Layout to Center ClipPath
+  const calculateLayout = (containerW, containerH) => {
+    if (!printDimensions.width || !printDimensions.height) return;
+
+    const padding = containerW < 768 ? 30 : 60;
     const availW = containerW - padding;
     const availH = containerH - padding;
 
-    // Calculate Zoom to fit Print Dimensions into Container
-    const scaleX = availW / printDimensions.width;
-    const scaleY = availH / printDimensions.height;
-    const zoom = Math.min(scaleX, scaleY);
+    const scale = Math.min(1, availW / printDimensions.width, availH / printDimensions.height);
 
-    // Calculate Center Offsets
-    // This shifts the (0,0) point to the middle of the screen
-    const centerX = (containerW - printDimensions.width * zoom) / 2;
-    const centerY = (containerH - printDimensions.height * zoom) / 2;
+    const finalWidth = printDimensions.width * scale;
+    const finalHeight = printDimensions.height * scale;
 
-    // Apply Transform: [scaleX, skewY, skewX, scaleY, translateX, translateY]
-    canvas.setViewportTransform([zoom, 0, 0, zoom, centerX, centerY]);
+    const left = (containerW - finalWidth) / 2;
+    const top = (containerH - finalHeight) / 2;
 
-    // Update Controls for Mobile/Desktop
-    const controlSize = containerW < 768 ? 24 : 12;
-    fabric.Object.prototype.set({
-        cornerSize: controlSize / zoom,
-        touchCornerSize: 40 / zoom,
-        transparentCorners: false,
-        borderScaleFactor: 2 / zoom,
+    setLayout({
+        width: finalWidth,
+        height: finalHeight,
+        left: left,
+        top: top,
+        scale: scale
     });
-    
-    canvas.requestRenderAll();
   };
 
   const updateMenuPosition = () => {
@@ -107,17 +100,10 @@ export default function CanvasEditor({
     const activeObj = canvas.getActiveObject();
 
     if (activeObj) {
-      const vpt = canvas.getViewportTransform();
       const objectCenter = activeObj.getCenterPoint();
-      
-      // Convert Canvas Coordinates -> Screen Coordinates
-      const screenX = objectCenter.x * vpt[0] + vpt[4];
-      const screenY = objectCenter.y * vpt[3] + vpt[5];
-      const scaledHeight = activeObj.getScaledHeight() * vpt[3];
-
       setMenuPosition({
-        left: screenX,
-        top: screenY - (scaledHeight / 2) - 60
+        left: objectCenter.x,
+        top: objectCenter.y - (activeObj.getScaledHeight() / 2) - 60
       });
 
       if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
@@ -134,30 +120,36 @@ export default function CanvasEditor({
     }
   };
 
-  // ✅ 1. INITIALIZE CANVAS
+  // ✅ 1. INITIALIZE CANVAS & GESTURES
   useEffect(() => {
     let canvas = fabricCanvasRef.current;
     if (!canvas) {
       canvas = new fabric.Canvas(canvasRef.current, {
-        backgroundColor: '#f3f4f6', // Grey wrapper background
+        backgroundColor: '#f3f4f6',
         selection: true,
         controlsAboveOverlay: true,
-        preserveObjectStacking: true, // Crucial for layering
+        preserveObjectStacking: true,
       });
       fabricCanvasRef.current = canvas;
       setFabricCanvas(canvas);
       setInitialized(true);
 
-      // TOUCH / PINCH ZOOM
+      // ---------------------------------------------------------
+      // 🔥 NEW: PINCH-TO-RESIZE (Object) vs PINCH-TO-ZOOM (Canvas)
+      // ---------------------------------------------------------
       canvas.on('touch:gesture', function(opt) {
           if (opt.e.touches && opt.e.touches.length === 2) {
+              
               const activeObj = canvas.getActiveObject();
+              
+              // CASE A: Object Selected -> Resize Object
               if (activeObj) {
-                  // Resize Object
                   if (opt.self.state === 'start') {
+                      // Save initial scale of the object
                       activeObj._startScaleX = activeObj.scaleX;
                       activeObj._startScaleY = activeObj.scaleY;
                   } else if (opt.self.state === 'change') {
+                      // Apply relative scale from gesture
                       const newScale = opt.self.scale; 
                       activeObj.set({
                           scaleX: activeObj._startScaleX * newScale,
@@ -166,16 +158,22 @@ export default function CanvasEditor({
                       activeObj.setCoords();
                       canvas.requestRenderAll();
                   }
+                  
+                  // Prevent canvas zoom if we are resizing an object
                   opt.e.preventDefault();
                   opt.e.stopPropagation();
-              } else {
-                  // Zoom Canvas
+              } 
+              
+              // CASE B: No Object -> Zoom Canvas
+              else {
                   if (opt.self.state === 'start') {
                       canvas._startZoom = canvas.getZoom();
                   } else if (opt.self.state === 'change') {
                       let zoom = canvas._startZoom * opt.self.scale;
                       if (zoom > 5) zoom = 5;
                       if (zoom < 0.1) zoom = 0.1;
+                      
+                      // Zoom to the center of the gesture
                       const point = new fabric.Point(opt.self.x, opt.self.y);
                       canvas.zoomToPoint(point, zoom);
                   }
@@ -183,7 +181,7 @@ export default function CanvasEditor({
           }
       });
 
-      // MOUSE WHEEL ZOOM
+      // Mouse Wheel Zoom (Desktop Backup)
       canvas.on('mouse:wheel', function(opt) {
           if (opt.e.ctrlKey || opt.e.metaKey) {
             const delta = opt.e.deltaY;
@@ -191,6 +189,7 @@ export default function CanvasEditor({
             zoom *= 0.999 ** delta;
             if (zoom > 5) zoom = 5;
             if (zoom < 0.05) zoom = 0.05;
+            
             canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
             opt.e.preventDefault();
             opt.e.stopPropagation();
@@ -202,9 +201,11 @@ export default function CanvasEditor({
       if (wrapperRef.current && canvas) {
         const { clientWidth, clientHeight } = wrapperRef.current;
         canvas.setDimensions({ width: clientWidth, height: clientHeight });
+        canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         
-        // ✅ FIT DESIGN TO CENTER
-        fitDesignToScreen(canvas, clientWidth, clientHeight);
+        calculateLayout(clientWidth, clientHeight);
+        
+        canvas.requestRenderAll();
       }
     };
 
@@ -212,6 +213,7 @@ export default function CanvasEditor({
     if (wrapperRef.current) ro.observe(wrapperRef.current);
 
     resizeCanvas();
+
     return () => ro.disconnect();
   }, [printDimensions]);
 
@@ -220,33 +222,29 @@ export default function CanvasEditor({
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
     
-    // Remove old borders
     canvas.getObjects().forEach((obj) => {
       if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') {
         canvas.remove(obj);
       }
     });
     
-    if (productId && printDimensions.width > 0) {
-      // 1. Create Clip Rect at (0,0) - Matches Design Coordinates
-      // absolutePositioned = false so it scales with the viewport (camera)
+    if (productId && layout.width > 0 && layout.height > 0) {
       const clipRect = new fabric.Rect({
-        left: 0,
-        top: 0,
-        width: printDimensions.width,
-        height: printDimensions.height,
-        absolutePositioned: false, 
+        left: layout.left,
+        top: layout.top,
+        width: layout.width,
+        height: layout.height,
+        absolutePositioned: true,
       });
       
       canvas.clipPath = clipRect;
       
-      // 2. Create Visual Border at (0,0)
       const visualBorder = new fabric.Rect({
-        left: 0,
-        top: 0,
-        width: printDimensions.width,
-        height: printDimensions.height,
-        fill: '#ffffff', // White Paper
+        left: layout.left,
+        top: layout.top,
+        width: layout.width,
+        height: layout.height,
+        fill: '#ffffff',
         stroke: 'rgba(0,0,0,0.1)',
         strokeWidth: 1,
         strokeDashArray: [5, 5],
@@ -254,18 +252,11 @@ export default function CanvasEditor({
         evented: false,
         customId: 'print-area-border',
         id: 'print-area-border',
-        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.1)', blur: 20 })
+        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.1)', blur: 10 })
       });
       
       canvas.add(visualBorder);
-      // ✅ Force to Bottom (Index 0)
       canvas.moveObjectTo(visualBorder, 0);
-
-      // Re-fit to ensure new dimensions are centered
-      if (wrapperRef.current) {
-          fitDesignToScreen(canvas, wrapperRef.current.clientWidth, wrapperRef.current.clientHeight);
-      }
-
     } else {
       canvas.clipPath = null;
     }
@@ -273,9 +264,9 @@ export default function CanvasEditor({
     canvas.requestRenderAll();
     window.dispatchEvent(new Event('resize_menu_update'));
 
-  }, [printDimensions, productId, activeView]);
+  }, [layout, productId, activeView]);
 
-  // ✅ 4. HANDLE SELECTION EVENTS (Same as before)
+  // ✅ 4. HANDLE SELECTION EVENTS
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
@@ -312,12 +303,16 @@ export default function CanvasEditor({
 
     return () => {
       canvas.off('selection:created', handleSelection);
-      // ... cleanup ...
+      canvas.off('selection:updated', handleSelection);
+      canvas.off('selection:cleared', handleCleared);
+      canvas.off('object:moving', handleMoving);
+      canvas.off('object:scaling', handleMoving);
+      canvas.off('object:rotating', handleMoving);
       canvas.off('object:modified', handleMoving);
     };
   }, [fabricCanvas, setSelectedId, setActiveTool]);
 
-  // ✅ 5. HANDLE MODIFICATIONS (Same as before)
+  // ✅ 5. HANDLE MODIFICATIONS
   useEffect(() => {
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
@@ -328,9 +323,44 @@ export default function CanvasEditor({
 
       let obj = e.target;
       if (!obj) return;
+
       const type = obj.type ? obj.type.toLowerCase() : '';
 
-      // ... (Keep existing group/text logic) ...
+      if (type === 'activeselection') {
+        const children = [...obj.getObjects()];
+        setTimeout(() => {
+          fabricCanvas.discardActiveObject();
+          const present = store.getState().canvas.present;
+          let updatedPresent = present.map((o) => JSON.parse(JSON.stringify(o)));
+          let hasChanges = false;
+
+          children.forEach((child) => {
+            const index = updatedPresent.findIndex((o) => o.id === child.customId);
+            if (index === -1) return;
+
+             updatedPresent[index].props = {
+                ...updatedPresent[index].props,
+                left: child.left,
+                top: child.top,
+                angle: child.angle,
+                scaleX: child.scaleX,
+                scaleY: child.scaleY,
+                fontSize: (child.type === 'text' || child.type === 'textbox') ? child.fontSize * child.scaleX : undefined
+              };
+              if (child.type === 'text') { updatedPresent[index].props.scaleX = 1; updatedPresent[index].props.scaleY = 1; }
+            hasChanges = true;
+          });
+          if (hasChanges) store.dispatch(setCanvasObjects(updatedPresent));
+
+          if (children.length > 0) {
+            const sel = new fabric.ActiveSelection(children, { canvas: fabricCanvas });
+            fabricCanvas.setActiveObject(sel);
+            fabricCanvas.requestRenderAll();
+          }
+        }, 0);
+        return;
+      }
+
       if (type === 'text' || type === 'textbox') {
         const newFontSize = obj.fontSize * obj.scaleX;
         obj.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
@@ -362,7 +392,7 @@ export default function CanvasEditor({
     };
   }, []);
 
-  // ✅ 6. SYNC REDUX STATE → FABRIC (Fixed Z-Index Logic)
+  // ✅ 6. SYNC REDUX STATE → FABRIC
   useEffect(() => {
     if (!initialized) return;
     const fabricCanvas = fabricCanvasRef.current;
@@ -370,8 +400,9 @@ export default function CanvasEditor({
 
     let selectedIds = [];
     const activeObject = fabricCanvas.getActiveObject();
-    // Preserve selection
-    if (activeObject && activeObject.type === 'activeselection') {
+    const isMultiSelect = activeObject && activeObject.type?.toLowerCase() === 'activeselection';
+
+    if (isMultiSelect) {
       selectedIds = activeObject.getObjects().map(o => o.customId);
       fabricCanvas.discardActiveObject();
     } else if (activeObject) {
@@ -389,9 +420,9 @@ export default function CanvasEditor({
 
       let existing = fabricObjects.find((o) => o.customId === objData.id);
 
-      // Sync Objects
-      if (['text', 'textbox', 'i-text'].includes(objData.type) || shapes.includes(objData.type)) {
+      if (objData.type === 'text' || shapes.includes(objData.type)) {
         const isCircle = objData.props.textEffect === 'circle';
+
         if (existing && existing.type === objData.type && !isCircle) {
           existing.set(objData.props);
           existing.setCoords();
@@ -400,8 +431,8 @@ export default function CanvasEditor({
           let newObj;
           if (isCircle) newObj = CircleText(objData);
           else if (shapes.includes(objData.type)) newObj = ShapeAdder(objData);
-          else newObj = StraightText(objData);
-          
+          else if (objData.type === 'text') newObj = StraightText(objData);
+
           if (newObj) {
             newObj.customId = objData.id;
             fabricCanvas.add(newObj);
@@ -410,22 +441,22 @@ export default function CanvasEditor({
       }
 
       if (objData.type === 'image') {
-         // ... (Image logic same as before) ...
-         if (!existing && !fabricCanvas.getObjects().some(obj => obj.customId === objData.id)) {
-            try {
-               const newObj = await FabricImage.fromURL(objData.src, { ...objData.props });
-               newObj.set({ customId: objData.id });
-               fabricCanvas.add(newObj);
-            } catch (err) { console.error(err); }
-         } else if (existing) {
-            updateExisting(existing, objData, isDifferent);
-         }
+        if (!existing && !fabricCanvas.getObjects().some(obj => obj.customId === objData.id)) {
+          try {
+            const newObj = await FabricImage.fromURL(objData.src, { ...objData.props });
+            newObj.set({ customId: objData.id });
+            fabricCanvas.add(newObj);
+          } catch (err) {
+            console.error("Error loading image:", err);
+          }
+        } else if (existing) {
+          updateExisting(existing, objData, isDifferent);
+        }
       }
 
       previousStatesRef.current.set(objData.id, currentString);
     });
 
-    // Clean up orphans
     const reduxIds = new Set(canvasObjects.map(o => o.id));
     fabricObjects.forEach((obj) => {
       if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') return;
@@ -435,23 +466,18 @@ export default function CanvasEditor({
       }
     });
 
-    // ✅ RE-ORDER Z-INDEX SAFELY
     const currentFabricObjects = fabricCanvas.getObjects();
+    let fabricObjectsArray = fabricCanvas._objects;
     canvasObjects.forEach((reduxObj, index) => {
       const fabricObj = currentFabricObjects.find((obj) => obj.customId === reduxObj.id);
       if (fabricObj) {
-        // We ALWAYS want Visual Border at 0.
-        // So user objects start effectively at 1.
-        // But if Visual Border is present, we must shift index by 1
-        const hasBorder = currentFabricObjects.some(o => o.customId === 'print-area-border');
-        const targetIndex = hasBorder ? index + 1 : index;
-
-        // Use moveObjectTo to enforce order
-        fabricCanvas.moveObjectTo(fabricObj, targetIndex);
+        const currentIndex = fabricObjectsArray.indexOf(fabricObj);
+        if (currentIndex !== index) {
+          fabricCanvas.moveObjectTo(fabricObj, index);
+        }
       }
     });
 
-    // Restore Selection
     if (selectedIds.length > 0) {
       const objectsToSelect = fabricCanvas.getObjects().filter(obj => selectedIds.includes(obj.customId));
       if (objectsToSelect.length > 1) {
