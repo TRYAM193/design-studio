@@ -210,8 +210,6 @@ export default function CanvasEditor({
         canvas.setDimensions({ width: clientWidth, height: clientHeight });
         canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
         
-        calculateLayout(clientWidth, clientHeight);
-        
         canvas.requestRenderAll();
       }
     };
