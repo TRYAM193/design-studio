@@ -145,9 +145,15 @@ export default function CanvasEditor({
     if (activeObj) {
       const vpt = canvas.getViewportTransform();
       const objectCenter = activeObj.getCenterPoint();
+
+      // Transform canvas coordinates to screen coordinates
+      const screenX = objectCenter.x * vpt[0] + vpt[4];
+      const screenY = objectCenter.y * vpt[3] + vpt[5];
+      const scaledHeight = activeObj.getScaledHeight() * vpt[3];
+
       setMenuPosition({
-        left: objectCenter.x,
-        top: objectCenter.y - (activeObj.getScaledHeight() / 2) - 60
+        left: screenX,
+        top: screenY - (scaledHeight / 2) - 50 // Offset for menu above object
       });
 
       if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
