@@ -314,7 +314,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowRight size={12} /> Horizontal (X)</span>
-            <span>{current.x * 100}</span>
+            <span>{current.x}</span>
           </div>
           <input
             type="range" min="-10" max="10" step="0.1"
