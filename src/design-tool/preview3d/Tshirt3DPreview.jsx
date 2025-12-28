@@ -318,7 +318,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowUpDown size={12}/> Height</span>
             <span>{current.scaleY.toFixed(2)}x</span>
           </div>
-          <input type="range" min="0.1" max="4.0" step="0.1" value={current.scaleY} onChange={(e) => updateAdjustment('scaleY', e.target.value)} style={{ width: "100%", cursor: "pointer" }} />
+          <input type="range" min="0.1" max="4.0" step="0.01" value={current.scaleY} onChange={(e) => updateAdjustment('scaleY', e.target.value)} style={{ width: "100%", cursor: "pointer" }} />
         </div>
 
       </div>
