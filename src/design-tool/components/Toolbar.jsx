@@ -705,7 +705,22 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
 
       {type === 'image' && (
         <div className="property-group">
-          <button className="primary-button full-width">Remove Background (AI)</button>
+          <button 
+        className="primary-button full-width" 
+        onClick={handleRemoveBackground}
+        disabled={isRemovingBg}
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+      >
+        {isRemovingBg ? (
+          <>
+            <FiLoader className="icon-spin" /> Processing AI...
+          </>
+        ) : (
+          <>
+            <FiLayers /> Remove Background
+          </>
+        )}
+      </button>
         </div>
       )}
     </div>
