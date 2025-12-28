@@ -383,7 +383,7 @@ export default function CanvasEditor({
       if (['text', 'textbox', 'i-text'].includes(objData.type) || shapes.includes(objData.type)) {
         const curvedEffects = ['circle', 'semicircle', 'arc-up', 'arc-down'];
         const isCurved = curvedEffects.includes(objData.props.textEffect);
-        if (existing && existing.type === objData.type && !isCircle) {
+        if (existing && existing.type === objData.type && !isCurved) {
           existing.set(objData.props);
           existing.setCoords();
         } else {
