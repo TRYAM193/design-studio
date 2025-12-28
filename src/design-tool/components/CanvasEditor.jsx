@@ -94,6 +94,12 @@ export default function CanvasEditor({
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
+  const gestureState = useRef({
+     lastScale: 1,
+     isGesture: false,
+     startDistance: 0
+  });
+
   // --- SCALING & MENU POSITIONING ---
   const calculateScaledSize = (originalWidth, originalHeight) => {
     const currentScreenWidth = window.innerWidth;
