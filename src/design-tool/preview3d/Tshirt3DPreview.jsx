@@ -117,18 +117,18 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
   const RenderPart = ({ meshName, tex, decalProps }) => {
     if (!nodes || !nodes[meshName]) return null;
 
-    // if (config.fullWrap && tex) {
-    //   return (
-    //     <group>
-    //       <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
-    //         <meshStandardMaterial color={color} metalness={0} roughness={0.5} side={THREE.DoubleSide} />
-    //       </mesh>
-    //       <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
-    //         <meshStandardMaterial color="white" metalness={0} roughness={0.5} map={tex} transparent={false} side={THREE.DoubleSide} />
-    //       </mesh>
-    //     </group>
-    //   );
-    // }
+    if (config.fullWrap && tex) {
+      return (
+        <group>
+          <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
+            <meshStandardMaterial color={color} metalness={0} roughness={0.5} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
+            <meshStandardMaterial color="white" metalness={0} roughness={0.5} map={tex} transparent={false} side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+      );
+    }
 
     return (
       <mesh geometry={nodes[meshName].geometry} material={nodes[meshName].material} frustumCulled={false} color={color}>
