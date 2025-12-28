@@ -178,7 +178,7 @@ export default function CanvasEditor({
     let canvas = fabricCanvasRef.current;
     if (!canvas) {
       canvas = new fabric.Canvas(canvasRef.current, {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#f3f4f6',
         selection: true,
         controlsAboveOverlay: true,
         preserveObjectStacking: true,
