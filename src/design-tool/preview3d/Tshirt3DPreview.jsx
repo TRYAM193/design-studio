@@ -146,7 +146,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
         meshName={m.front}
         tex={frontTex}
         decalProps={{
-          x: frontPos.x, y: frontPos.y, z: frontPos.z,
+          x: adjustments.x, y: frontPos.y, z: frontPos.z,
           scale: frontPos.scale,
           rotation: [0, 0, 0]
         }}
