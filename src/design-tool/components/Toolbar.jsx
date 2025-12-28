@@ -188,13 +188,14 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
           fabricCanvas.requestRenderAll();
 
           updateObject(id, { src: newImageUrl});
-          setIsRemovingBg(false)
         }
       }
     } catch (error) {
       console.error('Error during background removal:', error);
       alert('Background removal failed. Please try again.');
-      
+    }finally {
+      setIsRemovingBg(false);
+    }
   }
 
 
