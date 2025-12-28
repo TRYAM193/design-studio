@@ -374,6 +374,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
                 min="10" max="360" step="5"
                 value={arcAngle}
                 onInput={(e) => setArcAngle(Number(e.target.value))}
+                onChange={(e) => handleLiveUpdate('radius', Number(e.target.value))} // ✅ Added Live Update
                 onMouseUp={(e) => updateObject(id, { arcAngle: Number(e.target.value) })}
               />
             </div>
