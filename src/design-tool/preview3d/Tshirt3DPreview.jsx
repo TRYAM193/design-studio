@@ -282,10 +282,10 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Box size={12}/> Depth (Z)</span>
-            <span>{Math.round(posAdjust.z * 100)}</span>
+            <span>{Math.round(posAdjust.z )}</span>
           </div>
           <input 
-            type="range" min="-0.2" max="0.2" step="0.01" 
+            type="range" min="-10" max="10" step="0.01" 
             value={posAdjust.z}
             onChange={(e) => setPosAdjust(p => ({ ...p, z: parseFloat(e.target.value) }))}
             style={{ width: "100%", cursor: "pointer" }}
