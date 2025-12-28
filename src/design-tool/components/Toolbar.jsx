@@ -193,6 +193,8 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
       }
     } catch (error) {
       console.error('Error during background removal:', error);
+      alert('Background removal failed. Please try again.');
+      
   }
 
 
