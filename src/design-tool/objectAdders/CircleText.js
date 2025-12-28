@@ -24,7 +24,7 @@ export default function CircleText(objData) {
     x: props.left,
     y: props.top,
     angle: props.angle || 0,
-    scaleX: props.scaleX || 1,
+    scaleX: props.scaleX || 1, // Keep resize scaling
     scaleY: props.scaleY || 1,
     textEffect: props.textEffect || 'circle',
     arcAngle: props.arcAngle || 120,
@@ -45,8 +45,6 @@ export default function CircleText(objData) {
 
       groupItems = chars.map((char, i) => {
           const charX = startX + (i * step);
-          // Sine Wave: y = A * sin(kx)
-          // Frequency is fixed (0.5), Amplitude is controlled by velocity
           const charY = Math.sin(i * 0.5) * (obj.flagVelocity || 0); 
 
           return new fabric.FabricText(char, {
@@ -70,7 +68,7 @@ export default function CircleText(objData) {
   // ==========================================
   else {
       let totalAngle, startAngle;
-      let rotationOffset = 90; // Default: Bottoms of letters point to center
+      let rotationOffset = 90; 
 
       switch (obj.textEffect) {
         case 'semicircle':
@@ -79,17 +77,20 @@ export default function CircleText(objData) {
           break;
           
         case 'arc-down': // Frown / Rainbow (n)
-          // Text sits at TOP of circle (-90 degrees)
+          // Text sits at TOP (-90°). Reads Left (-180°) to Right (0°).
+          // Positive totalAngle means angles INCREASE.
           totalAngle = (obj.arcAngle * Math.PI) / 180;
           startAngle = -Math.PI / 2 - (totalAngle / 2);
-          rotationOffset = 90; // Standard: Upright at top
+          rotationOffset = 90; // Upright at top
           break;
 
         case 'arc-up': // Smile (u)
-          // Text sits at BOTTOM of circle (+90 degrees)
-          totalAngle = (obj.arcAngle * Math.PI) / 180;
+          // Text sits at BOTTOM (90°). Reads Left (180°) to Right (0°).
+          // ✅ FIX: Use NEGATIVE totalAngle so angles DECREASE from 180 -> 0.
+          totalAngle = -1 * (obj.arcAngle * Math.PI) / 180;
+          // Start at 90 + half the spread (e.g., 90 + 60 = 150)
           startAngle = Math.PI / 2 - (totalAngle / 2);
-          rotationOffset = -90; // Inverted: Bottoms point AWAY from center
+          rotationOffset = -90; // Bottoms point OUT
           break;
 
         case 'circle':
@@ -115,7 +116,7 @@ export default function CircleText(objData) {
         const charX = obj.radius * Math.cos(theta);
         const charY = obj.radius * Math.sin(theta);
         
-        // Calculate rotation based on tangent + offset
+        // Calculate rotation based on tangent
         const charAngle = (theta * 180) / Math.PI + rotationOffset;
 
         return new fabric.FabricText(char, {
