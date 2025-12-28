@@ -224,7 +224,7 @@ export default function CanvasEditor({
   // ✅ 2. HANDLE PRINT AREA MASK & BORDER
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !printDimensions.width) return;
     
     canvas.getObjects().forEach((obj) => {
       if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') {
