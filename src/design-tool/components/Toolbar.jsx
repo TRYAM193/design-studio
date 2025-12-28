@@ -323,7 +323,9 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
           <div className="control-row-buttons">
             <button className={`style-button ${currentEffect === 'straight' ? 'active' : ''}`} onClick={() => applyTextEffect('straight')} title="Straight"><FiSlash size={16} /></button>
             <button className={`style-button ${currentEffect === 'circle' ? 'active' : ''}`} onClick={() => applyTextEffect('circle')} title="Circle"><FiCircle size={16} /></button>
-            <button className={`style-button ${currentEffect === 'semicircle' ? 'active' : ''}`} onClick={() => applyTextEffect('semicircle')} title="Semicircle"><FiSunrise size={16} /></button>
+            <button className={`style-button ${currentEffect === 'arc-up' ? 'active' : ''}`} onClick={() => applyTextEffect('arc-up')} title="Arc Up"><FiSmile size={16} /></button>
+            <button className={`style-button ${currentEffect === 'arc-down' ? 'active' : ''}`} onClick={() => applyTextEffect('arc-down')} title="Arc Down"><FiFrown size={16} /></button>
+            
             <button className={`style-button ${currentEffect === 'flag' ? 'active' : ''}`} onClick={() => applyTextEffect('flag')} title="Flag"><FiFlag size={16} /></button>
           </div>
 
