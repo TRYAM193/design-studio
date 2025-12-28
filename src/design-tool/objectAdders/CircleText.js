@@ -134,7 +134,8 @@ export default function CircleText(objData) {
     fontSize: obj.fontSize,
     fontFamily: obj.fontFamily,
     fill: obj.color,
-    scaleX
+    scaleX: obj.scaleX, // ✅ ADDED
+    scaleY: obj.scaleY, // ✅ ADDED
   });
 
   return group;
