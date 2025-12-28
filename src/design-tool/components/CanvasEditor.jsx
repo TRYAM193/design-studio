@@ -69,28 +69,38 @@ export default function CanvasEditor({
   const [layout, setLayout] = useState({ width: 0, height: 0, left: 0, top: 0, scale: 1 });
 
   // ✅ HELPER: Calculate Layout to Center ClipPath
-  const calculateLayout = (containerW, containerH) => {
-    if (!printDimensions.width || !printDimensions.height) return;
+  // ✅ SMART FIT FUNCTION: Centers the (0,0) based design in the view
+  const fitDesignToScreen = (canvas, containerW, containerH) => {
+    if (!canvas || !printDimensions.width || !printDimensions.height) return;
 
-    const padding = containerW < 768 ? 30 : 60;
+    // Responsive Padding
+    const padding = containerW < 768 ? 20 : 60;
     const availW = containerW - padding;
     const availH = containerH - padding;
 
-    const scale = Math.min(1, availW / printDimensions.width, availH / printDimensions.height);
+    // Calculate Zoom to fit Print Dimensions into Container
+    const scaleX = availW / printDimensions.width;
+    const scaleY = availH / printDimensions.height;
+    const zoom = Math.min(scaleX, scaleY);
 
-    const finalWidth = printDimensions.width * scale;
-    const finalHeight = printDimensions.height * scale;
+    // Calculate Center Offsets
+    // This shifts the (0,0) point to the middle of the screen
+    const centerX = (containerW - printDimensions.width * zoom) / 2;
+    const centerY = (containerH - printDimensions.height * zoom) / 2;
 
-    const left = (containerW - finalWidth) / 2;
-    const top = (containerH - finalHeight) / 2;
+    // Apply Transform: [scaleX, skewY, skewX, scaleY, translateX, translateY]
+    canvas.setViewportTransform([zoom, 0, 0, zoom, centerX, centerY]);
 
-    setLayout({
-        width: finalWidth,
-        height: finalHeight,
-        left: left,
-        top: top,
-        scale: scale
+    // Update Controls for Mobile/Desktop
+    const controlSize = containerW < 768 ? 24 : 12;
+    fabric.Object.prototype.set({
+        cornerSize: controlSize / zoom,
+        touchCornerSize: 40 / zoom,
+        transparentCorners: false,
+        borderScaleFactor: 2 / zoom,
     });
+    
+    canvas.requestRenderAll();
   };
 
   const updateMenuPosition = () => {
