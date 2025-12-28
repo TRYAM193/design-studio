@@ -143,6 +143,7 @@ export default function CanvasEditor({
     const activeObj = canvas.getActiveObject();
 
     if (activeObj) {
+      const vpt = canvas.getViewportTransform();
       const objectCenter = activeObj.getCenterPoint();
       setMenuPosition({
         left: objectCenter.x,
