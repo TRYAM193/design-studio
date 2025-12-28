@@ -405,7 +405,7 @@ export const INITIAL_PRODUCTS = [
     },
 
     print_area_2d: {
-      front: { top: 28, left: 7, width: 88, height: 66 },
+      front: { top: 43, left: 7, width: 88, height: 66 },
       back: { top: 28, left: 7, width: 88, height: 66 }
     },
 
