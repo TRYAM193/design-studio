@@ -332,7 +332,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
             <span>{current.scale.toFixed(2)}x</span>
           </div>
           <input
-            type="range" min="0.5" max="2.5" step="0.1"
+            type="range" min="0" max="2.5" step="0.1"
             value={current.scale}
             onChange={(e) => updateAdjustment('scale', e.target.value)}
             style={{ width: "100%", cursor: "pointer" }}
