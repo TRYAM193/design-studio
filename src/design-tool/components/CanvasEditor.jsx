@@ -111,8 +111,10 @@ export default function CanvasEditor({
     const activeObj = canvas.getActiveObject();
 
     if (activeObj) {
-      // ✅ FIX: Access viewportTransform property directly in Fabric v6
+      // ✅ FIX: Access viewportTransform property directly (Fabric v6+)
       const vpt = canvas.viewportTransform; 
+      if (!vpt) return; // Safety check
+
       const objectCenter = activeObj.getCenterPoint();
       
       const screenX = objectCenter.x * vpt[0] + vpt[4];
@@ -152,6 +154,7 @@ export default function CanvasEditor({
       setFabricCanvas(canvas);
       setInitialized(true);
 
+      // Add shadow to make it look like paper
       if (canvas.wrapperEl) {
           canvas.wrapperEl.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
           canvas.wrapperEl.style.border = "1px solid #e2e8f0";
