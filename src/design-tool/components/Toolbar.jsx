@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   FiBold, FiItalic, FiUnderline, FiSearch, FiExternalLink,
-  FiLoader, FiSlash, FiCircle, FiSmile, FiFrown, FiSunrise, FiFlag
+  FiLoader, FiSlash, FiCircle, FiSmile, FiFrown, FiLayers, FiFlag
 } from 'react-icons/fi';
 import WebFont from 'webfontloader';
 import CircleText from '../objectAdders/CircleText';
-import { Path, FabricImage } from 'fabric';
+import { Path } from 'fabric';
 import {
   getStarPoints, getPolygonPoints, getTrianglePoints, getRoundedPathFromPoints,
   getArrowPoints, getDiamondPoints, getTrapezoidPoints, getLightningPoints
