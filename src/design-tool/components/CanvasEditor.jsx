@@ -223,54 +223,51 @@ export default function CanvasEditor({
     const canvas = fabricCanvasRef.current;
     if (!canvas || !printDimensions.width) return;
     
+    // Remove old borders
     canvas.getObjects().forEach((obj) => {
       if (obj.customId === 'print-area-border' || obj.id === 'print-area-border') {
         canvas.remove(obj);
       }
     });
     
-    if (productId && canvas.width > 0 && canvas.height > 0) {
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      const leftPos = centerX - scaledWidth / 2;
-      const topPos = centerY - scaledHeight / 2;
-
-      const clipRect = new fabric.Rect({
-        left: leftPos,
-        top: topPos,
-        width: scaledWidth,
-        height: scaledHeight,
+    // Create Clip Path (The Print Area)
+    const printAreaRect = new fabric.Rect({
+        left: 0,
+        top: 0,
+        width: printDimensions.width,
+        height: printDimensions.height,
         absolutePositioned: true,
-      });
-      
-      canvas.clipPath = clipRect;
-      
-      if (scaledHeight && scaledWidth) {
-        const visualBorder = new fabric.Rect({
-          left: leftPos,
-          top: topPos,
-          width: scaledWidth,
-          height: scaledHeight,
-          fill: 'transparent',
-          stroke: 'rgba(0,0,0,0.3)',
-          strokeWidth: 2,
-          strokeDashArray: [5, 5],
-          selectable: false,
-          evented: false,
-          customId: 'print-area-border',
-          id: 'print-area-border'
-        });
-        canvas.add(visualBorder);
-        canvas.bringObjectToFront(visualBorder);
-        // console.log('added border')
-      }
-    } else {
-      canvas.clipPath = null;
-    }
+    });
+    
+    // Set Clip Path
+    canvas.clipPath = printAreaRect;
+    
+    // Visual Border (Dashed line)
+    const visualBorder = new fabric.Rect({
+        left: 0,
+        top: 0,
+        width: printDimensions.width,
+        height: printDimensions.height,
+        fill: '#ffffff', // White background for the print area
+        stroke: 'rgba(0,0,0,0.2)',
+        strokeWidth: 4, // Thicker stroke
+        strokeDashArray: [10, 10],
+        selectable: false,
+        evented: false,
+        customId: 'print-area-border',
+        id: 'print-area-border'
+    });
+    
+    canvas.add(visualBorder);
+    canvas.sendToBack(visualBorder); // Ensure it's behind objects
     canvas.requestRenderAll();
-    window.dispatchEvent(new Event('resize_menu_update'));
+    
+    // Refit screen just in case
+    if (wrapperRef.current) {
+       fitDesignToScreen(canvas, wrapperRef.current.clientWidth, wrapperRef.current.clientHeight);
+    }
 
-  }, [printDimensions, activeView, window.innerWidth]);
+  }, [printDimensions, activeView]);
 
   // ✅ 4. HANDLE SELECTION EVENTS
   useEffect(() => {
