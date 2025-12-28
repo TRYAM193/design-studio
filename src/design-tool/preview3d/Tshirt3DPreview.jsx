@@ -26,7 +26,7 @@ const MODEL_CONFIGS = {
     cameraZ: 0.5,
     fullWrap: true, // Uses UV Mapping
     meshes: { front: "MUG" },
-    frontDecal: { x: -0.1, y: -2.5, width: 0, scaleX: 1, scaleY: 1 }, 
+    frontDecal: { x: -0.1, y: -2.5, : 1, scaleY: 1 }, 
   },
   "tote": {
     scale: 0.8,
