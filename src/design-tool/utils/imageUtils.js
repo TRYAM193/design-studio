@@ -13,6 +13,7 @@ export const processBackgroundRemoval = async (imageSource) => {
 
     // process the removal
     const blob = await removeBackground(imageSource, config);
+    console
     
     // Convert the result blob to a URL that Fabric.js can use
     return URL.createObjectURL(blob);
