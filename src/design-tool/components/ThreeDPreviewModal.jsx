@@ -34,7 +34,7 @@ export function ThreeDPreviewModal({
     });
 
     // Detect Pure Black
-    const isPureBlack = selectedColor.toLowerCase() === '#000000' || selectedColor.toLowerCase() === '#000';
+    const isPureBlack = selectedColor?.toLowerCase() === '#000000' || selectedColor.toLowerCase() === '#000';
 
     useEffect(() => {
         if (isOpen) {
