@@ -23,7 +23,6 @@ const uuidv4 = () => {
   });
 };
 
-// Extend toObject to include custom properties
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
     return toObject.call(
@@ -43,6 +42,13 @@ const isDifferent = (val1, val2) => {
   return val1 !== val2;
 };
 
+// ✅ HELPER: Calculate distance between two touch points
+const getDistance = (touch1, touch2) => {
+  const dx = touch1.clientX - touch2.clientX;
+  const dy = touch1.clientY - touch2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
 export default function CanvasEditor({
   setActiveTool,
   setSelectedId,
@@ -50,7 +56,6 @@ export default function CanvasEditor({
   fabricCanvas,
   printDimensions,
   productId,
-  activeView,
 }) {
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
@@ -66,7 +71,15 @@ export default function CanvasEditor({
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
-  // ✅ 1. Determine Logical Canvas Size
+  // ✅ REF for Gesture State (Avoiding Re-renders)
+  const gestureState = useRef({
+      isGesture: false,
+      startDist: 0,
+      startScale: 1, // For Object
+      startZoom: 1   // For Canvas
+  });
+
+  // ✅ 1. LOGICAL SIZE
   const getLogicalSize = () => {
     if (productId && printDimensions?.width && printDimensions?.height) {
       return { width: printDimensions.width, height: printDimensions.height };
@@ -74,13 +87,13 @@ export default function CanvasEditor({
     return { width: 800, height: 930 };
   };
 
-  // ✅ 2. RESIZE & CENTER LOGIC
+  // ✅ 2. FIT TO SCREEN
   const fitCanvasToScreen = (canvas, containerW, containerH) => {
     if (!canvas) return;
 
     const { width: targetW, height: targetH } = getLogicalSize();
     
-    // Less padding on mobile to maximize space
+    // Mobile Padding
     const padding = containerW < 768 ? 20 : 50;
     const availW = containerW - padding;
     const availH = containerH - padding;
@@ -140,7 +153,7 @@ export default function CanvasEditor({
     }
   };
 
-  // ✅ 3. INITIALIZE CANVAS & GESTURES
+  // ✅ 3. INITIALIZE & MANUAL GESTURES
   useEffect(() => {
     let canvas = fabricCanvasRef.current;
     if (!canvas) {
@@ -149,8 +162,7 @@ export default function CanvasEditor({
         selection: true,
         controlsAboveOverlay: true,
         preserveObjectStacking: true,
-        // ✅ Allow touch gestures
-        allowTouchScrolling: false, 
+        allowTouchScrolling: false, // Critical for our manual logic
       });
       fabricCanvasRef.current = canvas;
       setFabricCanvas(canvas);
@@ -161,56 +173,79 @@ export default function CanvasEditor({
           canvas.wrapperEl.style.border = "1px solid #e2e8f0";
       }
 
-      // --- PINCH GESTURES ---
-      canvas.on('touch:gesture', function(opt) {
-          // Fabric.js 'touch:gesture' event gives us 'opt.self' which contains gesture info
-          // opt.self.state = 'start' | 'change' | 'end'
-          // opt.self.scale = total scale factor since start
+      // -------------------------------------------------------------
+      // 🔥 MANUAL GESTURE HANDLERS (Replacing Fabric's touch:gesture)
+      // -------------------------------------------------------------
+      
+      // We attach these to the UPPER CANVAS (Interaction Layer)
+      const upperCanvas = canvas.upperCanvasEl;
+
+      const onTouchStart = (e) => {
+          if (e.touches && e.touches.length === 2) {
+              e.preventDefault(); // Stop browser zoom
+              const dist = getDistance(e.touches[0], e.touches[1]);
+              
+              gestureState.current.isGesture = true;
+              gestureState.current.startDist = dist;
+              
+              const activeObj = canvas.getActiveObject();
+              if (activeObj) {
+                  // Mode A: Object Resize
+                  gestureState.current.startScale = activeObj.scaleX; // Assuming uniform scale
+              } else {
+                  // Mode B: Canvas Zoom
+                  gestureState.current.startZoom = canvas.getZoom();
+              }
+          }
+      };
+
+      const onTouchMove = (e) => {
+          if (!gestureState.current.isGesture || e.touches.length !== 2) return;
+          e.preventDefault(); // CRITICAL: Stops page pinch
+
+          const dist = getDistance(e.touches[0], e.touches[1]);
+          const startDist = gestureState.current.startDist;
+          
+          // Calculate scale factor relative to start of pinch
+          const scaleFactor = dist / startDist; 
           
           const activeObj = canvas.getActiveObject();
-          
-          if (activeObj) {
-              // --- MODE A: RESIZE OBJECT ---
-              if (opt.self.state === 'start') {
-                  activeObj._startScaleX = activeObj.scaleX;
-                  activeObj._startScaleY = activeObj.scaleY;
-              } else if (opt.self.state === 'change') {
-                  const newScale = opt.self.scale; 
-                  activeObj.set({
-                      scaleX: activeObj._startScaleX * newScale,
-                      scaleY: activeObj._startScaleY * newScale
-                  });
-                  activeObj.setCoords();
-                  canvas.requestRenderAll();
-              }
-          } else {
-              // --- MODE B: ZOOM PAPER (CANVAS) ---
-              if (opt.self.state === 'start') {
-                  canvas._startZoom = canvas.getZoom();
-              } else if (opt.self.state === 'change') {
-                  let newZoom = canvas._startZoom * opt.self.scale;
-                  
-                  // Limit zoom levels
-                  if (newZoom > 5) newZoom = 5;
-                  if (newZoom < 0.2) newZoom = 0.2;
 
-                  const { width: logicalW, height: logicalH } = getLogicalSize();
-                  
-                  // Update both Canvas Dimensions AND Zoom to keep it crisp
-                  canvas.setDimensions({
-                      width: logicalW * newZoom,
-                      height: logicalH * newZoom
-                  });
-                  canvas.setZoom(newZoom);
-              }
+          if (activeObj) {
+              // --- RESIZE OBJECT ---
+              const newScale = gestureState.current.startScale * scaleFactor;
+              activeObj.set({ scaleX: newScale, scaleY: newScale });
+              activeObj.setCoords();
+              canvas.requestRenderAll();
+          } else {
+              // --- ZOOM CANVAS (PAPER) ---
+              let newZoom = gestureState.current.startZoom * scaleFactor;
+              
+              // Constraints
+              if (newZoom > 5) newZoom = 5;
+              if (newZoom < 0.2) newZoom = 0.2;
+
+              const { width: logicalW, height: logicalH } = getLogicalSize();
+              
+              // Update dimensions dynamically
+              canvas.setDimensions({
+                  width: logicalW * newZoom,
+                  height: logicalH * newZoom
+              });
+              canvas.setZoom(newZoom);
           }
-          
-          // Prevent browser zooming
-          if (opt.e) {
-            opt.e.preventDefault();
-            opt.e.stopPropagation();
+      };
+
+      const onTouchEnd = (e) => {
+          if (e.touches.length < 2) {
+              gestureState.current.isGesture = false;
           }
-      });
+      };
+
+      // Attach Listeners
+      upperCanvas.addEventListener('touchstart', onTouchStart, { passive: false });
+      upperCanvas.addEventListener('touchmove', onTouchMove, { passive: false });
+      upperCanvas.addEventListener('touchend', onTouchEnd);
     }
 
     const resizeCanvas = () => {
@@ -228,7 +263,7 @@ export default function CanvasEditor({
     return () => ro.disconnect();
   }, [printDimensions, productId]); 
 
-  // ✅ 4. SELECTION EVENTS
+  // ✅ 4. SELECTION
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
@@ -274,7 +309,7 @@ export default function CanvasEditor({
     };
   }, [fabricCanvas, setSelectedId, setActiveTool]);
 
-  // ✅ 5. OBJECT MODIFICATION HANDLER
+  // ✅ 5. MODIFICATION
   useEffect(() => {
     const fabricCanvas = fabricCanvasRef.current;
     if (!fabricCanvas) return;
@@ -319,7 +354,7 @@ export default function CanvasEditor({
     };
   }, []);
 
-  // ✅ 6. SYNC REDUX STATE → FABRIC
+  // ✅ 6. SYNC
   useEffect(() => {
     if (!initialized) return;
     const fabricCanvas = fabricCanvasRef.current;
@@ -419,10 +454,9 @@ export default function CanvasEditor({
     <div 
       ref={wrapperRef} 
       id="canvas-wrapper" 
-      // ✅ CRITICAL: touchAction: 'none' disables browser native zoom
-      // allowing Fabric.js to handle the gestures instead.
+      // ✅ TOUCH ACTION: NONE is critical to stop browser zooming
       className="relative w-full h-full flex items-center justify-center bg-slate-100 overflow-hidden"
-      style={{ touchAction: 'none' }} 
+      style={{ touchAction: 'none' }}
     >
       <canvas ref={canvasRef} id="canvas" />
 
