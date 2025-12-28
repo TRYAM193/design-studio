@@ -17,7 +17,7 @@ const MODEL_CONFIGS = {
       leftSleeve: "Sleeves_Node",
       rightSleeve: "Sleeves_Node001",
     },
-    frontDecal: { x: 0, y: 1.3, z: 0, scaleX: 0.3, scaleY: 0.4 },
+    frontDecal: { x: 0, y: 1.3, z: 0, scaleX: 0.3, scaleY: 0.3 },
     backDecal: { x: 0, y: 1.3, z: 0, scaleX: 0.4, scaleY: 0.4 },
     decalDepth: 0.6
   },
