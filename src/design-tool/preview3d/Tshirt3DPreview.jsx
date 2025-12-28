@@ -121,7 +121,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
       return (
         <group>
           <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
-            <meshStandardMaterial color={color} metalness={0} roughness={0.5} side={THREE.DoubleSide} />
+            <meshStandardMaterial color={color} metalness={0} roughness={0.5} side={THREE.DoubleSide} {...decalProps} />
           </mesh>
           <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
             <meshStandardMaterial color="white" metalness={0} roughness={0.5} map={tex} transparent={false} side={THREE.DoubleSide} />
