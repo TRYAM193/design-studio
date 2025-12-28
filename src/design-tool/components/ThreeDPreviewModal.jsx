@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShoppingBag, X, Box, Image as ImageIcon, Settings2, Move, Maximize2, ArrowRight, ArrowDown } from "lucide-react";
+import { Loader2, ShoppingBag, X, Box, Image as ImageIcon } from "lucide-react";
 import Tshirt3DPreview from '../preview3d/Tshirt3DPreview';
 
 export function ThreeDPreviewModal({
@@ -25,15 +25,13 @@ export function ThreeDPreviewModal({
     const [viewMode, setViewMode] = useState('2d');
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
 
-    // ✅ STATE: Adjustments for 2D Placement
+    // ✅ STATE: Holds the placement values from DB
     const [adjustments, setAdjustments] = useState({ 
         top: 25, 
         left: 0, 
         width: 100, 
         height: 50 
     });
-
-    const [showControls, setShowControls] = useState(true); // Toggle for the slider panel
 
     // Detect Pure Black
     const isPureBlack = selectedColor?.toLowerCase() === '#000000' || selectedColor?.toLowerCase() === '#000';
@@ -49,7 +47,8 @@ export function ThreeDPreviewModal({
         }
     }, [isOpen, productId, isMug, has3D]);
 
-    // Reset or Load Defaults when side changes
+    // ✅ APPLY DB VALUES AUTOMATICALLY
+    // When the side changes, we grab the specific print_area_2d values for that side
     useEffect(() => {
         const defaults = productData.print_area_2d?.[activeSide] || { top: 20, left: 30, width: 40, height: 40 };
         setAdjustments({
@@ -68,10 +67,6 @@ export function ThreeDPreviewModal({
 
     const currentTexture = getCurrentTexture();
     
-    const handleAdjustment = (key, value) => {
-        setAdjustments(prev => ({ ...prev, [key]: parseFloat(value) }));
-    };
-
     const getMugShift = () => {
         if (!isMug) return '0%';
         switch(activeSide) {
@@ -187,12 +182,11 @@ export function ThreeDPreviewModal({
                                             </div>
                                         )}
 
-                                        {/* LAYER 3: USER DESIGN & 2D ADJUSTMENT LOGIC */}
+                                        {/* LAYER 3: USER DESIGN & 2D PLACEMENT (FROM DB) */}
                                         {currentTexture && (
                                             <div 
                                                 className="absolute z-20 border border-transparent hover:border-white/50 transition-colors overflow-hidden"
                                                 style={{
-                                                    // ✅ THIS IS WHERE THE SLIDERS APPLY
                                                     top: `${adjustments.top}%`,
                                                     left: `${adjustments.left}%`,
                                                     width: `${adjustments.width}%`,
@@ -224,89 +218,6 @@ export function ThreeDPreviewModal({
                                         )}
                                     </div>
                                 </div>
-
-                                {/* ✅ NEW: 2D PLACEMENT FIXING PANEL (FLOATING) */}
-                                {showControls && (
-                                    <div className="absolute top-4 right-4 bg-zinc-950/90 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-2xl w-64 z-30 animate-in fade-in slide-in-from-right-5">
-                                        <div className="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
-                                            <h3 className="text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                                                <Settings2 size={14} className="text-indigo-400"/> Placement Fix
-                                            </h3>
-                                            <button onClick={() => setShowControls(false)} className="text-zinc-500 hover:text-white">
-                                                <X size={14} />
-                                            </button>
-                                        </div>
-                                        
-                                        <div className="space-y-4">
-                                            {/* Top Slider */}
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                                                    <span className="flex items-center gap-1"><ArrowDown size={10}/> Top Offset</span>
-                                                    <span className="text-white">{adjustments.top.toFixed(1)}%</span>
-                                                </div>
-                                                <input 
-                                                    type="range" min="0" max="100" step="0.5"
-                                                    value={adjustments.top}
-                                                    onChange={(e) => handleAdjustment('top', e.target.value)}
-                                                    className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
-                                                />
-                                            </div>
-
-                                            {/* Left Slider */}
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                                                    <span className="flex items-center gap-1"><ArrowRight size={10}/> Left Offset</span>
-                                                    <span className="text-white">{adjustments.left.toFixed(1)}%</span>
-                                                </div>
-                                                <input 
-                                                    type="range" min="-50" max="100" step="0.5"
-                                                    value={adjustments.left}
-                                                    onChange={(e) => handleAdjustment('left', e.target.value)}
-                                                    className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
-                                                />
-                                            </div>
-
-                                            {/* Width Slider */}
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                                                    <span className="flex items-center gap-1"><Maximize2 size={10}/> Width Scale</span>
-                                                    <span className="text-white">{adjustments.width.toFixed(1)}%</span>
-                                                </div>
-                                                <input 
-                                                    type="range" min="5" max="200" step="0.5"
-                                                    value={adjustments.width}
-                                                    onChange={(e) => handleAdjustment('width', e.target.value)}
-                                                    className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
-                                                />
-                                            </div>
-
-                                             {/* Height Slider */}
-                                             <div className="space-y-1">
-                                                <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                                                    <span className="flex items-center gap-1"><Maximize2 size={10} className="rotate-90"/> Height Scale</span>
-                                                    <span className="text-white">{adjustments.height.toFixed(1)}%</span>
-                                                </div>
-                                                <input 
-                                                    type="range" min="5" max="200" step="0.5"
-                                                    value={adjustments.height}
-                                                    onChange={(e) => handleAdjustment('height', e.target.value)}
-                                                    className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Toggle Button (If panel closed) */}
-                                {!showControls && (
-                                    <button 
-                                        onClick={() => setShowControls(true)}
-                                        className="absolute top-4 right-4 bg-zinc-900 p-2 rounded-lg border border-white/10 hover:bg-zinc-800 transition-colors"
-                                        title="Show Adjustment Controls"
-                                    >
-                                        <Settings2 size={20} className="text-white" />
-                                    </button>
-                                )}
 
                                 {/* Side Selector Thumbnails */}
                                 {mockupKeys.length > 1 && (
