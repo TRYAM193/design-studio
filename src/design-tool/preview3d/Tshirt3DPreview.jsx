@@ -254,7 +254,7 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowUp size={12}/> Vertical (Y)</span>
-            <span>{Math.round(posAdjust.y * 100)}</span>
+            <span>{Math.round(posAdjust.y)}</span>
           </div>
           <input 
             type="range" min="-10" max="10" step="0.01" 
@@ -268,10 +268,10 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowRight size={12}/> Horizontal (X)</span>
-            <span>{Math.round(posAdjust.x * 100)}</span>
+            <span>{Math.round(posAdjust.x)}</span>
           </div>
           <input 
-            type="range" min="-0.2" max="0.2" step="0.01" 
+            type="range" min="-10" max="10" step="0.01" 
             value={posAdjust.x}
             onChange={(e) => setPosAdjust(p => ({ ...p, x: parseFloat(e.target.value) }))}
             style={{ width: "100%", cursor: "pointer" }}
