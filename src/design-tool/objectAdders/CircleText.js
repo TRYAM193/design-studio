@@ -89,7 +89,7 @@ export default function CircleText(objData) {
           // Text sits at BOTTOM of circle (+90 degrees)
           totalAngle = (obj.arcAngle * Math.PI) / 180;
           startAngle = Math.PI / 2 - (totalAngle / 2);
-          rotationOffset = 90; // Inverted: Bottoms point AWAY from center
+          rotationOffset = -90; // Inverted: Bottoms point AWAY from center
           break;
 
         case 'circle':
