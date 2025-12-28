@@ -80,7 +80,7 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
         <div className="sidebar-content">
           <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-center">
             <FiCpu size={32} className="mx-auto text-indigo-500 mb-2" />
-            <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '5px', color: '#333' }}>Flux AI Generator</h3>
+            <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '5px', color: '#333' }}>AI Generator</h3>
             <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px', lineHeight: '1.4' }}>
               Describe what you want and let AI generate unique artwork for your design.
             </p>
