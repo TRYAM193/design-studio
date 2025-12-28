@@ -1,7 +1,8 @@
+// src/design-tool/components/ThreeDPreviewModal.jsx
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, ShoppingBag, X, Box, Image as ImageIcon, Settings2, Move, Maximize2, ArrowRight, ArrowDown } from "lucide-react";
+import { Loader2, ShoppingBag, X, Box, Image as ImageIcon, Settings2, Move, Maximize2 } from "lucide-react";
 import Tshirt3DPreview from '../preview3d/Tshirt3DPreview';
 
 export function ThreeDPreviewModal({
@@ -25,15 +26,12 @@ export function ThreeDPreviewModal({
     const [viewMode, setViewMode] = useState('2d');
     const [activeSide, setActiveSide] = useState(mockupKeys[0] || 'front');
 
-    // ✅ STATE: Adjustments for 2D Placement
     const [adjustments, setAdjustments] = useState({ 
         top: 25, 
         left: 0, 
         width: 100, 
         height: 50 
     });
-
-    const [showControls, setShowControls] = useState(true); // Toggle for the slider panel
 
     // Detect Pure Black
     const isPureBlack = selectedColor?.toLowerCase() === '#000000' || selectedColor?.toLowerCase() === '#000';
@@ -49,14 +47,13 @@ export function ThreeDPreviewModal({
         }
     }, [isOpen, productId, isMug, has3D]);
 
-    // Reset or Load Defaults when side changes
     useEffect(() => {
         const defaults = productData.print_area_2d?.[activeSide] || { top: 20, left: 30, width: 40, height: 40 };
         setAdjustments({
-            top: defaults.top || 20,
-            left: defaults.left || 0,
-            width: defaults.width || 100,
-            height: defaults.height || defaults.width || 100
+            top: defaults.top,
+            left: defaults.left,
+            width: defaults.width,
+            height: defaults.height || defaults.width || 40
         });
     }, [activeSide, productData]);
 
@@ -115,19 +112,9 @@ export function ThreeDPreviewModal({
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <Button 
-                             onClick={onAddToCart} 
-                             disabled={isSaving}
-                             className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
-                        >
-                            {isSaving ? <Loader2 className="animate-spin" /> : <ShoppingBag size={18} />}
-                            Add to Cart
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={onClose} className="text-zinc-400 hover:text-white rounded-full hover:bg-white/10">
-                            <X size={20} />
-                        </Button>
-                    </div>
+                    <Button variant="ghost" size="icon" onClick={onClose} className="text-zinc-400 hover:text-white rounded-full hover:bg-white/10">
+                        <X size={20} />
+                    </Button>
                 </div>
 
                 {/* --- MAIN STAGE --- */}
@@ -135,15 +122,15 @@ export function ThreeDPreviewModal({
                     
                     {/* === LEFT: PREVIEW AREA === */}
                     <div className="flex-1 relative flex flex-col min-w-0">
-                        
                         {viewMode === '2d' && (
                             <div className="relative w-full h-full flex flex-col">
                                 <div className="flex-1 flex items-center justify-center bg-zinc-900 p-8 overflow-auto">
                                     
                                     {/* 🖼️ MOCKUP CONTAINER */}
+                                    {/* Background is Grey (zinc-200) to contrast with black shirt */}
                                     <div className="relative w-full max-w-[500px] aspect-[3/4] shadow-2xl rounded-lg overflow-hidden bg-zinc-200 flex-shrink-0 group">
                                         
-                                        {/* LAYER 1: Base Color */}
+                                        {/* LAYER 1: Base Color (Masked to Shirt Shape) */}
                                         <div 
                                             className="absolute inset-0 w-full h-full z-0 transition-colors duration-300"
                                             style={{ 
@@ -159,10 +146,10 @@ export function ThreeDPreviewModal({
                                             }}
                                         />
 
-                                        {/* LAYER 2: Mockup Image */}
+                                        {/* LAYER 2: Mockup Image (Composite) */}
                                         {mockups[activeSide] ? (
                                             <>
-                                                {/* A. SHADOW LAYER */}
+                                                {/* A. SHADOW LAYER (Multiply) */}
                                                 <img 
                                                     src={mockups[activeSide]} 
                                                     alt={`${activeSide} view`} 
@@ -170,13 +157,14 @@ export function ThreeDPreviewModal({
                                                     style={{ mixBlendMode: 'multiply' }} 
                                                 />
                                                 
-                                                {/* B. HIGHLIGHT LAYER */}
+                                                {/* B. HIGHLIGHT LAYER (Screen) */}
                                                 <img 
                                                     src={mockups[activeSide]} 
                                                     alt={`${activeSide} highlights`} 
                                                     className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none"
                                                     style={{ 
                                                         mixBlendMode: 'screen', 
+                                                        // 👇 FIX: Reduce opacity drastically for black (0.1), keep normal for others (0.3)
                                                         opacity: isPureBlack ? 0.1 : 0.3 
                                                     }} 
                                                 />
@@ -187,12 +175,22 @@ export function ThreeDPreviewModal({
                                             </div>
                                         )}
 
-                                        {/* LAYER 3: USER DESIGN & 2D ADJUSTMENT LOGIC */}
+                                        {/* LAYER 3: MUG SHADOW (Only for mugs) */}
+                                        {isMug && (
+                                            <div 
+                                                className="absolute inset-0 z-15 pointer-events-none"
+                                                style={{
+                                                    background: `linear-gradient(to right, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.05) 25%, rgba(255,255,255,0.2) 40%, rgba(255,255,255,0.0) 50%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.4) 100%)`,
+                                                    mixBlendMode: 'multiply'
+                                                }}
+                                            />
+                                        )}
+
+                                        {/* LAYER 4: USER DESIGN */}
                                         {currentTexture && (
                                             <div 
                                                 className="absolute z-20 border border-transparent hover:border-white/50 transition-colors overflow-hidden"
                                                 style={{
-                                                    // ✅ THIS IS WHERE THE SLIDERS APPLY
                                                     top: `${adjustments.top}%`,
                                                     left: `${adjustments.left}%`,
                                                     width: `${adjustments.width}%`,
@@ -225,89 +223,6 @@ export function ThreeDPreviewModal({
                                     </div>
                                 </div>
 
-                                {/* ✅ NEW: 2D PLACEMENT FIXING PANEL (FLOATING) */}
-                                {showControls && (
-                                    <div className="absolute top-4 right-4 bg-zinc-950/90 backdrop-blur-md p-4 rounded-xl border border-white/10 shadow-2xl w-64 z-30 animate-in fade-in slide-in-from-right-5">
-                                        <div className="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
-                                            <h3 className="text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2">
-                                                <Settings2 size={14} className="text-indigo-400"/> Placement Fix
-                                            </h3>
-                                            <button onClick={() => setShowControls(false)} className="text-zinc-500 hover:text-white">
-                                                <X size={14} />
-                                            </button>
-                                        </div>
-                                        
-                                        <div className="space-y-4">
-                                            {/* Top Slider */}
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                                                    <span className="flex items-center gap-1"><ArrowDown size={10}/> Top Offset</span>
-                                                    <span className="text-white">{adjustments.top.toFixed(1)}%</span>
-                                                </div>
-                                                <input 
-                                                    type="range" min="0" max="100" step="0.5"
-                                                    value={adjustments.top}
-                                                    onChange={(e) => handleAdjustment('top', e.target.value)}
-                                                    className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
-                                                />
-                                            </div>
-
-                                            {/* Left Slider */}
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                                                    <span className="flex items-center gap-1"><ArrowRight size={10}/> Left Offset</span>
-                                                    <span className="text-white">{adjustments.left.toFixed(1)}%</span>
-                                                </div>
-                                                <input 
-                                                    type="range" min="-50" max="100" step="0.5"
-                                                    value={adjustments.left}
-                                                    onChange={(e) => handleAdjustment('left', e.target.value)}
-                                                    className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
-                                                />
-                                            </div>
-
-                                            {/* Width Slider */}
-                                            <div className="space-y-1">
-                                                <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                                                    <span className="flex items-center gap-1"><Maximize2 size={10}/> Width Scale</span>
-                                                    <span className="text-white">{adjustments.width.toFixed(1)}%</span>
-                                                </div>
-                                                <input 
-                                                    type="range" min="5" max="200" step="0.5"
-                                                    value={adjustments.width}
-                                                    onChange={(e) => handleAdjustment('width', e.target.value)}
-                                                    className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
-                                                />
-                                            </div>
-
-                                             {/* Height Slider */}
-                                             <div className="space-y-1">
-                                                <div className="flex justify-between text-[10px] text-zinc-400 font-medium">
-                                                    <span className="flex items-center gap-1"><Maximize2 size={10} className="rotate-90"/> Height Scale</span>
-                                                    <span className="text-white">{adjustments.height.toFixed(1)}%</span>
-                                                </div>
-                                                <input 
-                                                    type="range" min="5" max="200" step="0.5"
-                                                    value={adjustments.height}
-                                                    onChange={(e) => handleAdjustment('height', e.target.value)}
-                                                    className="w-full h-1.5 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500 hover:accent-indigo-400"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Toggle Button (If panel closed) */}
-                                {!showControls && (
-                                    <button 
-                                        onClick={() => setShowControls(true)}
-                                        className="absolute top-4 right-4 bg-zinc-900 p-2 rounded-lg border border-white/10 hover:bg-zinc-800 transition-colors"
-                                        title="Show Adjustment Controls"
-                                    >
-                                        <Settings2 size={20} className="text-white" />
-                                    </button>
-                                )}
-
                                 {/* Side Selector Thumbnails */}
                                 {mockupKeys.length > 1 && (
                                     <div className="h-24 border-t border-white/10 bg-zinc-950 flex items-center justify-center gap-4 flex-shrink-0">
@@ -329,11 +244,19 @@ export function ThreeDPreviewModal({
                                                         WebkitMaskSize: 'cover'
                                                     }} 
                                                 />
+                                                
                                                 <img 
                                                     src={mockups[side]} 
                                                     alt={side} 
                                                     className="absolute inset-0 w-full h-full object-cover" 
                                                     style={{ mixBlendMode: 'multiply' }}
+                                                />
+                                                <img 
+                                                    src={mockups[side]} 
+                                                    alt={side} 
+                                                    className="absolute inset-0 w-full h-full object-cover" 
+                                                    // 👇 FIX: Same fix for thumbnails
+                                                    style={{ mixBlendMode: 'screen', opacity: isPureBlack ? 0.1 : 0.3 }}
                                                 />
                                             </button>
                                         ))}
