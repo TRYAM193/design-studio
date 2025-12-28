@@ -78,10 +78,29 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
       title = "AI Design Generator";
       ContentComponent = () => (
         <div className="sidebar-content">
-          <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>Create with DALL-E</h3>
-          {/* This is where the DALL-E input component will go (Next step!) */}
-          <textarea rows="4" placeholder="Enter prompt here..." style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '14px', resize: 'none' }}></textarea>
-          <button className='header-button bg-green-500 hover:bg-green-600' style={{ width: '100%', marginTop: '10px', backgroundColor: '#28a745' }}>Generate</button>
+          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-center">
+            <FiCpu size={32} className="mx-auto text-indigo-500 mb-2" />
+            <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '5px', color: '#333' }}>Flux AI Generator</h3>
+            <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px', lineHeight: '1.4' }}>
+              Describe what you want and let AI generate unique artwork for your design.
+            </p>
+            <button 
+                onClick={() => setIsAiModalOpen(true)}
+                className='header-button' 
+                style={{ 
+                    width: '100%', 
+                    backgroundColor: '#4f46e5', 
+                    color: 'white',
+                    padding: '10px',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    border: 'none',
+                    fontWeight: '600'
+                }}
+            >
+                Open Generator
+            </button>
+          </div>
         </div>
       );
       break;
