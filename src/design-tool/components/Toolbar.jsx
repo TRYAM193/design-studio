@@ -337,28 +337,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
             <button className={`style-button ${currentEffect === 'flag' ? 'active' : ''}`} onClick={() => applyTextEffect('flag')} title="Flag"><FiFlag size={16} /></button>
           </div>
 
-          {currentEffect === 'circle' && (
-            <div className="control-row full-width">
-              <div className="control-row">
-                <label className="control-label">Radius</label>
-                <span style={{ fontSize: '12px', color: '#666' }}>{circleRadius}</span>
-              </div>
-              <input
-                type="range"
-                className="slider-input"
-                min="50" max="400" step="10"
-                value={circleRadius}
-                onInput={(e) => {
-                  const val = Number(e.target.value);
-                  setCircleRadius(val);
-                }}
-                onMouseUp={(e) => updateObject(id, { radius: Number(e.target.value) })}
-                onChange={(e) => handleLiveUpdate('radius', Number(e.target.value))}
-              />
-            </div>
-          )}
-
-          {['circle', 'semicircle', 'arc-up', 'arc-down'].includes(currentEffect) && (
+          {['circle', 'arc-up', 'arc-down'].includes(currentEffect) && (
             <div className="control-row full-width">
               <div className="control-row">
                 <label className="control-label">Radius (Curvature)</label>
