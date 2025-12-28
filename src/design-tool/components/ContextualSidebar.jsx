@@ -28,6 +28,8 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
 
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
+  
+
   switch (activePanel) {
     case 'saved':  // <--- ADD THIS CASE
       title = "Your Saved Designs";
