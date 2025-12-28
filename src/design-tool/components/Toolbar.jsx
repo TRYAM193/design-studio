@@ -358,6 +358,58 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
             </div>
           )}
 
+{['circle', 'semicircle', 'arc-up', 'arc-down'].includes(currentEffect) && (
+            <div className="control-row full-width">
+              <div className="control-row">
+                <label className="control-label">Radius (Curvature)</label>
+                <span style={{ fontSize: '12px', color: '#666' }}>{circleRadius}</span>
+              </div>
+              <input
+                type="range"
+                className="slider-input"
+                min="10" max="600" step="10"
+                value={circleRadius}
+                onInput={(e) => setCircleRadius(Number(e.target.value))}
+                onMouseUp={(e) => updateObject(id, { radius: Number(e.target.value) })}
+              />
+            </div>
+          )}
+
+          {/* ✅ ARC ANGLE SLIDER (Only for Arc Up/Down) */}
+          {['arc-up', 'arc-down'].includes(currentEffect) && (
+            <div className="control-row full-width">
+              <div className="control-row">
+                <label className="control-label">Arc Angle (Spread)</label>
+                <span style={{ fontSize: '12px', color: '#666' }}>{arcAngle}°</span>
+              </div>
+              <input
+                type="range"
+                className="slider-input"
+                min="10" max="360" step="5"
+                value={arcAngle}
+                onInput={(e) => setArcAngle(Number(e.target.value))}
+                onMouseUp={(e) => updateObject(id, { arcAngle: Number(e.target.value) })}
+              />
+            </div>
+          )}
+
+          {/* ✅ FLAG PROPS (Keep properties for Flag) */}
+          {currentEffect === 'flag' && (
+            <div className="control-row full-width">
+              <div className="control-row">
+                <label className="control-label">Wave Velocity</label>
+                <span style={{ fontSize: '12px', color: '#666' }}>{flagVelocity}</span>
+              </div>
+              <input
+                type="range"
+                className="slider-input"
+                min="0" max="100" step="1"
+                value={flagVelocity}
+                onInput={(e) => setFlagVelocity(Number(e.target.value))}
+                onMouseUp={(e) => updateObject(id, { flagVelocity: Number(e.target.value) })}
+              />
+            </div>
+          )}
           {/* FONT FAMILY SECTION */}
           <h3 className="property-group-subtitle">Font Family</h3>
           <div className="control-row full-width font-control-group">
