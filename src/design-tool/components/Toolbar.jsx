@@ -181,7 +181,6 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
 
       if(fabricObj) {
         const imgElement = new FabricImage();
-        
     }
   }
 
