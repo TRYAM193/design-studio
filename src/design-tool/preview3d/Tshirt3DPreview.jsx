@@ -1,12 +1,10 @@
-// src/design-tool/preview3d/Tshirt3DPreview.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Decal, Center, Environment } from "@react-three/drei";
-import { ArrowUp, ArrowRight, Maximize2, RotateCcw, Box, Layers, Backpack } from "lucide-react";
+import { ArrowUp, ArrowRight, Maximize2, RotateCcw, Box, ArrowLeftRight, ArrowUpDown } from "lucide-react"; 
 
 // --- 1. CONFIGURATION ---
-// You can update these base values later as mentioned
 const MODEL_CONFIGS = {
   "t-shirt": {
     scale: 0.8,
@@ -18,24 +16,26 @@ const MODEL_CONFIGS = {
       leftSleeve: "Sleeves_Node",
       rightSleeve: "Sleeves_Node001",
     },
-    frontDecal: { x: 0, y: 1.3, z: 0, scale: 0.4 },
-    backDecal: { x: 0, y: 1.3, z: 0, scale: 0.4 }
+    frontDecal: { x: 0, y: 1.3, z: 0, scaleX: 0.4, scaleY: 0.4 },
+    backDecal: { x: 0, y: 1.3, z: 0, scaleX: 0.4, scaleY: 0.4 },
+    decalDepth: 0.6
   },
   "mug": {
     scale: 1.5,
     position: [0, -1.5, 0],
     cameraZ: 0.5,
-    fullWrap: true,
+    fullWrap: true, // Uses UV Mapping
     meshes: { front: "MUG" },
-    frontDecal: { x: -0.05, y: -0.6, z: 0, scale: 0.6 },
+    frontDecal: { x: 0, y: 0, z: 0, scaleX: 1, scaleY: 1 }, 
   },
   "tote": {
     scale: 0.8,
     position: [0, -1.5, 0],
     cameraZ: 2.5,
     meshes: { front: "FRONT", back: "BACK", straps: "STRAPS" },
-    frontDecal: { x: 0, y: 1.22, z: -0.13, scale: 4 },
-    backDecal: { x: 0, y: 1.22, z: 0.13, scale: 4 }
+    frontDecal: { x: 0, y: 1.22, z: -0.13, scaleX: 4, scaleY: 4 },
+    backDecal: { x: 0, y: 1.22, z: 0.13, scaleX: 4, scaleY: 4 },
+    decalDepth: 0.6
   }
 };
 
@@ -54,9 +54,10 @@ function useDesignTexture(url) {
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
     loader.load(url, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      // Clamp to edge is crucial for the mug to stop "multiple objects" ghosting
       tex.wrapS = THREE.ClampToEdgeWrapping;
       tex.wrapT = THREE.ClampToEdgeWrapping;
-      tex.colorSpace = THREE.SRGBColorSpace;
       tex.needsUpdate = true;
       setTexture(tex);
     });
@@ -73,28 +74,17 @@ function CameraRig({ z }) {
   return null;
 }
 
-// In src/design-tool/preview3d/Tshirt3DPreview.jsx
-
-function CalibrationDecal({ texture, x, y, z, scale, depth = 0.5, rotation = [0, 0, 0] }) {
+// Updated to handle scaleX and scaleY independently
+function CalibrationDecal({ texture, x, y, z, scaleX, scaleY, depth = 0.6, rotation = [0, 0, 0] }) {
   if (!texture) return null;
   return (
     <>
-      {/* Use the 'depth' prop here instead of hardcoding 1.5 */}
-      <Decal position={[x, y, z]} rotation={rotation} scale={[scale, scale, depth]} debug={false}>
-        <meshBasicMaterial 
-          map={texture} 
-          transparent 
-          depthTest={true} 
-          depthWrite={false} 
-          polygonOffset 
-          polygonOffsetFactor={-4} 
-        />
+      <Decal position={[x, y, z]} rotation={rotation} scale={[scaleX, scaleY, depth]} debug={false}>
+        <meshBasicMaterial map={texture} transparent depthTest={true} depthWrite={false} polygonOffset polygonOffsetFactor={-4} />
       </Decal>
-      {/* Update the helper box to match the new depth */}
-      <group position={[x, y, z]} rotation={rotation} scale={[scale, scale, scale]}>
-        <axesHelper args={[1.2]} />
+      <group position={[x, y, z]} rotation={rotation} scale={[scaleX, scaleY, 1]}>
         <mesh>
-          <boxGeometry args={[1, 1, depth / scale]} /> 
+          <boxGeometry args={[1, 1, depth]} />
           <meshBasicMaterial wireframe color="yellow" transparent opacity={0.5} />
         </mesh>
       </group>
@@ -102,8 +92,7 @@ function CalibrationDecal({ texture, x, y, z, scale, depth = 0.5, rotation = [0,
   );
 }
 
-// src/design-tool/preview3d/Tshirt3DPreview.jsx (Part of DynamicModel)
-
+// --- 3. DYNAMIC MODEL ---
 function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, adjustments }) {
   const { nodes } = useGLTF(modelUrl);
   const m = config.meshes;
@@ -113,74 +102,64 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
   const leftTex = useDesignTexture(textures?.leftSleeve || textures?.left);
   const rightTex = useDesignTexture(textures?.rightSleeve || textures?.right);
 
-  // Calculate final positions (same as before)
+  // Merge Base Config with Live Adjustments
   const finalFront = useMemo(() => ({
     x: adjustments.front.x,
     y: adjustments.front.y,
     z: adjustments.front.z,
-    scale: adjustments.front.scale
+    scaleX: (frontPos.scaleX || 1) * adjustments.front.scaleX,
+    scaleY: (frontPos.scaleY || 1) * adjustments.front.scaleY
   }), [frontPos, adjustments.front]);
 
   const finalBack = useMemo(() => ({
     x: backPos.x + adjustments.back.x,
     y: backPos.y + adjustments.back.y,
     z: backPos.z + adjustments.back.z,
-    scale: backPos.scale * adjustments.back.scale
+    scaleX: (backPos.scaleX || 1) * adjustments.back.scaleX,
+    scaleY: (backPos.scaleY || 1) * adjustments.back.scaleY
   }), [backPos, adjustments.back]);
 
   const RenderPart = ({ meshName, tex, decalProps }) => {
     if (!nodes || !nodes[meshName]) return null;
-
-    // ✅ FIXED FULL WRAP LOGIC
+    
+    // --- MUG / FULL WRAP LOGIC (UV MAPPING) ---
     if (config.fullWrap && tex) {
-      // 1. Configure Texture to STOP repeating (Fixes "Multiple Objects")
-      tex.wrapS = THREE.ClampToEdgeWrapping;
-      tex.wrapT = THREE.ClampToEdgeWrapping;
-      
-      // 2. Apply Slider Values to Texture (UV Mapping)
       if (decalProps) {
-        // Center rotation/scaling
         tex.center.set(0.5, 0.5); 
         
-        // SCALE: Inverted logic for UVs (Higher repeat = Smaller image)
-        // We use Math.max to prevent divide by zero errors
-        const s = 1 / Math.max(decalProps.scale, 0.1); 
-        tex.repeat.set(s, s);
-
-        // POSITION: Map X/Y sliders to UV offset
-        // We divide by a factor (e.g., 2) to make the slider sensitivity feel normal
-        tex.offset.set(decalProps.x * -0.5, decalProps.y * 0.5); 
+        // Handle Independent Scaling (Width / Height)
+        // Note: In UV mapping, larger repeat number = smaller image. So we invert (1 / scale).
+        const repeatX = 1 / Math.max(decalProps.scaleX, 0.1);
+        const repeatY = 1 / Math.max(decalProps.scaleY, 0.1);
         
+        tex.repeat.set(repeatX, repeatY);
+        tex.offset.set(decalProps.x * -0.5, decalProps.y * 0.5); 
         tex.needsUpdate = true;
       }
 
       return (
         <group>
-          {/* Inner Mesh (Color) */}
           <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
             <meshStandardMaterial color={color} metalness={0} roughness={0.5} side={THREE.DoubleSide} />
           </mesh>
-          
-          {/* Outer Mesh (Design) */}
           <mesh geometry={nodes[meshName].geometry} frustumCulled={false}>
-            <meshStandardMaterial 
-              color="white" 
-              metalness={0} 
-              roughness={0.5} 
-              map={tex} 
-              transparent={true} // Important for PNG transparency
-              side={THREE.DoubleSide} 
-            />
+            <meshStandardMaterial color="white" metalness={0} roughness={0.5} map={tex} transparent side={THREE.DoubleSide} />
           </mesh>
         </group>
       );
     }
 
-    // Standard Decal Logic (For T-Shirts)
+    // --- T-SHIRT / DECAL LOGIC ---
     return (
       <mesh geometry={nodes[meshName].geometry} material={nodes[meshName].material} frustumCulled={false} color={color}>
         <meshStandardMaterial color={color} roughness={0.7} />
-        {tex && decalProps && <CalibrationDecal texture={tex} {...decalProps} />}
+        {tex && decalProps && (
+          <CalibrationDecal 
+            texture={tex} 
+            depth={config.decalDepth} 
+            {...decalProps} 
+          />
+        )}
       </mesh>
     );
   };
@@ -188,25 +167,25 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
   return (
     <group position={config.position} scale={config.scale} dispose={null}>
       
-      {/* Front Logic */}
+      {/* Front */}
       <RenderPart
         meshName={m.front}
         tex={frontTex}
         decalProps={{
           x: finalFront.x, y: finalFront.y, z: finalFront.z,
-          scale: finalFront.scale,
+          scaleX: finalFront.scaleX, scaleY: finalFront.scaleY,
           rotation: [0, 0, 0]
         }}
       />
 
-      {/* Back Logic */}
+      {/* Back */}
       {!config.fullWrap && (
         <RenderPart
           meshName={m.back}
           tex={backTex}
           decalProps={{
             x: backPos.x, y: backPos.y, z: backPos.z,
-            scale: backPos.scale,
+            scaleX: finalBack.scaleX, scaleY: finalBack.scaleY,
             rotation: [0, Math.PI, 0]
           }}
         />
@@ -227,19 +206,19 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
 export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" }) {
   const config = useMemo(() => resolveConfig(modelUrl), [modelUrl]);
   const [cameraZ] = useState(config.cameraZ || 2.5);
+  
+  // Base positions
+  const [frontPos] = useState(config.frontDecal || { x: 0, y: 0, z: 0.5, scaleX: 1, scaleY: 1 });
+  const [backPos] = useState(config.backDecal || { x: 0, y: 0, z: -0.5, scaleX: 1, scaleY: 1 });
 
-  // Base positions from Config
-  const [frontPos] = useState(config.frontDecal || { x: 0, y: 0, z: 0.5, scale: 0.5 });
-  const [backPos] = useState(config.backDecal || { x: 0, y: 0, z: -0.5, scale: 0.5 });
-
-  // ✅ STATE: Independent adjustments for Front and Back
-  const [editSide, setEditSide] = useState("front"); // 'front' | 'back'
+  const [editSide, setEditSide] = useState("front");
+  
+  // ✅ STATE: Now tracking scaleX and scaleY separately
   const [adjustments, setAdjustments] = useState({
-    front: { x: 0, y: 0, z: 0, scale: 1 },
-    back: { x: 0, y: 0, z: 0, scale: 1 }
+    front: { x: 0, y: 0, z: 0, scaleX: 1, scaleY: 1 },
+    back: { x: 0, y: 0, z: 0, scaleX: 1, scaleY: 1 }
   });
 
-  // Helper to update the current side's adjustment
   const updateAdjustment = (key, value) => {
     setAdjustments(prev => ({
       ...prev,
@@ -253,26 +232,22 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
   const resetCurrentSide = () => {
     setAdjustments(prev => ({
       ...prev,
-      [editSide]: { x: 0, y: 0, z: 0, scale: 1 }
+      [editSide]: { x: 0, y: 0, z: 0, scaleX: 1, scaleY: 1 }
     }));
   };
 
-  // Get current values for sliders
   const current = adjustments[editSide];
 
   if (!modelUrl) return <div>No 3D Model URL provided</div>;
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%", backgroundColor: "#111" }}>
-
+      
       <Canvas fov={45} camera={{ position: [0, 0, cameraZ], near: 0.1, far: 1000 }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 10, 7]} intensity={1} />
-        <directionalLight position={[0, 5, -10]} intensity={0.8} />
         <Environment preset="city" />
-
         <CameraRig z={cameraZ} />
-
         <Center>
           <DynamicModel
             modelUrl={modelUrl}
@@ -281,112 +256,72 @@ export default function Tshirt3DPreview({ modelUrl, textures, color = "#ffffff" 
             frontPos={frontPos}
             backPos={backPos}
             config={config}
-            adjustments={adjustments} // Pass full object
+            adjustments={adjustments}
           />
         </Center>
-
         <OrbitControls enablePan={false} minPolarAngle={0} maxPolarAngle={Math.PI} />
       </Canvas>
 
-      {/* ✅ UI CONTROLS */}
-      <div
+      {/* ✅ UPDATED UI CONTROLS */}
+      <div 
         style={{
-          position: "absolute",
-          bottom: "20px",
-          right: "20px",
-          width: "240px",
-          backgroundColor: "rgba(20, 20, 20, 0.9)",
-          backdropFilter: "blur(10px)",
-          padding: "16px",
-          borderRadius: "12px",
-          border: "1px solid rgba(255,255,255,0.1)",
-          color: "white",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          zIndex: 10
+          position: "absolute", bottom: "20px", right: "20px", width: "240px",
+          backgroundColor: "rgba(20, 20, 20, 0.9)", backdropFilter: "blur(10px)",
+          padding: "16px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.1)",
+          color: "white", display: "flex", flexDirection: "column", gap: "12px", zIndex: 10
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontSize: "12px", fontWeight: "600", color: "#ccc" }}>3D ALIGNMENT</span>
-          <button onClick={resetCurrentSide} style={{ background: "none", border: "none", color: "#888", cursor: "pointer" }} title="Reset Side">
+          <button onClick={resetCurrentSide} style={{ background: "none", border: "none", color: "#888", cursor: "pointer" }} title="Reset">
             <RotateCcw size={14} />
           </button>
         </div>
 
-        {/* SIDE SELECTOR */}
-        <div style={{ display: "flex", background: "#333", borderRadius: "6px", padding: "2px", marginBottom: "8px" }}>
-          <button
-            onClick={() => setEditSide("front")}
-            style={{ flex: 1, padding: "6px", borderRadius: "4px", border: "none", background: editSide === "front" ? "#555" : "transparent", color: "white", fontSize: "11px", cursor: "pointer" }}
-          >
-            Front
-          </button>
-          <button
-            onClick={() => setEditSide("back")}
-            style={{ flex: 1, padding: "6px", borderRadius: "4px", border: "none", background: editSide === "back" ? "#555" : "transparent", color: "white", fontSize: "11px", cursor: "pointer" }}
-          >
-            Back
-          </button>
+        <div style={{ display: "flex", background: "#333", borderRadius: "6px", padding: "2px" }}>
+          <button onClick={() => setEditSide("front")} style={{ flex: 1, padding: "6px", background: editSide === "front" ? "#555" : "transparent", color: "white", fontSize: "11px", border: "none", cursor: "pointer" }}>Front</button>
+          <button onClick={() => setEditSide("back")} style={{ flex: 1, padding: "6px", background: editSide === "back" ? "#555" : "transparent", color: "white", fontSize: "11px", border: "none", cursor: "pointer" }}>Back</button>
         </div>
 
-        {/* Vertical Slider */}
+        {/* Vertical Position */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowUp size={12} /> Vertical (Y)</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowUp size={12}/> Vertical (Y)</span>
             <span>{current.y}</span>
           </div>
-          <input
-            type="range" min="-10" max="10" step="0.1"
-            value={current.y}
-            onChange={(e) => updateAdjustment('y', e.target.value)}
-            style={{ width: "100%", cursor: "pointer" }}
-          />
+          <input type="range" min="-10" max="10" step="0.1" value={current.y} onChange={(e) => updateAdjustment('y', e.target.value)} style={{ width: "100%", cursor: "pointer" }} />
         </div>
 
-        {/* Horizontal Slider */}
+        {/* Horizontal Position */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowRight size={12} /> Horizontal (X)</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowRight size={12}/> Horizontal (X)</span>
             <span>{current.x}</span>
           </div>
-          <input
-            type="range" min="-10" max="10" step="0.1"
-            value={current.x}
-            onChange={(e) => updateAdjustment('x', e.target.value)}
-            style={{ width: "100%", cursor: "pointer" }}
-          />
+          <input type="range" min="-10" max="10" step="0.1" value={current.x} onChange={(e) => updateAdjustment('x', e.target.value)} style={{ width: "100%", cursor: "pointer" }} />
         </div>
 
-        {/* Depth Slider */}
+        <hr style={{ borderColor: "#333", margin: "4px 0" }} />
+
+        {/* Width Slider */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Box size={12} /> Depth (Z)</span>
-            <span>{current.z * 100}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowLeftRight size={12}/> Width</span>
+            <span>{current.scaleX.toFixed(2)}x</span>
           </div>
-          <input
-            type="range" min="-10" max="10" step="0.1"
-            value={current.z}
-            onChange={(e) => updateAdjustment('z', e.target.value)}
-            style={{ width: "100%", cursor: "pointer" }}
-          />
+          <input type="range" min="0.1" max="4.0" step="0.1" value={current.scaleX} onChange={(e) => updateAdjustment('scaleX', e.target.value)} style={{ width: "100%", cursor: "pointer" }} />
         </div>
 
-        {/* Scale Slider */}
+        {/* Height Slider */}
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginBottom: "4px" }}>
-            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Maximize2 size={12} /> Scale</span>
-            <span>{current.scale.toFixed(2)}x</span>
+            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><ArrowUpDown size={12}/> Height</span>
+            <span>{current.scaleY.toFixed(2)}x</span>
           </div>
-          <input
-            type="range" min="0" max="2.5" step="0.01"
-            value={current.scale}
-            onChange={(e) => updateAdjustment('scale', e.target.value)}
-            style={{ width: "100%", cursor: "pointer" }}
-          />
+          <input type="range" min="0.1" max="4.0" step="0.1" value={current.scaleY} onChange={(e) => updateAdjustment('scaleY', e.target.value)} style={{ width: "100%", cursor: "pointer" }} />
         </div>
+
       </div>
-
     </div>
   );
 }
