@@ -256,7 +256,7 @@ export default function CanvasEditor({
       });
       
       canvas.add(visualBorder);
-      canvas.sendToBack(visualBorder);
+      canvas.moveObjectTo(visualBorder, 0);
     } else {
       canvas.clipPath = null;
     }
