@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF, Decal, Center, Environment } from "@react-three/drei";
-import { ArrowUp, ArrowRight, Maximize2, RotateCcw, Box, Layers } from "lucide-react"; 
+import { ArrowUp, ArrowRight, Maximize2, RotateCcw, Box, Layers, Backpack } from "lucide-react"; 
 
 // --- 1. CONFIGURATION ---
 // You can update these base values later as mentioned
@@ -148,7 +148,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
         tex={frontTex}
         decalProps={{
           x: frontPos.x, y: frontPos.y, z: frontPos.z,
-          scale: finalFront.scale,
+          scale: frontPos.scale,
           rotation: [0, 0, 0]
         }}
       />
@@ -159,7 +159,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
           meshName={m.back}
           tex={backTex}
           decalProps={{
-            x: finalBack.x, y: finalBack.y, z: finalBack.z,
+            x: B.x, y: finalBack.y, z: finalBack.z,
             scale: finalBack.scale,
             rotation: [0, Math.PI, 0]
           }}
