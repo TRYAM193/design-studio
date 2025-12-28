@@ -104,7 +104,7 @@ function DynamicModel({ modelUrl, textures, color, frontPos, backPos, config, ad
     x: adjustments.front.x,
     y: adjustments.front.y,
     z: adjustments.front.z,
-    scale: frontPos.scale * adjustments.front.scale
+    scale: adjustments.front.scale
   }), [frontPos, adjustments.front]);
 
   const finalBack = useMemo(() => ({
