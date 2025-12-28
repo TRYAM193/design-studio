@@ -209,7 +209,6 @@ export default function CanvasEditor({
         const { clientWidth, clientHeight } = wrapperRef.current;
         canvas.setDimensions({ width: clientWidth, height: clientHeight });
         canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-        
         canvas.requestRenderAll();
       }
     };
