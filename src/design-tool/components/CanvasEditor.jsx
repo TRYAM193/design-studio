@@ -208,7 +208,7 @@ export default function CanvasEditor({
         const { clientWidth, clientHeight } = wrapperRef.current;
         canvas.setDimensions({ width: clientWidth, height: clientHeight });
         canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-        setContainerSize({ width: clientWidth, height: clientHeight });
+        fitDesignToScreen(canvas, clientWidth, clientHeight);
         canvas.requestRenderAll();
       }
     };
