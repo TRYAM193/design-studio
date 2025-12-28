@@ -297,8 +297,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     print_area_2d: {
-      front: { top: 26, left: 16, width: 67, height: 36 },
-      back: { top: 34, left: 16, width: 69, height: 38 }
+     front: { top: 32, left: 33.5, width: 33.5, height: 24.5 },
+      back: { top: 40, left: 35, width: 32, height: 29 }
     },
 
     options: {
