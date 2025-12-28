@@ -4,7 +4,9 @@ import ShapesSidebar from './ShapesSidebar';
 import { FiType, FiCircle, FiSunrise, FiFlag } from 'react-icons/fi';
 import SidebarSavedList from './SidebarSavedList';
 
-export default function ContextualSidebar({ activePanel, setActivePanel, addText, addHeading, addSubheading, productId, handleLoadSavedDesign }) {
+export default function ContextualSidebar({ activePanel, setActivePanel, addText, addHeading, addSubheading, productId, handleLoadSavedDesign, fabricCanvas,   // ✅ New Prop
+  setSelectedId,  // ✅ New Prop
+  setActiveTool }) {
 
   let ContentComponent = null;
   let title = "";
