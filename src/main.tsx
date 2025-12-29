@@ -21,6 +21,7 @@ import DesignEditorPage from "./pages/DesignEditorPage";
 import ThumbnailGenerator from "./pages/ThumbnailGenerator";
 import Storefront from './pages/StoreFront.tsx'; 
 import AdminProductManager from "./pages/AdminProductManager.tsx";
+import OrderCheckoutPage from './pages/OrderCheckoutPage';
 
 // ✅ IMPORT THE NEW PAGE
 import ProductDetails from "./pages/ProductDetails"; 
