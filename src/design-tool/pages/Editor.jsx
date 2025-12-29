@@ -80,7 +80,7 @@ export default function EditorPanel() {
     });
     const [selectedSize, setSelectedSize] = useState(urlSize || 'M');
     const [quantity, setQuantity] = useState(1);
-    
+
     // Mock sizes if not in productData (You can replace this with productData.options.sizes later)
     const AVAILABLE_SIZES = productData.options?.sizes || ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 
@@ -504,13 +504,10 @@ export default function EditorPanel() {
         }, 50);
     };
 
-   const handleAddToCart = async () => {
+    const handleAddToCart = async () => {
         setIsSaving(true);
-        
-        // 1. Ensure we have a preview image (use the current view if texture is missing)
         const finalPreview = designTextures[currentView]?.url || captureCurrentCanvas()?.url;
 
-        // 2. Build the Cart Item Object
         const cartItem = {
             designId: editingDesignId || `temp_${Date.now()}`,
             name: currentDesign?.name || "Custom Design",
@@ -518,26 +515,20 @@ export default function EditorPanel() {
             productId: productData.id || "unknown_product",
             variant: {
                 color: canvasBg,
-                size: urlSize || "M", // Default to M if not set
+                size: selectedSize, // ✅ Use selected size
             },
-            quantity: 1,
-            price: productData.price || 24.99, 
+            quantity: quantity,     // ✅ Use selected quantity
+            price: productData.price || 24.99,
             currency: 'INR',
             thumbnail: finalPreview,
-            designData: {
-                viewStates,
-                currentView
-            }
+            designData: { viewStates, currentView }
         };
 
-        // 3. Simulate processing delay then Navigate with State
-        setTimeout(() => { 
-            setIsSaving(false); 
-            setIsPreviewOpen(false); 
-            
-            // ✅ PASS DATA to the route
-            navigation('/checkout', { state: { orderData: cartItem } }); 
-        }, 1000);
+        setTimeout(() => {
+            setIsSaving(false);
+            setIsPreviewOpen(false);
+            navigation('/checkout', { state: { orderData: cartItem } });
+        }, 800);
     };
 
     const handleSaveSuccess = (savedId) => {
@@ -599,16 +590,16 @@ export default function EditorPanel() {
 
                     <div className="top-bar consolidated-bar">
                         <div className="control-group">
-                            <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={!past.length} style={{opacity: past.length ? '1' : '0.5', cursor: past.length ? 'pointer' : 'default'}}><FiRotateCcw size={18} /></button>
-                            <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{opacity: future.length ? '1' : '0.5', cursor: future.length ? 'pointer' : 'default'}}><FiRotateCw size={18} /></button>
+                            <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={!past.length} style={{ opacity: past.length ? '1' : '0.5', cursor: past.length ? 'pointer' : 'default' }}><FiRotateCcw size={18} /></button>
+                            <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{ opacity: future.length ? '1' : '0.5', cursor: future.length ? 'pointer' : 'default' }}><FiRotateCw size={18} /></button>
                         </div>
                         <div className="control-group divider">
-                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{opacity: !selectedId ? '0.5' : '1'}}><FiTrash2 size={18} /></button>
+                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{ opacity: !selectedId ? '0.5' : '1' }}><FiTrash2 size={18} /></button>
                         </div>
                         {selectedId && !showProperties && (
                             <button className="top-bar-button accent phone-only" onClick={() => setShowProperties(true)}><FiSettings size={18} /> Edit</button>
                         )}
-                        { !showColorPanel && !productData && (
+                        {!showColorPanel && !productData && (
                             <button className="top-bar-button accent phone-only" onClick={() => setShowColorPanel(true)}><FiDroplet size={18} /> Colors</button>
                         )}
                         <div className="control-group">
