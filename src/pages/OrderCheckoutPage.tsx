@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 import { FiMapPin, FiCreditCard, FiCheckCircle, FiChevronLeft, FiLoader } from 'react-icons/fi';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
