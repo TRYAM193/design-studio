@@ -499,9 +499,40 @@ export default function EditorPanel() {
         }, 50);
     };
 
-    const handleAddToCart = async () => {
+   const handleAddToCart = async () => {
         setIsSaving(true);
-        setTimeout(() => { setIsSaving(false); setIsPreviewOpen(false); navigation('/dashboard/orders'); }, 1500);
+        
+        // 1. Ensure we have a preview image (use the current view if texture is missing)
+        const finalPreview = designTextures[currentView]?.url || captureCurrentCanvas()?.url;
+
+        // 2. Build the Cart Item Object
+        const cartItem = {
+            designId: editingDesignId || `temp_${Date.now()}`,
+            name: currentDesign?.name || "Custom Design",
+            productTitle: productData.title || "Custom T-Shirt",
+            productId: productData.id || "unknown_product",
+            variant: {
+                color: canvasBg,
+                size: urlSize || "M", // Default to M if not set
+            },
+            quantity: 1,
+            price: productData.price || 24.99, 
+            currency: 'INR',
+            thumbnail: finalPreview,
+            designData: {
+                viewStates,
+                currentView
+            }
+        };
+
+        // 3. Simulate processing delay then Navigate with State
+        setTimeout(() => { 
+            setIsSaving(false); 
+            setIsPreviewOpen(false); 
+            
+            // ✅ PASS DATA to the route
+            navigation('/dashboard/orders', { state: { orderData: cartItem } }); 
+        }, 1000);
     };
 
     const handleSaveSuccess = (savedId) => {
