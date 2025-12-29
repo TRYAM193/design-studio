@@ -78,6 +78,7 @@ export default function CanvasEditor({
       startScale: 1, // For Object
       startZoom: 1   // For Canvas
   });
+  console.log(fabricCanvasRef.current?.getActiveObject())
 
   // ✅ 1. LOGICAL SIZE
   const getLogicalSize = () => {

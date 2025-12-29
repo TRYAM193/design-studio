@@ -29,7 +29,9 @@ export default function CircleText(objData) {
     textEffect: props.textEffect || 'circle',
     arcAngle: props.arcAngle || 120,
     flagVelocity: props.flagVelocity || 50, 
-    id: objData.id
+    id: objData.id,
+    flipX: props.flipX,
+    flipY: props.flipY || false
   };
 
   const chars = obj.text.split('');
@@ -175,7 +177,9 @@ export default function CircleText(objData) {
     text: obj.text,
     fontSize: obj.fontSize,
     fontFamily: obj.fontFamily,
-    fill: obj.color
+    fill: obj.color,
+    flipX: obj.flipX,
+    flipY: obj.flipY,
   });
 
   return group;

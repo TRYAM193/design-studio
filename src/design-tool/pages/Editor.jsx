@@ -563,16 +563,16 @@ export default function EditorPanel() {
 
                     <div className="top-bar consolidated-bar">
                         <div className="control-group">
-                            <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={past.length === 0}><FiRotateCcw size={18} /></button>
-                            <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={future.length === 0}><FiRotateCw size={18} /></button>
+                            <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={!past.length} style={{opacity: past.length ? '1' : '0.5', cursor: past.length ? 'pointer' : 'default'}}><FiRotateCcw size={18} /></button>
+                            <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{opacity: future.length ? '1' : '0.5', cursor: future.length ? 'pointer' : 'default'}}><FiRotateCw size={18} /></button>
                         </div>
                         <div className="control-group divider">
-                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)}><FiTrash2 size={18} /></button>
+                            <button className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{opacity: !selectedId ? '0.5' : '1'}}><FiTrash2 size={18} /></button>
                         </div>
                         {selectedId && !showProperties && (
                             <button className="top-bar-button accent phone-only" onClick={() => setShowProperties(true)}><FiSettings size={18} /> Edit</button>
                         )}
-                        {!selectedId && !showColorPanel && !productData && (
+                        { !showColorPanel && !productData && (
                             <button className="top-bar-button accent phone-only" onClick={() => setShowColorPanel(true)}><FiDroplet size={18} /> Colors</button>
                         )}
                         <div className="control-group">
