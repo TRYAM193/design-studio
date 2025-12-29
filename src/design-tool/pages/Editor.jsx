@@ -531,7 +531,7 @@ export default function EditorPanel() {
             setIsPreviewOpen(false); 
             
             // ✅ PASS DATA to the route
-            navigation('/dashboard/orders', { state: { orderData: cartItem } }); 
+            navigation('//checkout', { state: { orderData: cartItem } }); 
         }, 1000);
     };
 
