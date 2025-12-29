@@ -653,40 +653,110 @@ export default function EditorPanel() {
                             <RightSidebarTabs id={selectedId} type={activeTool} object={canvasObjects.find((obj) => obj.id === selectedId)} updateObject={updateObject} removeObject={removeObject} addText={addText} fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} />
                         </>
                     ) : (
-                        <div className="p-5">
-                            <div className="mobile-panel-header">
-                                <span className="mobile-panel-title">Product Colors</span>
-                                {/* Using FiChevronDown to signify 'pull down' / collapse */}
-                                <button onClick={() => setShowColorPanel(false)} className="mobile-close-btn">
-                                    <FiChevronDown size={24} />
-                                </button>
-                            </div>
-                            {productData.id && productData.options?.colors?.length > 0 ? (
-                                <>
-                                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">Product Colors</h3>
-                                    <div className="grid grid-cols-4 gap-3">
-                                        {productData.options.colors.map((color) => {
-                                            const hex = COLOR_MAP[color] || "#ccc";
-                                            const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
-                                            return (
-                                                <button
-                                                    key={color}
-                                                    onClick={() => handleColorChange(color)}
-                                                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-all relative group ${isActive ? "border-indigo-600 scale-110" : "border-slate-200 hover:border-slate-300"}`}
-                                                    style={{ backgroundColor: hex }}
-                                                    title={color}
-                                                >
-                                                    {isActive && <span className="absolute inset-0 flex items-center justify-center text-white/90"><FiCheckCircle size={16} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.5))" }} /></span>}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <p className="text-xs text-slate-400 mt-4 leading-relaxed">Visualize your design on different fabric colors.</p>
-                                </>
-                            ) : (
-                                <div className="text-center text-slate-400 py-10">Select an element to edit properties.</div>
-                            )}
+                        <div className="p-6 flex flex-col h-full overflow-y-auto">
+                        <div className="mobile-panel-header">
+                            <span className="mobile-panel-title">Product Options</span>
+                            <button onClick={() => setShowColorPanel(false)} className="mobile-close-btn"><FiChevronDown size={24} /></button>
                         </div>
+
+                        {/* --- 1. COLORS --- */}
+                        <div className="mb-8">
+                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Color</h3>
+                            <div className="grid grid-cols-5 gap-2">
+                                {productData.options?.colors?.length > 0 ? productData.options.colors.map((color) => {
+                                    const hex = COLOR_MAP[color] || "#ccc";
+                                    const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
+                                    return (
+                                        <button
+                                            key={color}
+                                            onClick={() => handleColorChange(color)}
+                                            className={`w-9 h-9 rounded-full border shadow-sm transition-all relative ${isActive ? "ring-2 ring-indigo-600 ring-offset-2 scale-100" : "hover:scale-110 border-slate-200"}`}
+                                            style={{ backgroundColor: hex }}
+                                            title={color}
+                                        >
+                                            {isActive && <FiCheckCircle className="text-white absolute inset-0 m-auto drop-shadow-md" />}
+                                        </button>
+                                    );
+                                }) : <p className="text-sm text-slate-400 col-span-5">No colors available</p>}
+                            </div>
+                        </div>
+
+                        {/* --- 2. SIZES --- */}
+                        <div className="mb-8">
+                            <div className="flex justify-between items-center mb-3">
+                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Size</h3>
+                                <span className="text-xs text-indigo-600 cursor-pointer hover:underline">Size Chart</span>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                                {AVAILABLE_SIZES.map((size) => (
+                                    <button
+                                        key={size}
+                                        onClick={() => setSelectedSize(size)}
+                                        className={`py-2 text-sm font-medium rounded-md border transition-all ${
+                                            selectedSize === size 
+                                            ? "border-indigo-600 bg-indigo-50 text-indigo-700" 
+                                            : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                                        }`}
+                                    >
+                                        {size}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* --- 3. QUANTITY --- */}
+                        <div className="mb-8">
+                             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Quantity</h3>
+                             <div className="flex items-center gap-4">
+                                <div className="flex items-center border border-slate-200 rounded-md">
+                                    <button 
+                                        onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                        className="p-2 hover:bg-slate-100 text-slate-600"
+                                    >
+                                        <FiMinus size={14} />
+                                    </button>
+                                    <input 
+                                        type="number" 
+                                        value={quantity} 
+                                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                                        className="w-12 text-center text-sm font-medium focus:outline-none"
+                                    />
+                                    <button 
+                                        onClick={() => setQuantity(q => q + 1)}
+                                        className="p-2 hover:bg-slate-100 text-slate-600"
+                                    >
+                                        <FiPlus size={14} />
+                                    </button>
+                                </div>
+                                <div className="text-sm text-slate-500">
+                                    ₹{((productData.price || 24.99) * quantity).toFixed(2)} total
+                                </div>
+                             </div>
+                        </div>
+
+                        {/* --- 4. CHECKOUT BUTTON (Sticks to bottom on mobile, inline on desktop) --- */}
+                        <div className="mt-auto pt-6 border-t border-slate-100">
+                             <div className="flex justify-between items-end mb-4">
+                                <div>
+                                    <p className="text-xs text-slate-400">Total Price</p>
+                                    <p className="text-2xl font-bold text-slate-900">₹{((productData.price || 24.99) * quantity).toFixed(2)}</p>
+                                </div>
+                             </div>
+                             
+                             <Button 
+                                onClick={handleAddToCart}
+                                disabled={isSaving || !fabricCanvas}
+                                className="w-full h-12 text-base bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200"
+                             >
+                                {isSaving ? (
+                                    <> <Loader2 className="animate-spin mr-2" /> Processing... </>
+                                ) : (
+                                    <> <FiShoppingCart className="mr-2" /> Buy Now </>
+                                )}
+                             </Button>
+                             <p className="text-[10px] text-center text-slate-400 mt-2">Secure checkout powered by Stripe</p>
+                        </div>
+                    </div>
                     )}
                 </aside>
 
