@@ -78,6 +78,11 @@ export default function EditorPanel() {
         print_areas: { front: { width: 4500, height: 5400 } },
         options: { colors: [] }
     });
+    const [selectedSize, setSelectedSize] = useState(urlSize || 'M');
+    const [quantity, setQuantity] = useState(1);
+    
+    // Mock sizes if not in productData (You can replace this with productData.options.sizes later)
+    const AVAILABLE_SIZES = productData.options?.sizes || ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 
     const [canvasBg, setCanvasBg] = useState(urlColor);
     const [currentView, setCurrentView] = useState("front");
