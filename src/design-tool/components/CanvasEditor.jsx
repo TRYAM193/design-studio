@@ -140,7 +140,7 @@ export default function CanvasEditor({
         top: screenY - (scaledHeight / 2) - 60
       });
 
-      if (activeObj.type === 'activeselection' || activeObj.type === 'group') {
+      if (activeObj.type === 'activeselection') {
         const ids = activeObj.getObjects().map(o => o.customId);
         setSelectedObjectUUIDs(ids);
         setSelectedObjectLocked(activeObj.getObjects().some(o => o.lockMovementX));
