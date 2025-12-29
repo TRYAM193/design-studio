@@ -77,6 +77,8 @@ createRoot(document.getElementById("root")!).render(
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
 
+          <Route path="/checkout" element={<OrderCheckoutPage />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
