@@ -115,7 +115,6 @@ export const INITIAL_PRODUCTS = [
     id: "men-hoodie",
     title: "Men's Essential Hoodie",
     category: "Men",
-    price: 45.00,
     // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-hoodie?alt=media&token=eb24627e-f16e-4c09-b2a4-417c86fb2139',
     model3d: null,
@@ -136,7 +135,10 @@ export const INITIAL_PRODUCTS = [
       height: 500
     },
 
-    price
+    price: {
+      IN: 899,
+
+    },
 
     print_area_2d: {
       front: { top: 32, left: 33.5, width: 33.5, height: 24.5 },
