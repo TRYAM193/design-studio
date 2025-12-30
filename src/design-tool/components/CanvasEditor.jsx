@@ -78,7 +78,6 @@ export default function CanvasEditor({
       startScale: 1, // For Object
       startZoom: 1   // For Canvas
   });
-  console.log(fabricCanvasRef.current?.getActiveObject())
 
   // ✅ 1. LOGICAL SIZE
   const getLogicalSize = () => {
@@ -136,8 +135,8 @@ export default function CanvasEditor({
       const scaledHeight = activeObj.getScaledHeight() * vpt[3];
 
       setMenuPosition({
-        left: screenX,
-        top: screenY - (scaledHeight / 2) - 60
+        left: screenX + 100,
+        top: screenY - (scaledHeight / 2) - 40
       });
 
       if (activeObj.type === 'activeselection') {
@@ -422,6 +421,13 @@ export default function CanvasEditor({
         fabricCanvas.remove(obj);
         previousStatesRef.current.delete(obj.customId);
       }
+    });
+
+    canvasObjects.forEach((objData, index) => {
+        const fabricObj = fabricCanvas.getObjects().find(o => o.customId === objData.id);
+        if (fabricObj) {
+            fabricCanvas.moveObjectTo(fabricObj,index);
+        }
     });
 
     if (selectedIds.length > 0) {

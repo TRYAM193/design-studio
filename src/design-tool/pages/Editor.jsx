@@ -72,12 +72,7 @@ export default function EditorPanel() {
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
 
-    const [productData, setProductData] = useState({
-        title: "Custom Design",
-        category: "Apparel",
-        print_areas: { front: { width: 4500, height: 5400 } },
-        options: { colors: [] }
-    });
+    const [productData, setProductData] = useState(false);
     const [selectedSize, setSelectedSize] = useState(urlSize || 'M');
     const [quantity, setQuantity] = useState(1);
 
@@ -652,7 +647,7 @@ export default function EditorPanel() {
                             </div>
                             <RightSidebarTabs id={selectedId} type={activeTool} object={canvasObjects.find((obj) => obj.id === selectedId)} updateObject={updateObject} removeObject={removeObject} addText={addText} fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} />
                         </>
-                    ) : (
+                    ) : ( productData && (
                         <div className="p-6 flex flex-col h-full overflow-y-auto">
                         <div className="mobile-panel-header">
                             <span className="mobile-panel-title">Product Options</span>
@@ -757,7 +752,7 @@ export default function EditorPanel() {
                              <p className="text-[10px] text-center text-slate-400 mt-2">Secure checkout powered by Stripe</p>
                         </div>
                     </div>
-                    )}
+                    ))}
                 </aside>
 
                 <ThreeDPreviewModal
