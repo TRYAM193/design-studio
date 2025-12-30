@@ -27,7 +27,7 @@ export const INITIAL_PRODUCTS = [
     price: {
       IN: 449,
       US: 18.9,
-      GB: 8.75,
+      GB: 12.75,
       EU: 8.7,
     },
 
