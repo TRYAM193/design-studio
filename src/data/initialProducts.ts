@@ -25,12 +25,11 @@ export const INITIAL_PRODUCTS = [
     },
 
     price: {
-      IN: 449,        // keep
+      IN: 449,        
       US: 19.99,
       GB: 13.99,
       EU: 15.99,
       CA: 32.99
-
     },
 
     // 🖼️ MOCKUPS (Must be Transparent PNGs for color blending)
