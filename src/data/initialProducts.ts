@@ -421,8 +421,9 @@ export const INITIAL_PRODUCTS = [
     },
 
     price: {
-      IN: 
-    }
+      IN: 399,
+
+    },
 
     mockups: {
       front: "/assets/mockups/tote-bag.png",
