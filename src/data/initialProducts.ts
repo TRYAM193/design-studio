@@ -307,6 +307,10 @@ export const INITIAL_PRODUCTS = [
       height: 500
     },
 
+    price: {
+      IN: 
+    }
+
     mockups: {
       front: "/assets/mockups/men-hoodie-front.png",
       back: "/assets/mockups/men-hoodie-back.png",
