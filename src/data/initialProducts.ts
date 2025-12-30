@@ -405,7 +405,6 @@ export const INITIAL_PRODUCTS = [
     id: "tote-bag-canvas",
     title: "Eco Canvas Tote Bag",
     category: "Accessories",
-    price: 19.00,
     // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Ftote-bag-canvas?alt=media&token=bd508609-096a-443c-a6a1-196390ceefdc',
     model3d: "/assets/tote.glb",
@@ -420,6 +419,10 @@ export const INITIAL_PRODUCTS = [
       width: 380,
       height: 380
     },
+
+    price: {
+      IN: 
+    }
 
     mockups: {
       front: "/assets/mockups/tote-bag.png",
