@@ -62,7 +62,6 @@ export const INITIAL_PRODUCTS = [
     id: "men-oversized-tee",
     title: "Men's Streetwear Oversized Tee",
     category: "Men",
-    price: 32.00,
     // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-oversized-tee?alt=media&token=3dcae3b1-042e-417b-8557-90fd177123ae',
     model3d: null,
@@ -85,7 +84,7 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 699,
-    }
+    },  
 
     print_area_2d: {
       front: { top: 29, left: 32.5, width: 36, height: 39 },
