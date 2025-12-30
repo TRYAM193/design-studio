@@ -142,7 +142,7 @@ export const INITIAL_PRODUCTS = [
     },
 
     options: {
-      colors: ["Black", "Sport Grey", "Navy"],
+      colors: ["Black", "White", "Navy"],
       sizes: ["S", "M", "L", "XL", "2XL"]
     },
 
