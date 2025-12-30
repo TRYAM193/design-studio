@@ -25,11 +25,12 @@ export const INITIAL_PRODUCTS = [
     },
 
     price: {
-      IN: 449,
-      US: 18.9,
-      GB: 12.75,
-      EU: 13.7,
-      CA: 29.54
+      IN: 449,        // keep
+      US: 19.99,
+      GB: 13.99,
+      EU: 15.99,
+      CA: 32.99
+
     },
 
     // 🖼️ MOCKUPS (Must be Transparent PNGs for color blending)
@@ -92,7 +93,7 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 699,
-    },  
+    },
 
     print_area_2d: {
       front: { top: 29, left: 32.5, width: 36, height: 39 },
