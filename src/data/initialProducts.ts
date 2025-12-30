@@ -29,7 +29,7 @@ export const INITIAL_PRODUCTS = [
       US: 18.9,
       GB: 12.75,
       EU: 13.7,
-      CA: 
+      CA: 29.54
     },
 
     // 🖼️ MOCKUPS (Must be Transparent PNGs for color blending)
