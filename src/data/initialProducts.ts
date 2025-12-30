@@ -391,7 +391,7 @@ export const INITIAL_PRODUCTS = [
       US: 11.99,
       GB: 7.99,
       EU: 8.99,
-      
+      CA: 14.99
     },
 
     mockups: {
