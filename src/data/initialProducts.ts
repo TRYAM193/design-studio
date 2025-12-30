@@ -387,11 +387,12 @@ export const INITIAL_PRODUCTS = [
     },
 
     price: {
-      IN: 349,
-      US: 11.99,
-      GB: 7.99,
-      EU: 8.99,
-      CA: 14.99
+      IN: 399
+US: 15.99,
+GB: 11.99,
+EU: 12.99,
+CA: 19.99
+
     },
 
     mockups: {
