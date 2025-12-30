@@ -180,7 +180,6 @@ export const INITIAL_PRODUCTS = [
     id: "women-classic-tee",
     title: "Women's Fitted Premium Tee",
     category: "Women",
-    price: 24.99,
     // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-classic-tee?alt=media&token=ec5f29b8-03fc-4879-80f9-608b99adf197',
     model3d: "/assets/t-shirt.glb",
@@ -258,6 +257,10 @@ export const INITIAL_PRODUCTS = [
       width: 420,
       height: 560
     },
+
+    price: {
+      IN: 
+    }
 
     options: {
       colors: ["White", "Black", "Sand"],
