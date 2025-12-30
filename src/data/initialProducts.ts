@@ -24,6 +24,10 @@ export const INITIAL_PRODUCTS = [
       height: 560
     },
 
+    price: {
+      IN: 449,
+    }
+
     // 🖼️ MOCKUPS (Must be Transparent PNGs for color blending)
     mockups: {
       front: "/assets/mockups/men-classic-tee-front.png",
