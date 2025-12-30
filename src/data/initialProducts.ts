@@ -364,8 +364,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     price: {
-      IN: 349
-    }
+      IN: 349,
+    },
 
     mockups: {
       front: "/assets/mockups/mug-front.png",
