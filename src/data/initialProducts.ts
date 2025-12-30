@@ -200,9 +200,9 @@ export const INITIAL_PRODUCTS = [
       height: 560
     },
 
-    price:{
-      
-    }
+    price: {
+      IN: 449,
+    },
 
     print_area_2d: {
       front: { top: 29, left: 32.5, width: 35, height: 39 },
