@@ -8,7 +8,6 @@ export const INITIAL_PRODUCTS = [
     id: "men-classic-tee",
     title: "Men's Classic Premium Tee",
     category: "Men",
-    price: 24.99,
     // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-classic-tee?alt=media&token=102baeb0-9b35-4d94-a3fd-8d77735915e4',
     model3d: "/assets/t-shirt.glb",
@@ -137,7 +136,7 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 899,
-      
+
     },
 
     print_area_2d: {
