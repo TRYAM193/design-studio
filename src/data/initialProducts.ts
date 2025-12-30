@@ -349,7 +349,6 @@ export const INITIAL_PRODUCTS = [
     id: "mug-ceramic-11oz",
     title: "Classic Ceramic Mug (11oz)",
     category: "Accessories",
-    price: 14.00,
     // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmug-ceramic-11oz?alt=media&token=7a07c2c7-78d6-4610-8e09-aee10ceb5bd1',
     model3d: "/assets/mug.glb",
@@ -363,6 +362,10 @@ export const INITIAL_PRODUCTS = [
       width: 800,
       height: 300
     },
+
+    price: {
+      IN: 
+    }
 
     mockups: {
       front: "/assets/mockups/mug-front.png",
