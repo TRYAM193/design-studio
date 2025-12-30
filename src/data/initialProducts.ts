@@ -259,8 +259,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     price: {
-      IN: 
-    }
+      IN: 449,
+    },
 
     options: {
       colors: ["White", "Black", "Sand"],
