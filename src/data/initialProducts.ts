@@ -137,7 +137,7 @@ export const INITIAL_PRODUCTS = [
     },
 
     price: {
-      IN: 899,
+      in: 899,
 
     },
 
