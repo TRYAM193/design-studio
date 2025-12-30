@@ -26,6 +26,7 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 449,
+      US: 12.
     },
 
     // 🖼️ MOCKUPS (Must be Transparent PNGs for color blending)
