@@ -291,7 +291,6 @@ export const INITIAL_PRODUCTS = [
     id: "women-hoodie",
     title: "Women's Cozy Hoodie",
     category: "Women",
-    price: 45.00,
     // ✅ RETAINED YOUR IMAGE URL
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-hoodie?alt=media&token=788e59c3-a0d8-489c-8603-c731023a2f10',
     model3d: null,
@@ -308,8 +307,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     price: {
-      IN: 
-    }
+      IN: 749,
+    },
 
     mockups: {
       front: "/assets/mockups/men-hoodie-front.png",
