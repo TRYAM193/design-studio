@@ -94,7 +94,7 @@ export const INITIAL_PRODUCTS = [
       IN: 699,
       US: 23.99,
       GB: 15.99,
-      
+      EU: 
     },
 
     print_area_2d: {
