@@ -83,6 +83,10 @@ export const INITIAL_PRODUCTS = [
       height: 560
     },
 
+    price: {
+      
+    }
+
     print_area_2d: {
       front: { top: 29, left: 32.5, width: 36, height: 39 },
       back: { top: 29, left: 32.5, width: 36, height: 39 }
