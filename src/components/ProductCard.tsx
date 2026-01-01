@@ -1,9 +1,7 @@
 // src/components/ProductCard.tsx
 import { BaseProduct } from "@/hooks/use-base-products";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router";
-import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: BaseProduct;
@@ -13,13 +11,23 @@ export function ProductCard({ product }: ProductCardProps) {
   const navigate = useNavigate();
   
   const handleViewDetails = () => {
-    // Navigate to Product Details Page
     navigate(`/product/${product.id}`);
   };
 
-  // Safe Fallback for price
-  const displayPrice = product.price || 0;
-  
+  // ✅ Currency Helper (You can move this to a global context later)
+  // For now, we default to India (IN) as per your strategy
+  const region = "IN"; 
+  const currencySymbols: Record<string, string> = {
+    IN: "₹",
+    US: "$",
+    GB: "£",
+    EU: "€",
+    CA: "C$"
+  };
+
+  const symbol = currencySymbols[region] || "₹";
+  const priceValue = product.price?.[region as keyof typeof product.price] || 0;
+
   // Use uploaded image or first mockup
   const displayImage = product.image || product.mockups?.front || "https://placehold.co/400x500?text=No+Image";
 
@@ -53,7 +61,10 @@ export function ProductCard({ product }: ProductCardProps) {
       </CardContent>
 
       <CardFooter className="px-4 pb-4 pt-2 flex justify-between items-center">
-        <span className="font-bold text-lg text-slate-900">${displayPrice.toFixed(2)}</span>
+        {/* ✅ Dynamic Price Display */}
+        <span className="font-bold text-lg text-slate-900">
+          {symbol}{priceValue.toFixed(2)}
+        </span>
       </CardFooter>
     </Card>
   );

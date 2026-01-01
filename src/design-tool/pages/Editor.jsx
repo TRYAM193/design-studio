@@ -29,6 +29,15 @@ const uuidv4 = () => {
     });
 };
 
+// ✅ Currency Configuration
+const CURRENCY_MAP = {
+    IN: { symbol: '₹', code: 'INR' },
+    US: { symbol: '$', code: 'USD' },
+    GB: { symbol: '£', code: 'GBP' },
+    EU: { symbol: '€', code: 'EUR' },
+    CA: { symbol: 'C$', code: 'CAD' }
+};
+
 const COLOR_MAP = {
     "White": "#FFFFFF", "Natural": "#F3E5AB", "Soft Cream": "#F5F5DC", "Sand": "#C2B280", "Silver": "#C0C0C0",
     "Black": "#000000", "Solid Black Blend": "#1a1a1a", "Black Heather": "#2D2D2D", "Charcoal": "#36454F",
@@ -71,12 +80,15 @@ export default function EditorPanel() {
     const urlColor = searchParams.get('color');
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
+    
+    // ✅ 1. Get Region from URL (Default to IN)
+    const urlRegion = searchParams.get('region') || 'IN';
 
     const [productData, setProductData] = useState(false);
     const [selectedSize, setSelectedSize] = useState(urlSize || 'M');
     const [quantity, setQuantity] = useState(1);
 
-    // Mock sizes if not in productData (You can replace this with productData.options.sizes later)
+    // Mock sizes if not in productData
     const AVAILABLE_SIZES = productData.options?.sizes || ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 
     const [canvasBg, setCanvasBg] = useState(urlColor);
@@ -104,6 +116,19 @@ export default function EditorPanel() {
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
     const [showColorPanel, setShowColorPanel] = useState(false);
 
+    // ✅ 2. Calculate Price based on Region
+    const currencyInfo = CURRENCY_MAP[urlRegion] || CURRENCY_MAP.IN;
+    
+    let currentPrice = 0;
+    if (productData) {
+        if (typeof productData.price === 'object') {
+            currentPrice = productData.price[urlRegion] || productData.price.IN || 0;
+        } else {
+            currentPrice = productData.price || 0;
+        }
+    }
+    const totalPrice = (currentPrice * quantity).toFixed(2);
+
     useEffect(() => {
         if (!selectedId) {
             setShowColorPanel(true);
@@ -111,29 +136,25 @@ export default function EditorPanel() {
     }, [selectedId]);
 
     const handleLoadSavedDesign = async (designItem) => {
+        // ... (Keep existing load logic unchanged) ...
         if (!designItem || !userId) return;
 
         try {
-            // 1. Fetch full design data (in case the list item is partial, or to get fresh data)
             const designRef = doc(db, `users/${userId}/designs`, designItem.id);
             const designSnap = await getDoc(designRef);
 
             if (!designSnap.exists()) return;
             const designData = designSnap.data();
 
-            // Check Type
             const isBlank = designData.type === 'BLANK' || !designData.type;
             const isProduct = designData.type === 'PRODUCT';
 
-            // --- SCENARIO A: MERGE (Blank/Universal Design) ---
             if (isBlank) {
-                console.log("Merging blank design...");
                 const incomingObjects = Array.isArray(designData.canvasData)
                     ? designData.canvasData
                     : (designData.canvasData?.front || []);
 
                 if (incomingObjects.length > 0) {
-                    // Give new IDs to avoid conflicts and shift slightly for visibility
                     const newObjects = incomingObjects.map(obj => ({
                         ...obj,
                         id: uuidv4(),
@@ -144,75 +165,46 @@ export default function EditorPanel() {
                             top: (obj.props.top || 0) + 20
                         }
                     }));
-
-                    // Append to current canvas objects
                     const currentObjects = store.getState().canvas.present;
                     const combinedObjects = [...currentObjects, ...newObjects];
-
                     dispatch(setCanvasObjects(combinedObjects));
-                    // Optional: Close sidebar after merge
-                    // setActivePanel(null); 
                 }
             }
-
-            // --- SCENARIO B: REPLACE (Product Specific Design) ---
             else if (isProduct) {
-                // Double check it matches current product to be safe
                 if (designData.productConfig?.productId === (urlProductId || productData.id)) {
-                    console.log("Replacing with saved product design...");
-
-                    // Restore Product Configuration
                     setCurrentDesign(designData);
                     setEditingDesignId(designData.id);
-
-                    // Restore Views
                     const savedStates = designData.canvasData || {};
                     setViewStates(savedStates);
-
-                    // Set Active View
                     const activeView = designData.productConfig.activeView || 'front';
                     setCurrentView(activeView);
-
-                    // Load Objects for that view
                     const activeObjects = savedStates[activeView] || [];
                     dispatch(setCanvasObjects(activeObjects));
-
-                    // Update URL to match this design
                     setSearchParams(prev => {
                         prev.set('designId', designData.id);
                         return prev;
                     });
-
-                    setActivePanel(null); // Close sidebar on full replace
+                    setActivePanel(null);
                 }
             }
-
         } catch (error) {
             console.error("Error loading saved design:", error);
         }
     };
-    // ✅ NAVIGATE & FREEZE: Save Session Before Leaving
+
     const navigateToTemplates = () => {
-        // 1. Capture Current State Synchronously
         const currentObjects = store.getState().canvas.present;
         const currentViewSnapshot = currentViewRef.current;
         const allViewsSnapshot = viewStatesRef.current;
-
-        // 2. Build Backup Payload
         const backupData = {
             view: currentViewSnapshot,
             viewStates: {
                 ...allViewsSnapshot,
-                [currentViewSnapshot]: currentObjects // Ensure latest objects are saved
+                [currentViewSnapshot]: currentObjects 
             },
             timestamp: Date.now()
         };
-        console.log(backupData)
-
-        // 3. Save to Storage
         sessionStorage.setItem('merge_context', JSON.stringify(backupData));
-
-        // 4. Navigate
         navigation('/dashboard/templates', {
             state: {
                 filterMode: 'product',
@@ -223,7 +215,7 @@ export default function EditorPanel() {
         });
     }
 
-    // ✅ 1. FETCH PRODUCT DATA
+    // 1. FETCH PRODUCT DATA
     useEffect(() => {
         async function initProduct() {
             const pid = currentDesign?.productConfig?.productId || urlProductId;
@@ -252,20 +244,17 @@ export default function EditorPanel() {
     }, [urlProductId, currentDesign]);
 
 
-    // ✅ 2. UNIFIED LOAD & MERGE LOGIC (Fixed for Back View Preservation)
+    // 2. UNIFIED LOAD & MERGE LOGIC 
     useEffect(() => {
+        // ... (Keep existing merge logic unchanged) ...
         if (!userId) return;
 
         const mergeId = location.state?.mergeDesignId;
         const isMerge = !!mergeId;
 
-        // --- SCENARIO A: MERGING ---
         if (isMerge) {
             async function performMerge() {
-                // 1. THAW: Restore Context from Storage
                 const contextJSON = sessionStorage.getItem('merge_context');
-
-                // Defaults if restore fails
                 let targetView = 'front';
                 let currentViewObjects = [];
                 let fullHistory = {};
@@ -273,20 +262,15 @@ export default function EditorPanel() {
                 if (contextJSON) {
                     try {
                         const context = JSON.parse(contextJSON);
-                        // Check freshness (e.g. < 1 hour)
                         if (Date.now() - context.timestamp < 3600000) {
                             targetView = context.view;
                             fullHistory = context.viewStates || {};
-                            // Get objects for the restored view
                             currentViewObjects = fullHistory[targetView] || [];
                         }
                     } catch (e) { console.error("Restore failed", e); }
-
-                    // Clean up storage so we don't restore old data later
                     sessionStorage.removeItem('merge_context');
                 }
 
-                // 2. FETCH: Get New Design to Merge
                 let incomingObjects = [];
                 try {
                     const designRef = doc(db, `users/${userId}/designs`, mergeId);
@@ -306,29 +290,20 @@ export default function EditorPanel() {
                     }
                 } catch (e) { console.error(e); }
 
-                // 3. COMBINE (InMemory)
                 const finalObjectsForView = [...currentViewObjects, ...incomingObjects];
-
-                // Update the history with the merged result
                 const finalHistory = {
                     ...fullHistory,
                     [targetView]: finalObjectsForView
                 };
 
-                // 4. APPLY ATOMICALLY
-                console.log(`Merging on ${targetView}: ${currentViewObjects.length} existing + ${incomingObjects.length} new`);
+                setCurrentView(targetView); 
+                setViewStates(finalHistory); 
+                dispatch(setCanvasObjects(finalObjectsForView)); 
 
-                setCurrentView(targetView); // Force correct view
-                setViewStates(finalHistory); // Restore full history (Front, etc.)
-                dispatch(setCanvasObjects(finalObjectsForView)); // Render current view
-
-                // 5. Cleanup
                 window.history.replaceState({}, document.title);
             }
             performMerge();
         }
-
-        // --- SCENARIO B: LOADING (Full Replace) ---
         else if (urlDesignId && editingDesignId !== urlDesignId) {
             async function loadDesign() {
                 try {
@@ -343,10 +318,8 @@ export default function EditorPanel() {
                         if (design.type === 'PRODUCT' && design.productConfig) {
                             const savedStates = design.canvasData || {};
                             setViewStates(savedStates);
-
                             const activeView = design.productConfig.activeView || 'front';
                             setCurrentView(activeView);
-
                             const activeObjects = savedStates[activeView] || [];
                             dispatch(setCanvasObjects(activeObjects));
                         } else {
@@ -362,7 +335,7 @@ export default function EditorPanel() {
     }, [urlDesignId, location.state, userId, dispatch]);
 
 
-    // ✅ 3. URL SYNC
+    // 3. URL SYNC
     useEffect(() => {
         if (currentDesign?.productConfig) {
             const params = new URLSearchParams(searchParams);
@@ -372,10 +345,12 @@ export default function EditorPanel() {
             if (productId && params.get('product') !== productId) { params.set('product', productId); changed = true; }
             if (variantColor && params.get('color') !== variantColor) { params.set('color', variantColor); changed = true; }
             if (variantSize && params.get('size') !== variantSize) { params.set('size', variantSize); changed = true; }
+            // ✅ Keep region in URL
+            if (!params.get('region')) { params.set('region', urlRegion); changed = true; }
 
             if (changed) setSearchParams(params, { replace: true });
         }
-    }, [currentDesign, setSearchParams]);
+    }, [currentDesign, setSearchParams, urlRegion]);
 
     // ... (Keep existing Scale, Dims, Snapshot Logic) ...
     useEffect(() => {
@@ -406,10 +381,8 @@ export default function EditorPanel() {
 
         const originalBg = fabricCanvas.backgroundColor;
         const originalClip = fabricCanvas.clipPath;
-        const originalVpt = fabricCanvas.viewportTransform; // Save current zoom/pan
+        const originalVpt = fabricCanvas.viewportTransform; 
 
-        // 1. Prepare Canvas for Export
-        // If it's a mug, we might want white background, otherwise transparent for T-shirts
         if (productData.title?.includes("Mug")) {
             fabricCanvas.backgroundColor = "#FFFFFF";
         } else {
@@ -418,7 +391,6 @@ export default function EditorPanel() {
 
         fabricCanvas.clipPath = null;
 
-        // Hide the border guide if it exists
         const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
         let wasBorderVisible = false;
         if (borderObj) {
@@ -426,26 +398,22 @@ export default function EditorPanel() {
             borderObj.visible = false;
         }
 
-        // 2. Calculate the "Standardization" Multiplier
-        // We want the output to be 2400px wide regardless of screen size.
         const TARGET_WIDTH = 2400;
-        const currentWidth = fabricCanvas.width; // This is the logical width
+        const currentWidth = fabricCanvas.width;
         const multiplier = TARGET_WIDTH / currentWidth;
 
-        // 3. Render & Export
         fabricCanvas.renderAll();
 
         const dataUrl = fabricCanvas.toDataURL({
             format: 'png',
-            quality: 1,           // Max quality
-            multiplier: multiplier, // <--- DYNAMIC SCALING
+            quality: 1,           
+            multiplier: multiplier, 
             enableRetinaScaling: true
         });
 
-        // 4. Restore Canvas State
         fabricCanvas.backgroundColor = originalBg;
         fabricCanvas.clipPath = originalClip;
-        if (originalVpt) fabricCanvas.setViewportTransform(originalVpt); // Restore zoom
+        if (originalVpt) fabricCanvas.setViewportTransform(originalVpt);
         if (borderObj) borderObj.visible = wasBorderVisible;
         fabricCanvas.requestRenderAll();
 
@@ -503,6 +471,7 @@ export default function EditorPanel() {
         setIsSaving(true);
         const finalPreview = designTextures[currentView]?.url || captureCurrentCanvas()?.url;
 
+        // ✅ 3. Update Cart Item with Region & Correct Price
         const cartItem = {
             designId: editingDesignId || `temp_${Date.now()}`,
             name: currentDesign?.name || "Custom Design",
@@ -510,11 +479,12 @@ export default function EditorPanel() {
             productId: productData.id || "unknown_product",
             variant: {
                 color: canvasBg,
-                size: selectedSize, // ✅ Use selected size
+                size: selectedSize, 
             },
-            quantity: quantity,     // ✅ Use selected quantity
-            price: productData.price || 24.99,
-            currency: 'INR',
+            quantity: quantity,
+            price: currentPrice, // Use the region-specific price
+            currency: currencyInfo.code, // Pass currency code (e.g., INR, USD)
+            region: urlRegion, // Pass region code
             thumbnail: finalPreview,
             designData: { viewStates, currentView }
         };
@@ -549,7 +519,6 @@ export default function EditorPanel() {
                 <MainToolbar
                     activePanel={activePanel}
                     onSelectTool={(tool) => {
-                        // ✅ Use the new freeze-and-navigate logic
                         if (tool === 'templates') {
                             navigateToTemplates();
                         } else {
@@ -637,7 +606,6 @@ export default function EditorPanel() {
                     />
                 </main>
 
-                {/* Change this line: */}
                 <aside className={`right-panel ${(selectedId ? showProperties : showColorPanel) ? 'active' : ''}`}>
                     {selectedId ? (
                         <>
@@ -724,17 +692,19 @@ export default function EditorPanel() {
                                     </button>
                                 </div>
                                 <div className="text-sm text-slate-500">
-                                    ₹{((productData.price || 24.99) * quantity).toFixed(2)} total
+                                    {/* ✅ Dynamic Symbol & Price */}
+                                    {currencyInfo.symbol}{totalPrice} total
                                 </div>
                              </div>
                         </div>
 
-                        {/* --- 4. CHECKOUT BUTTON (Sticks to bottom on mobile, inline on desktop) --- */}
+                        {/* --- 4. CHECKOUT BUTTON --- */}
                         <div className="mt-auto pt-6 border-t border-slate-100">
                              <div className="flex justify-between items-end mb-4">
                                 <div>
                                     <p className="text-xs text-slate-400">Total Price</p>
-                                    <p className="text-2xl font-bold text-slate-900">₹{((productData.price || 24.99) * quantity).toFixed(2)}</p>
+                                    {/* ✅ Dynamic Symbol & Price */}
+                                    <p className="text-2xl font-bold text-slate-900">{currencyInfo.symbol}{totalPrice}</p>
                                 </div>
                              </div>
                              

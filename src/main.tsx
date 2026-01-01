@@ -22,6 +22,8 @@ import ThumbnailGenerator from "./pages/ThumbnailGenerator";
 import Storefront from './pages/StoreFront.tsx'; 
 import AdminProductManager from "./pages/AdminProductManager.tsx";
 import OrderCheckoutPage from './pages/OrderCheckoutPage';
+import TermsConditions from "./pages/TermsConditions";
+import OrderDetailsPage from "./pages/OrderDetailsPage.tsx";
 
 // ✅ IMPORT THE NEW PAGE
 import ProductDetails from "./pages/ProductDetails"; 
@@ -62,10 +64,12 @@ createRoot(document.getElementById("root")!).render(
           {/* Store Routes */}
           <Route path="/store" element={<Storefront />} />
           <Route path="/product/:productId" element={<ProductDetails />} /> {/* ✅ ADDED THIS */}
+          <Route path="orders/:orderId" element={<OrderDetailsPage />} />
 
           <Route path="/design/*" element={<DesignEditorPage />} />
           <Route path="/generator" element={<ThumbnailGenerator />} />
           <Route path="/admin" element={<AdminProductManager/>} />
+          <Route path="/terms" element={<TermsConditions />} />
           
           {/* Dashboard Routes */}
           <Route path="/dashboard" element={<DashboardLayout />}>

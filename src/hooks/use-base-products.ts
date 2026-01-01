@@ -3,15 +3,25 @@ import { useState, useEffect } from 'react';
 import { db } from '@/firebase';
 import { collection, getDocs } from 'firebase/firestore';
 
+// ✅ Define the Multi-Currency Price Structure
+export interface PriceObject {
+  IN: number;
+  US: number;
+  GB: number;
+  EU: number;
+  CA: number;
+}
+
 export interface BaseProduct {
   id: string;
   title: string;
   description: string;
-  image: string | null;     // The main catalog image (uploaded via Admin)
+  image: string | null;     
   category: string;
-  price: number;            // Direct price from DB
   
-  // New fields from our schema
+  // ✅ Updated to support both old (number) and new (object) formats
+  price: PriceObject; 
+  
   mockups?: {
     front?: string;
     back?: string;
@@ -30,22 +40,32 @@ export function useBaseProducts() {
   useEffect(() => {
     async function fetchProducts() {
       try {
-        // Fetch ALL products (removed 'active' filter to ensure seeded items appear)
         const querySnapshot = await getDocs(collection(db, "base_products"));
-        
         const fetched: BaseProduct[] = [];
         
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           
+          // ✅ Intelligent Price Fallback
+          // If DB has old data (number), convert it to a safe default object
+          let processedPrice: PriceObject;
+          if (typeof data.price === 'object') {
+             processedPrice = data.price;
+          } else {
+             // Fallback for old products
+             processedPrice = { 
+               IN: data.price || 0, 
+               US: 0, GB: 0, EU: 0, CA: 0 
+             };
+          }
+
           fetched.push({
             id: doc.id,
             title: data.title || "Untitled Product",
             description: data.description || "",
-            // Use the uploaded image, fallback to the front mockup, then to placeholder
             image: data.image || data.mockups?.front || null, 
             category: data.category || "Uncategorized",
-            price: data.price || 0,
+            price: processedPrice,
             
             mockups: data.mockups || {},
             options: {

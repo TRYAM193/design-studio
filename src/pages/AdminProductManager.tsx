@@ -155,7 +155,7 @@ export default function AdminProductManager() {
                     <div className="flex gap-2 text-xs text-slate-500 mt-1">
                       <span className="bg-slate-100 px-2 py-1 rounded">ID: {product.id}</span>
                       <span className="bg-slate-100 px-2 py-1 rounded">Category: {product.category}</span>
-                      <span className="bg-slate-100 px-2 py-1 rounded">${product.price}</span>
+                      <span className="bg-slate-100 px-2 py-1 rounded">${product.price.IN}</span>
                     </div>
                   </div>
                   
