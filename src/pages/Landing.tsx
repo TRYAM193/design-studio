@@ -38,7 +38,7 @@ export default function Landing() {
 
            {/* Desktop Navigation */}
            <nav className="hidden md:flex items-center gap-8">
-             <Link to='/store' className="text-sm font-medium text-slate-500 hover:text-black transition-colors">Catalog</Link>
+            <Link to='/store' className="text-sm font-medium text-slate-500 hover:text-black transition-colors">Catalog</Link>
              <Link to="/dashboard/templates" className="text-sm font-medium text-slate-500 hover:text-black transition-colors">
                {t("nav.templates")}
              </Link>
@@ -118,16 +118,14 @@ export default function Landing() {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="mt-16 rounded-2xl border border-white/60 bg-white/40 backdrop-blur-sm p-2 shadow-2xl shadow-slate-200 max-w-5xl mx-auto overflow-hidden relative ring-1 ring-white/60"
+              className="mt-16 rounded-2xl border border-white/60 bg-white/40 backdrop-blur-sm aspect-[16/9] max-w-5xl mx-auto shadow-2xl shadow-slate-200 overflow-hidden relative ring-1 ring-white/60"
             >
-               <div className="rounded-xl overflow-hidden aspect-[16/9] relative">
-                   <img 
-                     src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1000&auto=format&fit=crop" 
-                     alt="T-Shirt Mockup" 
-                     className="w-full h-full object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-1000"
-                   />
-                   <div className="absolute inset-0 bg-gradient-to-t from-white/30 to-transparent" />
-               </div>
+               <img 
+                 src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1000&auto=format&fit=crop" 
+                 alt="T-Shirt Mockup" 
+                 className="w-full h-full object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-1000"
+               />
+               <div className="absolute inset-0 bg-gradient-to-t from-white/30 to-transparent" />
             </motion.div>
           </div>
         </section>
@@ -148,14 +146,14 @@ export default function Landing() {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="bg-white/70 backdrop-blur-md rounded-3xl p-8 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+                className="bg-white/70 backdrop-blur-md rounded-2xl p-8 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
               >
                 {/* Icon Box: Light Grey */}
-                <div className="h-14 w-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 text-slate-900 shadow-sm">
-                  <Wand2 className="h-7 w-7" />
+                <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center mb-6 text-slate-900 shadow-sm">
+                  <Wand2 className="h-6 w-6" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-slate-900">{t("landing.feature.ai.title")}</h3>
-                <p className="text-slate-500 text-lg leading-relaxed">
+                <p className="text-slate-500 text-lg">
                   {t("landing.feature.ai.desc")}
                 </p>
               </motion.div>
@@ -166,14 +164,14 @@ export default function Landing() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="bg-white/70 backdrop-blur-md rounded-3xl p-8 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+                className="bg-white/70 backdrop-blur-md rounded-2xl p-8 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
               >
                 {/* Icon Box: Light Grey */}
-                <div className="h-14 w-14 bg-slate-100 rounded-2xl flex items-center justify-center mb-6 text-slate-900 shadow-sm">
-                  <Layers className="h-7 w-7" />
+                <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center mb-6 text-slate-900 shadow-sm">
+                  <Layers className="h-6 w-6" />
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-slate-900">{t("landing.feature.editor.title")}</h3>
-                <p className="text-slate-500 text-lg leading-relaxed">
+                <p className="text-slate-500 text-lg">
                   {t("landing.feature.editor.desc")}
                 </p>
               </motion.div>
@@ -185,18 +183,15 @@ export default function Landing() {
         <section className="py-24 px-4">
           <div className="container mx-auto max-w-5xl">
             {/* CTA Background: Deep Charcoal/Black Gradient */}
-            <div className="bg-gradient-to-br from-zinc-900 via-black to-zinc-900 text-white rounded-[2.5rem] p-12 md:p-24 text-center relative overflow-hidden shadow-2xl shadow-zinc-900/30">
-              {/* Decorative circle in CTA */}
-              <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-white/5 rounded-full blur-3xl"></div>
-              
+            <div className="bg-gradient-to-br from-zinc-900 via-black to-zinc-900 text-white rounded-3xl p-12 md:p-24 text-center relative overflow-hidden shadow-2xl shadow-zinc-900/30">
               <div className="relative z-10 space-y-8">
                 <h2 className="text-3xl md:text-5xl font-bold tracking-tight">{t("landing.cta.title")}</h2>
-                <p className="text-slate-300 text-lg max-w-xl mx-auto leading-relaxed">
+                <p className="text-slate-300 text-lg max-w-xl mx-auto">
                   {t("landing.cta.desc")}
                 </p>
                 <Link to="/dashboard">
                   {/* Secondary Button: White on Black */}
-                  <Button size="lg" className="h-16 px-10 text-lg rounded-full font-bold bg-white text-black hover:bg-slate-100 shadow-lg transition-all">
+                  <Button size="lg" className="h-14 px-8 text-lg rounded-full font-semibold bg-white text-black hover:bg-slate-100 shadow-lg transition-all">
                     {t("landing.cta.button")}
                   </Button>
                 </Link>
