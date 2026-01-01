@@ -10,16 +10,16 @@ export default function Landing() {
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col font-sans selection:bg-slate-200 selection:text-black">
       
-      {/* ✅ NEW: BLACK & GREY GRADIENT BACKGROUND */}
+      {/* ✅ THEME: BLACK & GREY GRADIENT BACKGROUND */}
       <div className="fixed inset-0 -z-10 w-full h-full bg-slate-50">
-         {/* Blob 1: Deep Black/Charcoal (Top Left) */}
+         {/* Blob 1: Deep Charcoal (Top Left) */}
          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-zinc-900/10 blur-[120px] animate-pulse" />
-         {/* Blob 2: Silver/Light Grey (Top Right) */}
+         {/* Blob 2: Silver (Top Right) */}
          <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-slate-400/20 blur-[120px] animate-pulse delay-1000" />
          {/* Blob 3: Soft Grey (Bottom Left) */}
          <div className="absolute bottom-[-10%] left-[20%] w-[50%] h-[50%] rounded-full bg-gray-300/30 blur-[120px] animate-pulse delay-2000" />
          
-         {/* Grainy Texture for Polish (Keeps it looking premium, not flat) */}
+         {/* Texture Overlay */}
          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
       </div>
 
@@ -56,9 +56,8 @@ export default function Landing() {
                <Button variant="ghost" className="text-slate-600 hover:text-black hover:bg-slate-100">{t("nav.signin")}</Button>
              </Link>
              <Link to="/dashboard">
-               {/* Updated Button Style: Black & White */}
                <Button className="bg-black hover:bg-zinc-800 text-white shadow-lg shadow-zinc-500/20 border-0">
-                 {t("auth.getStarted")}
+                  {t("auth.getStarted")}
                </Button>
              </Link>
            </div>
@@ -85,7 +84,6 @@ export default function Landing() {
               className="text-5xl md:text-7xl font-bold tracking-tight leading-tight text-slate-900"
             >
               {t("landing.hero.titleStart")} <br />
-              {/* Highlight text is now a dark charcoal gradient */}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-black to-slate-600">
                 {t("landing.hero.titleEnd")}
               </span>
@@ -95,7 +93,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-xl text-slate-600 max-w-2xl mx-auto"
+              className="text-xl text-slate-500 max-w-2xl mx-auto"
             >
               {t("landing.hero.desc")}
             </motion.p>
@@ -148,7 +146,6 @@ export default function Landing() {
                 viewport={{ once: true }}
                 className="bg-white/70 backdrop-blur-md rounded-2xl p-8 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
               >
-                {/* Icon Box: Light Grey */}
                 <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center mb-6 text-slate-900 shadow-sm">
                   <Wand2 className="h-6 w-6" />
                 </div>
@@ -166,7 +163,6 @@ export default function Landing() {
                 transition={{ delay: 0.1 }}
                 className="bg-white/70 backdrop-blur-md rounded-2xl p-8 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
               >
-                {/* Icon Box: Light Grey */}
                 <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center mb-6 text-slate-900 shadow-sm">
                   <Layers className="h-6 w-6" />
                 </div>
@@ -182,7 +178,6 @@ export default function Landing() {
         {/* CTA Section */}
         <section className="py-24 px-4">
           <div className="container mx-auto max-w-5xl">
-            {/* CTA Background: Deep Charcoal/Black Gradient */}
             <div className="bg-gradient-to-br from-zinc-900 via-black to-zinc-900 text-white rounded-3xl p-12 md:p-24 text-center relative overflow-hidden shadow-2xl shadow-zinc-900/30">
               <div className="relative z-10 space-y-8">
                 <h2 className="text-3xl md:text-5xl font-bold tracking-tight">{t("landing.cta.title")}</h2>
@@ -190,7 +185,6 @@ export default function Landing() {
                   {t("landing.cta.desc")}
                 </p>
                 <Link to="/dashboard">
-                  {/* Secondary Button: White on Black */}
                   <Button size="lg" className="h-14 px-8 text-lg rounded-full font-semibold bg-white text-black hover:bg-slate-100 shadow-lg transition-all">
                     {t("landing.cta.button")}
                   </Button>
