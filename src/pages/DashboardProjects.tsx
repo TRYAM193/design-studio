@@ -79,7 +79,7 @@ export default function DashboardProjects() {
         </motion.h1>
         <Link to="/design">
           {/* Saffron Button Style */}
-          <Button className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0">
+          <Button className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-20">
             <Plus className="mr-2 h-4 w-4" />
             {t("common.newDesign")}
           </Button>
