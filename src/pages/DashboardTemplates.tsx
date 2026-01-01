@@ -146,13 +146,14 @@ export default function DashboardTemplates() {
               transition={{ delay: i * 0.05 }}
               className="group cursor-pointer"
             >
-              <div className="aspect-[3/4] rounded-2xl bg-white mb-3 overflow-hidden relative border border-white/10 shadow-lg">
+              {/* ✅ UPDATED: Removed bg-white, using Dark Glassmorphism */}
+              <div className="aspect-[3/4] rounded-2xl bg-slate-800/40 mb-3 overflow-hidden relative border border-white/10 shadow-lg backdrop-blur-sm">
                  <img 
                    src={template.image} 
                    alt={template.name}
-                   className="w-full h-full object-contain p-4 bg-white transition-transform duration-500 group-hover:scale-105"
+                   className="w-full h-full object-contain p-4 transition-transform duration-500 group-hover:scale-105"
                    onError={(e) => {
-                     (e.target as HTMLImageElement).src = "https://placehold.co/400x500/ffffff/000000?text=Template";
+                     (e.target as HTMLImageElement).src = "https://placehold.co/400x500/1e293b/ffffff?text=Template";
                    }}
                  />
                  
@@ -169,7 +170,7 @@ export default function DashboardTemplates() {
                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                    <Button 
                      size="sm" 
-                     className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold shadow-lg"
+                     className="w-full bg-white text-slate-900 hover:bg-slate-200 font-bold shadow-lg"
                      onClick={() => handleUseTemplate(template)}
                    >
                      {t("templates.useTemplate")}
