@@ -376,7 +376,7 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
-    const getCleanDataURL = () => {
+    const getCleanDataURL = (bg) => {
         if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
