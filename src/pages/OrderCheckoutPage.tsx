@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router';
-import { FiMapPin, FiCreditCard, FiChevronLeft, FiLoader, FiCheckCircle, FiShield } from 'react-icons/fi';
+import { FiMapPin, FiCreditCard, FiChevronLeft, FiLoader, FiCheckCircle, FiShield, FiShoppingBag, FiTruck } from 'react-icons/fi';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, setDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { motion } from "framer-motion";
 
 export default function OrderCheckoutPage() {
   const location = useLocation();
@@ -21,7 +22,6 @@ export default function OrderCheckoutPage() {
   const { orderData } = location.state || {};
   
   const [isProcessing, setIsProcessing] = useState(false);
-  // We removed "isSuccess" animation state because the gateway handles the UI now
   const [paymentMethod, setPaymentMethod] = useState('online'); // 'online' or 'cod'
 
   const [shippingInfo, setShippingInfo] = useState({
@@ -49,7 +49,11 @@ export default function OrderCheckoutPage() {
     }
   }, [orderData]);
 
-  if (!orderData) return <div className="p-10 text-center">No order found.</div>;
+  if (!orderData) return (
+    <div className="min-h-screen flex items-center justify-center bg-[#0f172a] text-white">
+        No order found.
+    </div>
+  );
 
   // 1. REGION & CURRENCY LOGIC
   const region = orderData.region || 'IN';
@@ -142,7 +146,7 @@ export default function OrderCheckoutPage() {
             email: shippingInfo.email,
         },
         theme: {
-            color: "#4f46e5" // Indigo-600
+            color: "#ea580c" // Orange-600 (Saffron)
         }
     };
 
@@ -182,163 +186,239 @@ export default function OrderCheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 font-sans">
+    <div className="min-h-screen relative pb-20 font-sans selection:bg-orange-500 selection:text-white">
       
-      <div className="max-w-5xl mx-auto mb-6">
-        <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2 pl-0 hover:bg-transparent hover:text-indigo-600">
-          <FiChevronLeft /> Back to Design
-        </Button>
+      {/* ✅ BACKGROUND: COSMIC SHIVA THEME */}
+      <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]"> 
+         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
+         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
+         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
       </div>
 
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="max-w-6xl mx-auto p-4 md:p-8 pt-6">
         
-        {/* LEFT COLUMN: DETAILS */}
-        <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><FiMapPin className="text-indigo-600"/> Shipping Details</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Full Name</Label><Input name="fullName" value={shippingInfo.fullName} onChange={handleInputChange} placeholder="John Doe" /></div>
-              <div className="space-y-2"><Label>Email</Label><Input name="email" value={shippingInfo.email} onChange={handleInputChange} placeholder="john@example.com" /></div>
-              <div className="space-y-2 md:col-span-2"><Label>Address</Label><Input name="address" value={shippingInfo.address} onChange={handleInputChange} placeholder="123 Main St" /></div>
-              <div className="space-y-2"><Label>City</Label><Input name="city" value={shippingInfo.city} onChange={handleInputChange} placeholder="New York" /></div>
-              <div className="space-y-2"><Label>Zip Code</Label><Input name="zip" value={shippingInfo.zip} onChange={handleInputChange} placeholder="10001" /></div>
-            </CardContent>
-          </Card>
-
-          <Card>
-             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><FiCreditCard className="text-green-600"/> Payment Method</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              
-              {/* OPTION 1: ONLINE PAYMENT (Razorpay OR Stripe) */}
-              <div 
-                onClick={() => setPaymentMethod('online')}
-                className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'online' ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-100 hover:border-slate-200'}`}
-              >
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'online' ? 'border-indigo-600' : 'border-slate-300'}`}>
-                  {paymentMethod === 'online' && <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />}
-                </div>
-                
-                {region === 'IN' ? (
-                    // India View: Show Razorpay Context
-                    <div>
-                        <div className="font-medium">UPI / Cards / Netbanking</div>
-                        <p className="text-xs text-slate-500 mt-1">Secured by Razorpay</p>
-                    </div>
-                ) : (
-                    // Global View: Show Stripe Context
-                    <div>
-                        <div className="font-medium">Credit / Debit Card</div>
-                        <p className="text-xs text-slate-500 mt-1">Secured by Stripe</p>
-                    </div>
-                )}
-                
-                {/* Secure Badge */}
-                <div className="ml-auto">
-                    <FiShield className="text-slate-400" />
-                </div>
-              </div>
-
-              {/* OPTION 2: COD (India Only) */}
-              {region === 'IN' && (
-                <div 
-                  onClick={() => setPaymentMethod('cod')}
-                  className={`flex items-center gap-4 p-4 rounded-lg border-2 cursor-pointer transition-all ${paymentMethod === 'cod' ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-100 hover:border-slate-200'}`}
-                >
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'cod' ? 'border-indigo-600' : 'border-slate-300'}`}>
-                    {paymentMethod === 'cod' && <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                        <span className="font-medium">Cash on Delivery</span>
-                        <Badge variant="outline" className="text-xs font-normal border-green-200 text-green-700 bg-green-50">Available</Badge>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1">Pay with cash upon delivery.</p>
-                  </div>
-                </div>
-              )}
-
-            </CardContent>
-          </Card>
+        {/* Navigation */}
+        <div className="mb-8">
+            <Button variant="ghost" onClick={() => navigate(-1)} className="gap-2 pl-0 hover:bg-transparent text-slate-400 hover:text-white transition-colors">
+            <FiChevronLeft /> Back to Design
+            </Button>
         </div>
 
-        {/* RIGHT COLUMN: SUMMARY */}
-        <div className="md:col-span-1">
-          <Card className="sticky top-6 shadow-md border-indigo-100">
-            <CardHeader className="bg-slate-50/50 pb-4">
-              <CardTitle>Order Summary</CardTitle>
-              <CardDescription>Review your design order</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="flex gap-4 mb-6">
-                 <div className="w-20 h-24 bg-white rounded-md border border-slate-200 overflow-hidden p-2">
-                    <img src={orderData.thumbnail} alt="Preview" className="w-full h-full object-contain" />
-                 </div>
-                 <div>
-                   <h4 className="font-bold text-slate-800 text-sm">{orderData.productTitle}</h4>
-                   <p className="text-xs text-slate-500 mt-1 capitalize">{orderData.variant.color} / {orderData.variant.size}</p>
-                   <p className="text-sm font-medium mt-2">Qty: {orderData.quantity}</p>
-                 </div>
-              </div>
-
-              <Separator className="my-4" />
-
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between items-center text-slate-400">
-                    <span>Retail Price</span>
-                    <span className="line-through decoration-slate-400">{symbol}{originalPrice.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center text-green-600 font-medium bg-green-50 p-2 rounded">
-                    <span>Your Savings</span>
-                    <span>- {symbol}{savings.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center mt-2">
-                    <span>Shipping</span>
-                    <div className="flex items-center gap-2">
-                        <span className="text-slate-400 line-through text-xs">{symbol}{fakeShippingCost}</span>
-                        <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-2 py-0.5">FREE</Badge>
-                    </div>
-                </div>
-                <Separator className="my-2" />
-                <div className="flex justify-between items-start pt-2">
-                    <span className="font-bold text-lg text-slate-800">Total</span>
-                    <div className="text-right">
-                        <div className="font-bold text-2xl text-indigo-600 leading-none">
-                            {symbol}{payAmount.toFixed(2)}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+            {/* LEFT COLUMN: DETAILS */}
+            <div className="lg:col-span-2 space-y-6">
+            
+            {/* Shipping Card */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                <Card className="bg-slate-800/40 backdrop-blur-md border border-white/10 shadow-xl overflow-hidden">
+                    <CardHeader className="bg-slate-900/30 border-b border-white/5">
+                        <CardTitle className="flex items-center gap-2 text-white">
+                            <FiMapPin className="text-blue-400"/> Shipping Details
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-5 p-6">
+                        <div className="space-y-2">
+                            <Label className="text-slate-300">Full Name</Label>
+                            <Input 
+                                name="fullName" 
+                                value={shippingInfo.fullName} 
+                                onChange={handleInputChange} 
+                                placeholder="Arjuna" 
+                                className="bg-slate-900/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 transition-all h-11"
+                            />
                         </div>
-                        <p className="text-[10px] text-slate-400 font-medium mt-1">
-                            Inclusive of all taxes
-                        </p>
+                        <div className="space-y-2">
+                            <Label className="text-slate-300">Email</Label>
+                            <Input 
+                                name="email" 
+                                value={shippingInfo.email} 
+                                onChange={handleInputChange} 
+                                placeholder="arjuna@example.com" 
+                                className="bg-slate-900/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 transition-all h-11"
+                            />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                            <Label className="text-slate-300">Address</Label>
+                            <Input 
+                                name="address" 
+                                value={shippingInfo.address} 
+                                onChange={handleInputChange} 
+                                placeholder="123 Cosmic Way" 
+                                className="bg-slate-900/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 transition-all h-11"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-slate-300">City</Label>
+                            <Input 
+                                name="city" 
+                                value={shippingInfo.city} 
+                                onChange={handleInputChange} 
+                                placeholder="Bengaluru" 
+                                className="bg-slate-900/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 transition-all h-11"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-slate-300">Zip Code</Label>
+                            <Input 
+                                name="zip" 
+                                value={shippingInfo.zip} 
+                                onChange={handleInputChange} 
+                                placeholder="560001" 
+                                className="bg-slate-900/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 transition-all h-11"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {/* Payment Method Card */}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <Card className="bg-slate-800/40 backdrop-blur-md border border-white/10 shadow-xl overflow-hidden">
+                    <CardHeader className="bg-slate-900/30 border-b border-white/5">
+                        <CardTitle className="flex items-center gap-2 text-white">
+                            <FiCreditCard className="text-orange-400"/> Payment Method
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 p-6">
+                    
+                    {/* OPTION 1: ONLINE PAYMENT */}
+                    <div 
+                        onClick={() => setPaymentMethod('online')}
+                        className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-300
+                            ${paymentMethod === 'online' 
+                                ? 'border-orange-500/50 bg-orange-500/10 shadow-[0_0_15px_rgba(234,88,12,0.1)]' 
+                                : 'border-white/5 bg-slate-900/30 hover:bg-slate-800/50 hover:border-white/10'
+                            }`}
+                    >
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === 'online' ? 'border-orange-500' : 'border-slate-500'}`}>
+                        {paymentMethod === 'online' && <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />}
+                        </div>
+                        
+                        {region === 'IN' ? (
+                            <div>
+                                <div className="font-medium text-white">UPI / Cards / Netbanking</div>
+                                <p className="text-xs text-slate-400 mt-1">Secured by Razorpay</p>
+                            </div>
+                        ) : (
+                            <div>
+                                <div className="font-medium text-white">Credit / Debit Card</div>
+                                <p className="text-xs text-slate-400 mt-1">Secured by Stripe</p>
+                            </div>
+                        )}
+                        
+                        <div className="ml-auto">
+                            <FiShield className="text-slate-500" />
+                        </div>
                     </div>
-                </div>
-              </div>
 
-              <Button 
-                onClick={handlePlaceOrder} 
-                disabled={isProcessing}
-                className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 h-14 text-lg font-bold shadow-lg shadow-indigo-200 transition-all hover:scale-[1.02]"
-              >
-                {isProcessing ? (
-                     <><FiLoader className="animate-spin mr-2" /> Processing...</>
-                ) : (
-                     `Pay ${symbol}${payAmount.toFixed(2)}`
-                )}
-              </Button>
-              
-              <p className="text-xs text-center text-slate-500 mt-4 leading-relaxed">
-                By placing this order, you agree to our <Link to="/terms" target="_blank" className="underline hover:text-indigo-600 font-medium">Terms & Conditions</Link>.
-              </p>
+                    {/* OPTION 2: COD */}
+                    {region === 'IN' && (
+                        <div 
+                        onClick={() => setPaymentMethod('cod')}
+                        className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-300
+                            ${paymentMethod === 'cod' 
+                                ? 'border-orange-500/50 bg-orange-500/10 shadow-[0_0_15px_rgba(234,88,12,0.1)]' 
+                                : 'border-white/5 bg-slate-900/30 hover:bg-slate-800/50 hover:border-white/10'
+                            }`}
+                        >
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${paymentMethod === 'cod' ? 'border-orange-500' : 'border-slate-500'}`}>
+                            {paymentMethod === 'cod' && <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />}
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="font-medium text-white">Cash on Delivery</span>
+                                <Badge variant="outline" className="text-[10px] font-normal border-green-500/30 text-green-400 bg-green-500/10">Available</Badge>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-1">Pay with cash upon delivery.</p>
+                        </div>
+                        </div>
+                    )}
 
-              <div className="flex justify-center items-center gap-2 mt-4 text-xs text-slate-400">
-                <FiCheckCircle className="text-green-500" />
-                <span>Secured by {region === 'IN' ? 'Razorpay' : 'Stripe'}</span>
-              </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+            </div>
 
-            </CardContent>
-          </Card>
+            {/* RIGHT COLUMN: SUMMARY */}
+            <div className="lg:col-span-1">
+                <Card className="sticky top-6 shadow-2xl border-white/10 bg-slate-800/60 backdrop-blur-xl">
+                    <CardHeader className="bg-slate-900/50 border-b border-white/5 pb-4">
+                        <CardTitle className="text-white flex items-center gap-2">
+                            <FiShoppingBag className="text-orange-400"/> Order Summary
+                        </CardTitle>
+                        <CardDescription className="text-slate-400">Review your design details</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <div className="flex gap-4 mb-6">
+                            <div className="w-20 h-24 bg-white rounded-lg border border-white/10 overflow-hidden p-2 shadow-inner">
+                                <img src={orderData.thumbnail} alt="Preview" className="w-full h-full object-contain" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-bold text-white text-sm line-clamp-2">{orderData.productTitle}</h4>
+                                <p className="text-xs text-slate-400 mt-1 capitalize">{orderData.variant.color} / {orderData.variant.size}</p>
+                                <p className="text-sm font-medium mt-2 text-slate-300">Qty: {orderData.quantity}</p>
+                            </div>
+                        </div>
+
+                        <Separator className="bg-white/10 my-4" />
+
+                        <div className="space-y-3 text-sm">
+                            <div className="flex justify-between items-center text-slate-400">
+                                <span>Retail Price</span>
+                                <span className="line-through decoration-slate-500">{symbol}{originalPrice.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-green-400 font-medium bg-green-500/10 p-2 rounded-lg border border-green-500/20">
+                                <span>Your Savings</span>
+                                <span>- {symbol}{savings.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center mt-2 text-slate-300">
+                                <span>Shipping</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-slate-500 line-through text-xs">{symbol}{fakeShippingCost}</span>
+                                    <Badge variant="secondary" className="bg-blue-500/10 text-blue-300 border-blue-500/20 px-2 py-0.5 text-[10px]">FREE</Badge>
+                                </div>
+                            </div>
+                            
+                            <Separator className="bg-white/10 my-2" />
+                            
+                            <div className="flex justify-between items-start pt-2">
+                                <span className="font-bold text-lg text-white">Total</span>
+                                <div className="text-right">
+                                    <div className="font-bold text-2xl text-orange-400 leading-none">
+                                        {symbol}{payAmount.toFixed(2)}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 font-medium mt-1">
+                                        Inclusive of all taxes
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Button 
+                            onClick={handlePlaceOrder} 
+                            disabled={isProcessing}
+                            className="w-full mt-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white h-14 text-lg font-bold shadow-lg shadow-orange-900/40 border-0 transition-all hover:scale-[1.02] disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            {isProcessing ? (
+                                <><FiLoader className="animate-spin mr-2" /> Processing...</>
+                            ) : (
+                                `Pay ${symbol}${payAmount.toFixed(2)}`
+                            )}
+                        </Button>
+                        
+                        <p className="text-xs text-center text-slate-500 mt-4 leading-relaxed">
+                            By placing this order, you agree to our <Link to="/terms" target="_blank" className="underline hover:text-orange-400 font-medium transition-colors">Terms & Conditions</Link>.
+                        </p>
+
+                        <div className="flex justify-center items-center gap-2 mt-4 text-xs text-slate-500">
+                            <FiCheckCircle className="text-green-500" />
+                            <span>Secured by {region === 'IN' ? 'Razorpay' : 'Stripe'}</span>
+                        </div>
+
+                    </CardContent>
+                </Card>
+            </div>
         </div>
       </div>
     </div>
