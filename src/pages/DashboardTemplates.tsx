@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Search, Crown, Filter } from "lucide-react";
+import { Search, Crown, Filter, Sparkles, Image as ImageIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useState, useMemo } from "react";
@@ -14,7 +14,7 @@ import {
 import { useTranslation } from "@/hooks/use-translation";
 import { useNavigate } from "react-router"; 
 
-// 1. IMPORT YOUR REAL JSON TEMPLATE
+// IMPORT REAL JSON TEMPLATE
 import design001Data from "@/templates/design-001.json";
 
 export default function DashboardTemplates() {
@@ -33,7 +33,6 @@ export default function DashboardTemplates() {
     return t(key) !== key ? t(key) : cat;
   };
 
-  // 2. DEFINE ONLY YOUR REAL TEMPLATES
   const templates = [
     { 
       id: "template-001",
@@ -44,7 +43,7 @@ export default function DashboardTemplates() {
       isLocal: true, 
       canvasData: design001Data 
     },
-    // Add more local templates here in the future...
+    // Add more templates here...
   ];
 
   const filteredTemplates = useMemo(() => {
@@ -56,12 +55,10 @@ export default function DashboardTemplates() {
     });
   }, [searchQuery, selectedCategory, selectedTier, templates]);
 
-  // 3. HANDLE CLICK: LOAD AS NEW DESIGN
   const handleUseTemplate = (template: any) => {
     navigate('/design', { 
       state: { 
         designToLoad: {
-          // WE DO NOT PASS AN ID. This tells the editor "This is a NEW, Unsaved design"
           id: null, 
           name: `${template.name} (Copy)`,
           canvasJSON: template.canvasData
@@ -71,23 +68,32 @@ export default function DashboardTemplates() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative pb-20">
+      
+      {/* ✅ BACKGROUND: COSMIC SHIVA THEME */}
+      <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]"> 
+         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
+         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
+         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+      </div>
+
       {/* Header and Filter Controls */}
       <div className="flex flex-col gap-6">
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold tracking-tight"
+          className="text-4xl font-bold tracking-tight text-white flex items-center gap-3"
         >
+          <Sparkles className="w-8 h-8 text-orange-400" />
           {t("templates.title")}
         </motion.h1>
         
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <div className="relative flex-1 w-full md:max-w-md">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input 
               placeholder={t("templates.search")}
-              className="pl-10 h-10" 
+              className="pl-10 h-10 bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500 focus:ring-orange-500/50 focus:border-orange-500/50 rounded-full" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -95,13 +101,13 @@ export default function DashboardTemplates() {
           
           <div className="flex items-center gap-2 w-full md:w-auto">
             <Select value={selectedTier} onValueChange={setSelectedTier}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[140px] bg-slate-800/50 border-white/10 text-slate-200 h-10 rounded-full">
                 <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4" />
+                  <Filter className="h-4 w-4 text-slate-400" />
                   <SelectValue placeholder={t("templates.filterTier")} />
                 </div>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-slate-900 border-white/10 text-slate-300">
                 <SelectItem value="All">{t("templates.allTiers")}</SelectItem>
                 <SelectItem value="Free">{t("pricing.plan.free")}</SelectItem>
                 <SelectItem value="Pro">{t("pricing.plan.pro")}</SelectItem>
@@ -110,12 +116,17 @@ export default function DashboardTemplates() {
           </div>
         </div>
 
+        {/* Category Pills */}
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {categories.map((cat) => (
             <Badge 
               key={cat} 
-              variant={selectedCategory === cat ? "default" : "secondary"}
-              className="px-4 py-2 text-sm cursor-pointer hover:opacity-80 whitespace-nowrap"
+              variant="outline"
+              className={`px-6 py-2 text-sm cursor-pointer whitespace-nowrap rounded-full transition-all border ${
+                selectedCategory === cat 
+                  ? "bg-orange-600 text-white border-orange-600 shadow-lg shadow-orange-900/40" 
+                  : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10 hover:text-white"
+              }`}
               onClick={() => setSelectedCategory(cat)}
             >
               {getCategoryLabel(cat)}
@@ -135,21 +146,22 @@ export default function DashboardTemplates() {
               transition={{ delay: i * 0.05 }}
               className="group cursor-pointer"
             >
-              <div className="aspect-[3/4] rounded-xl bg-secondary mb-3 overflow-hidden relative border shadow-sm">
+              <div className="aspect-[3/4] rounded-2xl bg-white mb-3 overflow-hidden relative border border-white/10 shadow-lg">
                  <img 
                    src={template.image} 
                    alt={template.name}
-                   className="w-full h-full object-contain p-2 bg-white transition-transform duration-500 group-hover:scale-105"
+                   className="w-full h-full object-contain p-4 bg-white transition-transform duration-500 group-hover:scale-105"
                    onError={(e) => {
-                     // Fallback if image not found
-                     (e.target as HTMLImageElement).src = "https://placehold.co/400x500?text=No+Image";
+                     (e.target as HTMLImageElement).src = "https://placehold.co/400x500/ffffff/000000?text=Template";
                    }}
                  />
-                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                 
+                 {/* Dark Overlay on Hover */}
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                  
                  {template.tier === "Pro" && (
-                   <div className="absolute top-2 right-2 bg-black/50 backdrop-blur-md text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                     <Crown className="h-3 w-3 text-yellow-400" />
+                   <div className="absolute top-2 right-2 bg-orange-500/20 backdrop-blur-md border border-orange-500/50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                     <Crown className="h-3 w-3 text-orange-500" />
                      Pro
                    </div>
                  )}
@@ -157,25 +169,30 @@ export default function DashboardTemplates() {
                  <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                    <Button 
                      size="sm" 
-                     className="w-full bg-white text-black hover:bg-white/90"
+                     className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold shadow-lg"
                      onClick={() => handleUseTemplate(template)}
                    >
                      {t("templates.useTemplate")}
                    </Button>
                  </div>
               </div>
-              <h3 className="font-medium truncate">{template.name}</h3>
-              <div className="flex items-center justify-between mt-1">
-                <p className="text-sm text-muted-foreground">{getCategoryLabel(template.category)}</p>
-                <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                  {template.tier}
-                </Badge>
+              
+              <div className="px-1">
+                <h3 className="font-bold text-slate-200 truncate">{template.name}</h3>
+                <div className="flex items-center justify-between mt-1">
+                    <p className="text-xs text-slate-500">{getCategoryLabel(template.category)}</p>
+                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-slate-800 text-slate-400 border border-white/10">
+                    {template.tier}
+                    </Badge>
+                </div>
               </div>
             </motion.div>
           ))
         ) : (
-          <div className="col-span-full text-center py-12 text-muted-foreground">
-            {t("templates.noResults")}
+          <div className="col-span-full flex flex-col items-center justify-center py-20 border-2 border-dashed border-white/10 rounded-3xl bg-white/5 text-center">
+            <ImageIcon className="h-12 w-12 text-slate-600 mb-4" />
+            <p className="text-slate-400 text-lg">{t("templates.noResults")}</p>
+            <p className="text-slate-600 text-sm">Try searching for something else.</p>
           </div>
         )}
       </div>
