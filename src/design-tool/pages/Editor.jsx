@@ -582,7 +582,7 @@ export default function EditorPanel() {
                                         print_areas: productData.print_areas
                                     }}
                                     currentObjects={canvasObjects}
-                                    onGetSnapshot={getCleanDataURL(true)}
+                                    onGetSnapshot={getCleanDataURL}
                                     onSaveSuccess={handleSaveSuccess}
                                     currentDesignName={currentDesign?.name}
                                 />
