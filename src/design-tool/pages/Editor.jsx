@@ -388,8 +388,6 @@ export default function EditorPanel() {
             } else {
                 fabricCanvas.backgroundColor = null;
             }
-        } else {
-            fabricCanvas.backgroundColor = originalBg || "#FFFFFF";
         }
             fabricCanvas.clipPath = null;
 
@@ -584,7 +582,7 @@ export default function EditorPanel() {
                                         print_areas: productData.print_areas
                                     }}
                                     currentObjects={canvasObjects}
-                                    onGetSnapshot={getCleanDataURL}
+                                    onGetSnapshot={getCleanDataURL()}
                                     onSaveSuccess={handleSaveSuccess}
                                     currentDesignName={currentDesign?.name}
                                 />
