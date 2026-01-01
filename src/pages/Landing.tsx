@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Layers, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, Layers, Sparkles, Wand2, Flame, Moon } from "lucide-react";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
@@ -8,46 +8,47 @@ export default function Landing() {
   const { t } = useTranslation();
 
   return (
-    // 1. Remove 'bg-background' so the gradient shows through
-    // 2. Add 'relative' and 'overflow-hidden' to contain the background elements
-    <div className="min-h-screen relative overflow-hidden flex flex-col font-sans selection:bg-slate-200 selection:text-black">
+    <div className="min-h-screen relative overflow-hidden flex flex-col font-sans selection:bg-orange-500 selection:text-white">
       
-      {/* ✅ NEW: BLACK & GREY GRADIENT BACKGROUND LAYERS */}
-      <div className="fixed inset-0 -z-10 w-full h-full bg-slate-50">
-         {/* Blob 1: Deep Charcoal (Top Left) */}
-         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-zinc-900/10 blur-[120px] animate-pulse" />
-         {/* Blob 2: Silver/Light Grey (Top Right) */}
-         <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-slate-400/20 blur-[120px] animate-pulse delay-1000" />
-         {/* Blob 3: Soft Grey (Bottom Left) */}
-         <div className="absolute bottom-[-10%] left-[20%] w-[50%] h-[50%] rounded-full bg-gray-300/30 blur-[120px] animate-pulse delay-2000" />
+      {/* ✅ UNIQUE BACKGROUND: COSMIC SHIVA THEME */}
+      <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]"> {/* Deep Slate/Night Blue Base */}
          
-         {/* Texture Overlay for Premium Feel */}
+         {/* Blob 1: Neelkanth Blue (Throat/Poison) - Top Left */}
+         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[60%] rounded-full bg-blue-600/30 blur-[120px] animate-pulse" />
+         
+         {/* Blob 2: Agni Saffron (Fire/Energy) - Top Right */}
+         <div className="absolute top-[10%] right-[-10%] w-[40%] h-[50%] rounded-full bg-orange-600/20 blur-[100px] animate-pulse delay-1000" />
+         
+         {/* Blob 3: Bhasma Ash/Silver (Moon/Purity) - Bottom Center */}
+         <div className="absolute bottom-[-10%] left-[20%] w-[60%] h-[40%] rounded-full bg-slate-400/10 blur-[120px] animate-pulse delay-2000" />
+         
+         {/* Stars / Dust Texture */}
          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/50 bg-white/70 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#0f172a]/70 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
            {/* Logo */}
            <div className="flex items-center gap-2">
               <img 
                 src="https://harmless-tapir-303.convex.cloud/api/storage/1a8853ff-ebac-480a-b68b-ffe2343bbf07" 
                 alt="TRYAM Logo" 
-                className="h-10 w-10 object-cover rounded-full shadow-sm grayscale hover:grayscale-0 transition-all"
+                className="h-10 w-10 object-cover rounded-full shadow-lg shadow-blue-500/20 ring-1 ring-white/10"
               />
-              <span className="font-bold text-xl tracking-tight text-slate-900">TRYAM</span>
+              <span className="font-bold text-xl tracking-tight text-white">TRYAM</span>
            </div>
 
            {/* Desktop Navigation */}
            <nav className="hidden md:flex items-center gap-8">
-            <Link to='/store' className="text-sm font-medium text-slate-500 hover:text-black transition-colors">Catalog</Link>
-             <Link to="/dashboard/templates" className="text-sm font-medium text-slate-500 hover:text-black transition-colors">
+            <Link to='/store' className="text-sm font-medium text-slate-300 hover:text-orange-400 transition-colors">Catalog</Link>
+             <Link to="/dashboard/templates" className="text-sm font-medium text-slate-300 hover:text-orange-400 transition-colors">
                {t("nav.templates")}
              </Link>
-             <Link to="/dashboard/products" className="text-sm font-medium text-slate-500 hover:text-black transition-colors">
+             <Link to="/dashboard/products" className="text-sm font-medium text-slate-300 hover:text-orange-400 transition-colors">
                {t("nav.products")}
              </Link>
-             <Link to="/dashboard/pricing" className="text-sm font-medium text-slate-500 hover:text-black transition-colors">
+             <Link to="/dashboard/pricing" className="text-sm font-medium text-slate-300 hover:text-orange-400 transition-colors">
                {t("nav.pricing")}
              </Link>
            </nav>
@@ -55,11 +56,11 @@ export default function Landing() {
            {/* Nav/Actions */}
            <div className="flex items-center gap-4">
              <Link to="/auth">
-               <Button variant="ghost" className="text-slate-600 hover:text-black hover:bg-slate-100">{t("nav.signin")}</Button>
+               <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10">{t("nav.signin")}</Button>
              </Link>
              <Link to="/dashboard">
-               {/* Updated Button Style: Black & White */}
-               <Button className="bg-black hover:bg-zinc-800 text-white shadow-lg shadow-zinc-500/20 border-0">
+               {/* CTA: Saffron Gradient (Rudraksha Style) */}
+               <Button className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/50 border-0">
                   {t("auth.getStarted")}
                </Button>
              </Link>
@@ -69,14 +70,16 @@ export default function Landing() {
 
       <main className="flex-1 relative z-10">
         {/* Hero Section */}
-        <section className="pt-20 pb-32 px-4">
+        <section className="pt-24 pb-32 px-4">
           <div className="container mx-auto max-w-6xl text-center space-y-8">
+            
+            {/* Badge: Moon Silver */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-slate-200 bg-white/60 backdrop-blur-md text-sm font-medium text-slate-600 shadow-sm"
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-900/20 backdrop-blur-md text-sm font-medium text-blue-200 shadow-[0_0_15px_rgba(59,130,246,0.3)]"
             >
-              <Sparkles className="h-3.5 w-3.5 text-black" />
+              <Moon className="h-3.5 w-3.5 text-blue-300 fill-blue-300" />
               {t("landing.hero.badge")}
             </motion.div>
             
@@ -84,11 +87,11 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-5xl md:text-7xl font-bold tracking-tight leading-tight text-slate-900"
+              className="text-5xl md:text-8xl font-extrabold tracking-tight leading-tight text-white drop-shadow-2xl"
             >
               {t("landing.hero.titleStart")} <br />
-              {/* Highlight text is now a dark charcoal gradient */}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-black to-slate-600">
+              {/* Text Gradient: Blue to Saffron */}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-orange-400 animate-pulse">
                 {t("landing.hero.titleEnd")}
               </span>
             </motion.h1>
@@ -97,7 +100,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-xl text-slate-500 max-w-2xl mx-auto"
+              className="text-xl text-slate-300 max-w-2xl mx-auto font-light"
             >
               {t("landing.hero.desc")}
             </motion.p>
@@ -106,12 +109,18 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex items-center justify-center pt-4"
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6"
             >
               <Link to="/dashboard">
-                <Button size="lg" className="h-14 px-8 text-lg rounded-full bg-black hover:bg-zinc-800 text-white shadow-xl shadow-zinc-900/20 hover:scale-105 transition-transform">
-                  {t("landing.hero.cta")} <ArrowRight className="ml-2 h-4 w-4" />
+                {/* Primary CTA: Trident Power (Orange Glow) */}
+                <Button size="lg" className="h-16 px-10 text-lg rounded-full bg-white text-blue-950 font-bold hover:bg-blue-50 shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:scale-105 transition-transform duration-300">
+                  {t("landing.hero.cta")} <Flame className="ml-2 h-5 w-5 text-orange-500 fill-orange-500" />
                 </Button>
+              </Link>
+              <Link to="/store">
+                 <Button size="lg" variant="outline" className="h-16 px-10 text-lg rounded-full border-slate-700 bg-transparent text-white hover:bg-white/10 hover:border-white/50">
+                    Browse Collection
+                 </Button>
               </Link>
             </motion.div>
 
@@ -120,24 +129,28 @@ export default function Landing() {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="mt-16 rounded-2xl border border-white/60 bg-white/40 backdrop-blur-sm aspect-[16/9] max-w-5xl mx-auto shadow-2xl shadow-slate-200 overflow-hidden relative ring-1 ring-white/60"
+              className="mt-20 rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm aspect-[16/9] max-w-5xl mx-auto shadow-2xl shadow-blue-900/20 overflow-hidden relative ring-1 ring-white/10"
             >
                <img 
                  src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1000&auto=format&fit=crop" 
-                 alt="T-Shirt Mockup" 
-                 className="w-full h-full object-cover grayscale-[20%] hover:grayscale-0 transition-all duration-1000"
+                 alt="Apparel Mockup" 
+                 className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-all duration-1000"
                />
-               <div className="absolute inset-0 bg-gradient-to-t from-white/30 to-transparent" />
+               {/* Dark Overlay gradient */}
+               <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent" />
             </motion.div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="py-24">
+        <section className="py-24 relative">
+          {/* Subtle separator glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent"></div>
+
           <div className="container mx-auto px-4 max-w-6xl">
             <div className="text-center mb-16 space-y-4">
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900">{t("landing.features.title")}</h2>
-              <p className="text-lg text-slate-500 max-w-2xl mx-auto">
+              <h2 className="text-3xl md:text-5xl font-bold text-white">{t("landing.features.title")}</h2>
+              <p className="text-lg text-slate-400 max-w-2xl mx-auto">
                 {t("landing.features.desc")}
               </p>
             </div>
@@ -148,13 +161,13 @@ export default function Landing() {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="bg-white/70 backdrop-blur-md rounded-2xl p-8 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+                className="bg-slate-800/40 backdrop-blur-md rounded-3xl p-10 border border-white/5 shadow-xl hover:shadow-blue-500/10 transition-all hover:-translate-y-2 group"
               >
-                <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center mb-6 text-slate-900 shadow-sm">
-                  <Wand2 className="h-6 w-6" />
+                <div className="h-14 w-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.1)] group-hover:scale-110 transition-transform">
+                  <Wand2 className="h-7 w-7" />
                 </div>
-                <h3 className="text-2xl font-bold mb-3 text-slate-900">{t("landing.feature.ai.title")}</h3>
-                <p className="text-slate-500 text-lg">
+                <h3 className="text-2xl font-bold mb-3 text-white">{t("landing.feature.ai.title")}</h3>
+                <p className="text-slate-400 text-lg leading-relaxed">
                   {t("landing.feature.ai.desc")}
                 </p>
               </motion.div>
@@ -165,13 +178,13 @@ export default function Landing() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="bg-white/70 backdrop-blur-md rounded-2xl p-8 border border-white/60 shadow-lg hover:shadow-xl transition-all hover:-translate-y-1"
+                className="bg-slate-800/40 backdrop-blur-md rounded-3xl p-10 border border-white/5 shadow-xl hover:shadow-orange-500/10 transition-all hover:-translate-y-2 group"
               >
-                <div className="h-12 w-12 bg-slate-100 rounded-xl flex items-center justify-center mb-6 text-slate-900 shadow-sm">
-                  <Layers className="h-6 w-6" />
+                <div className="h-14 w-14 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.1)] group-hover:scale-110 transition-transform">
+                  <Layers className="h-7 w-7" />
                 </div>
-                <h3 className="text-2xl font-bold mb-3 text-slate-900">{t("landing.feature.editor.title")}</h3>
-                <p className="text-slate-500 text-lg">
+                <h3 className="text-2xl font-bold mb-3 text-white">{t("landing.feature.editor.title")}</h3>
+                <p className="text-slate-400 text-lg leading-relaxed">
                   {t("landing.feature.editor.desc")}
                 </p>
               </motion.div>
@@ -182,14 +195,20 @@ export default function Landing() {
         {/* CTA Section */}
         <section className="py-24 px-4">
           <div className="container mx-auto max-w-5xl">
-            <div className="bg-gradient-to-br from-zinc-900 via-black to-zinc-900 text-white rounded-3xl p-12 md:p-24 text-center relative overflow-hidden shadow-2xl shadow-zinc-900/30">
+            {/* CTA Background: Deep Void to Saffron Burst */}
+            <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-[3rem] p-12 md:p-24 text-center relative overflow-hidden shadow-2xl shadow-black/50 border border-white/10">
+              
+              {/* Background Glows */}
+              <div className="absolute top-0 right-0 w-[30rem] h-[30rem] bg-orange-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-blue-600/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
+
               <div className="relative z-10 space-y-8">
-                <h2 className="text-3xl md:text-5xl font-bold tracking-tight">{t("landing.cta.title")}</h2>
-                <p className="text-slate-300 text-lg max-w-xl mx-auto">
+                <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-white">{t("landing.cta.title")}</h2>
+                <p className="text-blue-100/80 text-xl max-w-xl mx-auto font-light">
                   {t("landing.cta.desc")}
                 </p>
                 <Link to="/dashboard">
-                  <Button size="lg" className="h-14 px-8 text-lg rounded-full font-semibold bg-white text-black hover:bg-slate-100 shadow-lg transition-all">
+                  <Button size="lg" className="h-16 px-12 text-lg rounded-full font-bold bg-white text-slate-900 hover:bg-orange-50 shadow-[0_0_40px_rgba(255,255,255,0.15)] transition-all scale-100 hover:scale-105">
                     {t("landing.cta.button")}
                   </Button>
                 </Link>
@@ -200,7 +219,7 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 py-12 bg-white/60 backdrop-blur-lg">
+      <footer className="border-t border-white/10 py-12 bg-[#0f172a]/80 backdrop-blur-lg">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div className="col-span-2 space-y-4">
@@ -208,36 +227,36 @@ export default function Landing() {
                 <img 
                   src="https://harmless-tapir-303.convex.cloud/api/storage/1a8853ff-ebac-480a-b68b-ffe2343bbf07" 
                   alt="TRYAM Logo" 
-                  className="h-8 w-8 object-cover rounded-full grayscale"
+                  className="h-8 w-8 object-cover rounded-full shadow-sm ring-1 ring-white/20"
                 />
-                <span className="font-bold text-lg text-slate-900">TRYAM</span>
+                <span className="font-bold text-lg text-white">TRYAM</span>
               </div>
-              <p className="text-slate-500 max-w-xs">
+              <p className="text-slate-400 max-w-xs">
                 {t("footer.description")}
               </p>
             </div>
             <div>
-              <h4 className="font-bold mb-4 text-slate-900">{t("footer.platform")}</h4>
-              <ul className="space-y-2 text-sm text-slate-500">
-                <li><a href="#" className="hover:text-black transition-colors">{t("footer.designStudio")}</a></li>
-                <li><a href="#" className="hover:text-black transition-colors">{t("footer.aiGenerator")}</a></li>
-                <li><a href="#" className="hover:text-black transition-colors">{t("nav.pricing")}</a></li>
+              <h4 className="font-bold mb-4 text-white">{t("footer.platform")}</h4>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("footer.designStudio")}</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("footer.aiGenerator")}</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("nav.pricing")}</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4 text-slate-900">{t("footer.company")}</h4>
-              <ul className="space-y-2 text-sm text-slate-500">
-                <li><a href="#" className="hover:text-black transition-colors">{t("footer.about")}</a></li>
-                <li><a href="#" className="hover:text-black transition-colors">{t("footer.blog")}</a></li>
-                <li><a href="#" className="hover:text-black transition-colors">{t("footer.contact")}</a></li>
+              <h4 className="font-bold mb-4 text-white">{t("footer.company")}</h4>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("footer.about")}</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("footer.blog")}</a></li>
+                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("footer.contact")}</a></li>
               </ul>
             </div>
           </div>
-          <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
             <p>© 2025 TRYAM. {t("footer.rights")}</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-black transition-colors">{t("footer.privacy")}</a>
-              <a href="#" className="hover:text-black transition-colors">{t("footer.terms")}</a>
+              <a href="#" className="hover:text-white transition-colors">{t("footer.privacy")}</a>
+              <a href="#" className="hover:text-white transition-colors">{t("footer.terms")}</a>
             </div>
           </div>
         </div>
