@@ -40,7 +40,7 @@ export default function DashboardPricing() {
             description: "For individuals just getting started.",
             features: ["5 Projects", "Basic Templates", "1GB Storage", "Standard Support"],
             button: t("pricing.button.current"),
-            highlight: false,
+            highlight: true,
             comingSoon: false,
             icon: Sparkles
           },
