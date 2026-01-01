@@ -8,18 +8,20 @@ export default function Landing() {
   const { t } = useTranslation();
 
   return (
+    // 1. Remove 'bg-background' so the gradient shows through
+    // 2. Add 'relative' and 'overflow-hidden' to contain the background elements
     <div className="min-h-screen relative overflow-hidden flex flex-col font-sans selection:bg-slate-200 selection:text-black">
       
-      {/* ✅ THEME: BLACK & GREY GRADIENT BACKGROUND */}
+      {/* ✅ NEW: BLACK & GREY GRADIENT BACKGROUND LAYERS */}
       <div className="fixed inset-0 -z-10 w-full h-full bg-slate-50">
          {/* Blob 1: Deep Charcoal (Top Left) */}
          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-zinc-900/10 blur-[120px] animate-pulse" />
-         {/* Blob 2: Silver (Top Right) */}
+         {/* Blob 2: Silver/Light Grey (Top Right) */}
          <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] rounded-full bg-slate-400/20 blur-[120px] animate-pulse delay-1000" />
          {/* Blob 3: Soft Grey (Bottom Left) */}
          <div className="absolute bottom-[-10%] left-[20%] w-[50%] h-[50%] rounded-full bg-gray-300/30 blur-[120px] animate-pulse delay-2000" />
          
-         {/* Texture Overlay */}
+         {/* Texture Overlay for Premium Feel */}
          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
       </div>
 
@@ -56,6 +58,7 @@ export default function Landing() {
                <Button variant="ghost" className="text-slate-600 hover:text-black hover:bg-slate-100">{t("nav.signin")}</Button>
              </Link>
              <Link to="/dashboard">
+               {/* Updated Button Style: Black & White */}
                <Button className="bg-black hover:bg-zinc-800 text-white shadow-lg shadow-zinc-500/20 border-0">
                   {t("auth.getStarted")}
                </Button>
@@ -84,6 +87,7 @@ export default function Landing() {
               className="text-5xl md:text-7xl font-bold tracking-tight leading-tight text-slate-900"
             >
               {t("landing.hero.titleStart")} <br />
+              {/* Highlight text is now a dark charcoal gradient */}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-black to-slate-600">
                 {t("landing.hero.titleEnd")}
               </span>
