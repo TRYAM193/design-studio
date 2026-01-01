@@ -388,7 +388,7 @@ if (!bgRequired) {
         } else {
             fabricCanvas.backgroundColor = null;
         }
-
+    }else
         fabricCanvas.clipPath = null;
 
         const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
