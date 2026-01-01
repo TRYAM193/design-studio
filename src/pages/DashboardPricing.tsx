@@ -50,7 +50,7 @@ export default function DashboardPricing() {
             description: "For professionals and growing teams.",
             features: [], 
             button: "Coming Soon",
-            highlight: true,
+            highlight: false,
             comingSoon: true,
             icon: Zap
           },
