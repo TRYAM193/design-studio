@@ -376,13 +376,13 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
-    const getCleanDataURL = (bg) => {
+    const getCleanDataURL = (bgRequired = false) => {
         if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
         const originalClip = fabricCanvas.clipPath;
         const originalVpt = fabricCanvas.viewportTransform; 
-
+if (!bgRequired) {
         if (productData.title?.includes("Mug")) {
             fabricCanvas.backgroundColor = "#FFFFFF";
         } else {
