@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Clock, Plus, Shirt, Store, Loader2, Sparkles, Crown } from "lucide-react";
+import { ArrowRight, Clock, Shirt, Store, Sparkles, Crown } from "lucide-react"; // Removed Plus
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/use-auth";
 import { Link, useNavigate } from "react-router";
 import { useTranslation } from "@/hooks/use-translation";
-import { useUserDesigns } from "@/hooks/use-user-designs"; // ✅ Import Hook
+import { useUserDesigns } from "@/hooks/use-user-designs";
 
-// ✅ Import Template Data (Same as DashboardTemplates)
+// Import Template Data
 import design001Data from "@/templates/design-001.json";
 
 export default function DashboardHome() {
@@ -15,10 +15,8 @@ export default function DashboardHome() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // ✅ Fetch Real User Designs
   const { designs, loading: designsLoading } = useUserDesigns(user?.uid);
 
-  // ✅ Define Templates (Sync with DashboardTemplates.tsx)
   const templates = [
     { 
       id: "template-001",
@@ -31,7 +29,6 @@ export default function DashboardHome() {
     },
   ];
 
-  // Handler to load a template
   const handleUseTemplate = (template: any) => {
     navigate('/design', { 
       state: { 
@@ -56,41 +53,30 @@ export default function DashboardHome() {
           {t("dashboard.welcome")}, {user?.displayName?.split(" ")[0] || "Creator"}!
         </motion.h1>
         
-        {/* Quick Actions (Store Links) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "T-Shirt", icon: Plus, query: "tee" },
-            { label: "Hoodie", icon: Plus, query: "hoodie" },
-            { label: "Long Sleeve", icon: Plus, query: "long" },
-            { label: "Tote Bag", icon: Plus, query: "tote" }
-          ].map((action, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.1 }}
+        {/* ✅ REPLACED QUICK ACTIONS WITH SINGLE STORE NAVIGATION */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          className="flex flex-col sm:flex-row gap-4"
+        >
+          <Link to="/store">
+            <Button 
+              size="lg" 
+              className="h-16 px-8 text-lg font-medium shadow-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all hover:scale-[1.02]"
             >
-              <Link to={`/store?search=${action.query}`}>
-                <Button 
-                  variant="outline" 
-                  className="w-full h-32 flex flex-col gap-4 border-dashed hover:border-solid hover:border-primary hover:bg-primary/5 transition-all group"
-                >
-                  <div className="h-10 w-10 rounded-full bg-secondary group-hover:bg-primary group-hover:text-primary-foreground flex items-center justify-center transition-colors">
-                    <action.icon className="h-5 w-5" />
-                  </div>
-                  <span className="font-medium">{action.label}</span>
-                </Button>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+              <Store className="mr-3 h-6 w-6" />
+              Browse Store Catalog
+            </Button>
+          </Link>
+        </motion.div>
       </section>
 
       {/* Main Content Area */}
       {isAuthenticated ? (
          <div className="space-y-12">
            
-          {/* ✅ RECENT PROJECTS SECTION */}
+          {/* Recent Projects Section */}
           <section className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
@@ -106,12 +92,10 @@ export default function DashboardHome() {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
               {designsLoading ? (
-                 // Loading Skeletons
                  [1, 2, 3, 4].map((i) => (
                     <div key={i} className="h-[250px] bg-secondary animate-pulse rounded-xl" />
                  ))
               ) : designs.length > 0 ? (
-                // Real Designs
                 designs.slice(0, 4).map((design) => (
                   <Link key={design.id} to={`/design?designId=${design.id}`}>
                     <Card className="group cursor-pointer hover:shadow-lg transition-all overflow-hidden border hover:border-primary/50">
@@ -128,7 +112,6 @@ export default function DashboardHome() {
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                           <Clock className="h-3 w-3" />
                           <span>
-                             {/* Simple date formatter if createdAt exists */}
                              {design.createdAt?.seconds 
                                ? new Date(design.createdAt.seconds * 1000).toLocaleDateString() 
                                : "Just now"}
@@ -139,7 +122,6 @@ export default function DashboardHome() {
                   </Link>
                 ))
               ) : (
-                // Empty State
                 <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl bg-muted/30">
                   <p className="text-muted-foreground mb-4">No recent designs found.</p>
                   <Link to="/design">
@@ -150,7 +132,7 @@ export default function DashboardHome() {
             </div>
           </section>
 
-          {/* ✅ FEATURED TEMPLATES SECTION */}
+          {/* Featured Templates Section */}
           <section className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold flex items-center gap-2">
