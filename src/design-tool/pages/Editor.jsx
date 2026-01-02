@@ -29,7 +29,7 @@ const uuidv4 = () => {
     });
 };
 
-// ✅ Currency Configuration
+// Currency Configuration
 const CURRENCY_MAP = {
     IN: { symbol: '₹', code: 'INR' },
     US: { symbol: '$', code: 'USD' },
@@ -80,8 +80,8 @@ export default function EditorPanel() {
     const urlColor = searchParams.get('color');
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
-
-    // ✅ 1. Get Region from URL (Default to IN)
+    
+    // 1. Get Region from URL (Default to IN)
     const urlRegion = searchParams.get('region') || 'IN';
 
     const [productData, setProductData] = useState(false);
@@ -116,9 +116,9 @@ export default function EditorPanel() {
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
     const [showColorPanel, setShowColorPanel] = useState(false);
 
-    // ✅ 2. Calculate Price based on Region
+    // 2. Calculate Price based on Region
     const currencyInfo = CURRENCY_MAP[urlRegion] || CURRENCY_MAP.IN;
-
+    
     let currentPrice = 0;
     if (productData) {
         if (typeof productData.price === 'object') {
@@ -136,7 +136,6 @@ export default function EditorPanel() {
     }, [selectedId]);
 
     const handleLoadSavedDesign = async (designItem) => {
-        // ... (Keep existing load logic unchanged) ...
         if (!designItem || !userId) return;
 
         try {
@@ -200,7 +199,7 @@ export default function EditorPanel() {
             view: currentViewSnapshot,
             viewStates: {
                 ...allViewsSnapshot,
-                [currentViewSnapshot]: currentObjects
+                [currentViewSnapshot]: currentObjects 
             },
             timestamp: Date.now()
         };
@@ -215,7 +214,6 @@ export default function EditorPanel() {
         });
     }
 
-    // 1. FETCH PRODUCT DATA
     useEffect(() => {
         async function initProduct() {
             const pid = currentDesign?.productConfig?.productId || urlProductId;
@@ -244,9 +242,7 @@ export default function EditorPanel() {
     }, [urlProductId, currentDesign]);
 
 
-    // 2. UNIFIED LOAD & MERGE LOGIC 
     useEffect(() => {
-        // ... (Keep existing merge logic unchanged) ...
         if (!userId) return;
 
         const mergeId = location.state?.mergeDesignId;
@@ -296,9 +292,9 @@ export default function EditorPanel() {
                     [targetView]: finalObjectsForView
                 };
 
-                setCurrentView(targetView);
-                setViewStates(finalHistory);
-                dispatch(setCanvasObjects(finalObjectsForView));
+                setCurrentView(targetView); 
+                setViewStates(finalHistory); 
+                dispatch(setCanvasObjects(finalObjectsForView)); 
 
                 window.history.replaceState({}, document.title);
             }
@@ -335,7 +331,6 @@ export default function EditorPanel() {
     }, [urlDesignId, location.state, userId, dispatch]);
 
 
-    // 3. URL SYNC
     useEffect(() => {
         if (currentDesign?.productConfig) {
             const params = new URLSearchParams(searchParams);
@@ -345,14 +340,12 @@ export default function EditorPanel() {
             if (productId && params.get('product') !== productId) { params.set('product', productId); changed = true; }
             if (variantColor && params.get('color') !== variantColor) { params.set('color', variantColor); changed = true; }
             if (variantSize && params.get('size') !== variantSize) { params.set('size', variantSize); changed = true; }
-            // ✅ Keep region in URL
             if (!params.get('region')) { params.set('region', urlRegion); changed = true; }
 
             if (changed) setSearchParams(params, { replace: true });
         }
     }, [currentDesign, setSearchParams, urlRegion]);
 
-    // ... (Keep existing Scale, Dims, Snapshot Logic) ...
     useEffect(() => {
         if (productData.canvas_size) {
             const area = productData.canvas_size;
@@ -376,20 +369,20 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
-    const getCleanDataURL = (bgRequired = false) => {
+    const getCleanDataURL = () => {
         if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
         const originalClip = fabricCanvas.clipPath;
-        const originalVpt = fabricCanvas.viewportTransform;
-        if (!bgRequired) {
-            if (productData.title?.includes("Mug")) {
-                fabricCanvas.backgroundColor = "#FFFFFF";
-            } else {
-                fabricCanvas.backgroundColor = null;
-            }
+        const originalVpt = fabricCanvas.viewportTransform; 
+
+        if (productData.title?.includes("Mug")) {
+            fabricCanvas.backgroundColor = "#FFFFFF";
+        } else {
+            fabricCanvas.backgroundColor = null;
         }
-            fabricCanvas.clipPath = null;
+
+        fabricCanvas.clipPath = null;
 
         const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
         let wasBorderVisible = false;
@@ -406,8 +399,8 @@ export default function EditorPanel() {
 
         const dataUrl = fabricCanvas.toDataURL({
             format: 'png',
-            quality: 1,
-            multiplier: multiplier,
+            quality: 1,           
+            multiplier: multiplier, 
             enableRetinaScaling: true
         });
 
@@ -471,7 +464,6 @@ export default function EditorPanel() {
         setIsSaving(true);
         const finalPreview = designTextures[currentView]?.url || captureCurrentCanvas()?.url;
 
-        // ✅ 3. Update Cart Item with Region & Correct Price
         const cartItem = {
             designId: editingDesignId || `temp_${Date.now()}`,
             name: currentDesign?.name || "Custom Design",
@@ -479,12 +471,12 @@ export default function EditorPanel() {
             productId: productData.id || "unknown_product",
             variant: {
                 color: canvasBg,
-                size: selectedSize,
+                size: selectedSize, 
             },
             quantity: quantity,
-            price: currentPrice, // Use the region-specific price
-            currency: currencyInfo.code, // Pass currency code (e.g., INR, USD)
-            region: urlRegion, // Pass region code
+            price: currentPrice,
+            currency: currencyInfo.code, 
+            region: urlRegion, 
             thumbnail: finalPreview,
             designData: { viewStates, currentView }
         };
@@ -508,13 +500,23 @@ export default function EditorPanel() {
 
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
-            <div className="logo-circle"><img src="/assets/LOGO.png" alt="TRYAM" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /></div>
-            <h1>TRYAM</h1>
+            <div className="logo-circle ring-1 ring-white/20 shadow-lg shadow-orange-500/20">
+                <img src="/assets/LOGO.png" alt="TRYAM" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <h1 style={{ color: 'white' }}>TRYAM</h1>
         </div>
     );
 
     return (
-        <div className="main-app-container">
+        <div className="main-app-container selection:bg-orange-500 selection:text-white">
+            
+            {/* ✅ COSMIC BACKGROUND */}
+            <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]"> 
+                <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+            </div>
+
             <div className="main full-height-main">
                 <MainToolbar
                     activePanel={activePanel}
@@ -540,12 +542,13 @@ export default function EditorPanel() {
                     setSelectedId={setSelectedId}
                     setActiveTool={setActiveTool} />}
 
-                <main className="preview-area relative bg-slate-100 flex items-center justify-center overflow-hidden" ref={containerRef}>
+                {/* ✅ Canvas Preview Area - Now Transparent to show Cosmic Background */}
+                <main className="preview-area relative bg-transparent flex items-center justify-center overflow-hidden" ref={containerRef}>
 
                     {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
-                        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/90 p-1.5 rounded-full border shadow-sm backdrop-blur-sm">
+                        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-slate-800/80 p-1.5 rounded-full border border-white/10 shadow-lg backdrop-blur-md">
                             {Object.keys(productData.print_areas).map(view => (
-                                <button key={view} onClick={() => handleSwitchView(view)} className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${currentView === view ? "bg-black text-white" : "text-slate-600 hover:bg-slate-100"}`}>
+                                <button key={view} onClick={() => handleSwitchView(view)} className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${currentView === view ? "bg-orange-600 text-white shadow-orange-900/50" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
                                     {view.replace('_', ' ')}
                                 </button>
                             ))}
@@ -587,7 +590,7 @@ export default function EditorPanel() {
                                     currentDesignName={currentDesign?.name}
                                 />
                             )}
-                            <Button onClick={handleGeneratePreview} disabled={isGeneratingPreview || !fabricCanvas}>
+                            <Button onClick={handleGeneratePreview} disabled={isGeneratingPreview || !fabricCanvas} className="bg-slate-700 hover:bg-slate-600 text-white border border-white/10">
                                 {isGeneratingPreview ? <><Loader2 className="animate-spin" /> Generating...</> : "Preview"}
                             </Button>
                         </div>
@@ -615,112 +618,111 @@ export default function EditorPanel() {
                             </div>
                             <RightSidebarTabs id={selectedId} type={activeTool} object={canvasObjects.find((obj) => obj.id === selectedId)} updateObject={updateObject} removeObject={removeObject} addText={addText} fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} />
                         </>
-                    ) : (productData && (
+                    ) : ( productData && (
                         <div className="p-6 flex flex-col h-full overflow-y-auto">
-                            <div className="mobile-panel-header">
-                                <span className="mobile-panel-title">Product Options</span>
-                                <button onClick={() => setShowColorPanel(false)} className="mobile-close-btn"><FiChevronDown size={24} /></button>
-                            </div>
+                        <div className="mobile-panel-header">
+                            <span className="mobile-panel-title">Product Options</span>
+                            <button onClick={() => setShowColorPanel(false)} className="mobile-close-btn"><FiChevronDown size={24} /></button>
+                        </div>
 
-                            {/* --- 1. COLORS --- */}
-                            <div className="mb-8">
-                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Color</h3>
-                                <div className="grid grid-cols-5 gap-2">
-                                    {productData.options?.colors?.length > 0 ? productData.options.colors.map((color) => {
-                                        const hex = COLOR_MAP[color] || "#ccc";
-                                        const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
-                                        return (
-                                            <button
-                                                key={color}
-                                                onClick={() => handleColorChange(color)}
-                                                className={`w-9 h-9 rounded-full border shadow-sm transition-all relative ${isActive ? "ring-2 ring-indigo-600 ring-offset-2 scale-100" : "hover:scale-110 border-slate-200"}`}
-                                                style={{ backgroundColor: hex }}
-                                                title={color}
-                                            >
-                                                {isActive && <FiCheckCircle className="text-white absolute inset-0 m-auto drop-shadow-md" />}
-                                            </button>
-                                        );
-                                    }) : <p className="text-sm text-slate-400 col-span-5">No colors available</p>}
-                                </div>
-                            </div>
-
-                            {/* --- 2. SIZES --- */}
-                            <div className="mb-8">
-                                <div className="flex justify-between items-center mb-3">
-                                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Size</h3>
-                                    <span className="text-xs text-indigo-600 cursor-pointer hover:underline">Size Chart</span>
-                                </div>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {AVAILABLE_SIZES.map((size) => (
+                        {/* --- 1. COLORS --- */}
+                        <div className="mb-8">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Color</h3>
+                            <div className="grid grid-cols-5 gap-2">
+                                {productData.options?.colors?.length > 0 ? productData.options.colors.map((color) => {
+                                    const hex = COLOR_MAP[color] || "#ccc";
+                                    const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
+                                    return (
                                         <button
-                                            key={size}
-                                            onClick={() => setSelectedSize(size)}
-                                            className={`py-2 text-sm font-medium rounded-md border transition-all ${selectedSize === size
-                                                    ? "border-indigo-600 bg-indigo-50 text-indigo-700"
-                                                    : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                                                }`}
+                                            key={color}
+                                            onClick={() => handleColorChange(color)}
+                                            className={`w-9 h-9 rounded-full border transition-all relative ${isActive ? "ring-2 ring-orange-500 ring-offset-2 ring-offset-[#0f172a] scale-110" : "hover:scale-110 border-slate-600"}`}
+                                            style={{ backgroundColor: hex }}
+                                            title={color}
                                         >
-                                            {size}
+                                            {isActive && <FiCheckCircle className="text-orange-500 absolute -top-1 -right-1 bg-white rounded-full drop-shadow-md" />}
                                         </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* --- 3. QUANTITY --- */}
-                            <div className="mb-8">
-                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Quantity</h3>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center border border-slate-200 rounded-md">
-                                        <button
-                                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                                            className="p-2 hover:bg-slate-100 text-slate-600"
-                                        >
-                                            <FiMinus size={14} />
-                                        </button>
-                                        <input
-                                            type="number"
-                                            value={quantity}
-                                            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                                            className="w-12 text-center text-sm font-medium focus:outline-none"
-                                        />
-                                        <button
-                                            onClick={() => setQuantity(q => q + 1)}
-                                            className="p-2 hover:bg-slate-100 text-slate-600"
-                                        >
-                                            <FiPlus size={14} />
-                                        </button>
-                                    </div>
-                                    <div className="text-sm text-slate-500">
-                                        {/* ✅ Dynamic Symbol & Price */}
-                                        {currencyInfo.symbol}{totalPrice} total
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* --- 4. CHECKOUT BUTTON --- */}
-                            <div className="mt-auto pt-6 border-t border-slate-100">
-                                <div className="flex justify-between items-end mb-4">
-                                    <div>
-                                        <p className="text-xs text-slate-400">Total Price</p>
-                                        {/* ✅ Dynamic Symbol & Price */}
-                                        <p className="text-2xl font-bold text-slate-900">{currencyInfo.symbol}{totalPrice}</p>
-                                    </div>
-                                </div>
-
-                                <Button
-                                    onClick={handleAddToCart}
-                                    disabled={isSaving || !fabricCanvas}
-                                    className="w-full h-12 text-base bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200"
-                                >
-                                    {isSaving ? (
-                                        <> <Loader2 className="animate-spin mr-2" /> Processing... </>
-                                    ) : (
-                                        <> <FiShoppingCart className="mr-2" /> Buy Now </>
-                                    )}
-                                </Button>
-                                <p className="text-[10px] text-center text-slate-400 mt-2">Secure checkout powered by Stripe</p>
+                                    );
+                                }) : <p className="text-sm text-slate-500 col-span-5">No colors available</p>}
                             </div>
                         </div>
+
+                        {/* --- 2. SIZES --- */}
+                        <div className="mb-8">
+                            <div className="flex justify-between items-center mb-3">
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Size</h3>
+                                <span className="text-xs text-orange-400 cursor-pointer hover:underline">Size Chart</span>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                                {AVAILABLE_SIZES.map((size) => (
+                                    <button
+                                        key={size}
+                                        onClick={() => setSelectedSize(size)}
+                                        className={`py-2 text-sm font-medium rounded-md border transition-all ${
+                                            selectedSize === size 
+                                            ? "border-orange-500 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(234,88,12,0.2)]" 
+                                            : "border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800"
+                                        }`}
+                                    >
+                                        {size}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* --- 3. QUANTITY --- */}
+                        <div className="mb-8">
+                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Quantity</h3>
+                             <div className="flex items-center gap-4">
+                                <div className="flex items-center border border-slate-700 rounded-md bg-slate-900/50">
+                                    <button 
+                                        onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                        className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white"
+                                    >
+                                        <FiMinus size={14} />
+                                    </button>
+                                    <input 
+                                        type="number" 
+                                        value={quantity} 
+                                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                                        className="w-12 text-center text-sm font-medium focus:outline-none bg-transparent text-white"
+                                    />
+                                    <button 
+                                        onClick={() => setQuantity(q => q + 1)}
+                                        className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white"
+                                    >
+                                        <FiPlus size={14} />
+                                    </button>
+                                </div>
+                                <div className="text-sm text-slate-400">
+                                    {currencyInfo.symbol}{totalPrice} total
+                                </div>
+                             </div>
+                        </div>
+
+                        {/* --- 4. CHECKOUT BUTTON --- */}
+                        <div className="mt-auto pt-6 border-t border-slate-700">
+                             <div className="flex justify-between items-end mb-4">
+                                <div>
+                                    <p className="text-xs text-slate-400">Total Price</p>
+                                    <p className="text-2xl font-bold text-white">{currencyInfo.symbol}{totalPrice}</p>
+                                </div>
+                             </div>
+                             
+                             <Button 
+                                onClick={handleAddToCart}
+                                disabled={isSaving || !fabricCanvas}
+                                className="w-full h-12 text-base bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0"
+                             >
+                                {isSaving ? (
+                                    <> <Loader2 className="animate-spin mr-2" /> Processing... </>
+                                ) : (
+                                    <> <FiShoppingCart className="mr-2" /> Buy Now </>
+                                )}
+                             </Button>
+                             <p className="text-[10px] text-center text-slate-500 mt-2">Secure checkout powered by Stripe</p>
+                        </div>
+                    </div>
                     ))}
                 </aside>
 

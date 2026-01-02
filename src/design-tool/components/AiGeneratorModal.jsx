@@ -1,7 +1,8 @@
+// src/design-tool/components/AiGeneratorModal.jsx
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FiLoader, FiCpu, FiZap, FiImage } from 'react-icons/fi';
+import { FiLoader, FiCpu, FiZap } from 'react-icons/fi';
 import { generateImageFromPrompt } from '../utils/aiService';
 
 const STYLES = [
@@ -22,18 +23,12 @@ export function AiGeneratorModal({ isOpen, onClose, onImageGenerated }) {
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
-    
     setIsGenerating(true);
     setError('');
 
     try {
-      // 1. Generate Image
       const imageUrl = await generateImageFromPrompt(prompt, selectedStyle);
-      
-      // 2. Send back to editor
       onImageGenerated(imageUrl);
-      
-      // 3. Cleanup
       onClose();
       setPrompt('');
     } catch (err) {
@@ -46,21 +41,21 @@ export function AiGeneratorModal({ isOpen, onClose, onImageGenerated }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-zinc-950 border-zinc-800 text-white sm:max-w-[500px]">
-        <DialogTitle className="flex items-center gap-2 text-xl font-bold border-b border-zinc-800 pb-4">
-          <FiCpu className="text-indigo-500" /> 
-          <span>Flux AI Generator</span>
-          <span className="ml-auto text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-1 rounded border border-indigo-500/30">FAST MODE</span>
+      <DialogContent className="bg-[#0f172a] border border-white/10 text-white sm:max-w-[500px] shadow-2xl backdrop-blur-xl">
+        <DialogTitle className="flex items-center gap-2 text-xl font-bold border-b border-white/10 pb-4">
+          <FiCpu className="text-orange-500" /> 
+          <span>Cosmic AI Generator</span>
+          <span className="ml-auto text-[10px] bg-orange-500/20 text-orange-400 px-2 py-1 rounded border border-orange-500/30">PRO</span>
         </DialogTitle>
 
         <div className="space-y-5 py-2">
           
           {/* Prompt Area */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">What do you want to create?</label>
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">What do you want to create?</label>
             <textarea
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[120px] resize-none placeholder:text-zinc-600"
-              placeholder="E.g. A cute astronaut cat floating in space, holding a slice of pizza..."
+              className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 min-h-[120px] resize-none placeholder:text-slate-600 transition-all"
+              placeholder="E.g. A mystical shiva trident glowing in space with nebula background..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
             />
@@ -68,7 +63,7 @@ export function AiGeneratorModal({ isOpen, onClose, onImageGenerated }) {
 
           {/* Style Selector */}
           <div className="space-y-2">
-            <label className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Choose a Style</label>
+            <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Choose a Style</label>
             <div className="grid grid-cols-3 gap-2">
               {STYLES.map((style) => (
                 <button
@@ -76,8 +71,8 @@ export function AiGeneratorModal({ isOpen, onClose, onImageGenerated }) {
                   onClick={() => setSelectedStyle(style.id)}
                   className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${
                     selectedStyle === style.id 
-                      ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.3)]' 
-                      : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:bg-zinc-800 hover:border-zinc-700'
+                      ? 'bg-orange-600/20 border-orange-500 text-white shadow-[0_0_15px_rgba(234,88,12,0.3)]' 
+                      : 'bg-slate-900/30 border-white/10 text-slate-400 hover:bg-slate-800 hover:border-white/20'
                   }`}
                 >
                   <span className="text-xl mb-2">{style.icon}</span>
@@ -96,11 +91,11 @@ export function AiGeneratorModal({ isOpen, onClose, onImageGenerated }) {
           <Button 
             onClick={handleGenerate} 
             disabled={isGenerating || !prompt.trim()}
-            className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold tracking-wide shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="w-full h-12 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold tracking-wide shadow-lg shadow-orange-900/40 transition-all hover:scale-[1.02] active:scale-[0.98] border-0"
           >
             {isGenerating ? (
               <span className="flex items-center gap-2">
-                <FiLoader className="animate-spin" /> Generating (approx 1s)...
+                <FiLoader className="animate-spin" /> Generating...
               </span>
             ) : (
               <span className="flex items-center gap-2">

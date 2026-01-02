@@ -61,7 +61,7 @@ export default function SaveDesignButton({
 
   return (
     <>
-      <Button onClick={handleSaveClick} variant="outline" size="sm" className="gap-2">
+      <Button onClick={handleSaveClick} variant="outline" size="sm" className="gap-2 text-black">
         <FiSave size={16} />
         Save
       </Button>

@@ -1,3 +1,4 @@
+// src/design-tool/components/Toolbar.jsx
 import React, { useState, useEffect } from 'react';
 import {
   FiBold, FiItalic, FiUnderline, FiSearch, FiExternalLink,
@@ -37,8 +38,6 @@ function extractFontNameFromUrl(url) {
   return null;
 }
 
-// --- LIVE UPDATE LOGIC ---
-// Updates Fabric object directly for smooth performance without spamming Redux history
 // Function to directly update the Fabric object without touching Redux history
 function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
   if (!fabricCanvas) return;
@@ -47,7 +46,6 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
 
   let finalUpdates = { ...updates };
 
-  // 1. Handle Shadow (Existing logic)
   const shadowKeys = ['shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY'];
   const shadowUpdateKeys = Object.keys(updates).filter(key => shadowKeys.includes(key));
 
@@ -62,11 +60,9 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
     shadowKeys.forEach(key => delete finalUpdates[key]);
   }
 
-  // 2. Handle Shape Rounding (Swapping Polygons for Paths) [NEW LOGIC]
-  const type = object.type; // Use Redux type (e.g., 'star')
-  const shapeTypes = ['star', 'pentagon', 'hexagon', 'triangle', 'arrow', 'diamond', 'trapezoid', 'lightning']; // 🆕
+  const type = object.type;
+  const shapeTypes = ['star', 'pentagon', 'hexagon', 'triangle', 'arrow', 'diamond', 'trapezoid', 'lightning'];
 
-  // Check if we are updating radius for a supported shape
   if (shapeTypes.includes(type) && (updates.radius !== undefined || updates.rx !== undefined)) {
     const mergedProps = { ...currentLiveProps, ...updates };
     const r = mergedProps.radius !== undefined ? mergedProps.radius : (mergedProps.rx || 0);
@@ -81,17 +77,14 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
     else if (type === 'trapezoid') points = getTrapezoidPoints(100, 80);
     else if (type === 'lightning') points = getLightningPoints(50, 100);
 
-    // Generate smoothed path data
     const pathData = getRoundedPathFromPoints(points, r);
 
-    // Create new Path object
     const newPathObj = new Path(pathData, {
       ...existing.toObject(['customId']),
       ...finalUpdates,
       path: pathData
     });
 
-    // Swap Objects on Canvas
     const index = fabricCanvas.getObjects().indexOf(existing);
     fabricCanvas.remove(existing);
     fabricCanvas.add(newPathObj);
@@ -103,7 +96,6 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
     return;
   }
 
-  // 3. Handle Text / Rect / Circle Updates (Existing logic)
   existing.set(finalUpdates);
 
   if (existing.type === 'text') {
@@ -117,11 +109,7 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
 
   if (isSpecialEffect) {
     const mergedProps = { ...currentLiveProps, ...updates };
-
-    // Re-generate the entire group with new props
     const newGroup = CircleText({ id: id, props: mergedProps });
-
-    // Replace on canvas while keeping position/layer
     const index = fabricCanvas.getObjects().indexOf(existing);
     fabricCanvas.remove(existing);
     fabricCanvas.add(newGroup);
@@ -142,17 +130,15 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
   const props = object?.props || {};
   const [liveProps, setLiveProps] = useState(props);
 
-  // Font State
   const [googleFontUrl, setGoogleFontUrl] = useState('');
   const [showFontUrlInput, setShowFontUrlInput] = useState(false);
   const [isFontLoading, setIsFontLoading] = useState(false);
   const [originalFontFamily, setOriginalFontFamily] = useState(props.fontFamily || 'Arial');
 
-  // Unified Radius State (for Rects AND Shapes)
   const [borderRadius, setBorderRadius] = useState(props.rx || props.radius || 0);
-  const [circleRadius, setCircleRadius] = useState(props.radius || 150); // Specifically for Text Circle Effect
-  const [arcAngle, setArcAngle] = useState(props.arcAngle || 120); // ✅ NEW: Arc Angle
-  const [flagVelocity, setFlagVelocity] = useState(props.flagVelocity || 50); // ✅ NEW: Flag Prop
+  const [circleRadius, setCircleRadius] = useState(props.radius || 150);
+  const [arcAngle, setArcAngle] = useState(props.arcAngle || 120);
+  const [flagVelocity, setFlagVelocity] = useState(props.flagVelocity || 50);
 
   const currentEffect = object?.textEffect || props.textEffect || 'none';
   const effectiveType = object?.type || type;
@@ -174,9 +160,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
 
     try {
       setIsRemovingBg(true);
-
       const newImageUrl = await processBackgroundRemoval(currentSrc);
-
       const fabricObj = fabricCanvas.getObjects().find((o) => o.customId === id);
 
       if (fabricObj) {
@@ -186,7 +170,6 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
           fabricObj.setElement(imgElement);
           fabricObj.setCoords();
           fabricCanvas.requestRenderAll();
-
           updateObject(id, { src: newImageUrl });
         }
       }
@@ -201,15 +184,12 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
   useEffect(() => {
     if (object && object.props) {
       setLiveProps(object.props);
-      // Sync local state
       setBorderRadius(object.props.rx || object.props.radius || 0);
       setCircleRadius(object.props.radius || 150);
-      setArcAngle(object.props.arcAngle || 120); // Sync Arc Angle
+      setArcAngle(object.props.arcAngle || 120);
       setFlagVelocity(object.props.flagVelocity || 50);
     }
   }, [object]);
-
-  // --- HANDLERS ---
 
   const handleApplyFont = (fontName) => {
     if (!fontName || isFontLoading) return;
@@ -252,8 +232,6 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
     }
   };
 
-  // ✅ SAVES TO HISTORY (Redux)
-  // Call this onMouseUp (sliders), onBlur (inputs), or onClick (buttons)
   const handleUpdateAndHistory = (key, value) => {
     const updates = { [key]: value };
     const shadowKeys = ['shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY'];
@@ -274,8 +252,6 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
     updateObject(id, updates);
   };
 
-  // ✅ VISUAL ONLY (Fabric)
-  // Call this onChange (sliders/color) for smooth updates
   const handleLiveUpdate = (key, value) => {
     setLiveProps(prev => ({ ...prev, [key]: value }));
     liveUpdateFabric(fabricCanvas, id, { [key]: value }, liveProps, object);
@@ -316,23 +292,19 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
   };
 
   const handleColorChange = (key, value) => {
-    // 🔹 live update (Fabric only)
     setLiveProps(prev => ({ ...prev, [key]: value }));
     liveUpdateFabric(fabricCanvas, id, { [key]: value }, liveProps, object);
 
-    // 🔹 clear previous commit
     if (colorCommitTimer.current) {
       clearTimeout(colorCommitTimer.current);
     }
 
-    // 🔹 commit AFTER user stops changing color
     colorCommitTimer.current = setTimeout(() => {
       handleUpdateAndHistory(key, value);
-    }, 300); // 250–400ms feels perfect
+    }, 300);
   };
 
 
-  // --- RENDER ---
   if (!object) {
     return (
       <div className="property-panel-message">
@@ -359,7 +331,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
               value={liveProps.text || ''}
               onChange={(e) => handleUpdateAndHistory('text', e.target.value)}
               placeholder="Enter your text here"
-              style={{ color: '#000000' }}
+              // ✅ REMOVED hardcoded black color
             />
           </div>
 
@@ -370,7 +342,6 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
             <button className={`style-button ${liveProps.underline ? 'active' : ''}`} onClick={() => toggleTextStyle('underline')} title="Underline"><FiUnderline size={16} /></button>
           </div>
 
-          {/* Text Effects */}
           <h3 className="property-group-subtitle">Text Effects</h3>
           <div className="control-row-buttons">
             <button className={`style-button ${currentEffect === 'straight' ? 'active' : ''}`} onClick={() => applyTextEffect('straight')} title="Straight"><FiSlash size={16} /></button>
@@ -384,7 +355,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
             <div className="control-row full-width">
               <div className="control-row">
                 <label className="control-label">Radius (Curvature)</label>
-                <span style={{ fontSize: '12px', color: '#666' }}>{circleRadius}</span>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>{circleRadius}</span>
               </div>
               <input
                 type="range"
@@ -392,18 +363,17 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
                 min="10" max="600" step="10"
                 value={circleRadius}
                 onInput={(e) => setCircleRadius(Number(e.target.value))}
-                onChange={(e) => handleLiveUpdate('radius', Number(e.target.value))} // ✅ Added Live Update
+                onChange={(e) => handleLiveUpdate('radius', Number(e.target.value))}
                 onMouseUp={(e) => updateObject(id, { radius: Number(e.target.value) })}
               />
             </div>
           )}
 
-          {/* ✅ ARC ANGLE SLIDER (Only for Arc Up/Down) */}
           {['arc-up', 'arc-down'].includes(currentEffect) && (
             <div className="control-row full-width">
               <div className="control-row">
                 <label className="control-label">Arc Angle (Spread)</label>
-                <span style={{ fontSize: '12px', color: '#666' }}>{arcAngle}°</span>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>{arcAngle}°</span>
               </div>
               <input
                 type="range"
@@ -411,18 +381,17 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
                 min="10" max="360" step="5"
                 value={arcAngle}
                 onInput={(e) => setArcAngle(Number(e.target.value))}
-                onChange={(e) => handleLiveUpdate('arcAngle', Number(e.target.value))} // ✅ Added Live Update
+                onChange={(e) => handleLiveUpdate('arcAngle', Number(e.target.value))}
                 onMouseUp={(e) => updateObject(id, { arcAngle: Number(e.target.value) })}
               />
             </div>
           )}
 
-          {/* ✅ FLAG PROPS (Keep properties for Flag) */}
           {currentEffect === 'flag' && (
             <div className="control-row full-width">
               <div className="control-row">
                 <label className="control-label">Wave Velocity</label>
-                <span style={{ fontSize: '12px', color: '#666' }}>{flagVelocity}</span>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>{flagVelocity}</span>
               </div>
               <input
                 type="range"
@@ -430,12 +399,12 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
                 min="0" max="100" step="1"
                 value={flagVelocity}
                 onInput={(e) => setFlagVelocity(Number(e.target.value))}
-                onChange={(e) => handleLiveUpdate('flagVelocity', Number(e.target.value))} // ✅ Added Live Update
+                onChange={(e) => handleLiveUpdate('flagVelocity', Number(e.target.value))}
                 onMouseUp={(e) => updateObject(id, { flagVelocity: Number(e.target.value) })}
               />
             </div>
           )}
-          {/* FONT FAMILY SECTION */}
+          
           <h3 className="property-group-subtitle">Font Family</h3>
           <div className="control-row full-width font-control-group">
             <input
@@ -445,7 +414,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
               onChange={(e) => handleLiveUpdate('fontFamily', e.target.value)}
               placeholder="Enter font name (e.g., Roboto)"
               disabled={isFontLoading}
-              style={{ color: '#000000' }}
+              // ✅ REMOVED hardcoded color
             />
             <div className="font-link-helper">
               <button
@@ -522,7 +491,6 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
         <div className="property-group">
           <h3 className="property-group-title">Shape Style</h3>
 
-          {/* Fill Color (Skip for lines) */}
           {type !== 'line' && (
             <div className="control-row">
               <label className="control-label">Fill Color</label>
@@ -563,25 +531,23 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
             onMouseUp={(e) => handleUpdateAndHistory('strokeWidth', Number(e.target.value))}
           />
 
-          {/* 🆕 UNIVERSAL BORDER RADIUS SLIDER */}
           {supportsBorderRadius && (
             <>
               <div className="control-row" style={{ marginTop: '15px' }}>
                 <label className="control-label">Corner Radius</label>
-                <span style={{ fontSize: '12px', color: '#666' }}>{Math.round(borderRadius)}</span>
+                <span style={{ fontSize: '12px', color: '#94a3b8' }}>{Math.round(borderRadius)}</span>
               </div>
               <input
                 type="range"
                 className="slider-input"
                 min="0"
-                max={effectiveType === 'rect' ? 100 : 40} // Limit radius for complex shapes
+                max={effectiveType === 'rect' ? 100 : 40}
                 step="1"
                 value={borderRadius}
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setBorderRadius(val);
 
-                  // Handle Rect vs Other Shapes
                   if (effectiveType === 'rect') {
                     setLiveProps(prev => ({ ...prev, rx: val, ry: val }));
                     liveUpdateFabric(fabricCanvas, id, { rx: val, ry: val }, liveProps, object);
@@ -593,7 +559,6 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
                 onMouseUp={(e) => {
                   const val = Number(e.target.value);
                   const key = effectiveType === 'rect' ? 'rx' : 'radius';
-                  // Save to Redux History
                   updateObject(id, { [key]: val, ...(effectiveType === 'rect' ? { ry: val } : {}) });
                 }}
               />

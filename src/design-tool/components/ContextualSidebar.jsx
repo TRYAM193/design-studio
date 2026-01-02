@@ -1,43 +1,26 @@
-// src/components/ContextualSidebar.jsx
+// src/design-tool/components/ContextualSidebar.jsx
 import React, { useState } from 'react';
 import ShapesSidebar from './ShapesSidebar';
 import SidebarSavedList from './SidebarSavedList';
-import { AiGeneratorModal } from './AiGeneratorModal'; // ✅ Import Modal
+import { AiGeneratorModal } from './AiGeneratorModal';
 import addImageToCanvas from '../objectAdders/Image';
-import { FiCpu } from 'react-icons/fi';
+import { FiCpu, FiType, FiUploadCloud } from 'react-icons/fi';
 
-export default function ContextualSidebar({ activePanel, setActivePanel, addText, addHeading, addSubheading, productId, handleLoadSavedDesign, fabricCanvas,   // ✅ New Prop
-  setSelectedId,  // ✅ New Prop
-  setActiveTool }) {
+export default function ContextualSidebar({ activePanel, setActivePanel, addText, addHeading, addSubheading, productId, handleLoadSavedDesign, fabricCanvas, setSelectedId, setActiveTool }) {
 
   let ContentComponent = null;
   let title = "";
 
-  const presetStyle = {
-    padding: '12px',
-    border: '1px solid #eee',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    textAlign: 'center',
-    backgroundColor: '#fff',
-    transition: 'all 0.2s',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '5px'
-  };
-
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const handleAiImageGenerated = (imageUrl) => {
-    // Add the generated image to the canvas using your existing logic
     if (imageUrl && fabricCanvas) {
         addImageToCanvas(imageUrl, setSelectedId, setActiveTool, fabricCanvas);
     }
   };
 
   switch (activePanel) {
-    case 'saved':  // <--- ADD THIS CASE
+    case 'saved':
       title = "Your Saved Designs";
       ContentComponent = () => (
         <SidebarSavedList
@@ -47,57 +30,63 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
       );
       break;
     case 'text':
-      title = "Text Styles & Presets";
+      title = "Text Styles";
       ContentComponent = () => (
-        <div className="sidebar-content">
+        <div className="sidebar-content space-y-4">
           <button
             onClick={() => addText()}
-            className="header-button button"
-            style={{ padding: '10px', border: '1px solid #ccc', borderRadius: '6px', cursor: 'pointer', color: '#fff' }}
+            className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold shadow-lg shadow-orange-900/20 transition-all flex items-center justify-center gap-2"
           >
-            Add a Text Box
+            <FiType /> Add Text Box
           </button>
-          <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>Font Presets</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div className='p-3 border rounded-md cursor-pointer hover:bg-gray-100' style={{ padding: '3px', border: '1px solid #ccc', borderRadius: '6px', cursor: 'pointer', textAlign: 'center' }} onClick={() => addHeading()}><h1 style={{ margin: '0' }}> Add Heading </h1></div>
-            <div className='p-3 border rounded-md cursor-pointer hover:bg-gray-100' style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '6px', cursor: 'pointer', textAlign: 'center' }} onClick={() => addSubheading()}><h3 style={{ margin: '0' }}> Add Subheading </h3></div>
+          
+          <div className="space-y-2 mt-4">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Presets</h3>
+            <div 
+                className='p-4 border border-white/10 rounded-lg cursor-pointer hover:bg-white/5 hover:border-orange-500/50 transition-all bg-slate-800/40' 
+                onClick={() => addHeading()}
+            >
+                <h1 className="text-2xl font-bold text-white text-center">Add Heading</h1>
+            </div>
+            <div 
+                className='p-3 border border-white/10 rounded-lg cursor-pointer hover:bg-white/5 hover:border-orange-500/50 transition-all bg-slate-800/40' 
+                onClick={() => addSubheading()}
+            >
+                <h3 className="text-lg font-medium text-slate-300 text-center">Add Subheading</h3>
+            </div>
           </div>
         </div>
       );
       break;
     case 'image':
-      title = "Image Upload & Library";
+      title = "Images";
       ContentComponent = () => (
-        <div className="sidebar-content">
-          <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '10px' }}>Recent Uploads</h3>
-          <p style={{ fontSize: '14px', color: '#666' }}>The upload button is in the left toolbar.</p>
-          {/* Future: Grid of recent images */}
+        <div className="sidebar-content text-center py-8">
+          <div className="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+             <FiUploadCloud size={24} className="text-slate-400" />
+          </div>
+          <h3 className="text-sm font-bold text-white mb-2">Upload Image</h3>
+          <p className="text-xs text-slate-400 px-4">
+            Use the "Image" button in the main toolbar to upload files from your device.
+          </p>
         </div>
       );
       break;
     case 'ai':
-      title = "AI Design Generator";
+      title = "AI Generator";
       ContentComponent = () => (
         <div className="sidebar-content">
-          <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-lg text-center">
-            <FiCpu size={32} className="mx-auto text-indigo-500 mb-2" />
-            <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '5px', color: '#333' }}>AI Generator</h3>
-            <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px', lineHeight: '1.4' }}>
-              Describe what you want and let AI generate unique artwork for your design.
+          <div className="p-5 bg-gradient-to-b from-slate-800/50 to-slate-900/50 border border-orange-500/20 rounded-xl text-center shadow-lg">
+            <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FiCpu size={24} className="text-orange-500" />
+            </div>
+            <h3 className="text-sm font-bold text-white mb-2">Create with AI</h3>
+            <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+              Describe your vision and let our cosmic AI generate unique artwork for your merch.
             </p>
             <button 
                 onClick={() => setIsAiModalOpen(true)}
-                className='header-button' 
-                style={{ 
-                    width: '100%', 
-                    backgroundColor: '#4f46e5', 
-                    color: 'white',
-                    padding: '10px',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    border: 'none',
-                    fontWeight: '600'
-                }}
+                className='w-full py-2.5 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-orange-900/30 transition-all'
             >
                 Open Generator
             </button>
@@ -106,7 +95,7 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
       );
       break;
     case 'shapes':
-      title = "Shapes & Lines";
+      title = "Shapes";
       ContentComponent = ShapesSidebar;
       break;
     default:
@@ -114,25 +103,25 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
       title = "";
   }
 
-  // Final content wrapper
   const FinalContent = ContentComponent ? <ContentComponent onClose={() => setActivePanel(null)} /> : null;
 
   return (
-    <aside className="contextual-sidebar">
-      {/* Header with Close Button */}
-      <div className="sidebar-header">
-        <h2 style={{ fontSize: '18px', fontWeight: 'bold', textTransform: 'capitalize' }}>{title}</h2>
+    <aside className="contextual-sidebar flex flex-col h-full">
+      <div className="sidebar-header shrink-0">
+        <h2 className="text-sm font-bold text-white uppercase tracking-wide">{title}</h2>
         <button
           onClick={() => setActivePanel(null)}
-          style={{ padding: '8px', borderRadius: '50%', background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
+          className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
           title="Close Sidebar"
         >
           &times;
         </button>
       </div>
 
-      {/* Dynamic Content Area */}
-      {FinalContent}
+      <div className="flex-grow overflow-y-auto custom-scrollbar">
+         {FinalContent}
+      </div>
+      
       <AiGeneratorModal 
         isOpen={isAiModalOpen} 
         onClose={() => setIsAiModalOpen(false)} 
