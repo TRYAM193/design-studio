@@ -24,7 +24,6 @@ export default function DashboardHome() {
       isLocal: true, 
       canvasData: design001Data 
     },
-    // Add more templates as needed
   ];
 
   const handleUseTemplate = (template: any) => {
@@ -40,8 +39,8 @@ export default function DashboardHome() {
   };
 
   return (
-    <div className="space-y-12 pb-20 relative">
-       {/* ✅ BACKGROUND: COSMIC SHIVA THEME */}
+    <div className="space-y-8 pb-20 relative px-2 sm:px-0">
+       {/* BACKGROUND: COSMIC SHIVA THEME */}
        <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]"> 
          <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
@@ -49,63 +48,58 @@ export default function DashboardHome() {
       </div>
 
       {/* Hero Section */}
-      <section className="space-y-8">
+      <section className="space-y-4">
         <div className="flex justify-between items-end">
           <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl font-bold tracking-tight text-white"
+            className="text-2xl md:text-3xl font-bold tracking-tight text-white"
           >
-            {t("dashboard.welcome")}, <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-orange-400">
+            {t("dashboard.welcome")}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-orange-400">
               {user?.displayName?.split(" ")[0] || "Creator"}
             </span>
           </motion.h1>
 
-          <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-sm text-slate-300">
-             <Moon className="w-4 h-4 text-slate-400" />
-             <span>Moon Phase: Waxing</span>
+          <div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-white/10 bg-white/5 text-xs text-slate-300">
+             <Moon className="w-3 h-3 text-slate-400" />
+             <span>Waxing Phase</span>
           </div>
         </div>
         
-        {/* ✅ HERO CTA: PREMIUM STORE CARD */}
+        {/* COMPACT HERO CTA CARD */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
+          initial={{ opacity: 0, scale: 0.99 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          className="relative group rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl shadow-black/50"
+          className="relative group rounded-xl overflow-hidden border border-white/10 shadow-xl shadow-black/40 h-40 md:h-48"
         >
-           {/* Card Background */}
            <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-[#1a2035] to-slate-900" />
+           <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-orange-500/10 rounded-full blur-[80px] group-hover:bg-orange-500/20 transition-all duration-700" />
            
-           {/* Glow Effects */}
-           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[100px] group-hover:bg-orange-500/20 transition-all duration-700" />
-           
-           <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="space-y-6 max-w-xl">
-                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold uppercase tracking-wider">
-                    <Flame className="w-3 h-3" /> Trending Now
+           <div className="relative z-10 p-6 flex flex-col md:flex-row items-center justify-between gap-4 h-full">
+              <div className="space-y-2 max-w-lg">
+                 <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-[10px] font-bold uppercase tracking-wider">
+                    <Flame className="w-3 h-3" /> Trending
                  </div>
-                 <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-                    Explore the <span className="text-blue-300">Cosmic Collection</span>
+                 <h2 className="text-xl md:text-2xl font-bold text-white leading-tight">
+                    Start Your <span className="text-blue-300">Cosmic Collection</span>
                  </h2>
-                 <p className="text-slate-400 text-lg">
-                    Premium hoodies, oversized tees, and accessories ready for your custom touch.
+                 <p className="text-slate-400 text-xs md:text-sm line-clamp-1">
+                    Premium hoodies & tees ready for your custom touch.
                  </p>
                  
-                 <Link to="/store">
-                    {/* THE "SAFFRON" BUTTON STYLE */}
-                    <Button size="lg" className="h-14 px-8 text-lg rounded-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold shadow-[0_0_30px_rgba(234,88,12,0.3)] hover:shadow-[0_0_50px_rgba(234,88,12,0.5)] hover:-translate-y-1 transition-all duration-300 border-0 group/btn">
-                       <Store className="mr-3 h-5 w-5" />
-                       Browse Catalog
-                    </Button>
-                 </Link>
+                 <div className="pt-1">
+                    <Link to="/store">
+                        <Button size="sm" className="h-9 px-6 text-sm rounded-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold shadow-lg border-0">
+                        <Store className="mr-2 h-4 w-4" />
+                        Browse Catalog
+                        </Button>
+                    </Link>
+                 </div>
               </div>
 
-              {/* Decorative Icon */}
-              <div className="hidden md:block relative">
-                 <div className="absolute inset-0 bg-white/5 blur-3xl rounded-full" />
-                 <Store className="w-32 h-32 text-slate-700 relative z-10 opacity-50 rotate-12 group-hover:rotate-0 transition-all duration-700" />
+              <div className="hidden md:block relative mr-8">
+                 <Store className="w-24 h-24 text-slate-700 opacity-50 rotate-12 group-hover:rotate-0 transition-all duration-700" />
               </div>
            </div>
         </motion.div>
@@ -113,46 +107,46 @@ export default function DashboardHome() {
 
       {/* Main Content Area */}
       {isAuthenticated ? (
-         <div className="space-y-12">
+         <div className="space-y-8">
            
           {/* Recent Projects Section */}
-          <section className="space-y-6">
+          <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-400" />
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-400" />
                 {t("dashboard.recent")}
               </h2>
               <Link to="/dashboard/projects">
-                <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/5 gap-2">
-                  {t("dashboard.viewAll")} <ArrowRight className="h-4 w-4" />
+                <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-white/5 gap-1 h-8 text-xs">
+                  {t("dashboard.viewAll")} <ArrowRight className="h-3 w-3" />
                 </Button>
               </Link>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {designsLoading ? (
-                 [1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-[280px] bg-slate-800/50 animate-pulse rounded-2xl border border-white/5" />
+                 [1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="h-40 bg-slate-800/50 animate-pulse rounded-xl border border-white/5" />
                  ))
               ) : designs.length > 0 ? (
-                designs.slice(0, 4).map((design) => (
+                designs.slice(0, 5).map((design) => (
                   <Link key={design.id} to={`/design?designId=${design.id}`}>
-                    <Card className="group cursor-pointer hover:shadow-2xl hover:shadow-blue-500/10 transition-all overflow-hidden border border-white/10 bg-slate-800/40 backdrop-blur-md rounded-2xl">
-                      <div className="aspect-square bg-slate-900/50 relative flex items-center justify-center overflow-hidden p-4">
+                    <Card className="group cursor-pointer hover:shadow-lg hover:shadow-blue-500/10 transition-all overflow-hidden border border-white/10 bg-slate-800/40 backdrop-blur-md rounded-xl h-full">
+                      <div className="aspect-square bg-white relative flex items-center justify-center overflow-hidden p-2">
                         {design.imageData ? (
-                          <img src={design.imageData} alt={design.name} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                          <img src={design.imageData} alt={design.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
                         ) : (
-                          <div className="p-4 bg-white/5 rounded-full">
-                             <Zap className="h-8 w-8 text-slate-600" />
+                          <div className="p-2 bg-slate-100 rounded-full">
+                             <Zap className="h-6 w-6 text-slate-400" />
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                           <span className="px-4 py-2 bg-white text-black rounded-full text-xs font-bold">Edit</span>
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                           <span className="px-3 py-1 bg-white text-black rounded-full text-[10px] font-bold shadow-md">Edit</span>
                         </div>
                       </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-bold text-slate-200 truncate">{design.name || t("dashboard.untitled")}</h3>
-                        <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                      <CardContent className="p-3">
+                        <h3 className="font-bold text-slate-200 truncate text-xs">{design.name || t("dashboard.untitled")}</h3>
+                        <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1">
                           <Clock className="h-3 w-3" />
                           <span>
                              {design.createdAt?.seconds 
@@ -165,10 +159,10 @@ export default function DashboardHome() {
                   </Link>
                 ))
               ) : (
-                <div className="col-span-full py-16 text-center border border-dashed border-white/10 rounded-3xl bg-white/5">
-                  <p className="text-slate-400 mb-6">No recent designs found in the void.</p>
+                <div className="col-span-full py-10 text-center border border-dashed border-white/10 rounded-xl bg-white/5">
+                  <p className="text-slate-400 text-sm mb-4">No recent designs found.</p>
                   <Link to="/design">
-                    <Button variant="secondary" className="bg-slate-800 text-white hover:bg-slate-700">Create your first design</Button>
+                    <Button variant="secondary" size="sm" className="bg-slate-800 text-white hover:bg-slate-700 text-xs h-8">Start Creating</Button>
                   </Link>
                 </div>
               )}
@@ -176,57 +170,57 @@ export default function DashboardHome() {
           </section>
 
           {/* Featured Templates Section */}
-          <section className="space-y-6">
+          <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-orange-400" />
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-orange-400" />
                 {t("templates.title") || "Featured Templates"}
               </h2>
               <Link to="/dashboard/templates">
-                <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/5 gap-2">
-                  View All <ArrowRight className="h-4 w-4" />
+                <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-white/5 gap-1 h-8 text-xs">
+                  View All <ArrowRight className="h-3 w-3" />
                 </Button>
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {templates.map((template, i) => (
                 <motion.div
                   key={template.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
                   className="group cursor-pointer"
                 >
-                  <div className="aspect-[3/4] rounded-2xl bg-slate-800/50 mb-3 overflow-hidden relative border border-white/10 shadow-lg">
+                  <div className="aspect-[3/4] rounded-xl bg-white mb-2 overflow-hidden relative border border-white/10 shadow-sm">
                      <img 
                        src={template.image} 
                        alt={template.name}
-                       className="w-full h-full object-contain p-4 bg-slate-900/50 transition-transform duration-500 group-hover:scale-105"
-                       onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/400x500/1e293b/ffffff?text=Template"; }}
+                       className="w-full h-full object-contain p-2 bg-white transition-transform duration-500 group-hover:scale-105"
+                       onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/400x500/ffffff/000000?text=Template"; }}
                      />
                      
-                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                      
                      {template.tier === "Pro" && (
-                       <div className="absolute top-2 right-2 bg-orange-500/20 backdrop-blur-md border border-orange-500/50 text-orange-300 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                         <Crown className="h-3 w-3" /> Pro
+                       <div className="absolute top-2 right-2 bg-orange-500/20 backdrop-blur-md border border-orange-500/50 text-orange-600 text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
+                         <Crown className="h-2.5 w-2.5" /> Pro
                        </div>
                      )}
 
-                     <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                     <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
                        <Button 
                          size="sm" 
-                         className="w-full bg-white text-slate-900 hover:bg-slate-200 font-bold"
+                         className="w-full h-8 text-xs bg-white text-slate-900 hover:bg-slate-200 font-bold shadow-sm"
                          onClick={() => handleUseTemplate(template)}
                        >
-                         Use Template
+                         Use
                        </Button>
                      </div>
                   </div>
-                  <h3 className="font-medium text-slate-200 truncate px-1">{template.name}</h3>
-                  <p className="text-xs text-slate-500 px-1">{template.category}</p>
+                  <h3 className="font-medium text-slate-200 truncate px-1 text-xs">{template.name}</h3>
+                  <p className="text-[10px] text-slate-500 px-1">{template.category}</p>
                 </motion.div>
               ))}
             </div>
@@ -234,13 +228,13 @@ export default function DashboardHome() {
 
          </div>
       ) : (
-        <section className="bg-slate-800/30 border border-white/5 rounded-3xl p-12 text-center space-y-6">
-          <h2 className="text-2xl font-bold text-white">{t("dashboard.startFree")}</h2>
-          <p className="text-slate-400 max-w-xl mx-auto">
+        <section className="bg-slate-800/30 border border-white/5 rounded-2xl p-8 text-center space-y-4">
+          <h2 className="text-xl font-bold text-white">{t("dashboard.startFree")}</h2>
+          <p className="text-slate-400 max-w-md mx-auto text-sm">
             {t("dashboard.startDesc")}
           </p>
           <Link to="/store">
-             <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-8">
+             <Button size="sm" className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-6 h-9 text-sm">
                Go to Catalog
              </Button>
           </Link>
