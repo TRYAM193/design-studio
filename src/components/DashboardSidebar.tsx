@@ -168,7 +168,7 @@ export function DashboardSidebar() {
               size="icon"
               className={`rounded-xl transition-all h-9 w-9 ${
                 item.isSpecial 
-                  ? "bg-gradient-to-br rounded-l from-orange-500 to-red-600 text-white shadow-lg shadow-orange-900/40 scale-110 -translate-y-1" // Special Style for Middle Button
+                  ? "bg-gradient-to-br rounded-full from-orange-500 to-red-600 text-white shadow-lg shadow-orange-900/40 scale-110 -translate-y-1" // Special Style for Middle Button
                   : isActive(item.path) 
                     ? "bg-blue-600/20 text-blue-300" 
                     : "text-slate-500 hover:text-slate-200"
