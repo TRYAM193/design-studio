@@ -16,11 +16,12 @@ import { useAuth } from '@/hooks/use-auth';
 import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
 import { db } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle, FiChevronDown, FiDroplet, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
+import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle, FiChevronDown, FiDroplet,FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
+import { toast } from 'sonner';
 
 const uuidv4 = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -80,7 +81,7 @@ export default function EditorPanel() {
     const urlColor = searchParams.get('color');
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
-    
+
     // 1. Get Region from URL (Default to IN)
     const urlRegion = searchParams.get('region') || 'IN';
 
@@ -115,10 +116,11 @@ export default function EditorPanel() {
     const [activePanel, setActivePanel] = useState('text');
     const [canvasDims, setCanvasDims] = useState({ width: 4500, height: 5400 });
     const [showColorPanel, setShowColorPanel] = useState(false);
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
 
     // 2. Calculate Price based on Region
     const currencyInfo = CURRENCY_MAP[urlRegion] || CURRENCY_MAP.IN;
-    
+
     let currentPrice = 0;
     if (productData) {
         if (typeof productData.price === 'object') {
@@ -199,7 +201,7 @@ export default function EditorPanel() {
             view: currentViewSnapshot,
             viewStates: {
                 ...allViewsSnapshot,
-                [currentViewSnapshot]: currentObjects 
+                [currentViewSnapshot]: currentObjects
             },
             timestamp: Date.now()
         };
@@ -292,9 +294,9 @@ export default function EditorPanel() {
                     [targetView]: finalObjectsForView
                 };
 
-                setCurrentView(targetView); 
-                setViewStates(finalHistory); 
-                dispatch(setCanvasObjects(finalObjectsForView)); 
+                setCurrentView(targetView);
+                setViewStates(finalHistory);
+                dispatch(setCanvasObjects(finalObjectsForView));
 
                 window.history.replaceState({}, document.title);
             }
@@ -374,7 +376,7 @@ export default function EditorPanel() {
 
         const originalBg = fabricCanvas.backgroundColor;
         const originalClip = fabricCanvas.clipPath;
-        const originalVpt = fabricCanvas.viewportTransform; 
+        const originalVpt = fabricCanvas.viewportTransform;
 
         if (productData.title?.includes("Mug")) {
             fabricCanvas.backgroundColor = "#FFFFFF";
@@ -399,8 +401,8 @@ export default function EditorPanel() {
 
         const dataUrl = fabricCanvas.toDataURL({
             format: 'png',
-            quality: 1,           
-            multiplier: multiplier, 
+            quality: 1,
+            multiplier: multiplier,
             enableRetinaScaling: true
         });
 
@@ -460,31 +462,64 @@ export default function EditorPanel() {
         }, 50);
     };
 
-    const handleAddToCart = async () => {
-        setIsSaving(true);
+    const generateOrderPayload = () => {
         const finalPreview = designTextures[currentView]?.url || captureCurrentCanvas()?.url;
-
-        const cartItem = {
+        return {
             designId: editingDesignId || `temp_${Date.now()}`,
             name: currentDesign?.name || "Custom Design",
             productTitle: productData.title || "Custom T-Shirt",
             productId: productData.id || "unknown_product",
             variant: {
-                color: canvasBg,
-                size: selectedSize, 
+                color: Object.keys(COLOR_MAP).find(key => COLOR_MAP[key] === canvasBg) || canvasBg,
+                size: selectedSize,
             },
             quantity: quantity,
             price: currentPrice,
-            currency: currencyInfo.code, 
-            region: urlRegion, 
+            currency: currencyInfo.code,
+            region: urlRegion,
             thumbnail: finalPreview,
-            designData: { viewStates, currentView }
+            designData: { viewStates, currentView },
+            createdAt: new Date().toISOString()
         };
+    };
+
+    // ✅ ACTION 1: ADD TO CART (Database)
+    const handleAddToCart = async () => {
+        if (!userId) {
+            alert("Please login to add to cart");
+            return;
+        }
+        setIsAddingToCart(true);
+        try {
+            const payload = generateOrderPayload();
+            // Save to Firestore under user's cart collection
+            await addDoc(collection(db, `users/${userId}/cart`), payload);
+
+            // Show Success & Stay on Page
+            // toast.success("Added to Cart!"); // Use toast if available
+            alert("Successfully added to Cart!");
+        } catch (error) {
+            console.error("Error adding to cart:", error);
+            alert("Failed to add to cart");
+        } finally {
+            setIsAddingToCart(false);
+            setIsPreviewOpen(false);
+        }
+    };
+
+    // ✅ ACTION 2: BUY NOW (LocalStorage + Redirect)
+    const handleBuyNow = async () => {
+        setIsSaving(true);
+        const payload = generateOrderPayload();
+
+        // Save to LocalStorage for immediate retrieval
+        localStorage.setItem('directBuyItem', JSON.stringify(payload));
 
         setTimeout(() => {
             setIsSaving(false);
             setIsPreviewOpen(false);
-            navigation('/checkout', { state: { orderData: cartItem } });
+            // Navigate with Query Param
+            navigation('/checkout?mode=direct');
         }, 800);
     };
 
@@ -509,9 +544,9 @@ export default function EditorPanel() {
 
     return (
         <div className="main-app-container selection:bg-orange-500 selection:text-white">
-            
+
             {/* ✅ COSMIC BACKGROUND */}
-            <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]"> 
+            <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]">
                 <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
                 <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
@@ -618,111 +653,126 @@ export default function EditorPanel() {
                             </div>
                             <RightSidebarTabs id={selectedId} type={activeTool} object={canvasObjects.find((obj) => obj.id === selectedId)} updateObject={updateObject} removeObject={removeObject} addText={addText} fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} />
                         </>
-                    ) : ( productData && (
+                    ) : (productData && (
                         <div className="p-6 flex flex-col h-full overflow-y-auto">
-                        <div className="mobile-panel-header">
-                            <span className="mobile-panel-title">Product Options</span>
-                            <button onClick={() => setShowColorPanel(false)} className="mobile-close-btn"><FiChevronDown size={24} /></button>
-                        </div>
+                            <div className="mobile-panel-header">
+                                <span className="mobile-panel-title">Product Options</span>
+                                <button onClick={() => setShowColorPanel(false)} className="mobile-close-btn"><FiChevronDown size={24} /></button>
+                            </div>
 
-                        {/* --- 1. COLORS --- */}
-                        <div className="mb-8">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Color</h3>
-                            <div className="grid grid-cols-5 gap-2">
-                                {productData.options?.colors?.length > 0 ? productData.options.colors.map((color) => {
-                                    const hex = COLOR_MAP[color] || "#ccc";
-                                    const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
-                                    return (
+                            {/* --- 1. COLORS --- */}
+                            <div className="mb-8">
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Color</h3>
+                                <div className="grid grid-cols-5 gap-2">
+                                    {productData.options?.colors?.length > 0 ? productData.options.colors.map((color) => {
+                                        const hex = COLOR_MAP[color] || "#ccc";
+                                        const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
+                                        return (
+                                            <button
+                                                key={color}
+                                                onClick={() => handleColorChange(color)}
+                                                className={`w-9 h-9 rounded-full border transition-all relative ${isActive ? "ring-2 ring-orange-500 ring-offset-2 ring-offset-[#0f172a] scale-110" : "hover:scale-110 border-slate-600"}`}
+                                                style={{ backgroundColor: hex }}
+                                                title={color}
+                                            >
+                                                {isActive && <FiCheckCircle className="text-orange-500 absolute -top-1 -right-1 bg-white rounded-full drop-shadow-md" />}
+                                            </button>
+                                        );
+                                    }) : <p className="text-sm text-slate-500 col-span-5">No colors available</p>}
+                                </div>
+                            </div>
+
+                            {/* --- 2. SIZES --- */}
+                            <div className="mb-8">
+                                <div className="flex justify-between items-center mb-3">
+                                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Size</h3>
+                                    <span className="text-xs text-orange-400 cursor-pointer hover:underline">Size Chart</span>
+                                </div>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {AVAILABLE_SIZES.map((size) => (
                                         <button
-                                            key={color}
-                                            onClick={() => handleColorChange(color)}
-                                            className={`w-9 h-9 rounded-full border transition-all relative ${isActive ? "ring-2 ring-orange-500 ring-offset-2 ring-offset-[#0f172a] scale-110" : "hover:scale-110 border-slate-600"}`}
-                                            style={{ backgroundColor: hex }}
-                                            title={color}
+                                            key={size}
+                                            onClick={() => setSelectedSize(size)}
+                                            className={`py-2 text-sm font-medium rounded-md border transition-all ${selectedSize === size
+                                                    ? "border-orange-500 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(234,88,12,0.2)]"
+                                                    : "border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800"
+                                                }`}
                                         >
-                                            {isActive && <FiCheckCircle className="text-orange-500 absolute -top-1 -right-1 bg-white rounded-full drop-shadow-md" />}
+                                            {size}
                                         </button>
-                                    );
-                                }) : <p className="text-sm text-slate-500 col-span-5">No colors available</p>}
-                            </div>
-                        </div>
-
-                        {/* --- 2. SIZES --- */}
-                        <div className="mb-8">
-                            <div className="flex justify-between items-center mb-3">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Size</h3>
-                                <span className="text-xs text-orange-400 cursor-pointer hover:underline">Size Chart</span>
-                            </div>
-                            <div className="grid grid-cols-4 gap-2">
-                                {AVAILABLE_SIZES.map((size) => (
-                                    <button
-                                        key={size}
-                                        onClick={() => setSelectedSize(size)}
-                                        className={`py-2 text-sm font-medium rounded-md border transition-all ${
-                                            selectedSize === size 
-                                            ? "border-orange-500 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(234,88,12,0.2)]" 
-                                            : "border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800"
-                                        }`}
-                                    >
-                                        {size}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* --- 3. QUANTITY --- */}
-                        <div className="mb-8">
-                             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Quantity</h3>
-                             <div className="flex items-center gap-4">
-                                <div className="flex items-center border border-slate-700 rounded-md bg-slate-900/50">
-                                    <button 
-                                        onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                                        className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white"
-                                    >
-                                        <FiMinus size={14} />
-                                    </button>
-                                    <input 
-                                        type="number" 
-                                        value={quantity} 
-                                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                                        className="w-12 text-center text-sm font-medium focus:outline-none bg-transparent text-white"
-                                    />
-                                    <button 
-                                        onClick={() => setQuantity(q => q + 1)}
-                                        className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white"
-                                    >
-                                        <FiPlus size={14} />
-                                    </button>
+                                    ))}
                                 </div>
-                                <div className="text-sm text-slate-400">
-                                    {currencyInfo.symbol}{totalPrice} total
+                            </div>
+
+                            {/* --- 3. QUANTITY --- */}
+                            <div className="mb-8">
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Quantity</h3>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center border border-slate-700 rounded-md bg-slate-900/50">
+                                        <button
+                                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                                            className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white"
+                                        >
+                                            <FiMinus size={14} />
+                                        </button>
+                                        <input
+                                            type="number"
+                                            value={quantity}
+                                            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                                            className="w-12 text-center text-sm font-medium focus:outline-none bg-transparent text-white"
+                                        />
+                                        <button
+                                            onClick={() => setQuantity(q => q + 1)}
+                                            className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white"
+                                        >
+                                            <FiPlus size={14} />
+                                        </button>
+                                    </div>
+                                    <div className="text-sm text-slate-400">
+                                        {currencyInfo.symbol}{totalPrice} total
+                                    </div>
                                 </div>
+                            </div>
+
+                            {/* --- 4. CHECKOUT BUTTON --- */}
+                            <div className="mt-auto pt-6 border-t border-slate-700">
+                                <div className="flex justify-between items-end mb-4">
+                                    <div>
+                                        <p className="text-xs text-slate-400">Total Price</p>
+                                        <p className="text-2xl font-bold text-white">{currencyInfo.symbol}{totalPrice}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 flex-col sm:flex-row">
+                                 {/* ADD TO CART BUTTON */}
+                                 <Button 
+                                    onClick={handleAddToCart}
+                                    disabled={isAddingToCart || !fabricCanvas}
+                                    className="flex-1 h-12 text-base bg-slate-700 hover:bg-slate-600 text-white border border-slate-600"
+                                 >
+                                    {isAddingToCart ? (
+                                        <Loader2 className="animate-spin" />
+                                    ) : (
+                                        <> <FiShoppingBag className="mr-2" /> Add to Cart </>
+                                    )}
+                                 </Button>
+
+                                 {/* BUY NOW BUTTON */}
+                                 <Button 
+                                    onClick={handleBuyNow}
+                                    disabled={isSaving || !fabricCanvas}
+                                    className="flex-1 h-12 text-base bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0"
+                                 >
+                                    {isSaving ? (
+                                        <> <Loader2 className="animate-spin mr-2" /> Processing... </>
+                                    ) : (
+                                        <> <FiShoppingCart className="mr-2" /> Buy Now </>
+                                    )}
+                                 </Button>
                              </div>
+                                <p className="text-[10px] text-center text-slate-500 mt-2">Secure checkout powered by Stripe</p>
+                            </div>
                         </div>
-
-                        {/* --- 4. CHECKOUT BUTTON --- */}
-                        <div className="mt-auto pt-6 border-t border-slate-700">
-                             <div className="flex justify-between items-end mb-4">
-                                <div>
-                                    <p className="text-xs text-slate-400">Total Price</p>
-                                    <p className="text-2xl font-bold text-white">{currencyInfo.symbol}{totalPrice}</p>
-                                </div>
-                             </div>
-                             
-                             <Button 
-                                onClick={handleAddToCart}
-                                disabled={isSaving || !fabricCanvas}
-                                className="w-full h-12 text-base bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0"
-                             >
-                                {isSaving ? (
-                                    <> <Loader2 className="animate-spin mr-2" /> Processing... </>
-                                ) : (
-                                    <> <FiShoppingCart className="mr-2" /> Buy Now </>
-                                )}
-                             </Button>
-                             <p className="text-[10px] text-center text-slate-500 mt-2">Secure checkout powered by Stripe</p>
-                        </div>
-                    </div>
                     ))}
                 </aside>
 
