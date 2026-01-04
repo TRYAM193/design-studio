@@ -5,6 +5,9 @@ import { doc, setDoc, serverTimestamp, updateDoc, collection, getDocs, getDoc } 
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase';
 
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
 // Data Library
 import { Country, State, City } from 'country-state-city';
 
