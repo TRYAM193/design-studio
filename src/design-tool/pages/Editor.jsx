@@ -643,8 +643,8 @@ export default function EditorPanel() {
             price: productData.price || 0,
             currency: 'INR',
             // Default thumbnail is the front, or the current view if front missing
-            thumbnail: generatedPreviews['front'] || generatedPreviews[originalView] || "/assets/placeholder.png",
-            thum: productData.image,
+            thumbnail_files: generatedPreviews['front'] || generatedPreviews[originalView] || "/assets/placeholder.png",
+            thumbnail: productData.image,
             // ✅ NEW: Return objects containing ALL generated images
             printFiles: generatedPrintFiles, // { front: '...', back: '...' }
             previewImages: generatedPreviews, // { front: 'data:image...', back: '...' }
