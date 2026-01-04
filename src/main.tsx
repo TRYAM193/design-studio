@@ -57,7 +57,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <VlyToolbar />
     <AuthProvider>
-      <CartProvider>
+      {/* <CartProvider> */}
         <BrowserRouter>
           <RouteSyncer />
           <Routes>
@@ -90,7 +90,7 @@ createRoot(document.getElementById("root")!).render(
           </Routes>
         </BrowserRouter>
         <Toaster />
-      </CartProvider>
+      {/* </CartProvider> */}
     </AuthProvider>
   </StrictMode>,
 );
