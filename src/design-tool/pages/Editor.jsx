@@ -613,6 +613,8 @@ export default function EditorPanel() {
         else if (urlRegion == 'US') vendor = 'printify';
         else vendor = 'gelato';
 
+        
+
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
             title: productData.title || "Custom T-Shirt",
