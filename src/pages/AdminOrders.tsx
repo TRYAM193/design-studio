@@ -157,8 +157,8 @@ export default function AdminOrders() {
 
                     {/* Customer */}
                     <TableCell>
-                        <div className="text-slate-200">{order.shippingAddress.name || 'Name'}</div>
-                        <div className="text-xs text-slate-500">{order.sh.email}</div>
+                        <div className="text-slate-200">{order.shippingAddress.fullName || 'Name'}</div>
+                        <div className="text-xs text-slate-500">{order.shippingAddress.email}</div>
                     </TableCell>
 
                     {/* Destination */}
