@@ -613,7 +613,7 @@ export default function EditorPanel() {
         else if (urlRegion == 'US') vendor = 'printify';
         else vendor = 'gelato';
 
-        
+
 
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
@@ -633,7 +633,7 @@ export default function EditorPanel() {
                 viewStates: updatedViewStates,
                 currentView
             },
-            vendor: "qikink",
+            vendor: vendor,
             createdAt: new Date().toISOString()
         };
     };
