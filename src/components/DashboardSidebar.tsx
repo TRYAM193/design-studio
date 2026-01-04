@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router"; 
-import { 
-  Home, 
-  LayoutTemplate, 
-  FolderOpen, 
-  Package, 
-  Plus, 
-  ShoppingCart, 
-  Settings, 
-  LogOut, 
+import { Link, useLocation } from "react-router";
+import {
+  Home,
+  LayoutTemplate,
+  FolderOpen,
+  Package,
+  Plus,
+  ShoppingCart,
+  Settings,
+  LogOut,
   LogIn,
   ChevronLeft,
   ChevronRight
@@ -37,7 +37,7 @@ export function DashboardSidebar() {
   const { user, signOut, isAuthenticated } = useAuth();
   const { cartCount } = useCart();
   const { t } = useTranslation();
-  
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [userProfile, setUserProfile] = useState<{ name?: string; image?: string } | null>(null);
 
@@ -75,7 +75,7 @@ export function DashboardSidebar() {
   // ✅ UPDATED: Profile Menu now includes Settings Link
   const ProfileMenuContent = () => (
     <div className="bg-[#0f172a] text-slate-200 border border-white/10 rounded-md w-56">
-      <div className="flex items-center gap-2 p-3 border-b border-white/10"> 
+      <div className="flex items-center gap-2 p-3 border-b border-white/10">
         <Avatar className="h-8 w-8 border border-orange-500/30">
           <AvatarImage src={userProfile?.image} />
           <AvatarFallback className="bg-slate-800 text-orange-400 text-xs">{initials}</AvatarFallback>
@@ -85,7 +85,7 @@ export function DashboardSidebar() {
           <span className="text-[10px] text-slate-400 truncate">{user?.email}</span>
         </div>
       </div>
-      
+
       <div className="p-1">
         <Link to="/dashboard/settings">
           <DropdownMenuItem className="cursor-pointer hover:bg-white/5 focus:bg-white/5">
@@ -107,12 +107,11 @@ export function DashboardSidebar() {
   return (
     <>
       {/* DESKTOP SIDEBAR */}
-      <aside 
-        className={`hidden sm:flex fixed z-30 top-0 left-0 h-screen bg-[#0f172a]/95 backdrop-blur-xl border-r border-white/5 flex-col py-6 transition-all duration-300 ease-in-out ${
-          isCollapsed ? "w-20 px-2 items-center" : "w-64 px-4"
-        }`}
+      <aside
+        className={`hidden sm:flex fixed z-30 top-0 left-0 h-screen bg-[#0f172a]/95 backdrop-blur-xl border-r border-white/5 flex-col py-6 transition-all duration-300 ease-in-out ${isCollapsed ? "w-20 px-2 items-center" : "w-64 px-4"
+          }`}
       >
-        <button 
+        <button
           onClick={() => setIsCollapsed(!isCollapsed)}
           className="absolute -right-3 top-9 bg-slate-800 border border-white/10 text-slate-400 hover:text-white rounded-full p-1 shadow-lg hover:scale-110 transition-all z-50"
         >
@@ -131,10 +130,9 @@ export function DashboardSidebar() {
         </Link>
 
         <Link to="/design" className={`mb-6 w-full ${isCollapsed ? "flex justify-center" : ""}`}>
-          <Button 
-            className={`bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg shadow-orange-900/20 transition-all duration-300 ${
-              isCollapsed ? "h-10 w-10 rounded-xl p-0" : "w-full rounded-xl h-10 font-medium"
-            }`}
+          <Button
+            className={`bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg shadow-orange-900/20 transition-all duration-300 ${isCollapsed ? "h-10 w-10 rounded-xl p-0" : "w-full rounded-xl h-10 font-medium"
+              }`}
           >
             <Plus className={`h-5 w-5 ${!isCollapsed && "mr-2"}`} />
             {!isCollapsed && "Start Designing"}
@@ -155,15 +153,13 @@ export function DashboardSidebar() {
                   <Link to={item.path} className={`w-full ${isCollapsed ? "flex justify-center" : ""}`}>
                     <Button
                       variant="ghost"
-                      className={`h-10 mb-1 transition-all duration-200 ${
-                        isCollapsed 
+                      className={`h-10 mb-1 transition-all duration-200 ${isCollapsed
                           ? "w-10 px-0 justify-center rounded-xl"
-                          : "w-full justify-start rounded-lg" 
-                      } ${
-                        isActive(item.path) 
-                          ? "bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 hover:text-blue-300" 
+                          : "w-full justify-start rounded-lg"
+                        } ${isActive(item.path)
+                          ? "bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 hover:text-blue-300"
                           : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
-                      }`}
+                        }`}
                     >
                       <item.icon className={`h-4 w-4 ${!isCollapsed && "mr-3"}`} />
                       {!isCollapsed && <span>{item.label}</span>}
@@ -174,22 +170,20 @@ export function DashboardSidebar() {
               </Tooltip>
             </TooltipProvider>
           ))}
-          
+
           <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link to="/dashboard/cart" className={`w-full ${isCollapsed ? "flex justify-center" : ""}`}>
                   <Button
                     variant="ghost"
-                    className={`h-10 transition-all duration-200 relative ${
-                      isCollapsed 
-                        ? "w-10 px-0 justify-center rounded-xl" 
+                    className={`h-10 transition-all duration-200 relative ${isCollapsed
+                        ? "w-10 px-0 justify-center rounded-xl"
                         : "w-full justify-start rounded-lg"
-                    } ${
-                      isActive('/dashboard/cart') 
-                        ? "bg-blue-600/10 text-blue-400" 
+                      } ${isActive('/dashboard/cart')
+                        ? "bg-blue-600/10 text-blue-400"
                         : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
-                    }`}
+                      }`}
                   >
                     <ShoppingCart className={`h-4 w-4 ${!isCollapsed && "mr-3"}`} />
                     {!isCollapsed && <span>Cart</span>}
@@ -201,45 +195,44 @@ export function DashboardSidebar() {
                   </Button>
                 </Link>
               </TooltipTrigger>
-               {isCollapsed && <TooltipContent side="right" className="bg-slate-800 text-slate-200 border-white/10">Cart</TooltipContent>}
+              {isCollapsed && <TooltipContent side="right" className="bg-slate-800 text-slate-200 border-white/10">Cart</TooltipContent>}
             </Tooltip>
           </TooltipProvider>
         </nav>
 
         <div className={`mt-auto pt-4 border-t border-white/5 w-full ${isCollapsed ? "flex flex-col items-center" : ""}`}>
           {isAuthenticated ? (
-             <DropdownMenu>
-               <DropdownMenuTrigger asChild>
-                 <button className={`flex items-center rounded-xl hover:bg-white/5 transition-colors group ${
-                   isCollapsed ? "justify-center p-0 h-10 w-10" : "gap-3 w-full p-2 text-left"
-                 }`}>
-                   <Avatar className="h-9 w-9 border border-white/10 group-hover:border-orange-500/50 transition-colors">
-                     <AvatarImage src={userProfile?.image} />
-                     <AvatarFallback className="bg-slate-800 text-slate-200 text-xs">{initials}</AvatarFallback>
-                   </Avatar>
-                   
-                   {!isCollapsed && (
-                     <>
-                       <div className="flex-1 overflow-hidden">
-                         <p className="text-sm font-medium text-slate-200 truncate">{displayName}</p>
-                         <p className="text-xs text-slate-500 truncate">{user?.email}</p>
-                       </div>
-                       <Settings className="h-4 w-4 text-slate-500 group-hover:text-slate-300" />
-                     </>
-                   )}
-                 </button>
-               </DropdownMenuTrigger>
-               <DropdownMenuContent side="right" align={isCollapsed ? "start" : "end"} className="w-56 ml-2 bg-[#0f172a] border-white/10 text-slate-200 p-0">
-                 <ProfileMenuContent />
-               </DropdownMenuContent>
-             </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={`flex items-center rounded-xl hover:bg-white/5 transition-colors group ${isCollapsed ? "justify-center p-0 h-10 w-10" : "gap-3 w-full p-2 text-left"
+                  }`}>
+                  <Avatar className="h-9 w-9 border border-white/10 group-hover:border-orange-500/50 transition-colors">
+                    <AvatarImage src={userProfile?.image} />
+                    <AvatarFallback className="bg-slate-800 text-slate-200 text-xs">{initials}</AvatarFallback>
+                  </Avatar>
+
+                  {!isCollapsed && (
+                    <>
+                      <div className="flex-1 overflow-hidden">
+                        <p className="text-sm font-medium text-slate-200 truncate">{displayName}</p>
+                        <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                      </div>
+                      <Settings className="h-4 w-4 text-slate-500 group-hover:text-slate-300" />
+                    </>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align={isCollapsed ? "start" : "end"} className="w-56 ml-2 bg-[#0f172a] border-white/10 text-slate-200 p-0">
+                <ProfileMenuContent />
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
-             <Link to="/auth" className="w-full">
-               <Button variant="ghost" className={`justify-start text-slate-400 hover:text-white ${isCollapsed ? "w-10 px-0 justify-center" : "w-full"}`}>
-                 <LogIn className={`h-4 w-4 ${!isCollapsed && "mr-2"}`} />
-                 {!isCollapsed && "Sign In"}
-               </Button>
-             </Link>
+            <Link to="/auth" className="w-full">
+              <Button variant="ghost" className={`justify-start text-slate-400 hover:text-white ${isCollapsed ? "w-10 px-0 justify-center" : "w-full"}`}>
+                <LogIn className={`h-4 w-4 ${!isCollapsed && "mr-2"}`} />
+                {!isCollapsed && "Sign In"}
+              </Button>
+            </Link>
           )}
         </div>
       </aside>
@@ -248,29 +241,29 @@ export function DashboardSidebar() {
       <div className="sm:hidden fixed z-50 bottom-0 left-0 w-full h-16 bg-[#0f172a]/95 backdrop-blur-xl border-t border-white/10 flex items-center justify-around px-2 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
         {mobileNavItems.map((item) => (
           <Link key={item.path} to={item.path}>
-             <Button
-                variant="ghost"
-                size="icon"
-                className={
-                  item.isSpecial
-                    ? "bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-full h-12 w-12 -translate-y-4 shadow-lg shadow-orange-900/50 border-4 border-[#0f172a]"
-                    : `text-slate-500 hover:text-slate-200 ${isActive(item.path) ? "text-blue-400" : ""}`
-                }
-             >
-                <item.icon className={item.isSpecial ? "h-6 w-6" : "h-5 w-5"} />
-             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={
+                item.isSpecial
+                  ? "bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-full h-12 w-12 -translate-y-4 shadow-lg shadow-orange-900/50 border-4 border-[#0f172a]"
+                  : `text-slate-500 hover:text-slate-200 ${isActive(item.path) ? "text-blue-400" : ""}`
+              }
+            >
+              <item.icon className={item.isSpecial ? "h-6 w-6" : "h-5 w-5"} />
+            </Button>
           </Link>
         ))}
 
         <Link to="/dashboard/cart">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className={`text-slate-500 hover:text-slate-200 relative ${isActive('/dashboard/cart') ? "text-blue-400" : ""}`}
           >
             <ShoppingCart className="h-5 w-5" />
             {cartCount > 0 && (
-               <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
+              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
             )}
           </Button>
         </Link>
@@ -291,9 +284,9 @@ export function DashboardSidebar() {
           </DropdownMenu>
         ) : (
           <Link to="/auth">
-             <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-200">
-               <LogIn className="h-5 w-5" />
-             </Button>
+            <Button variant="ghost" size="icon" className="text-slate-500 hover:text-slate-200">
+              <LogIn className="h-5 w-5" />
+            </Button>
           </Link>
         )}
       </div>
