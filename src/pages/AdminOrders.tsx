@@ -193,7 +193,7 @@ export default function AdminOrders() {
                             </Badge>
 
                             {/* Misroute Warning & Fix */}
-                            {isMisrouted && !order.providerStatus && (
+                            {/* {isMisrouted && !order.providerStatus && (
                                 <button 
                                     onClick={() => handleReRoute(order.id, recommended)}
                                     className="flex items-center gap-1 text-[10px] text-yellow-500 hover:text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20 transition-colors"
@@ -201,7 +201,7 @@ export default function AdminOrders() {
                                 >
                                     <RefreshCw className="h-3 w-3" /> Should be {recommended.toUpperCase()}
                                 </button>
-                            )}
+                            )} */}
                           </div>
                       </TableCell>
 
