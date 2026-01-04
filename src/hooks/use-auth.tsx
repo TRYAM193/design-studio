@@ -7,7 +7,8 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  sendPasswordResetEmail // ✅ Import this
 } from "firebase/auth";
 import { auth } from "@/firebase";
 
@@ -17,6 +18,7 @@ interface AuthContextType {
   user: User | null;
   signIn: (type: string, formData?: any) => Promise<void>;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>; // ✅ Add type definition
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -58,8 +60,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
   };
 
+  // ✅ New Function: Reset Password
+  const resetPassword = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!user, isLoading, user, signIn, signOut }}>
+    <AuthContext.Provider value={{ isAuthenticated: !!user, isLoading, user, signIn, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );
