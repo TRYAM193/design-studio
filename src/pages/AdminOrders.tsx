@@ -156,7 +156,7 @@ export default function AdminOrders() {
 
                     {/* Customer */}
                     <TableCell>
-                        <div className="text-slate-200">{order.customer.name }</div>
+                        <div className="text-slate-200">{order.customer.name || 'Name'}</div>
                         <div className="text-xs text-slate-500">{order.customer.email}</div>
                     </TableCell>
 
