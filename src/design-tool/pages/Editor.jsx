@@ -402,7 +402,7 @@ export default function EditorPanel() {
             productId: productData.id,
             variant: { color: canvasBg, size: selectedSize },
             quantity: quantity,
-            price: productData.price || 0,
+            price: currentPrice,
             currency: 'INR',
             thumbnail: generatedPreviews['front'] || currentSnapshot || "/assets/placeholder.png",
             
