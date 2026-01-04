@@ -450,8 +450,8 @@ export default function EditorPanel() {
 
         // 1. Prepare Canvas: Hide backgrounds/borders for clean print file
         const originalBg = fabricCanvas.backgroundColor;
-        fabricCanvas.backgroundColor = null; 
-        
+        fabricCanvas.backgroundColor = null;
+
         const borderObj = fabricCanvas.getObjects().find(obj => obj.id === 'print-area-border' || obj.customId === 'print-area-border');
         if (borderObj) borderObj.visible = false;
 
@@ -459,7 +459,7 @@ export default function EditorPanel() {
             // 2. Export High Res (Multiplier 4x approx 2000px)
             const dataUrl = fabricCanvas.toDataURL({
                 format: 'png',
-                multiplier: 4, 
+                multiplier: 4,
                 quality: 1,
                 enableRetinaScaling: true
             });
@@ -469,10 +469,10 @@ export default function EditorPanel() {
             // Naming: userId / timestamp_view.png
             const filename = `print_files/${user?.uid || 'guest'}/${Date.now()}_${currentView}.png`;
             const storageRef = ref(storage, filename);
-            
+
             await uploadString(storageRef, dataUrl, 'data_url');
             const downloadUrl = await getDownloadURL(storageRef);
-            
+
             console.log("✅ High Res Generated:", downloadUrl);
             return downloadUrl;
 
@@ -650,15 +650,15 @@ export default function EditorPanel() {
         // 2. High Res Print File (Only if User is clicking "Add to Cart")
         let printFileUrl = null;
         let highResGenerated = false;
-        
+
         if (isFinalCheckout) {
-             printFileUrl = await generateAndUploadHighRes();
-             highResGenerated = !!printFileUrl;
+            printFileUrl = await generateAndUploadHighRes();
+            highResGenerated = !!printFileUrl;
         }
 
         // 3. Capture Current View JSON (Standard Fabric JSON, not Redux)
         const currentViewJSON = getFullCanvasJSON();
-        
+
         // 4. Merge into ViewStates
         const updatedViewStates = {
             ...viewStates,
@@ -677,15 +677,15 @@ export default function EditorPanel() {
             price: productData.price || 0,
             currency: 'INR',
             thumbnail: productData.image || "/assets/placeholder.png",
-            
+
             // 🚀 AUTOMATION DATA
-            printFileUrl: printFileUrl, 
+            printFileUrl: printFileUrl,
             highResGenerated: highResGenerated,
 
             // 💾 RE-EDIT & MANUAL FALLBACK DATA
-            designData: { 
+            designData: {
                 viewStates: updatedViewStates, // Contains full JSON for every view
-                currentView: currentView 
+                currentView: currentView
             },
             vendor: "qikink",
             createdAt: new Date().toISOString()
@@ -693,32 +693,34 @@ export default function EditorPanel() {
     };
     // ✅ 5. HANDLE ADD/UPDATE
     const handleAddToCart = async () => {
-        if (!userId) {
-            alert("Please login to save your cart");
-            return;
-        }
+        if (!userId) { alert("Please login"); return; }
+
         setIsAddingToCart(true);
         try {
-            const payload = generateOrderPayload();
+            // Pass 'true' to trigger High-Res generation
+            const payload = await generateOrderPayload(true);
 
             if (isEditMode && editCartId) {
-                // ✅ UPDATE MODE
                 await updateItemContent(editCartId, payload);
-                alert("Cart updated successfully!");
-                navigation('/dashboard/cart'); // Send user back to cart
+                alert("Cart Updated!");
+                navigation('/cart');
             } else {
-                // ✅ ADD MODE
                 await addItem(payload);
+                // toast.success("Added to Cart");
             }
+
+            if (!payload.highResGenerated) {
+                console.warn("Using Manual Admin Fallback");
+            }
+
         } catch (error) {
-            console.error("Error adding to cart:", error);
-            alert("Failed to save to cart");
+            console.error(error);
+            alert("Error saving design");
         } finally {
             setIsAddingToCart(false);
             setIsPreviewOpen(false);
         }
     };
-
     // ✅ ACTION 2: BUY NOW (LocalStorage + Redirect)
     const handleBuyNow = async () => {
         setIsSaving(true);
@@ -959,8 +961,8 @@ export default function EditorPanel() {
                                         onClick={handleAddToCart}
                                         disabled={isAddingToCart || !fabricCanvas}
                                         className={`flex-1 h-12 text-base text-white border border-slate-600 ${isEditMode
-                                                ? "bg-blue-600 hover:bg-blue-700 border-blue-500" // Blue for Update
-                                                : "bg-slate-700 hover:bg-slate-600"
+                                            ? "bg-blue-600 hover:bg-blue-700 border-blue-500" // Blue for Update
+                                            : "bg-slate-700 hover:bg-slate-600"
                                             }`}
                                     >
                                         {isAddingToCart ? (
