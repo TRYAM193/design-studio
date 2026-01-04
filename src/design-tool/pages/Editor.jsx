@@ -676,7 +676,7 @@ export default function EditorPanel() {
             quantity: quantity,
             price: productData.price || 0,
             currency: 'INR',
-            thumbnail: thumbUrl || "/assets/placeholder.png",
+            thumbnail: productData.image || "/assets/placeholder.png",
             
             // 🚀 AUTOMATION DATA
             printFileUrl: printFileUrl, 
