@@ -190,6 +190,16 @@ export default function OrderCheckoutPage() {
     return shippingInfo.stateCode ? City.getCitiesOfState(shippingInfo.countryCode, shippingInfo.stateCode) : [];
   }, [shippingInfo.countryCode, shippingInfo.stateCode]);
 
+const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   // Currency Logic
   const currencySymbol = shippingInfo.countryCode === 'US' ? "$" : (shippingInfo.countryCode === 'GB' ? "£" : (['DE', 'FR', 'IT', 'ES', 'NL'].includes(shippingInfo.countryCode) ? "€" : "₹"));
   const totalPayAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
