@@ -577,8 +577,6 @@ export default function EditorPanel() {
         try {
             // 2. Loop through every view defined in product
             for (const view of allViews) {
-                // Get Objects for this view
-                let viewObjects = tempViewStates[view] || [];
 
                 // If a view has no objects, we can still generate a blank file or skip.
                 // Usually better to generate it if it's a valid print area.
