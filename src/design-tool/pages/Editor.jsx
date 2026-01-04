@@ -487,6 +487,12 @@ export default function EditorPanel() {
         }
     };
 
+    const getFullCanvasJSON = () => {
+        if (!fabricCanvas) return null;
+        // Include custom properties that Fabric usually ignores
+        return fabricCanvas.toJSON(['id', 'customId', 'selectable', 'lockMovementX', 'lockMovementY', 'price', 'sku']);
+    };
+
     // ✅ UPDATED: Use the helper for normal URL loading
     useEffect(() => {
         // Only run this if we are NOT in edit mode (Edit mode handles its own loading)
