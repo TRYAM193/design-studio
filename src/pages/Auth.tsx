@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, Mail, Lock, User as UserIcon, Chrome } from "lucide-react"; // Chrome icon for Google
+import { Loader2, Mail, Lock, User as UserIcon, Chrome, ArrowRight } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Separator } from "@/components/ui/separator";
@@ -91,66 +91,70 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#0f172a] text-white">
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#0f172a] text-white font-sans selection:bg-orange-500/30">
       
-      {/* 🌌 COSMIC BACKGROUND (Same as Editor) */}
+      {/* 🌌 COSMIC BACKGROUND */}
       <div className="fixed inset-0 -z-10 w-full h-full pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px] animate-pulse" style={{animationDuration: '8s'}} />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px] animate-pulse" style={{animationDuration: '10s'}} />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
       </div>
 
       {/* 🔹 MAIN CONTENT */}
       <div className="flex-1 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md border border-white/10 bg-slate-900/60 backdrop-blur-xl shadow-2xl text-slate-200">
+        <Card className="w-full max-w-md border border-white/10 bg-slate-900/60 backdrop-blur-2xl shadow-2xl text-slate-200 ring-1 ring-white/5">
           
           <CardHeader className="text-center pb-2">
-            <div className="flex justify-center mb-4">
-               <div className="h-16 w-16 rounded-full bg-gradient-to-tr from-orange-500 to-red-600 p-0.5 shadow-lg shadow-orange-500/20">
-                  <div className="h-full w-full bg-slate-900 rounded-full flex items-center justify-center overflow-hidden">
-                    <img src="/assets/LOGO.png" alt="Logo" className="h-full w-full object-cover" />
+            <div className="flex justify-center mb-6">
+               <div className="relative group cursor-pointer" onClick={() => navigate("/")}>
+                  {/* Glowing Ring Effect */}
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-red-600 rounded-full opacity-75 blur group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                  <div className="relative h-20 w-20 rounded-full bg-slate-950 p-1 flex items-center justify-center ring-1 ring-white/10">
+                    <img src="/assets/LOGO.png" alt="Logo" className="h-full w-full object-cover rounded-full" />
                   </div>
                </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-white tracking-tight">Welcome to TRYAM</CardTitle>
-            <CardDescription className="text-slate-400">Design your style, wear your imagination.</CardDescription>
+            <CardTitle className="text-3xl font-bold text-white tracking-tight">Welcome Back</CardTitle>
+            <CardDescription className="text-slate-400 mt-1">Enter your details to access your creative space.</CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pt-2">
             
-            {/* 1. GOOGLE BUTTON */}
+            {/* 1. MODERN GOOGLE BUTTON */}
             <Button 
                 onClick={handleGoogleLogin} 
                 disabled={isLoading}
-                variant="outline" 
-                className="w-full h-11 bg-white hover:bg-slate-100 text-slate-900 border-0 font-medium transition-all"
+                className="w-full h-12 bg-white hover:bg-slate-50 text-slate-900 font-semibold border-0 rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-white/5 group relative overflow-hidden"
             >
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4 text-blue-600" />}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-100/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin text-slate-400" /> : <Chrome className="mr-2 h-5 w-5 text-blue-600" />}
                 Continue with Google
             </Button>
 
-            <div className="flex items-center gap-4 text-xs text-slate-500 uppercase">
-                <Separator className="flex-1 bg-white/10" /> OR <Separator className="flex-1 bg-white/10" />
+            <div className="relative flex py-1 items-center">
+                <div className="flex-grow border-t border-white/10"></div>
+                <span className="flex-shrink-0 mx-4 text-xs text-slate-500 uppercase tracking-widest font-medium">Or continue with</span>
+                <div className="flex-grow border-t border-white/10"></div>
             </div>
 
             {/* 2. TABS FOR LOGIN / SIGNUP */}
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 bg-slate-800/50 border border-white/5">
-                <TabsTrigger value="signin" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Sign In</TabsTrigger>
-                <TabsTrigger value="signup" className="data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">Sign Up</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-slate-950/50 border border-white/10 p-1 h-12 rounded-xl">
+                <TabsTrigger value="signin" className="rounded-lg data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 font-medium transition-all">Sign In</TabsTrigger>
+                <TabsTrigger value="signup" className="rounded-lg data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 font-medium transition-all">Sign Up</TabsTrigger>
               </TabsList>
 
               {/* --- SIGN IN FORM --- */}
-              <TabsContent value="signin">
-                <form onSubmit={(e) => handleAuthSubmit(e, false)} className="space-y-4 pt-4">
+              <TabsContent value="signin" className="mt-4 focus-visible:ring-0">
+                <form onSubmit={(e) => handleAuthSubmit(e, false)} className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Email Address</Label>
-                    <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                    <Label className="text-slate-300 text-xs uppercase tracking-wider font-bold ml-1">Email</Label>
+                    <div className="relative group">
+                        <Mail className="absolute left-3 top-3.5 h-4 w-4 text-slate-500 group-focus-within:text-orange-500 transition-colors" />
                         <Input 
                             type="email" 
-                            placeholder="you@example.com" 
-                            className="pl-10 bg-slate-900/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50"
+                            placeholder="name@example.com" 
+                            className="h-11 pl-10 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 rounded-xl transition-all"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -158,16 +162,16 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                        <Label className="text-slate-300">Password</Label>
-                        <span className="text-xs text-orange-400 cursor-pointer hover:underline">Forgot password?</span>
+                    <div className="flex justify-between items-center ml-1">
+                        <Label className="text-slate-300 text-xs uppercase tracking-wider font-bold">Password</Label>
+                        <span className="text-xs text-orange-400 cursor-pointer hover:text-orange-300 transition-colors">Forgot?</span>
                     </div>
-                    <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                    <div className="relative group">
+                        <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-500 group-focus-within:text-orange-500 transition-colors" />
                         <Input 
                             type="password" 
                             placeholder="••••••••" 
-                            className="pl-10 bg-slate-900/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50"
+                            className="h-11 pl-10 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 rounded-xl transition-all"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -175,25 +179,29 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </div>
                   </div>
                   
-                  {error && <p className="text-sm text-red-400 text-center bg-red-500/10 p-2 rounded border border-red-500/20">{error}</p>}
+                  {error && <div className="text-sm text-red-400 text-center bg-red-500/10 p-3 rounded-lg border border-red-500/20 flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500" />{error}</div>}
 
-                  <Button type="submit" disabled={isLoading} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold">
-                    {isLoading ? <Loader2 className="animate-spin" /> : "Sign In"}
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading} 
+                    className="w-full h-12 bg-gradient-to-r from-orange-500 via-red-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white font-bold rounded-xl shadow-lg shadow-orange-900/20 hover:shadow-orange-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+                  >
+                    {isLoading ? <Loader2 className="animate-spin" /> : <span className="flex items-center gap-2">Sign In <ArrowRight className="h-4 w-4 opacity-70" /></span>}
                   </Button>
                 </form>
               </TabsContent>
 
               {/* --- SIGN UP FORM --- */}
-              <TabsContent value="signup">
-                <form onSubmit={(e) => handleAuthSubmit(e, true)} className="space-y-4 pt-4">
+              <TabsContent value="signup" className="mt-4 focus-visible:ring-0">
+                <form onSubmit={(e) => handleAuthSubmit(e, true)} className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Email Address</Label>
-                    <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                    <Label className="text-slate-300 text-xs uppercase tracking-wider font-bold ml-1">Email</Label>
+                    <div className="relative group">
+                        <Mail className="absolute left-3 top-3.5 h-4 w-4 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
                         <Input 
                             type="email" 
-                            placeholder="you@example.com" 
-                            className="pl-10 bg-slate-900/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50"
+                            placeholder="name@example.com" 
+                            className="h-11 pl-10 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 rounded-xl transition-all"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
@@ -201,13 +209,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-slate-300">Create Password</Label>
-                    <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                    <Label className="text-slate-300 text-xs uppercase tracking-wider font-bold ml-1">Create Password</Label>
+                    <div className="relative group">
+                        <Lock className="absolute left-3 top-3.5 h-4 w-4 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
                         <Input 
                             type="password" 
-                            placeholder="At least 6 characters" 
-                            className="pl-10 bg-slate-900/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50"
+                            placeholder="Min 6 characters" 
+                            className="h-11 pl-10 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 rounded-xl transition-all"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -215,9 +223,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </div>
                   </div>
 
-                  {error && <p className="text-sm text-red-400 text-center bg-red-500/10 p-2 rounded border border-red-500/20">{error}</p>}
+                  {error && <div className="text-sm text-red-400 text-center bg-red-500/10 p-3 rounded-lg border border-red-500/20 flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500" />{error}</div>}
 
-                  <Button type="submit" disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold">
+                  <Button 
+                    type="submit" 
+                    disabled={isLoading} 
+                    className="w-full h-12 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg shadow-blue-900/20 hover:shadow-blue-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+                  >
                     {isLoading ? <Loader2 className="animate-spin" /> : "Create Account"}
                   </Button>
                 </form>
@@ -226,17 +238,17 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
           </CardContent>
           
-          <CardFooter className="flex flex-col gap-4 border-t border-white/5 pt-6">
+          <CardFooter className="flex flex-col gap-4 border-t border-white/5 pt-6 bg-slate-950/30 rounded-b-xl">
              <Button 
-                variant="ghost" 
+                variant="outline" 
                 onClick={handleGuestLogin} 
                 disabled={isLoading}
-                className="text-slate-400 hover:text-white w-full"
+                className="w-full h-11 border-white/5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl transition-all duration-200 backdrop-blur-sm border-dashed"
              >
                 <UserIcon className="mr-2 h-4 w-4" /> Continue as Guest
              </Button>
              <p className="text-[10px] text-slate-500 text-center">
-                By continuing, you agree to our Terms of Service and Privacy Policy.
+                By continuing, you agree to our <span className="text-slate-400 hover:text-white cursor-pointer transition-colors">Terms</span> and <span className="text-slate-400 hover:text-white cursor-pointer transition-colors">Privacy Policy</span>.
              </p>
           </CardFooter>
         </Card>
