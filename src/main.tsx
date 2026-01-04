@@ -76,7 +76,7 @@ createRoot(document.getElementById("root")!).render(
             {/* Dashboard Routes */}
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
-              <Route path="/cart" element={<CartPage />} />
+              <Route path="cart" element={<CartPage />} />
               <Route path="templates" element={<DashboardTemplates />} />
               <Route path="projects" element={<DashboardProjects />} />
               <Route path="orders" element={<DashboardOrders />} />
