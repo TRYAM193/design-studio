@@ -105,7 +105,7 @@ export default function CartPage() {
             <p className="text-slate-500 max-w-sm">Looks like you haven't added any custom tees yet. Start designing!</p>
             <Link to="/design">
               <Button size="lg" className="bg-orange-600 hover:bg-orange-700 mt-4 rounded-full px-8 shadow-lg shadow-orange-900/20">
-                Start Designing
+                Browse Catalogs
               </Button>
             </Link>
           </div>
