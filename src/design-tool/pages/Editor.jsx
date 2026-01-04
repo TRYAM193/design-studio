@@ -445,6 +445,54 @@ export default function EditorPanel() {
         return null;
     };
 
+    const generateAndUploadHighRes = async () => {
+        if (!fabricCanvas) return null;
+
+        // 1. Prepare Canvas: Hide backgrounds/borders for clean print file
+        const originalBg = fabricCanvas.backgroundColor;
+        fabricCanvas.backgroundColor = null;
+
+        const borderObj = fabricCanvas.getObjects().find(obj => obj.id === 'print-area-border' || obj.customId === 'print-area-border');
+        if (borderObj) borderObj.visible = false;
+
+        try {
+            // 2. Export High Res (Multiplier 4x approx 2000px)
+            const dataUrl = fabricCanvas.toDataURL({
+                format: 'png',
+                multiplier: 4,
+                quality: 1,
+                enableRetinaScaling: true
+            });
+
+            // 3. Upload to Firebase Storage
+            const storage = getStorage();
+            // Naming: userId / timestamp_view.png
+            const filename = `print_files/${user?.uid || 'guest'}/${Date.now()}_${currentView}.png`;
+            const storageRef = ref(storage, filename);
+
+            await uploadString(storageRef, dataUrl, 'data_url');
+            const downloadUrl = await getDownloadURL(storageRef);
+
+            console.log("✅ High Res Generated:", downloadUrl);
+            return downloadUrl;
+
+        } catch (error) {
+            console.warn("⚠️ High-Res Gen Failed (Low RAM?):", error);
+            return null; // Automation will fail, but order proceeds manually
+        } finally {
+            // 4. Restore Canvas
+            fabricCanvas.backgroundColor = originalBg;
+            if (borderObj) borderObj.visible = true;
+            fabricCanvas.requestRenderAll();
+        }
+    };
+
+    const getFullCanvasJSON = () => {
+        if (!fabricCanvas) return null;
+        // Include custom properties that Fabric usually ignores
+        return fabricCanvas.toJSON(['id', 'customId', 'selectable', 'lockMovementX', 'lockMovementY', 'price', 'sku']);
+    };
+
     // ✅ UPDATED: Use the helper for normal URL loading
     useEffect(() => {
         // Only run this if we are NOT in edit mode (Edit mode handles its own loading)
@@ -597,69 +645,82 @@ export default function EditorPanel() {
         }, 50);
     };
 
-    const generateOrderPayload = () => {
-        const finalPreview = designTextures[currentView]?.url || captureCurrentCanvas()?.url;
+    const generateOrderPayload = async (isFinalCheckout = false) => {
 
-        // ✅ MERGE FIX: Ensure payload has the ABSOLUTE LATEST canvas state
-        const currentObjects = store.getState().canvas.present;
+        // 2. High Res Print File (Only if User is clicking "Add to Cart")
+        let printFileUrl = null;
+        let highResGenerated = false;
+
+        if (isFinalCheckout) {
+            printFileUrl = await generateAndUploadHighRes();
+            highResGenerated = !!printFileUrl;
+        }
+
+        // 3. Capture Current View JSON (Standard Fabric JSON, not Redux)
+        const currentViewJSON = getFullCanvasJSON();
+
+        // 4. Merge into ViewStates
         const updatedViewStates = {
             ...viewStates,
-            [currentView]: currentObjects
+            [currentView]: currentViewJSON // Saving strict JSON now
         };
-
-        
 
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
             title: productData.title || "Custom T-Shirt",
-            productId: productData.id || "unknown_product",
+            productId: productData.id,
             variant: {
-                color: Object.keys(COLOR_MAP).find(key => COLOR_MAP[key] === canvasBg) || canvasBg,
+                color: canvasBg,
                 size: selectedSize,
             },
             quantity: quantity,
-            price: currentPrice,
-            currency: currencyInfo.code,
-            region: urlRegion,
-            thumbnail: productData.image,
-            // ✅ Save the MERGED view states
+            price: productData.price || 0,
+            currency: 'INR',
+            thumbnail: productData.image || "/assets/placeholder.png",
+
+            // 🚀 AUTOMATION DATA
+            printFileUrl: printFileUrl,
+            highResGenerated: highResGenerated,
+
+            // 💾 RE-EDIT & MANUAL FALLBACK DATA
             designData: {
-                viewStates: updatedViewStates,
-                currentView
+                viewStates: updatedViewStates, // Contains full JSON for every view
+                currentView: currentView
             },
             vendor: "qikink",
             createdAt: new Date().toISOString()
         };
     };
-
     // ✅ 5. HANDLE ADD/UPDATE
     const handleAddToCart = async () => {
-        if (!userId) {
-            alert("Please login to save your cart");
-            return;
-        }
+        if (!userId) { alert("Please login"); return; }
+
         setIsAddingToCart(true);
         try {
-            const payload = generateOrderPayload();
+            // Pass 'true' to trigger High-Res generation
+            const payload = await generateOrderPayload(true);
 
             if (isEditMode && editCartId) {
-                // ✅ UPDATE MODE
                 await updateItemContent(editCartId, payload);
-                alert("Cart updated successfully!");
-                navigation('/dashboard/cart'); // Send user back to cart
+                alert("Cart Updated!");
+                navigation('/cart');
             } else {
-                // ✅ ADD MODE
                 await addItem(payload);
+                // toast.success("Added to Cart");
             }
+
+            if (!payload.highResGenerated) {
+                console.warn("Using Manual Admin Fallback");
+            }
+
         } catch (error) {
-            console.error("Error adding to cart:", error);
-            alert("Failed to save to cart");
+            console.error(error);
+            alert("Error saving design");
         } finally {
             setIsAddingToCart(false);
             setIsPreviewOpen(false);
         }
     };
-
     // ✅ ACTION 2: BUY NOW (LocalStorage + Redirect)
     const handleBuyNow = async () => {
         setIsSaving(true);
@@ -900,8 +961,8 @@ export default function EditorPanel() {
                                         onClick={handleAddToCart}
                                         disabled={isAddingToCart || !fabricCanvas}
                                         className={`flex-1 h-12 text-base text-white border border-slate-600 ${isEditMode
-                                                ? "bg-blue-600 hover:bg-blue-700 border-blue-500" // Blue for Update
-                                                : "bg-slate-700 hover:bg-slate-600"
+                                            ? "bg-blue-600 hover:bg-blue-700 border-blue-500" // Blue for Update
+                                            : "bg-slate-700 hover:bg-slate-600"
                                             }`}
                                     >
                                         {isAddingToCart ? (
