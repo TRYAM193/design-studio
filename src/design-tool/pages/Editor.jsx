@@ -74,6 +74,8 @@ export default function EditorPanel() {
     const [editingDesignId, setEditingDesignId] = useState(null);
     const [showProperties, setShowProperties] = useState(false);
 
+    const editCartId = searchParams.get('editCartId');
+    const [isEditMode, setIsEditMode] = useState(false);
     // Redux State
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
