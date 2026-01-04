@@ -1,6 +1,7 @@
 // src/design-tool/pages/Editor.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/Editor.css';
+import * as fabric from 'fabric';
 import CanvasEditor from '../components/CanvasEditor';
 import Text from '../functions/text';
 import updateObject from '../functions/update';
@@ -17,7 +18,6 @@ import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
 import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-// import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage'; // REMOVED for speed
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2, Save } from "lucide-react";
@@ -136,17 +136,44 @@ export default function EditorPanel() {
         }
     }, [selectedId]);
 
-    // --- Loading & Merging Logic (Abbreviated for brevity - keeping logic same) ---
+    // --- Loading & Merging Logic ---
+
     const handleLoadSavedDesign = async (designItem) => {
         if (!designItem || !userId) return;
+
         try {
             const designRef = doc(db, `users/${userId}/designs`, designItem.id);
             const designSnap = await getDoc(designRef);
+
             if (!designSnap.exists()) return;
             const designData = designSnap.data();
 
-            if (designData.type === 'PRODUCT') {
-                 if (designData.productConfig?.productId === (urlProductId || productData.id)) {
+            const isBlank = designData.type === 'BLANK' || !designData.type;
+            const isProduct = designData.type === 'PRODUCT';
+
+            if (isBlank) {
+                const incomingObjects = Array.isArray(designData.canvasData)
+                    ? designData.canvasData
+                    : (designData.canvasData?.front || []);
+
+                if (incomingObjects.length > 0) {
+                    const newObjects = incomingObjects.map(obj => ({
+                        ...obj,
+                        id: uuidv4(),
+                        customId: uuidv4(),
+                        props: {
+                            ...obj.props,
+                            left: (obj.props.left || 0) + 20,
+                            top: (obj.props.top || 0) + 20
+                        }
+                    }));
+                    const currentObjects = store.getState().canvas.present;
+                    const combinedObjects = [...currentObjects, ...newObjects];
+                    dispatch(setCanvasObjects(combinedObjects));
+                }
+            }
+            else if (isProduct) {
+                if (designData.productConfig?.productId === (urlProductId || productData.id)) {
                     setCurrentDesign(designData);
                     setEditingDesignId(designData.id);
                     const savedStates = designData.canvasData || {};
@@ -155,26 +182,42 @@ export default function EditorPanel() {
                     setCurrentView(activeView);
                     const activeObjects = savedStates[activeView] || [];
                     dispatch(setCanvasObjects(activeObjects));
-                    setSearchParams(prev => { prev.set('designId', designData.id); return prev; });
+                    setSearchParams(prev => {
+                        prev.set('designId', designData.id);
+                        return prev;
+                    });
+                    setActivePanel(null);
                 }
-            } else {
-                // Legacy or blank handling
-                const objects = designData.canvasData || [];
-                dispatch(setCanvasObjects(objects));
             }
-        } catch (error) { console.error("Error loading:", error); }
+        } catch (error) {
+            console.error("Error loading saved design:", error);
+        }
     };
 
     const navigateToTemplates = () => {
         const currentObjects = store.getState().canvas.present;
+        const currentViewSnapshot = currentViewRef.current;
+        const allViewsSnapshot = viewStatesRef.current;
         const backupData = {
-            view: currentView,
-            viewStates: { ...viewStates, [currentView]: currentObjects },
+            view: currentViewSnapshot,
+            viewStates: {
+                ...allViewsSnapshot,
+                [currentViewSnapshot]: currentObjects
+            },
             timestamp: Date.now()
         };
         sessionStorage.setItem('merge_context', JSON.stringify(backupData));
-        navigation('/dashboard/templates', { state: { filterMode: 'product', filterProductId: productData.productId } });
+        navigation('/dashboard/templates', {
+            state: {
+                filterMode: 'product',
+                filterProductId: productData.productId,
+                filterColor: canvasBg,
+                filterSize: urlSize
+            }
+        });
     }
+
+    // --- Product Data Helpers ---
 
     const fetchProductData = async (pid) => {
         if (!pid) return null;
@@ -191,17 +234,27 @@ export default function EditorPanel() {
                 setProductData(processedData);
                 return processedData;
             }
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error("Error loading product:", err);
+        }
         return null;
     };
 
-    // --- Restore from Cart ---
+    // --- Load Cart Item (Edit Mode) ---
+
     useEffect(() => {
         if (editCartId && cartItems.length > 0) {
             const itemToEdit = cartItems.find(i => i.id === editCartId);
+
             if (itemToEdit && itemToEdit.designData) {
+                console.log("Loading Cart Item for Edit:", itemToEdit);
+
                 setIsEditMode(true);
-                if (itemToEdit.variant?.color) setCanvasBg(COLOR_MAP[itemToEdit.variant.color] || itemToEdit.variant.color);
+
+                if (itemToEdit.variant?.color) {
+                    const cName = itemToEdit.variant.color;
+                    setCanvasBg(COLOR_MAP[cName] || cName);
+                }
                 if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
                 if (itemToEdit.quantity) setQuantity(itemToEdit.quantity);
 
@@ -209,20 +262,138 @@ export default function EditorPanel() {
                     setViewStates(itemToEdit.designData.viewStates);
                     viewStatesRef.current = itemToEdit.designData.viewStates;
                 }
+
                 const savedView = itemToEdit.designData.currentView || 'front';
                 setCurrentView(savedView);
-                dispatch(setCanvasObjects(itemToEdit.designData.viewStates?.[savedView] || []));
+
+                const objectsToLoad = itemToEdit.designData.viewStates?.[savedView] || [];
+                dispatch(setCanvasObjects(objectsToLoad));
+                
                 fetchProductData(itemToEdit.productId);
             }
         }
     }, [editCartId, cartItems, dispatch]);
 
+
     useEffect(() => {
         if (!editCartId) {
             const pid = urlProductId || currentDesign?.productConfig?.productId;
-            if (pid) fetchProductData(pid);
+            if (pid) {
+                fetchProductData(pid).then((data) => {
+                    if (data && !urlColor && !currentDesign) {
+                        const initialColor = data.options?.colors?.[0] || "White";
+                        setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
+                    }
+                });
+            }
         }
     }, [urlProductId, currentDesign, editCartId]);
+
+
+    // --- Merge & Design Loading Effects ---
+    useEffect(() => {
+        if (!userId) return;
+
+        const mergeId = location.state?.mergeDesignId;
+        const isMerge = !!mergeId;
+
+        if (isMerge) {
+            async function performMerge() {
+                const contextJSON = sessionStorage.getItem('merge_context');
+                let targetView = 'front';
+                let currentViewObjects = [];
+                let fullHistory = {};
+
+                if (contextJSON) {
+                    try {
+                        const context = JSON.parse(contextJSON);
+                        if (Date.now() - context.timestamp < 3600000) {
+                            targetView = context.view;
+                            fullHistory = context.viewStates || {};
+                            currentViewObjects = fullHistory[targetView] || [];
+                        }
+                    } catch (e) { console.error("Restore failed", e); }
+                    sessionStorage.removeItem('merge_context');
+                }
+
+                let incomingObjects = [];
+                try {
+                    const designRef = doc(db, `users/${userId}/designs`, mergeId);
+                    const designSnap = await getDoc(designRef);
+                    if (designSnap.exists()) {
+                        const design = designSnap.data();
+                        const raw = Array.isArray(design.canvasData) ? design.canvasData : (design.canvasData?.front || []);
+
+                        if (raw.length > 0) {
+                            incomingObjects = raw.map(obj => ({
+                                ...obj,
+                                id: uuidv4(),
+                                customId: uuidv4(),
+                                props: { ...obj.props, left: (obj.props.left || 0) + 30, top: (obj.props.top || 0) + 30 }
+                            }));
+                        }
+                    }
+                } catch (e) { console.error(e); }
+
+                const finalObjectsForView = [...currentViewObjects, ...incomingObjects];
+                const finalHistory = {
+                    ...fullHistory,
+                    [targetView]: finalObjectsForView
+                };
+
+                setCurrentView(targetView);
+                setViewStates(finalHistory);
+                dispatch(setCanvasObjects(finalObjectsForView));
+
+                window.history.replaceState({}, document.title);
+            }
+            performMerge();
+        }
+        else if (urlDesignId && editingDesignId !== urlDesignId && !editCartId) {
+            async function loadDesign() {
+                try {
+                    const designRef = doc(db, `users/${userId}/designs`, urlDesignId);
+                    const designSnap = await getDoc(designRef);
+
+                    if (designSnap.exists()) {
+                        const design = designSnap.data();
+                        setCurrentDesign(design);
+                        setEditingDesignId(design.id);
+
+                        if (design.type === 'PRODUCT' && design.productConfig) {
+                            const savedStates = design.canvasData || {};
+                            setViewStates(savedStates);
+                            const activeView = design.productConfig.activeView || 'front';
+                            setCurrentView(activeView);
+                            const activeObjects = savedStates[activeView] || [];
+                            dispatch(setCanvasObjects(activeObjects));
+                        } else {
+                            const objects = design.canvasData || [];
+                            dispatch(setCanvasObjects(objects));
+                        }
+                    }
+                } catch (e) { console.error("Error loading design", e); }
+            }
+            loadDesign();
+        }
+
+    }, [urlDesignId, location.state, userId, dispatch, editCartId]);
+
+
+    useEffect(() => {
+        if (currentDesign?.productConfig && !editCartId) {
+            const params = new URLSearchParams(searchParams);
+            const { productId, variantColor, variantSize } = currentDesign.productConfig;
+
+            let changed = false;
+            if (productId && params.get('product') !== productId) { params.set('product', productId); changed = true; }
+            if (variantColor && params.get('color') !== variantColor) { params.set('color', variantColor); changed = true; }
+            if (variantSize && params.get('size') !== variantSize) { params.set('size', variantSize); changed = true; }
+            if (!params.get('region')) { params.set('region', urlRegion); changed = true; }
+
+            if (changed) setSearchParams(params, { replace: true });
+        }
+    }, [currentDesign, setSearchParams, urlRegion, editCartId]);
 
 
     useEffect(() => {
@@ -239,20 +410,20 @@ export default function EditorPanel() {
             const realHeight = productData.print_areas?.[currentView]?.height || 5400;
             const availableWidth = containerRef.current.clientWidth;
             const availableHeight = containerRef.current.clientHeight;
-            setScaleFactor(Math.min((availableWidth * 0.85) / realWidth, (availableHeight * 0.85) / realHeight));
+            const widthRatio = (availableWidth * 0.85) / realWidth;
+            const heightRatio = (availableHeight * 0.85) / realHeight;
+            setScaleFactor(Math.min(widthRatio, heightRatio));
         }
         calculateScale();
         window.addEventListener('resize', calculateScale);
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
+    // --- Canvas Utils (Reduced for speed) ---
 
-    // --- Optimized Image Generation ---
-
-    // Added 'targetWidth' for faster thumbnail generation
-    const getCleanDataURL = (targetWidth = 2400) => {
+    const getCleanDataURL = (targetWidth = 1200) => {
+        // Used ONLY for 3D Preview / Manual actions, NOT for Cart/Checkout
         if (!fabricCanvas) return null;
-
         const originalBg = fabricCanvas.backgroundColor;
         const originalClip = fabricCanvas.clipPath;
         const originalVpt = fabricCanvas.viewportTransform;
@@ -267,18 +438,17 @@ export default function EditorPanel() {
         if (borderObj) borderObj.visible = false;
 
         const currentWidth = fabricCanvas.width;
-        const multiplier = targetWidth / currentWidth; // Calculate multiplier dynamically
+        const multiplier = targetWidth / currentWidth;
 
         fabricCanvas.renderAll();
 
         const dataUrl = fabricCanvas.toDataURL({
             format: 'png',
-            quality: 0.8, // Reduced slightly for speed
+            quality: 0.8,
             multiplier: multiplier,
             enableRetinaScaling: true
         });
 
-        // Restore
         fabricCanvas.backgroundColor = originalBg;
         fabricCanvas.clipPath = originalClip;
         if (originalVpt) fabricCanvas.setViewportTransform(originalVpt);
@@ -289,7 +459,7 @@ export default function EditorPanel() {
     };
 
     const captureCurrentCanvas = () => {
-        const url = getCleanDataURL(1200); // Default preview size
+        const url = getCleanDataURL(1200); 
         if (!url) return null;
         const arr = url.split(',');
         const mime = arr[0].match(/:(.*?);/)[1];
@@ -303,10 +473,10 @@ export default function EditorPanel() {
 
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
-        const currentSnapshot = captureCurrentCanvas();
-        if (currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
+        // Don't auto-generate previews on switch, just switch state
         const currentCanvasState = store.getState().canvas.present;
         setViewStates(prev => ({ ...prev, [currentView]: currentCanvasState }));
+        
         setCurrentView(newView);
         const nextObjects = viewStates[newView] || []; 
         dispatch(setCanvasObjects(nextObjects));
@@ -333,87 +503,43 @@ export default function EditorPanel() {
         }, 50);
     };
 
-    // ✅ 🚀 OPTIMIZED PAYLOAD GENERATOR
-    const generateOrderPayload = async () => {
-        const originalView = currentView;
-        
-        // 1. Snapshot CURRENT view (Fast, no reload needed)
-        // Use 800px for thumbnails (much faster than 2400px)
-        const currentSnapshot = getCleanDataURL(800); 
+    // ✅ 🚀 INSTANT PAYLOAD GENERATOR
+    const generateOrderPayload = () => {
+        // 1. Snapshot CURRENT Redux state (The Design Objects)
         const currentReduxState = store.getState().canvas.present;
         
-        // Update local history
-        const tempViewStates = { ...viewStates, [currentView]: currentReduxState };
-        
-        // Prepare results container
-        const generatedPreviews = { ...designTextures }; 
-        if(currentSnapshot) generatedPreviews[currentView] = currentSnapshot;
+        // 2. Merge it into the full view history
+        const tempViewStates = { 
+            ...viewStates, 
+            [currentView]: currentReduxState 
+        };
 
-        // 2. Identify UNTOUCHED views vs EDITED views
-        // We only need to generate images for views that have objects in them.
-        // We filter 'tempViewStates' for keys that are NOT currentView and have objects > 0
-        const viewsToProcess = Object.keys(tempViewStates).filter(view => {
-            const objects = tempViewStates[view];
-            // Only process if it's not the current view AND it has objects
-            return view !== currentView && objects && objects.length > 0;
-        });
+        // 3. Construct Payload WITHOUT GENERATING IMAGES
+        // We use the static product image from Firebase as the thumbnail
+        const baseImage = productData.image || productData.mockups?.front || "/assets/placeholder.png";
 
-        // 3. Process other views (only if necessary)
-        if (viewsToProcess.length > 0) {
-            setIsGeneratingPreview(true); // Small spinner
-            
-            try {
-                for (const view of viewsToProcess) {
-                    const viewObjects = tempViewStates[view];
-                    
-                    // Load into canvas
-                    await new Promise(resolve => {
-                        fabricCanvas.loadFromJSON({ version: "6.9.0", objects: viewObjects }, () => {
-                            fabricCanvas.renderAll();
-                            resolve();
-                        });
-                    });
-
-                    // Snapshot (Fast 800px)
-                    const url = getCleanDataURL(800);
-                    if(url) generatedPreviews[view] = url;
-                }
-            } catch (e) {
-                console.error("Error generating backgrounds", e);
-            } finally {
-                // Restore Original View
-                await new Promise(resolve => {
-                    fabricCanvas.loadFromJSON({ version: "5.3.0", objects: currentReduxState }, () => {
-                        setCurrentView(originalView);
-                        dispatch(setCanvasObjects(currentReduxState));
-                        fabricCanvas.renderAll();
-                        resolve();
-                    });
-                });
-                setIsGeneratingPreview(false);
-            }
-        }
-
-        // 4. Return Payload (No High-Res Uploads here - fast return)
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
             title: productData.title || "Custom T-Shirt",
             productId: productData.id,
             variant: { color: canvasBg, size: selectedSize },
             quantity: quantity,
-            price: currentPrice,
+            price: productData.price || 0,
             currency: 'INR',
-            thumbnail: productData.image,
             
-            // Contains all view images (low res)
-            previewImages: generatedPreviews, 
+            // ✅ Static Image (Instant)
+            thumbnail: baseImage,
             
-            // We set this false, so Admin knows to generate from JSON
+            // ✅ Empty Previews (Since we aren't generating them)
+            previewImages: {}, 
+            
+            // ✅ Flag for Admin to know they must generate files
             highResGenerated: false, 
             
+            // ✅ THE IMPORTANT PART: All the JSON data needed to reconstruct the design
             designData: {
                 viewStates: tempViewStates, 
-                currentView: originalView
+                currentView: currentView
             },
             vendor: "qikink",
             createdAt: new Date().toISOString()
@@ -424,7 +550,7 @@ export default function EditorPanel() {
         if (!userId) { alert("Please login"); return; }
         setIsAddingToCart(true);
         try {
-            const payload = await generateOrderPayload(); // Fast generation
+            const payload = generateOrderPayload(); // Sync function now
             if (isEditMode && editCartId) {
                 await updateItemContent(editCartId, payload);
                 alert("Cart Updated!");
@@ -442,28 +568,20 @@ export default function EditorPanel() {
 
     const handleBuyNow = async () => {
         setIsSaving(true);
-        // Fast generation (no Firebase upload)
-        const payload = await generateOrderPayload(); 
-        
         try {
-             // LocalStorage has 5MB limit. 
-             // If payload is too big (many images), we might need to strip previews for LS
-             // For now, try saving.
-            localStorage.setItem('directBuyItem', JSON.stringify(payload));
-            navigation('/checkout?mode=direct');
+             const payload = generateOrderPayload(); // Sync function now
+             // Store payload in LocalStorage for checkout page
+             localStorage.setItem('directBuyItem', JSON.stringify(payload));
+             navigation('/checkout?mode=direct');
         } catch (e) {
-            console.error("Storage limit exceeded?", e);
-            // Fallback: Just navigate, maybe pass ID? 
-            // Ideally, we should save to DB as a 'temp_cart' item instead of LS
-            alert("Design too complex for direct buy. Adding to cart instead.");
-            await addItem(payload);
-            navigation('/cart');
+            console.error("Buy Now Error", e);
+            alert("Error proceeding to checkout.");
         } finally {
             setIsSaving(false);
         }
     };
 
-    // ... (BrandDisplay, etc. remains same) ...
+    // ... (Render Logic) ...
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
             <div className="logo-circle ring-1 ring-white/20 shadow-lg shadow-orange-500/20">
@@ -545,7 +663,7 @@ export default function EditorPanel() {
                                     }}
                                     currentObjects={canvasObjects}
                                     onGetSnapshot={() => getCleanDataURL(1200)}
-                                    onSaveSuccess={() => {}}
+                                    onSaveSuccess={handleSaveSuccess}
                                     currentDesignName={currentDesign?.name}
                                 />
                             )}
@@ -557,14 +675,14 @@ export default function EditorPanel() {
 
                     <CanvasEditor
                         setFabricCanvas={setFabricCanvas}
+                        fabricCanvas={fabricCanvas} // Fix: passed ref correctly
                         canvasObjects={canvasObjects}
                         selectedId={selectedId}
                         setActiveTool={setActiveTool}
                         setSelectedId={setSelectedId}
-                        fabricCanvas={fabricCanvas}
                         printDimensions={canvasDims}
                         productId={productData.id}
-                        activeView={currentView}
+                        activeView={currentView} // ✅ Added activeView prop
                     />
                 </main>
 
