@@ -599,7 +599,6 @@ export default function EditorPanel() {
                 viewStates: updatedViewStates, // Consistently Objects[]
                 currentView: currentView
             },
-            vendor: "qikink",
             createdAt: new Date().toISOString()
         };
     };
