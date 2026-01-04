@@ -609,6 +609,8 @@ export default function EditorPanel() {
 
         let vendor;
 
+        if 
+
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
             title: productData.title || "Custom T-Shirt",
