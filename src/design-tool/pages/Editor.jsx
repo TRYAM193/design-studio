@@ -644,7 +644,7 @@ export default function EditorPanel() {
                 // ✅ UPDATE MODE
                 await updateItemContent(editCartId, payload);
                 alert("Cart updated successfully!");
-                navigation('/cart'); // Send user back to cart
+                navigation('/dashboard/cart'); // Send user back to cart
             } else {
                 // ✅ ADD MODE
                 await addItem(payload);
