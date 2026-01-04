@@ -644,7 +644,7 @@ export default function EditorPanel() {
             currency: 'INR',
             // Default thumbnail is the front, or the current view if front missing
             thumbnail: generatedPreviews['front'] || generatedPreviews[originalView] || "/assets/placeholder.png",
-            
+            image: productData
             // ✅ NEW: Return objects containing ALL generated images
             printFiles: generatedPrintFiles, // { front: '...', back: '...' }
             previewImages: generatedPreviews, // { front: 'data:image...', back: '...' }
