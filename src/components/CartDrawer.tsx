@@ -1,17 +1,18 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose } from "@/components/ui/sheet"; // Ensure SheetClose is imported or handle closing manually
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/hooks/use-auth";
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, Pencil, LogIn } from "lucide-react"; // Added Pencil
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, Pencil, LogIn, Heart, RotateCcw } from "lucide-react"; 
 import { useNavigate } from "react-router";
 import { useState } from "react";
+import { Separator } from "@/components/ui/separator";
 
 export function CartDrawer() {
-  const { items, removeItem, updateQuantity, cartTotal, cartCount } = useCart();
+  const { items, savedItems, removeItem, updateQuantity, saveForLater, moveToCart, removeSavedItem, cartTotal, cartCount } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false); // Controlled state to close drawer on edit
+  const [open, setOpen] = useState(false);
 
   const handleCheckout = () => {
     setOpen(false);
@@ -20,7 +21,6 @@ export function CartDrawer() {
 
   const handleEdit = (cartItemId: string) => {
     setOpen(false);
-    // 🚀 Pass the Cart ID to the editor
     navigate(`/design?editCartId=${cartItemId}`);
   };
 
@@ -53,7 +53,7 @@ export function CartDrawer() {
              </Button>
           </div>
         ) : (
-          items.length === 0 ? (
+          items.length === 0 && savedItems.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-500 gap-4 p-6 text-center">
               <ShoppingBag className="w-16 h-16 opacity-20" />
               <p>Your cart is empty.</p>
@@ -64,19 +64,18 @@ export function CartDrawer() {
           ) : (
             <>
               <ScrollArea className="flex-1 px-6 py-4">
+                 {/* === ACTIVE CART ITEMS === */}
                  <div className="space-y-6">
                    {items.map((item) => (
                       <div key={item.id} className="flex gap-4 group relative bg-slate-900/30 p-2 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                         
-                        {/* Thumbnail */}
                         <div className="w-20 h-24 bg-white rounded-lg p-2 flex-shrink-0 border border-white/10">
                           <img src={item.thumbnail} alt={item.title} className="w-full h-full object-contain" />
                         </div>
                         
-                        {/* Details */}
                         <div className="flex-1 flex flex-col justify-between py-1 min-w-0">
                           <div>
-                            <div className="flex justify-between items-start pr-6">
+                            <div className="flex justify-between items-start pr-8">
                                 <h4 className="font-medium text-sm text-slate-200 line-clamp-1">{item.title}</h4>
                             </div>
                             <p className="text-xs text-slate-500 mt-0.5">{item.variant.color} / {item.variant.size}</p>
@@ -85,35 +84,86 @@ export function CartDrawer() {
                           <div className="flex justify-between items-end mt-2">
                             <p className="text-sm font-bold text-white">₹{item.price}</p>
                             
-                            <div className="flex items-center gap-3 bg-slate-800 rounded-lg border border-white/5 p-1 h-7">
-                               <button onClick={() => updateQuantity(item.id, -1)} className="w-6 h-full flex items-center justify-center hover:text-orange-400"><Minus className="w-3 h-3" /></button>
-                               <span className="text-xs font-medium w-4 text-center">{item.quantity}</span>
-                               <button onClick={() => updateQuantity(item.id, 1)} className="w-6 h-full flex items-center justify-center hover:text-orange-400"><Plus className="w-3 h-3" /></button>
+                            <div className="flex items-center gap-2">
+                                {/* SAVE FOR LATER BUTTON */}
+                                <button 
+                                  onClick={() => saveForLater(item.id)} 
+                                  className="text-xs flex items-center gap-1 text-slate-500 hover:text-blue-400 mr-2"
+                                  title="Save for Later"
+                                >
+                                   <Heart className="w-3.5 h-3.5" /> Save
+                                </button>
+
+                                <div className="flex items-center gap-3 bg-slate-800 rounded-lg border border-white/5 p-1 h-7">
+                                   <button onClick={() => updateQuantity(item.id, -1)} className="w-6 h-full flex items-center justify-center hover:text-orange-400"><Minus className="w-3 h-3" /></button>
+                                   <span className="text-xs font-medium w-4 text-center">{item.quantity}</span>
+                                   <button onClick={() => updateQuantity(item.id, 1)} className="w-6 h-full flex items-center justify-center hover:text-orange-400"><Plus className="w-3 h-3" /></button>
+                                </div>
                             </div>
                           </div>
                         </div>
 
-                        {/* ✅ EDIT BUTTON */}
-                        <button 
-                          onClick={() => handleEdit(item.id)} 
-                          className="absolute top-2 right-8 p-1.5 text-slate-500 hover:text-blue-400 transition-colors"
-                          title="Edit Design"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-
-                        {/* REMOVE BUTTON */}
-                        <button 
-                          onClick={() => removeItem(item.id)} 
-                          className="absolute top-2 right-2 p-1.5 text-slate-500 hover:text-red-400 transition-colors"
-                          title="Remove"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-
+                        {/* Top Right Actions */}
+                        <div className="absolute top-2 right-2 flex flex-col gap-1">
+                            <button 
+                              onClick={() => removeItem(item.id)} 
+                              className="p-1.5 text-slate-500 hover:text-red-400 transition-colors"
+                              title="Remove"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button 
+                              onClick={() => handleEdit(item.id)} 
+                              className="p-1.5 text-slate-500 hover:text-blue-400 transition-colors"
+                              title="Edit Design"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
                       </div>
                    ))}
                  </div>
+
+                 {/* === SAVED FOR LATER SECTION === */}
+                 {savedItems.length > 0 && (
+                    <div className="mt-8">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Separator className="flex-1 bg-white/10" />
+                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Saved for Later ({savedItems.length})</span>
+                            <Separator className="flex-1 bg-white/10" />
+                        </div>
+                        
+                        <div className="space-y-4 opacity-75">
+                            {savedItems.map((item) => (
+                                <div key={item.id} className="flex gap-4 p-2 rounded-lg border border-dashed border-white/10 hover:border-white/20 transition-colors">
+                                    <div className="w-16 h-16 bg-white rounded-md p-1 flex-shrink-0 grayscale">
+                                        <img src={item.thumbnail} alt={item.title} className="w-full h-full object-contain" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-medium text-xs text-slate-300 line-clamp-1">{item.title}</h4>
+                                        <p className="text-[10px] text-slate-500 mb-2">{item.variant.color} / {item.variant.size} • ₹{item.price}</p>
+                                        
+                                        <div className="flex gap-3">
+                                            <button 
+                                                onClick={() => moveToCart(item.id)}
+                                                className="text-[10px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                                            >
+                                                <RotateCcw className="w-3 h-3" /> Move to Cart
+                                            </button>
+                                            <button 
+                                                onClick={() => removeSavedItem(item.id)}
+                                                className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1"
+                                            >
+                                                <Trash2 className="w-3 h-3" /> Remove
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                 )}
+
               </ScrollArea>
               
               <div className="p-6 bg-[#0f172a] border-t border-white/10 space-y-4 shadow-2xl z-10">
