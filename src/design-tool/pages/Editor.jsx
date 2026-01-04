@@ -609,7 +609,9 @@ export default function EditorPanel() {
 
         let vendor;
 
-        if 
+        if (urlRegion == 'IN') 
+
+        
 
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
