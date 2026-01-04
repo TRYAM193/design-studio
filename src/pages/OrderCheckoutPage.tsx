@@ -164,6 +164,8 @@ export default function OrderCheckoutPage() {
       return;
     }
 
+    
+
     setIsProcessing(true);
     try {
       const orderId = `ORD-${Date.now()}`;
