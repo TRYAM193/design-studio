@@ -164,7 +164,8 @@ export default function OrderCheckoutPage() {
       return;
     }
 
-    
+    let vendor;
+    if ()
 
     setIsProcessing(true);
     try {
