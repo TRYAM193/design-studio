@@ -23,34 +23,42 @@ export default function TermsConditions() {
             <section>
                 <h2 className="text-xl font-bold text-slate-900 mb-3">1. Introduction</h2>
                 <p className="text-slate-600 leading-relaxed">
-                    Welcome to TRYAM. By using our website and placing an order, you agree to the following terms and conditions. Please read them carefully before making a purchase.
+                    Welcome to TRYAM. We exist to help you wear your imagination. By using our platform, you agree to these terms, which ensure we can deliver the best custom experience for you.
                 </p>
             </section>
 
             <section>
-                <h2 className="text-xl font-bold text-slate-900 mb-3">2. Products & Printing</h2>
+                <h2 className="text-xl font-bold text-slate-900 mb-3">2. Your Designs & Rights</h2>
                 <p className="text-slate-600 leading-relaxed">
-                    Since all our products are printed on demand specifically for you, slight variations in color or print placement may occur. We utilize high-quality DTG (Direct-to-Garment) printing to ensure longevity.
+                    <strong>You own your art.</strong> When you upload a design to TRYAM, you retain full ownership and copyright. You grant us a non-exclusive license only to print your specific order. We will never sell your personal designs to others.
                 </p>
             </section>
 
             <section>
-                <h2 className="text-xl font-bold text-slate-900 mb-3">3. Returns & Refunds</h2>
+                <h2 className="text-xl font-bold text-slate-900 mb-3">3. Products & Printing</h2>
                 <p className="text-slate-600 leading-relaxed">
-                    <strong>Made-to-Order Policy:</strong> We do not accept returns for "Change of Mind" or "Wrong Size" issues as every item is custom made.
+                    We use premium Direct-to-Garment (DTG) printing technology for vibrant, long-lasting prints. Since every item is printed on demand, slight variations in color placement may occur compared to the digital mockup.
+                </p>
+            </section>
+
+            <section>
+                <h2 className="text-xl font-bold text-slate-900 mb-3">4. Returns & Replacement Policy</h2>
+                <p className="text-slate-600 leading-relaxed">
+                    <strong>Custom Items:</strong> Because each item is made specifically for you, we cannot offer returns for size exchanges or buyer's remorse. Please check our Size Guide carefully before ordering.
                     <br/><br/>
-                    <strong>Defects:</strong> If you receive a damaged product or a printing error, please contact us within 48 hours of delivery with photos, and we will send a free replacement.
+                    <strong>Our Quality Promise:</strong> If your order arrives damaged, or if there is a printing error, we have your back. Please email us at <strong>support@tryam.com</strong> within <strong>7 days</strong> of delivery with a photo of the issue, and we will send a free replacement immediately.
                 </p>
             </section>
 
             <section>
-                <h2 className="text-xl font-bold text-slate-900 mb-3">4. Shipping & Delivery</h2>
+                <h2 className="text-xl font-bold text-slate-900 mb-3">5. Shipping & Cancellations</h2>
                 <p className="text-slate-600 leading-relaxed">
-                    Estimated delivery times are 5-7 business days for India and 7-14 days for International orders. Delays due to couriers or customs are outside our control, but we will assist in tracking your package.
+                    <strong>Modifications:</strong> You can cancel or modify your order within <strong>2 hours</strong> of placement. After that, production begins.
+                    <br/><br/>
+                    <strong>Delivery:</strong> Estimated delivery is 5-7 business days (India) and 7-14 days (International). We will provide a tracking number as soon as your order ships.
                 </p>
             </section>
         </div>
-
       </div>
     </div>
   );
