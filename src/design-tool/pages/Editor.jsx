@@ -445,6 +445,48 @@ export default function EditorPanel() {
         return null;
     };
 
+    const generateAndUploadHighRes = async () => {
+        if (!fabricCanvas) return null;
+
+        // 1. Prepare Canvas: Hide backgrounds/borders for clean print file
+        const originalBg = fabricCanvas.backgroundColor;
+        fabricCanvas.backgroundColor = null; 
+        
+        const borderObj = fabricCanvas.getObjects().find(obj => obj.id === 'print-area-border' || obj.customId === 'print-area-border');
+        if (borderObj) borderObj.visible = false;
+
+        try {
+            // 2. Export High Res (Multiplier 4x approx 2000px)
+            const dataUrl = fabricCanvas.toDataURL({
+                format: 'png',
+                multiplier: 4, 
+                quality: 1,
+                enableRetinaScaling: true
+            });
+
+            // 3. Upload to Firebase Storage
+            const storage = getStorage();
+            // Naming: userId / timestamp_view.png
+            const filename = `print_files/${user?.uid || 'guest'}/${Date.now()}_${currentView}.png`;
+            const storageRef = ref(storage, filename);
+            
+            await uploadString(storageRef, dataUrl, 'data_url');
+            const downloadUrl = await getDownloadURL(storageRef);
+            
+            console.log("✅ High Res Generated:", downloadUrl);
+            return downloadUrl;
+
+        } catch (error) {
+            console.warn("⚠️ High-Res Gen Failed (Low RAM?):", error);
+            return null; // Automation will fail, but order proceeds manually
+        } finally {
+            // 4. Restore Canvas
+            fabricCanvas.backgroundColor = originalBg;
+            if (borderObj) borderObj.visible = true;
+            fabricCanvas.requestRenderAll();
+        }
+    };
+
     // ✅ UPDATED: Use the helper for normal URL loading
     useEffect(() => {
         // Only run this if we are NOT in edit mode (Edit mode handles its own loading)
@@ -606,7 +648,7 @@ export default function EditorPanel() {
             ...viewStates,
             [currentView]: currentObjects
         };
-        
+
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
             title: productData.title || "Custom T-Shirt",
