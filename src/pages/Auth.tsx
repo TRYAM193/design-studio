@@ -173,7 +173,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center ml-2 mr-2">
                         <Label className="text-slate-300 text-xs uppercase tracking-wider font-bold">Password</Label>
-                        <span className="text-xs text-orange-400 cursor-pointer hover:text-orange-300 transition-colors">Forgot?</span>
+                        <span className="text-xs text-orange-400 cursor-pointer hover:text-orange-300 transition-colors">Forgot Password?</span>
                     </div>
                     <div className="relative group">
                         <Lock className="absolute left-4 top-3.5 h-4 w-4 text-slate-500 group-focus-within:text-orange-500 transition-colors" />
