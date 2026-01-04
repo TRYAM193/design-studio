@@ -165,7 +165,7 @@ export default function OrderCheckoutPage() {
     }
 
     let vendor;
-    if ()
+    if (shippingInfo.countryCode === 'IN') vendor = 'india_provider';
 
     setIsProcessing(true);
     try {
