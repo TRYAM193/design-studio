@@ -26,8 +26,7 @@ import TermsConditions from "./pages/TermsConditions";
 import OrderDetailsPage from "./pages/OrderDetailsPage.tsx";
 import { CartProvider } from "./context/CartContext";
 import CartPage from "./pages/CartPage.tsx"; // ✅ Import Provider
-
-// ✅ IMPORT THE NEW PAGE
+import AdminOrders from "./pages/AdminOrders.tsx";
 import ProductDetails from "./pages/ProductDetails";
 
 function RouteSyncer() {
@@ -85,7 +84,6 @@ createRoot(document.getElementById("root")!).render(
             </Route>
 
             <Route path="/checkout" element={<OrderCheckoutPage />} />
-            // Inside Routes
             <Route path="/admin/orders" element={<AdminOrders />} />
 
             <Route path="*" element={<NotFound />} />
