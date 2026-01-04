@@ -610,10 +610,8 @@ export default function EditorPanel() {
         let vendor;
 
         if (urlRegion == 'IN') vendor = 'qikink';
-        if (urlRegion == 'US') vendor = 'printify';
-        else vendor = ''
-
-        
+        else if (urlRegion == 'US') vendor = 'printify';
+        else vendor = 'gelato';
 
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
