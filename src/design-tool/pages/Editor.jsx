@@ -103,6 +103,35 @@ export default function EditorPanel() {
     // Track Refs for Cleanup/Backup
     const currentViewRef = useRef(currentView);
     const viewStatesRef = useRef(viewStates);
+    useEffect(() => {
+        if (editCartId && cartItems.length > 0 && fabricCanvas) {
+             const itemToEdit = cartItems.find(i => i.id === editCartId);
+             
+             if (itemToEdit && itemToEdit.designData) {
+                 // 1. Set flag
+                 setIsEditMode(true);
+
+                 // 2. Restore View States (Front/Back)
+                 if (itemToEdit.designData.viewStates) {
+                     setViewStates(itemToEdit.designData.viewStates);
+                 }
+
+                 // 3. Restore Current View
+                 const savedView = itemToEdit.designData.currentView || 'front';
+                 setCurrentView(savedView);
+
+                 // 4. Restore Canvas Objects
+                 // Logic to load specific view objects
+                 const objectsToLoad = itemToEdit.designData.viewStates?.[savedView] || [];
+                 dispatch(setCanvasObjects(objectsToLoad));
+                 
+                 // 5. Restore Product Config (Color/Size)
+                 if (itemToEdit.variant?.color) handleColorChange(itemToEdit.variant.color);
+                 if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
+                 // Note: Ideally, we also ensure productData matches itemToEdit.productId
+             }
+        }
+    }, [editCartId, cartItems, fabricCanvas, dispatch]);
 
     useEffect(() => { currentViewRef.current = currentView; }, [currentView]);
     useEffect(() => { viewStatesRef.current = viewStates; }, [viewStates]);
