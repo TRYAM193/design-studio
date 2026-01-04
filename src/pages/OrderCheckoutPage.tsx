@@ -526,15 +526,15 @@ export default function OrderCheckoutPage() {
             </Card>
 
             <Dialog open={showStripeModal} onOpenChange={setShowStripeModal}>
-        <DialogContent className="bg-slate-900 text-white border-white/10">
-          <DialogHeader><DialogTitle>Secure Payment</DialogTitle></DialogHeader>
-          {stripeClientSecret && stripePromise && (
-            <Elements stripe={stripePromise} options={{ clientSecret: stripeClientSecret, appearance: { theme: 'night' } }}>
-              <StripeCheckoutForm onSuccess={handleStripeSuccess} />
-            </Elements>
-          )}
-        </DialogContent>
-      </Dialog>
+              <DialogContent className="bg-slate-900 text-white border-white/10">
+                <DialogHeader><DialogTitle>Secure Payment</DialogTitle></DialogHeader>
+                {stripeClientSecret && stripePromise && (
+                  <Elements stripe={stripePromise} options={{ clientSecret: stripeClientSecret, appearance: { theme: 'night' } }}>
+                    <StripeCheckoutForm onSuccess={handleStripeSuccess} />
+                  </Elements>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
