@@ -577,6 +577,8 @@ export default function EditorPanel() {
         try {
             // 2. Loop through every view defined in product
             for (const view of allViews) {
+                // Get Objects for this view
+                let viewObjects = tempViewStates[view] || [];
 
                 // If a view has no objects, we can still generate a blank file or skip.
                 // Usually better to generate it if it's a valid print area.
@@ -584,7 +586,12 @@ export default function EditorPanel() {
                 
                 // Load this view's objects onto the MAIN canvas
                 await new Promise((resolve) => {
-                    fabricCanvas.loadFromJSON(() => {
+                    // fabricCanvas.loadFromJSON expects a JSON object with "objects" key
+                    const jsonToLoad = { 
+                        version: "5.3.0", 
+                        objects: viewObjects 
+                    };
+                    fabricCanvas.loadFromJSON(jsonToLoad, () => {
                         fabricCanvas.renderAll();
                         resolve();
                     });
@@ -636,7 +643,7 @@ export default function EditorPanel() {
             price: productData.price || 0,
             currency: 'INR',
             // Default thumbnail is the front, or the current view if front missing
-            thumbnail_files: generatedPreviews['front'] || generatedPreviews[originalView] || "/assets/placeholder.png",
+            thumbnail_fil: generatedPreviews['front'] || generatedPreviews[originalView] || "/assets/placeholder.png",
             thumbnail: productData.image,
             // ✅ NEW: Return objects containing ALL generated images
             printFiles: generatedPrintFiles, // { front: '...', back: '...' }
