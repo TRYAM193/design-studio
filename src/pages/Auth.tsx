@@ -10,12 +10,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"; // ✅ Import Dialog components
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, Mail, Lock, User as UserIcon, ArrowRight } from "lucide-react";
+import { Loader2, Mail, Lock, User as UserIcon, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { toast } from "sonner"; // ✅ Import Toast for success message
 
-// ✅ 1. Custom Google SVG Component for authenticity
+// Custom Google Icon
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -30,7 +38,7 @@ interface AuthProps {
 }
 
 function Auth({ redirectAfterAuth }: AuthProps = {}) {
-  const { isLoading: authLoading, isAuthenticated, signIn } = useAuth();
+  const { isLoading: authLoading, isAuthenticated, signIn, resetPassword } = useAuth(); // ✅ Get resetPassword
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +47,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  // Forgot Password State
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       const redirect = redirectAfterAuth || "/dashboard";
@@ -46,7 +59,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
 
-  // Handle Google Login
+  // Google Login
   const handleGoogleLogin = async () => {
     setIsLoading(true);
     setError(null);
@@ -59,7 +72,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
-  // Handle Email/Password Login & Signup
+  // Email/Password Login & Signup
   const handleAuthSubmit = async (e: React.FormEvent, isSignUp: boolean) => {
     e.preventDefault();
     setIsLoading(true);
@@ -99,6 +112,34 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
+  // ✅ Handle Password Reset
+  const handleForgotPasswordClick = () => {
+    setResetEmail(email); // Pre-fill email if user typed it
+    setIsResetOpen(true);
+  };
+
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) return;
+    
+    setIsResetting(true);
+    try {
+        await resetPassword(resetEmail);
+        setIsResetOpen(false);
+        toast.success("Password reset email sent!", {
+            description: "Check your inbox for instructions.",
+            icon: <CheckCircle2 className="h-4 w-4 text-green-500"/>
+        });
+    } catch (error: any) {
+        console.error(error);
+        toast.error("Failed to send reset email", {
+            description: error.code === 'auth/user-not-found' ? "No account found with this email." : "Please try again later."
+        });
+    } finally {
+        setIsResetting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#0f172a] text-white font-sans selection:bg-orange-500/30">
       
@@ -116,7 +157,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           <CardHeader className="text-center pb-2">
             <div className="flex justify-center mb-6">
                <div className="relative group cursor-pointer" onClick={() => navigate("/")}>
-                  {/* Glowing Ring Effect */}
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-500 to-red-600 rounded-full opacity-75 blur group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
                   <div className="relative h-20 w-20 rounded-full bg-slate-950 p-1 flex items-center justify-center ring-1 ring-white/10">
                     <img src="/assets/LOGO.png" alt="Logo" className="h-full w-full object-cover rounded-full" />
@@ -129,11 +169,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
           <CardContent className="space-y-6 pt-2 flex flex-col items-center">
             
-            {/* 1. GOOGLE BUTTON (Authentic & Pill Shaped) */}
+            {/* GOOGLE BUTTON */}
             <Button 
                 onClick={handleGoogleLogin} 
                 disabled={isLoading}
-                // ✅ Reduced Width & Added Rounded-Full
                 className="w-[85%] h-12 bg-white hover:bg-slate-50 text-slate-900 font-semibold border-0 rounded-full transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-white/5 flex items-center justify-center gap-3"
             >
                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin text-slate-400" /> : <GoogleIcon />}
@@ -146,14 +185,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 <div className="flex-grow border-t border-white/10"></div>
             </div>
 
-            {/* 2. TABS FOR LOGIN / SIGNUP */}
+            {/* TABS */}
             <Tabs defaultValue="signin" className="w-[85%]">
               <TabsList className="grid w-full grid-cols-2 bg-slate-950/50 border border-white/10 p-1 h-12 rounded-full">
                 <TabsTrigger value="signin" className="rounded-full data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 font-medium transition-all">Sign In</TabsTrigger>
                 <TabsTrigger value="signup" className="rounded-full data-[state=active]:bg-slate-800 data-[state=active]:text-white text-slate-400 font-medium transition-all">Sign Up</TabsTrigger>
               </TabsList>
 
-              {/* --- SIGN IN FORM --- */}
+              {/* SIGN IN */}
               <TabsContent value="signin" className="mt-4 focus-visible:ring-0">
                 <form onSubmit={(e) => handleAuthSubmit(e, false)} className="space-y-4">
                   <div className="space-y-2">
@@ -173,7 +212,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center ml-2 mr-2">
                         <Label className="text-slate-300 text-xs uppercase tracking-wider font-bold">Password</Label>
-                        <span className="text-xs text-orange-400 cursor-pointer hover:text-orange-300 transition-colors">Forgot Password?</span>
+                        {/* ✅ Forgot Password Trigger */}
+                        <span 
+                            onClick={handleForgotPasswordClick}
+                            className="text-xs text-orange-400 cursor-pointer hover:text-orange-300 transition-colors hover:underline"
+                        >
+                            Forgot?
+                        </span>
                     </div>
                     <div className="relative group">
                         <Lock className="absolute left-4 top-3.5 h-4 w-4 text-slate-500 group-focus-within:text-orange-500 transition-colors" />
@@ -188,7 +233,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </div>
                   </div>
                   
-                  {error && <div className="text-sm text-red-400 text-center bg-red-500/10 p-3 rounded-xl border border-red-500/20 flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500" />{error}</div>}
+                  {error && <div className="text-sm text-red-400 text-center bg-red-500/10 p-3 rounded-xl border border-red-500/20 flex items-center justify-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-red-500" />{error}</div>}
 
                   <Button 
                     type="submit" 
@@ -200,7 +245,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 </form>
               </TabsContent>
 
-              {/* --- SIGN UP FORM --- */}
+              {/* SIGN UP */}
               <TabsContent value="signup" className="mt-4 focus-visible:ring-0">
                 <form onSubmit={(e) => handleAuthSubmit(e, true)} className="space-y-4">
                   <div className="space-y-2">
@@ -232,7 +277,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                     </div>
                   </div>
 
-                  {error && <div className="text-sm text-red-400 text-center bg-red-500/10 p-3 rounded-xl border border-red-500/20 flex items-center justify-center gap-2 animate-in fade-in slide-in-from-top-1"><span className="h-1.5 w-1.5 rounded-full bg-red-500" />{error}</div>}
+                  {error && <div className="text-sm text-red-400 text-center bg-red-500/10 p-3 rounded-xl border border-red-500/20 flex items-center justify-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-red-500" />{error}</div>}
 
                   <Button 
                     type="submit" 
@@ -252,7 +297,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 variant="outline" 
                 onClick={handleGuestLogin} 
                 disabled={isLoading}
-                // ✅ Reduced Width & Pill Shape
                 className="w-[85%] h-11 border-white/5 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-full transition-all duration-200 backdrop-blur-sm border-dashed"
              >
                 <UserIcon className="mr-2 h-4 w-4" /> Continue as Guest
@@ -263,6 +307,54 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           </CardFooter>
         </Card>
       </div>
+
+      {/* ✅ FORGOT PASSWORD DIALOG */}
+      <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
+        <DialogContent className="bg-slate-900 border border-white/10 text-white sm:rounded-2xl shadow-2xl shadow-black/50">
+            <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-center">Reset Password</DialogTitle>
+                <DialogDescription className="text-center text-slate-400">
+                    Enter your email address and we'll send you a link to reset your password.
+                </DialogDescription>
+            </DialogHeader>
+            
+            <form onSubmit={handleResetSubmit} className="space-y-4 mt-2">
+                <div className="space-y-2">
+                    <Label className="text-slate-300 text-xs uppercase tracking-wider font-bold ml-1">Email Address</Label>
+                    <div className="relative group">
+                        <Mail className="absolute left-4 top-3.5 h-4 w-4 text-slate-500 group-focus-within:text-orange-500 transition-colors" />
+                        <Input 
+                            type="email" 
+                            placeholder="name@example.com" 
+                            className="h-11 pl-12 bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 rounded-full transition-all"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            required
+                        />
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                    <Button 
+                        type="button" 
+                        variant="ghost" 
+                        onClick={() => setIsResetOpen(false)}
+                        className="rounded-full hover:bg-white/5 text-slate-400 hover:text-white"
+                    >
+                        Cancel
+                    </Button>
+                    <Button 
+                        type="submit" 
+                        disabled={isResetting || !resetEmail}
+                        className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6"
+                    >
+                        {isResetting ? <Loader2 className="animate-spin h-4 w-4" /> : "Send Reset Link"}
+                    </Button>
+                </div>
+            </form>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
