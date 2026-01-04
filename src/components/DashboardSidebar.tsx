@@ -56,7 +56,7 @@ export function DashboardSidebar() {
     return () => unsub();
   }, [user?.uid]);
 
-  const displayName = userProfile?.name || user?.displayName || user?.email?.split("@")[0];
+  const displayName = userProfile?.name || user?.displayName || user?.email?.split("@")[0] || "User";
   const initials = displayName?.charAt(0).toUpperCase();
 
   const navItems = [
