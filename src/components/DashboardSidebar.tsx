@@ -178,7 +178,7 @@ export function DashboardSidebar() {
           <TooltipProvider delayDuration={0}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link to="/cart" className={`w-full ${isCollapsed ? "flex justify-center" : ""}`}>
+                <Link to="/dashboard/cart" className={`w-full ${isCollapsed ? "flex justify-center" : ""}`}>
                   <Button
                     variant="ghost"
                     className={`h-10 transition-all duration-200 relative ${
@@ -186,7 +186,7 @@ export function DashboardSidebar() {
                         ? "w-10 px-0 justify-center rounded-xl" 
                         : "w-full justify-start rounded-lg"
                     } ${
-                      isActive('/cart') 
+                      isActive('/dashboard/cart') 
                         ? "bg-blue-600/10 text-blue-400" 
                         : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
                     }`}
