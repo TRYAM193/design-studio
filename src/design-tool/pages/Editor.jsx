@@ -645,38 +645,54 @@ export default function EditorPanel() {
         }, 50);
     };
 
-    const generateOrderPayload = () => {
-        const finalPreview = designTextures[currentView]?.url || captureCurrentCanvas()?.url;
+    const generateOrderPayload = async (isFinalCheckout = false) => {
+        // 1. Thumbnail (Screen Res)
+        const thumbUrl = fabricCanvas ? fabricCanvas.toDataURL({ format: 'png', multiplier: 0.5 }) : null;
 
-        // ✅ MERGE FIX: Ensure payload has the ABSOLUTE LATEST canvas state
-        const currentObjects = store.getState().canvas.present;
+        // 2. High Res Print File (Only if User is clicking "Add to Cart")
+        let printFileUrl = null;
+        let highResGenerated = false;
+        
+        if (isFinalCheckout) {
+             printFileUrl = await generateAndUploadHighRes();
+             highResGenerated = !!printFileUrl;
+        }
+
+        // 3. Capture Current View JSON (Standard Fabric JSON, not Redux)
+        const currentViewJSON = getFullCanvasJSON();
+        
+        // 4. Merge into ViewStates
         const updatedViewStates = {
             ...viewStates,
-            [currentView]: currentObjects
+            [currentView]: currentViewJSON // Saving strict JSON now
         };
 
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
             title: productData.title || "Custom T-Shirt",
-            productId: productData.id || "unknown_product",
+            productId: productData.id,
             variant: {
-                color: Object.keys(COLOR_MAP).find(key => COLOR_MAP[key] === canvasBg) || canvasBg,
+                color: canvasBg,
                 size: selectedSize,
             },
             quantity: quantity,
-            price: currentPrice,
-            currency: currencyInfo.code,
-            region: urlRegion,
-            thumbnail: productData.image,
-            // ✅ Save the MERGED view states
-            designData: {
-                viewStates: updatedViewStates,
-                currentView
+            price: productData.price || 0,
+            currency: 'INR',
+            thumbnail: thumbUrl || "/assets/placeholder.png",
+            
+            // 🚀 AUTOMATION DATA
+            printFileUrl: printFileUrl, 
+            highResGenerated: highResGenerated,
+
+            // 💾 RE-EDIT & MANUAL FALLBACK DATA
+            designData: { 
+                viewStates: updatedViewStates, // Contains full JSON for every view
+                currentView: currentView 
             },
+            vendor: "qikink",
             createdAt: new Date().toISOString()
         };
     };
-
     // ✅ 5. HANDLE ADD/UPDATE
     const handleAddToCart = async () => {
         if (!userId) {
