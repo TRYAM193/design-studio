@@ -103,7 +103,7 @@ export default function CartPage() {
             </div>
             <h2 className="text-xl font-semibold text-slate-300">Your cart is empty</h2>
             <p className="text-slate-500 max-w-sm">Looks like you haven't added any custom tees yet. Start designing!</p>
-            <Link to="/design">
+            <Link to="/store">
               <Button size="lg" className="bg-orange-600 hover:bg-orange-700 mt-4 rounded-full px-8 shadow-lg shadow-orange-900/20">
                 Browse Catalog
               </Button>
