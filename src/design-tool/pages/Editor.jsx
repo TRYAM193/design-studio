@@ -404,7 +404,7 @@ export default function EditorPanel() {
             quantity: quantity,
             price: currentPrice,
             currency: 'INR',
-            thumbnail: generatedPreviews['front'] || currentSnapshot || "/assets/placeholder.png",
+            thumbnail: productData.image,
             
             // Contains all view images (low res)
             previewImages: generatedPreviews, 
