@@ -63,11 +63,11 @@ export default function CartPage() {
                         {/* Actions */}
                         <div className="flex flex-col items-end gap-3">
                            <div className="flex items-center gap-3 bg-slate-900/50 rounded-lg p-1 border border-white/5">
-                             <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="p-1 hover:text-white text-slate-400 disabled:opacity-50" disabled={item.quantity <= 1}>
+                             <button onClick={() => updateQuantity(item.id, - 1)} className="p-1 hover:text-white text-slate-400 disabled:opacity-50" disabled={item.quantity <= 1}>
                                <Minus size={16} />
                              </button>
                              <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                             <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="p-1 hover:text-white text-slate-400">
+                             <button onClick={() => updateQuantity(item.id, + 1)} className="p-1 hover:text-white text-slate-400">
                                <Plus size={16} />
                              </button>
                            </div>
