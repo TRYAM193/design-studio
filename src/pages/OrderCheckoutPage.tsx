@@ -184,7 +184,7 @@ export default function OrderCheckoutPage() {
         status: 'pending_payment',
         createdAt: serverTimestamp(),
         orderId,
-        
+        vendor
       };
 
       await setDoc(orderRef, newOrder);
