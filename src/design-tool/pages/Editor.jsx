@@ -63,7 +63,7 @@ export default function EditorPanel() {
     const navigation = useNavigate();
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
-    const { addItem } = useCart();
+    const { addItem, updateItemContent, items: cartItems } = useCart();
     const { user } = useAuth();
     const userId = user?.uid;
 
