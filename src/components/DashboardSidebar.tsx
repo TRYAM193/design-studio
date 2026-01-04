@@ -262,7 +262,7 @@ export function DashboardSidebar() {
           </Link>
         ))}
 
-        <Link to="/cart">
+        <Link to="/dashboard/cart">
           <Button 
             variant="ghost" 
             size="icon" 
