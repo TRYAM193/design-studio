@@ -607,11 +607,7 @@ export default function EditorPanel() {
             [currentView]: currentObjects
         };
 
-        let vendor;
-
-        if (urlRegion == 'IN') vendor = 'qikink';
-        else if (urlRegion == 'US') vendor = 'printify';
-        else vendor = 'gelato';
+       
 
 
 
@@ -633,7 +629,6 @@ export default function EditorPanel() {
                 viewStates: updatedViewStates,
                 currentView
             },
-            vendor: vendor,
             createdAt: new Date().toISOString()
         };
     };
