@@ -24,7 +24,8 @@ import AdminProductManager from "./pages/AdminProductManager.tsx";
 import OrderCheckoutPage from './pages/OrderCheckoutPage';
 import TermsConditions from "./pages/TermsConditions";
 import OrderDetailsPage from "./pages/OrderDetailsPage.tsx";
-import { CartProvider } from "./context/CartContext"; // ✅ Import Provider
+import { CartProvider } from "./context/CartContext";
+import  // ✅ Import Provider
 
 // ✅ IMPORT THE NEW PAGE
 import ProductDetails from "./pages/ProductDetails";
