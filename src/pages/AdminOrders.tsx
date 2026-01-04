@@ -73,7 +73,7 @@ export default function AdminOrders() {
   // 3. Logic to Suggest Correct Provider
   const getRecommendedProvider = (countryCode: string) => {
     if (countryCode === 'IN') return 'qikink';
-    if (countryCode === 'US' || code === 'CA') return 'printify';
+    if (countryCode === 'US') return 'printify';
     return 'gelato'; 
   };
 
