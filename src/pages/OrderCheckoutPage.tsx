@@ -164,10 +164,10 @@ export default function OrderCheckoutPage() {
       return;
     }
 
-    let provi;
-    if (shippingInfo.countryCode === 'IN') vendor = 'qikink';
-    else if (shippingInfo.countryCode === 'US') vendor = 'printify';
-    else vendor = 'gelato';
+    let provider;
+    if (shippingInfo.countryCode === 'IN') provider = 'qikink';
+    else if (shippingInfo.countryCode === 'US') provider = 'printify';
+    else provider = 'gelato';
 
     setIsProcessing(true);
     try {
@@ -184,7 +184,7 @@ export default function OrderCheckoutPage() {
         status: 'pending_payment',
         createdAt: serverTimestamp(),
         orderId,
-        vendor
+        provider
       };
 
       await setDoc(orderRef, newOrder);
