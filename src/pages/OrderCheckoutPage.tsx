@@ -7,7 +7,7 @@ import { db, functions } from '@/firebase';
 
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // For Stripe Modal
 // Data Library
 import { Country, State, City } from 'country-state-city';
 
