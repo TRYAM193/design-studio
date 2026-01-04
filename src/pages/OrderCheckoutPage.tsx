@@ -32,6 +32,42 @@ import {
   Lock
 } from "lucide-react";
 
+const StripeCheckoutForm = ({ clientSecret, onSuccess, onClose }: any) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [error, setError] = useState('');
+  const [processing, setProcessing] = useState(false);
+
+  const handleSubmit = async (event: any) => {
+    event.preventDefault();
+    if (!stripe || !elements) return;
+    setProcessing(true);
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: window.location.href },
+      redirect: "if_required"
+    });
+
+    if (error) {
+      setError(error.message || "Payment failed");
+      setProcessing(false);
+    } else if (paymentIntent && paymentIntent.status === "succeeded") {
+      onSuccess(paymentIntent.id);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+      <PaymentElement />
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      <Button type="submit" disabled={!stripe || processing} className="w-full bg-orange-600 hover:bg-orange-500 text-white">
+        {processing ? <Loader2 className="animate-spin" /> : "Pay Now"}
+      </Button>
+    </form>
+  );
+};
+
 export default function OrderCheckoutPage() {
   const navigate = useNavigate();
   const location = useLocation();
