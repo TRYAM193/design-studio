@@ -646,8 +646,6 @@ export default function EditorPanel() {
     };
 
     const generateOrderPayload = async (isFinalCheckout = false) => {
-        // 1. Thumbnail (Screen Res)
-        const thumbUrl = fabricCanvas ? fabricCanvas.toDataURL({ format: 'png', multiplier: 0.5 }) : null;
 
         // 2. High Res Print File (Only if User is clicking "Add to Cart")
         let printFileUrl = null;
