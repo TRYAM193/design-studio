@@ -266,7 +266,7 @@ export function DashboardSidebar() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className={`text-slate-500 hover:text-slate-200 relative ${isActive('/cart') ? "text-blue-400" : ""}`}
+            className={`text-slate-500 hover:text-slate-200 relative ${isActive('/dashboard') ? "text-blue-400" : ""}`}
           >
             <ShoppingCart className="h-5 w-5" />
             {cartCount > 0 && (
