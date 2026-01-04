@@ -49,7 +49,7 @@ interface Order {
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  console
+  console.log(orders)
 
   // 1. Live Listen to Orders
   useEffect(() => {
