@@ -214,44 +214,82 @@ export default function OrderCheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) return;
-    if (!shippingInfo.line1 || !shippingInfo.stateCode || !shippingInfo.city || !shippingInfo.zip) {
-      alert("Please complete your full shipping address.");
-      return;
-    }
-
-    let provider;
-    if (shippingInfo.countryCode === 'IN') provider = 'qikink';
-    else if (shippingInfo.countryCode === 'US') provider = 'printify';
-    else provider = 'gelato';
+    if (!shippingInfo.line1 || !shippingInfo.city) { alert("Address incomplete."); return; }
 
     setIsProcessing(true);
+
+    // 1. Create Order in Firestore (Pending)
+    const orderId = `ORD-${Date.now()}`;
+    const orderRef = doc(db, 'orders', orderId);
+    
+    // Determine Provider Logic
+    let provider = shippingInfo.countryCode === 'IN' ? 'qikink' : 'printify';
+
+    const newOrder = {
+      userId: user?.uid || 'guest',
+      items,
+      shippingAddress: shippingInfo,
+      payment: { method: paymentMethod, total: totalPayAmount, currency: currencySymbol, status: 'pending' },
+      status: 'pending_payment',
+      createdAt: serverTimestamp(),
+      orderId,
+      provider
+    };
+
     try {
-      const orderId = `ORD-${Date.now()}`;
-      const orderRef = doc(db, 'orders', orderId);
-      const countryName = Country.getCountryByCode(shippingInfo.countryCode)?.name || shippingInfo.countryCode;
-      const stateName = State.getStateByCodeAndCountry(shippingInfo.stateCode, shippingInfo.countryCode)?.name || shippingInfo.stateCode;
-
-      const newOrder = {
-        userId: user?.uid || 'guest',
-        items,
-        shippingAddress: { ...shippingInfo, country: countryName, state: stateName },
-        payment: { method: paymentMethod, total: totalPayAmount, currency: currencySymbol, status: 'pending' },
-        status: 'pending_payment',
-        createdAt: serverTimestamp(),
-        orderId,
-        provider
-      };
-
       await setDoc(orderRef, newOrder);
+      setPendingOrderId(orderId);
 
-      // Simulate Payment
-      setTimeout(async () => {
-        await updateDoc(orderRef, { status: 'placed', 'payment.status': paymentMethod === 'online' ? 'paid' : 'pending_cod' });
-        navigate(`/dashboard/orders`);
-      }, 2000);
+      // 2. Handle Payment Flow
+      if (paymentMethod === 'cod') {
+         // Direct Success
+         await updateDoc(orderRef, { status: 'placed', 'payment.status': 'pending_cod' });
+         navigate('/dashboard/orders');
+      
+      } else if (shippingInfo.countryCode === 'IN') {
+         // --- RAZORPAY FLOW ---
+         const loaded = await loadRazorpay();
+         if (!loaded) { alert('Razorpay SDK failed to load'); setIsProcessing(false); return; }
+
+         const createRzpOrder = httpsCallable(functions, 'createRazorpayOrder');
+         const { data }: any = await createRzpOrder({ amount: totalPayAmount, currency: 'INR' });
+
+         const options = {
+            key: data.keyId,
+            amount: data.amount,
+            currency: data.currency,
+            order_id: data.orderId,
+            name: "TRYAM Store",
+            description: "Custom T-Shirt Order",
+            handler: async function (response: any) {
+                // Success
+                await updateDoc(orderRef, { 
+                    status: 'placed', 
+                    'payment.status': 'paid', 
+                    'payment.txnId': response.razorpay_payment_id 
+                });
+                navigate('/dashboard/orders');
+            },
+            prefill: { name: shippingInfo.fullName, email: shippingInfo.email }
+         };
+         const rzp = new (window as any).Razorpay(options);
+         rzp.open();
+         setIsProcessing(false);
+
+      } else {
+         // --- STRIPE FLOW ---
+         const createStripe = httpsCallable(functions, 'createStripeIntent');
+         const { data }: any = await createStripe({ amount: totalPayAmount, currency: 'usd' }); // Convert currency if needed
+
+         setStripePromise(loadStripe(data.publishableKey));
+         setStripeClientSecret(data.clientSecret);
+         setShowStripeModal(true); // Open Modal
+         setIsProcessing(false);
+      }
 
     } catch (error) {
-      console.error("Order failed:", error);
+      console.error("Order Error:", error);
+      alert("Failed to initiate order.");
       setIsProcessing(false);
     }
   };
