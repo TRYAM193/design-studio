@@ -252,6 +252,7 @@ export default function EditorPanel() {
 
                 setIsEditMode(true);
 
+                // 1. Restore Product Configuration
                 if (itemToEdit.variant?.color) {
                     const cName = itemToEdit.variant.color;
                     setCanvasBg(COLOR_MAP[cName] || cName);
@@ -259,17 +260,21 @@ export default function EditorPanel() {
                 if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
                 if (itemToEdit.quantity) setQuantity(itemToEdit.quantity);
 
+                // 2. Restore View States
+                // Ensure we have the full history of all sides
                 if (itemToEdit.designData.viewStates) {
                     setViewStates(itemToEdit.designData.viewStates);
                     viewStatesRef.current = itemToEdit.designData.viewStates;
                 }
 
+                // 3. Set Current View & Load Objects
                 const savedView = itemToEdit.designData.currentView || 'front';
                 setCurrentView(savedView);
 
                 const objectsToLoad = itemToEdit.designData.viewStates?.[savedView] || [];
                 dispatch(setCanvasObjects(objectsToLoad));
                 
+                // 4. Force Product Data Load
                 fetchProductData(itemToEdit.productId);
             }
         }
@@ -277,6 +282,7 @@ export default function EditorPanel() {
 
 
     useEffect(() => {
+        // Initial Product Load (if not editing cart)
         if (!editCartId) {
             const pid = urlProductId || currentDesign?.productConfig?.productId;
             if (pid) {
@@ -423,8 +429,7 @@ export default function EditorPanel() {
 
     // --- High Res & Canvas Utils ---
 
-    // ✅ UPDATED: Accepts specific view name to generate filenames correctly
-    const generateAndUploadHighRes = async (targetView = currentView) => {
+    const generateAndUploadHighRes = async () => {
         if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
@@ -442,8 +447,7 @@ export default function EditorPanel() {
             });
 
             const storage = getStorage();
-            // Unique filename for every side
-            const filename = `print_files/${user?.uid || 'guest'}/${Date.now()}_${targetView}.png`;
+            const filename = `print_files/${user?.uid || 'guest'}/${Date.now()}_${currentView}.png`;
             const storageRef = ref(storage, filename);
 
             await uploadString(storageRef, dataUrl, 'data_url');
@@ -451,18 +455,13 @@ export default function EditorPanel() {
             return downloadUrl;
 
         } catch (error) {
-            console.warn(`High-Res Gen Failed for ${targetView}:`, error);
+            console.warn("High-Res Gen Failed:", error);
             return null;
         } finally {
             fabricCanvas.backgroundColor = originalBg;
             if (borderObj) borderObj.visible = true;
             fabricCanvas.requestRenderAll();
         }
-    };
-
-    const getFullCanvasJSON = () => {
-        if (!fabricCanvas) return null;
-        return fabricCanvas.toJSON(['id', 'customId', 'selectable', 'lockMovementX', 'lockMovementY', 'price', 'sku']);
     };
 
     const getCleanDataURL = () => {
@@ -527,12 +526,17 @@ export default function EditorPanel() {
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
+        // 1. Snapshot for Preview
         const currentSnapshot = captureCurrentCanvas();
         if (currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
 
+        // 2. Save current Objects to state (Using Redux State)
         const currentCanvasState = store.getState().canvas.present;
+
+        // 3. Sync State
         setViewStates(prev => ({ ...prev, [currentView]: currentCanvasState }));
 
+        // 4. Switch & Load
         setCurrentView(newView);
         const nextObjects = viewStates[newView] || []; 
         dispatch(setCanvasObjects(nextObjects));
@@ -559,77 +563,23 @@ export default function EditorPanel() {
         }, 50);
     };
 
-    // ✅ REWRITTEN: Iterate over ALL views, switch canvas, capture image, restore.
     const generateOrderPayload = async (isFinalCheckout = false) => {
-        const originalView = currentView;
-        // 1. Snapshot current state before messing with it
-        const currentReduxState = store.getState().canvas.present;
-        const tempViewStates = { ...viewStates, [currentView]: currentReduxState };
+        let printFileUrl = null;
+        let highResGenerated = false;
 
-        const allViews = Object.keys(productData.print_areas || { front: {} });
-        
-        const generatedPrintFiles = {};
-        const generatedPreviews = {};
-
-        // Indicate processing
-        setIsGeneratingPreview(true); 
-
-        try {
-            // 2. Loop through every view defined in product
-            for (const view of allViews) {
-                // Get Objects for this view
-                let viewObjects = tempViewStates[view] || [];
-
-                // If a view has no objects, we can still generate a blank file or skip.
-                // Usually better to generate it if it's a valid print area.
-                // However, if the user never touched "back", viewObjects is empty.
-                
-                // Load this view's objects onto the MAIN canvas
-                await new Promise((resolve) => {
-                    // fabricCanvas.loadFromJSON expects a JSON object with "objects" key
-                    const jsonToLoad = { 
-                        version: "5.3.0", 
-                        objects: viewObjects 
-                    };
-                    fabricCanvas.loadFromJSON(jsonToLoad, () => {
-                        fabricCanvas.renderAll();
-                        resolve();
-                    });
-                });
-
-                // 3. Generate High Res Print File (for "Add to Cart")
-                if (isFinalCheckout) {
-                     const url = await generateAndUploadHighRes(view); 
-                     if (url) generatedPrintFiles[view] = url;
-                }
-                
-                // 4. Generate Thumbnail/Preview
-                const previewUrl = getCleanDataURL(); 
-                if (previewUrl) generatedPreviews[view] = previewUrl; 
-            }
-
-        } catch (e) {
-            console.error("Error generating view images:", e);
-        } finally {
-            // 5. Restore the Original View so the user sees what they saw before clicking
-            const originalObjects = tempViewStates[originalView] || [];
-            await new Promise((resolve) => {
-                const jsonToLoad = { 
-                    version: "5.3.0", 
-                    objects: originalObjects 
-                };
-                fabricCanvas.loadFromJSON(jsonToLoad, () => {
-                    setCurrentView(originalView);
-                    // Also sync Redux back to be safe
-                    dispatch(setCanvasObjects(originalObjects));
-                    fabricCanvas.renderAll();
-                    resolve();
-                });
-            });
-            setIsGeneratingPreview(false);
+        if (isFinalCheckout) {
+            printFileUrl = await generateAndUploadHighRes();
+            highResGenerated = !!printFileUrl;
         }
 
-        const highResGenerated = Object.keys(generatedPrintFiles).length > 0;
+        // ✅ REWRITE: Use canvasObjects (Redux) instead of full JSON
+        // This ensures the saved data structure matches what handleSwitchView uses
+        const currentCanvasState = store.getState().canvas.present;
+
+        const updatedViewStates = {
+            ...viewStates,
+            [currentView]: currentCanvasState
+        };
 
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
@@ -642,17 +592,12 @@ export default function EditorPanel() {
             quantity: quantity,
             price: productData.price || 0,
             currency: 'INR',
-            // Default thumbnail is the front, or the current view if front missing
-            thumbnail_fil: generatedPreviews['front'] || generatedPreviews[originalView] || "/assets/placeholder.png",
-            thumbnail: productData.image,
-            // ✅ NEW: Return objects containing ALL generated images
-            printFiles: generatedPrintFiles, // { front: '...', back: '...' }
-            previewImages: generatedPreviews, // { front: 'data:image...', back: '...' }
-
+            thumbnail: productData.image || "/assets/placeholder.png",
+            printFileUrl: printFileUrl,
             highResGenerated: highResGenerated,
             designData: {
-                viewStates: tempViewStates, 
-                currentView: originalView // Restore original view pointer
+                viewStates: updatedViewStates, // Consistently Objects[]
+                currentView: currentView
             },
             vendor: "qikink",
             createdAt: new Date().toISOString()
@@ -685,11 +630,7 @@ export default function EditorPanel() {
 
     const handleBuyNow = async () => {
         setIsSaving(true);
-        // For "Buy Now", we might skip high-res generation to speed up UI, 
-        // OR generate it now. Usually better to generate now to ensure data integrity.
-        // Passing 'true' to ensure we have print files ready.
-        const payload = await generateOrderPayload(true); 
-        
+        const payload = generateOrderPayload(); // Generates low-res for speed, high-res handled at checkout
         localStorage.setItem('directBuyItem', JSON.stringify(payload));
 
         setTimeout(() => {
