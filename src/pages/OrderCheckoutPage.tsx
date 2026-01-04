@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, setDoc, serverTimestamp, updateDoc, collection, getDocs, getDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions'
 import { db } from '@/firebase';
 
 // Data Library
