@@ -586,11 +586,6 @@ export default function EditorPanel() {
                 
                 // Load this view's objects onto the MAIN canvas
                 await new Promise((resolve) => {
-                    // fabricCanvas.loadFromJSON expects a JSON object with "objects" key
-                    const jsonToLoad = { 
-                        version: "5.3.0", 
-                        objects: viewObjects 
-                    };
                     fabricCanvas.loadFromJSON(() => {
                         fabricCanvas.renderAll();
                         resolve();
