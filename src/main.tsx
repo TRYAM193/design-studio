@@ -90,7 +90,7 @@ createRoot(document.getElementById("root")!).render(
           </Routes>
         </BrowserRouter>
         <Toaster />
-      {/* </CartProvider> */}
+      </CartProvider>
     </AuthProvider>
   </StrictMode>,
 );
