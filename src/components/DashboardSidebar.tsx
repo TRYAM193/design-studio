@@ -57,7 +57,7 @@ export function DashboardSidebar() {
   }, [user?.uid]);
 
   const displayName = userProfile?.name || user?.displayName;
-  const initials = displayName.charAt(0).toUpperCase();
+  const initials = displayName?.charAt(0).toUpperCase();
 
   const navItems = [
     { icon: Home, label: t("nav.home"), path: "/dashboard", isSpecial: false },
