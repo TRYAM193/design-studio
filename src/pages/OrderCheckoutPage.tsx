@@ -221,7 +221,7 @@ export default function OrderCheckoutPage() {
     // 1. Create Order in Firestore (Pending)
     const orderId = `ORD-${Date.now()}`;
     const orderRef = doc(db, 'orders', orderId);
-    
+
     // Determine Provider Logic
     let provider = shippingInfo.countryCode === 'IN' ? 'qikink' : 'printify';
 
@@ -242,49 +242,49 @@ export default function OrderCheckoutPage() {
 
       // 2. Handle Payment Flow
       if (paymentMethod === 'cod') {
-         // Direct Success
-         await updateDoc(orderRef, { status: 'placed', 'payment.status': 'pending_cod' });
-         navigate('/dashboard/orders');
-      
+        // Direct Success
+        await updateDoc(orderRef, { status: 'placed', 'payment.status': 'pending_cod' });
+        navigate('/dashboard/orders');
+
       } else if (shippingInfo.countryCode === 'IN') {
-         // --- RAZORPAY FLOW ---
-         const loaded = await loadRazorpay();
-         if (!loaded) { alert('Razorpay SDK failed to load'); setIsProcessing(false); return; }
+        // --- RAZORPAY FLOW ---
+        const loaded = await loadRazorpay();
+        if (!loaded) { alert('Razorpay SDK failed to load'); setIsProcessing(false); return; }
 
-         const createRzpOrder = httpsCallable(functions, 'createRazorpayOrder');
-         const { data }: any = await createRzpOrder({ amount: totalPayAmount, currency: 'INR' });
+        const createRzpOrder = httpsCallable(functions, 'createRazorpayOrder');
+        const { data }: any = await createRzpOrder({ amount: totalPayAmount, currency: 'INR' });
 
-         const options = {
-            key: data.keyId,
-            amount: data.amount,
-            currency: data.currency,
-            order_id: data.orderId,
-            name: "TRYAM Store",
-            description: "Custom T-Shirt Order",
-            handler: async function (response: any) {
-                // Success
-                await updateDoc(orderRef, { 
-                    status: 'placed', 
-                    'payment.status': 'paid', 
-                    'payment.txnId': response.razorpay_payment_id 
-                });
-                navigate('/dashboard/orders');
-            },
-            prefill: { name: shippingInfo.fullName, email: shippingInfo.email }
-         };
-         const rzp = new (window as any).Razorpay(options);
-         rzp.open();
-         setIsProcessing(false);
+        const options = {
+          key: data.keyId,
+          amount: data.amount,
+          currency: data.currency,
+          order_id: data.orderId,
+          name: "TRYAM Store",
+          description: "Custom T-Shirt Order",
+          handler: async function (response: any) {
+            // Success
+            await updateDoc(orderRef, {
+              status: 'placed',
+              'payment.status': 'paid',
+              'payment.txnId': response.razorpay_payment_id
+            });
+            navigate('/dashboard/orders');
+          },
+          prefill: { name: shippingInfo.fullName, email: shippingInfo.email }
+        };
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+        setIsProcessing(false);
 
       } else {
-         // --- STRIPE FLOW ---
-         const createStripe = httpsCallable(functions, 'createStripeIntent');
-         const { data }: any = await createStripe({ amount: totalPayAmount, currency: 'usd' }); // Convert currency if needed
+        // --- STRIPE FLOW ---
+        const createStripe = httpsCallable(functions, 'createStripeIntent');
+        const { data }: any = await createStripe({ amount: totalPayAmount, currency: 'usd' }); // Convert currency if needed
 
-         setStripePromise(loadStripe(data.publishableKey));
-         setStripeClientSecret(data.clientSecret);
-         setShowStripeModal(true); // Open Modal
-         setIsProcessing(false);
+        setStripePromise(loadStripe(data.publishableKey));
+        setStripeClientSecret(data.clientSecret);
+        setShowStripeModal(true); // Open Modal
+        setIsProcessing(false);
       }
 
     } catch (error) {
@@ -292,6 +292,18 @@ export default function OrderCheckoutPage() {
       alert("Failed to initiate order.");
       setIsProcessing(false);
     }
+  };
+
+  // C. Stripe Success Handler
+  const handleStripeSuccess = async (txnId: string) => {
+    setShowStripeModal(false);
+    const orderRef = doc(db, 'orders', pendingOrderId);
+    await updateDoc(orderRef, {
+      status: 'placed',
+      'payment.status': 'paid',
+      'payment.txnId': txnId
+    });
+    navigate('/dashboard/orders');
   };
 
   if (loadingItems) return (
