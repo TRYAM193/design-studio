@@ -73,6 +73,7 @@ export default function AdminOrders() {
 
     return () => unsubscribe();
   }, []);
+  console.log(orders);
 
   // 2. Mock "Manual Sync" (Actual sync happens in backend)
   const handleManualSync = async (order: Order) => {
