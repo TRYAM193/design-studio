@@ -85,6 +85,8 @@ createRoot(document.getElementById("root")!).render(
 
             <Route path="/checkout" element={<OrderCheckoutPage />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
+            <Route path="/admin/orders" element={<AdminOrders />} />
+
 
             <Route path="*" element={<NotFound />} />
           </Routes>
