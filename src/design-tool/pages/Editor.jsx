@@ -591,7 +591,7 @@ export default function EditorPanel() {
                         version: "5.3.0", 
                         objects: viewObjects 
                     };
-                    fabricCanvas.loadFromJSON(jsonToLoad, () => {
+                    fabricCanvas.loadFromJSON(() => {
                         fabricCanvas.renderAll();
                         resolve();
                     });
