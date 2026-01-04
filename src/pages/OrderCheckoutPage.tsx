@@ -190,7 +190,7 @@ export default function OrderCheckoutPage() {
     return shippingInfo.stateCode ? City.getCitiesOfState(shippingInfo.countryCode, shippingInfo.stateCode) : [];
   }, [shippingInfo.countryCode, shippingInfo.stateCode]);
 
-const loadRazorpay = () => {
+  const loadRazorpay = () => {
     return new Promise((resolve) => {
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
