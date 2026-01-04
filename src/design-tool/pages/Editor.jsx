@@ -606,11 +606,7 @@ export default function EditorPanel() {
             ...viewStates,
             [currentView]: currentObjects
         };
-
-       
-
-
-
+        
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
             title: productData.title || "Custom T-Shirt",
