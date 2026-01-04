@@ -464,61 +464,71 @@ export default function EditorPanel() {
         }, 50);
     };
 
-    const generateOrderPayload = (isDirectBuy = false) => {
-        // ⚠️ Heavy Data Protection: 
-        // If adding to cart (Firestore), we can store more. 
-        // If Buy Now (LocalStorage), we might hit 5MB limits.
-        // Ideally, save the design to 'designs' collection first, and only pass the ID.
-        
+    const generateOrderPayload = () => {
         const finalPreview = designTextures[currentView]?.url || captureCurrentCanvas()?.url;
-        
+        const safePrice = parseFloat(currentPrice) || 0;
+
         return {
-            productId: productData.id || "unknown",
-            title: productData.title || "Custom T-Shirt",
+            title: productData.title || "Custom T-Shirt", 
+            productId: productData.id || "unknown_product",
             variant: {
                 color: Object.keys(COLOR_MAP).find(key => COLOR_MAP[key] === canvasBg) || canvasBg,
                 size: selectedSize,
             },
-            thumbnail: productData.image, 
-            price: currentPrice,
-            currency: currencyInfo.code,
             quantity: quantity,
+            price: safePrice,
+            currency: currencyInfo.code, 
             region: urlRegion,
-            vendor: "qikink", // Dynamic based on logic
-            // Only pass heavy design data if strictly needed, otherwise rely on saved Design ID
-            designId: editingDesignId || `temp_${Date.now()}`, 
-            // optional: viewStates (careful with size!)
+            thumbnail: finalPreview || "/assets/placeholder.png", 
+            vendor: "qikink", // Default vendor
+            designData: { viewStates, currentView },
         };
     };
 
-    // ✅ ACTION 1: ADD TO CART (Uses Context now)
+    // ✅ ACTION 1: ADD TO CART (Restricted to Users)
     const handleAddToCart = async () => {
+        if (!user) {
+            // 🔒 GATEKEEPER FOR CART
+            alert("Please create an account to save your cart history!"); 
+            // Optional: navigation('/auth')
+            return;
+        }
+        
+        if (!fabricCanvas) return;
         setIsAddingToCart(true);
+
         try {
             const payload = generateOrderPayload();
-            await addItem(payload); // Context handles Firestore vs LocalStorage
+            await addItem(payload); // Context handles Firestore save
+            setIsPreviewOpen(false);
         } catch (error) {
-            console.error("Cart error", error);
-            toast.error("Failed to add to cart");
+            console.error("Cart error:", error);
+            alert("Failed to add to cart");
         } finally {
             setIsAddingToCart(false);
-            setIsPreviewOpen(false);
         }
     };
 
-    // ✅ ACTION 2: BUY NOW (Direct LocalStorage)
+    // ✅ ACTION 2: BUY NOW (Allowed for Guests)
     const handleBuyNow = async () => {
+        if (!fabricCanvas) return;
         setIsSaving(true);
-        const payload = generateOrderPayload(true);
         
-        // Save temporary "Buy Now" item
-        localStorage.setItem('directBuyItem', JSON.stringify(payload));
+        try {
+            const payload = generateOrderPayload();
+            // Save temporary "Direct Buy" item to local storage
+            // This allows checkout page to read it without database
+            localStorage.setItem('directBuyItem', JSON.stringify(payload));
 
-        setTimeout(() => {
+            setTimeout(() => {
+                setIsSaving(false);
+                setIsPreviewOpen(false);
+                navigation('/checkout?mode=direct');
+            }, 800);
+        } catch (error) {
+            console.error(error);
             setIsSaving(false);
-            setIsPreviewOpen(false);
-            navigation('/checkout?mode=direct');
-        }, 500);
+        }
     };
 
     const handleSaveSuccess = (savedId) => {
