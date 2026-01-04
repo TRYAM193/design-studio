@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { db } from "@/firebase";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
+import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
+import * as fabric from 'fabric'; // ✅ Requires 'fabric' installed in frontend
+
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
@@ -8,50 +11,52 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  Loader2, MapPin, ExternalLink, AlertCircle, CheckCircle2, Eye, RefreshCw
+  Loader2, MapPin, ExternalLink, AlertCircle, CheckCircle2, Zap 
 } from "lucide-react";
 import { toast } from "sonner";
 
-// ✅ 1. Match the Interface to YOUR Data Structure
 interface Order {
   id: string;
   orderId: string;
-  createdAt: any; // Timestamp
-  status: string; // 'placed', 'processing', 'shipped'
-  
-  // Nested Objects
-  payment: {
-    total: number;
-    status: string;
-    method: string;
-    currency: string;
-  };
-  
-  shippingAddress: {
-    fullName: string;
-    email: string;
-    line1: string;
-    city: string;
-    state: string;
-    country: string;
-    countryCode: string; // 'IN', 'US'
-    zip: string;
-  };
-
+  createdAt: any;
+  status: string;
+  payment: { total: number; status: string; };
+  shippingAddress: { fullName: string; countryCode: string; city: string; };
   items: any[];
-  
-  // Provider Fields
-  provider: string; // 'gelato', 'qikink', 'printify'
-  providerStatus?: string; // 'synced', 'error'
+  provider: string;
+  providerStatus?: string;
   providerOrderId?: string;
+  printFiles?: Record<string, string>; // To store generated URLs
 }
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  console.log(orders)
+  
+  // Track which order is currently generating images
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // 1. Live Listen to Orders
+  // 🎨 HIDDEN CANVAS REFS
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fabricRef = useRef<fabric.Canvas | null>(null);
+
+  // 1. Initialize Hidden Fabric Canvas (Once)
+  useEffect(() => {
+    if (canvasRef.current && !fabricRef.current) {
+        // Create a large canvas for High-Res output
+        fabricRef.current = new fabric.Canvas(canvasRef.current, {
+            width: 2400, // Print Quality Width (e.g. 8 inches @ 300dpi)
+            height: 3200 
+        });
+    }
+    // Cleanup
+    return () => {
+        fabricRef.current?.dispose();
+        fabricRef.current = null;
+    };
+  }, []);
+
+  // 2. Live Listen to Orders
   useEffect(() => {
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -62,47 +67,93 @@ export default function AdminOrders() {
       setOrders(fetchedOrders);
       setIsLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // 2. Logic to Suggest Correct Provider
+  // 3. Logic to Suggest Correct Provider
   const getRecommendedProvider = (countryCode: string) => {
     if (countryCode === 'IN') return 'qikink';
-    if (countryCode === 'US') return 'printify';
-    return 'gelato'; // Rest of world
+    if (countryCode === 'US' || code === 'CA') return 'printify';
+    return 'gelato'; 
   };
 
-  // 3. Update Provider Function (Fixing the wrong assignment)
-  const handleReRoute = async (orderId: string, correctProvider: string) => {
+  // 🚀 4. THE MANUAL GENERATOR FUNCTION
+  const handleManualProcess = async (order: Order) => {
+    if (!fabricRef.current) return;
+    setProcessingId(order.id);
+    toast.info("Starting High-Res Generation...");
+
     try {
-        await updateDoc(doc(db, "orders", orderId), {
-            provider: correctProvider
-        });
-        toast.success(`Rerouted to ${correctProvider.toUpperCase()}`);
-    } catch (e) {
-        toast.error("Failed to update provider");
-    }
-  };
+        const storage = getStorage();
+        const designData = order.items[0]?.designData; // Assuming single item for now
+        
+        if (!designData) throw new Error("No design data found in order");
 
-  // 4. Mock Sync
-  const handleManualSync = async (order: Order) => {
-    const targetProvider = order.provider;
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 2000)), 
-      {
-        loading: `Pushing to ${targetProvider.toUpperCase()} API...`,
-        success: () => {
-            updateDoc(doc(db, "orders", order.id), {
-                providerStatus: 'synced',
-                providerOrderId: `POD-${Math.floor(Math.random() * 10000)}`,
-                status: 'processing'
+        const generatedFiles: Record<string, string> = {};
+        const views = ['front', 'back'];
+
+        // A. LOOP THROUGH VIEWS (Front/Back)
+        for (const view of views) {
+            const viewState = designData.viewStates?.[view];
+            
+            // Skip empty sides
+            if (!viewState || viewState.length === 0) continue;
+
+            // B. LOAD JSON TO HIDDEN CANVAS
+            await new Promise<void>((resolve) => {
+                fabricRef.current!.loadFromJSON({ version: "5.3.0", objects: viewState }, () => {
+                    // Optional: You can resize objects here if needed
+                    fabricRef.current!.renderAll();
+                    resolve();
+                });
             });
-            return `Sent to ${targetProvider}`;
-        },
-        error: 'Failed to sync'
-      }
-    );
+
+            // C. GENERATE PNG (High Res)
+            const dataUrl = fabricRef.current.toDataURL({
+                format: 'png',
+                multiplier: 1, // Already set canvas to 2400px
+                quality: 1
+            });
+
+            // D. UPLOAD TO FIREBASE
+            const filename = `orders/${order.id}/print_${view}_${Date.now()}.png`;
+            const storageRef = ref(storage, filename);
+            await uploadString(storageRef, dataUrl, 'data_url');
+            const downloadUrl = await getDownloadURL(storageRef);
+
+            generatedFiles[view] = downloadUrl;
+            console.log(`✅ Generated ${view}:`, downloadUrl);
+        }
+
+        // E. UPDATE FIRESTORE WITH PRINT FILES
+        await updateDoc(doc(db, "orders", order.id), {
+            printFiles: generatedFiles
+        });
+
+        // F. MOCK PUSH TO PROVIDER (Replace with real API call later)
+        const targetProvider = order.provider || getRecommendedProvider(order.shippingAddress.countryCode);
+        
+        // Simulate API latency
+        await new Promise(r => setTimeout(r, 1500));
+
+        // G. MARK AS SYNCED
+        await updateDoc(doc(db, "orders", order.id), {
+            provider: targetProvider,
+            providerStatus: 'synced',
+            providerOrderId: `${targetProvider.toUpperCase()}-${Math.floor(Math.random() * 100000)}`,
+            status: 'processing'
+        });
+
+        toast.success(`Order processed & sent to ${targetProvider.toUpperCase()}`);
+
+    } catch (error) {
+        console.error("Manual Process Error:", error);
+        toast.error("Failed to process order");
+    } finally {
+        setProcessingId(null);
+        // Clear canvas
+        fabricRef.current.clear();
+    }
   };
 
   if (isLoading) {
@@ -112,19 +163,17 @@ export default function AdminOrders() {
   return (
     <div className="min-h-screen bg-[#0f172a] text-white p-8 font-sans selection:bg-orange-500/30">
       
+      {/* 🕵️ HIDDEN CANVAS (Off-Screen) */}
+      <div style={{ position: 'absolute', left: '-9999px', visibility: 'hidden' }}>
+        <canvas ref={canvasRef} />
+      </div>
+
       <div className="max-w-7xl mx-auto mb-8 flex justify-between items-center">
         <div>
            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-600">
              Order Command Center
            </h1>
            <p className="text-slate-400 mt-1">Manage global fulfillment & routing</p>
-        </div>
-        <div className="flex gap-4">
-             {/* Simple Stats */}
-            <Card className="bg-slate-900 border-white/10 px-6 py-2">
-                <span className="text-xs text-slate-500 uppercase font-bold">Total Sales</span>
-                <p className="text-2xl font-bold text-green-400">₹{orders.reduce((acc, o) => acc + (o.payment?.total || 0), 0).toLocaleString()}</p>
-            </Card>
         </div>
       </div>
 
@@ -148,62 +197,33 @@ export default function AdminOrders() {
               </TableHeader>
               <TableBody>
                 {orders.map((order) => {
-                  // Logic to check if routing is correct
-                  const recommended = getRecommendedProvider(order.shippingAddress?.countryCode || 'IN');
-                  const isMisrouted = order.provider !== recommended;
+                  const isProcessingThis = processingId === order.id;
 
                   return (
                     <TableRow key={order.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                      
-                      {/* ID */}
                       <TableCell className="font-medium font-mono text-slate-300">
                           #{order.orderId ? order.orderId.slice(-6) : order.id.slice(0,6)}
-                          <div className="text-[10px] text-slate-500">{order.createdAt?.seconds ? new Date(order.createdAt.seconds * 1000).toLocaleDateString() : 'Just now'}</div>
                       </TableCell>
 
-                      {/* Customer (Using correct fields) */}
                       <TableCell>
                           <div className="text-slate-200 font-medium">{order.shippingAddress?.fullName}</div>
-                          <div className="text-xs text-slate-500">{order.shippingAddress?.email}</div>
                       </TableCell>
 
-                      {/* Location */}
                       <TableCell>
                           <div className="flex items-center gap-2 text-sm text-slate-300">
                               <MapPin className="h-3 w-3 text-slate-500" />
-                              {order.shippingAddress?.city}, {order.shippingAddress?.countryCode}
+                              {order.shippingAddress?.countryCode}
                           </div>
                       </TableCell>
 
-                      {/* Payment Total */}
                       <TableCell>
                           <span className="font-bold text-white">₹{order.payment?.total}</span>
-                          <span className="text-xs text-green-400 ml-2 capitalize">({order.payment?.status})</span>
                       </TableCell>
 
-                      {/* Provider Routing (With Fix Button) */}
                       <TableCell>
-                          <div className="flex flex-col gap-1 items-start">
-                            {/* Current Assigned Provider */}
-                            <Badge className={`
-                                ${order.provider === 'qikink' ? 'bg-orange-900/50 text-orange-400 border-orange-500/20' : ''}
-                                ${order.provider === 'printify' ? 'bg-green-900/50 text-green-400 border-green-500/20' : ''}
-                                ${order.provider === 'gelato' ? 'bg-blue-900/50 text-blue-400 border-blue-500/20' : ''}
-                            `}>
-                                {order.provider?.toUpperCase()}
-                            </Badge>
-
-                            {/* Misroute Warning & Fix */}
-                            {/* {isMisrouted && !order.providerStatus && (
-                                <button 
-                                    onClick={() => handleReRoute(order.id, recommended)}
-                                    className="flex items-center gap-1 text-[10px] text-yellow-500 hover:text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20 transition-colors"
-                                    title={`Click to change provider to ${recommended.toUpperCase()}`}
-                                >
-                                    <RefreshCw className="h-3 w-3" /> Should be {recommended.toUpperCase()}
-                                </button>
-                            )} */}
-                          </div>
+                          <Badge className="bg-slate-800 text-slate-300">
+                                {order.provider?.toUpperCase() || 'AUTO'}
+                          </Badge>
                       </TableCell>
 
                       {/* Sync Status */}
@@ -211,12 +231,12 @@ export default function AdminOrders() {
                           {order.providerStatus === 'synced' ? (
                               <div className="flex items-center gap-1.5 text-xs text-green-400 bg-green-900/20 px-2 py-1 rounded-full w-fit">
                                   <CheckCircle2 className="h-3.5 w-3.5" />
-                                  <span>Synced</span>
+                                  <span>Fulfilled</span>
                               </div>
                           ) : (
-                              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                              <div className="flex items-center gap-1.5 text-xs text-yellow-500">
                                   <AlertCircle className="h-3.5 w-3.5" />
-                                  <span>Pending Push</span>
+                                  <span>Action Needed</span>
                               </div>
                           )}
                       </TableCell>
@@ -225,12 +245,21 @@ export default function AdminOrders() {
                       <TableCell className="text-right">
                           <Button 
                               size="sm" 
-                              variant="outline"
-                              onClick={() => handleManualSync(order)}
-                              disabled={order.providerStatus === 'synced'}
-                              className="h-8 text-xs border-orange-500/30 text-orange-400 hover:bg-orange-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                              onClick={() => handleManualProcess(order)}
+                              disabled={order.providerStatus === 'synced' || isProcessingThis}
+                              className={`h-8 text-xs ${
+                                order.providerStatus === 'synced' 
+                                ? 'bg-transparent text-slate-500 border border-slate-700' 
+                                : 'bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-900/20'
+                              }`}
                           >
-                              <ExternalLink className="mr-1 h-3 w-3" /> Push API
+                              {isProcessingThis ? (
+                                  <><Loader2 className="mr-2 h-3 w-3 animate-spin" /> Generating...</>
+                              ) : order.providerStatus === 'synced' ? (
+                                  "Done"
+                              ) : (
+                                  <><Zap className="mr-1 h-3 w-3" /> Process Order</>
+                              )}
                           </Button>
                       </TableCell>
 
