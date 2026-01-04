@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle, FiChevronDown, FiDroplet,FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
 import { toast } from 'sonner';
+import { useCart } from '@/context/CartContext';
 
 const uuidv4 = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -62,6 +63,7 @@ export default function EditorPanel() {
     const navigation = useNavigate();
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
+    const { addItem } = useCart();
     const { user } = useAuth();
     const userId = user?.uid;
 
@@ -462,65 +464,61 @@ export default function EditorPanel() {
         }, 50);
     };
 
-    const generateOrderPayload = () => {
+    const generateOrderPayload = (isDirectBuy = false) => {
+        // ⚠️ Heavy Data Protection: 
+        // If adding to cart (Firestore), we can store more. 
+        // If Buy Now (LocalStorage), we might hit 5MB limits.
+        // Ideally, save the design to 'designs' collection first, and only pass the ID.
+        
         const finalPreview = designTextures[currentView]?.url || captureCurrentCanvas()?.url;
+        
         return {
-            designId: editingDesignId || `temp_${Date.now()}`,
-            name: currentDesign?.name || "Custom Design",
-            productTitle: productData.title || "Custom T-Shirt",
-            productId: productData.id || "unknown_product",
+            productId: productData.id || "unknown",
+            title: productData.title || "Custom T-Shirt",
             variant: {
                 color: Object.keys(COLOR_MAP).find(key => COLOR_MAP[key] === canvasBg) || canvasBg,
                 size: selectedSize,
             },
-            quantity: quantity,
+            thumbnail: productData.image, 
             price: currentPrice,
             currency: currencyInfo.code,
+            quantity: quantity,
             region: urlRegion,
-            thumbnail: finalPreview,
-            designData: { viewStates, currentView },
-            createdAt: new Date().toISOString()
+            vendor: "qikink", // Dynamic based on logic
+            // Only pass heavy design data if strictly needed, otherwise rely on saved Design ID
+            designId: editingDesignId || `temp_${Date.now()}`, 
+            // optional: viewStates (careful with size!)
         };
     };
 
-    // ✅ ACTION 1: ADD TO CART (Database)
+    // ✅ ACTION 1: ADD TO CART (Uses Context now)
     const handleAddToCart = async () => {
-        if (!userId) {
-            alert("Please login to add to cart");
-            return;
-        }
         setIsAddingToCart(true);
         try {
             const payload = generateOrderPayload();
-            // Save to Firestore under user's cart collection
-            await addDoc(collection(db, `users/${userId}/cart`), payload);
-
-            // Show Success & Stay on Page
-            // toast.success("Added to Cart!"); // Use toast if available
-            alert("Successfully added to Cart!");
+            await addItem(payload); // Context handles Firestore vs LocalStorage
         } catch (error) {
-            console.error("Error adding to cart:", error);
-            alert("Failed to add to cart");
+            console.error("Cart error", error);
+            toast.error("Failed to add to cart");
         } finally {
             setIsAddingToCart(false);
             setIsPreviewOpen(false);
         }
     };
 
-    // ✅ ACTION 2: BUY NOW (LocalStorage + Redirect)
+    // ✅ ACTION 2: BUY NOW (Direct LocalStorage)
     const handleBuyNow = async () => {
         setIsSaving(true);
-        const payload = generateOrderPayload();
-
-        // Save to LocalStorage for immediate retrieval
+        const payload = generateOrderPayload(true);
+        
+        // Save temporary "Buy Now" item
         localStorage.setItem('directBuyItem', JSON.stringify(payload));
 
         setTimeout(() => {
             setIsSaving(false);
             setIsPreviewOpen(false);
-            // Navigate with Query Param
             navigation('/checkout?mode=direct');
-        }, 800);
+        }, 500);
     };
 
     const handleSaveSuccess = (savedId) => {

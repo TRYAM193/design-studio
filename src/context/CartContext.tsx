@@ -1,93 +1,122 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth"; 
+import { db } from "@/firebase";
+import { collection, onSnapshot, addDoc, deleteDoc, doc, updateDoc, query, getDocs, writeBatch } from "firebase/firestore";
 
-// ✅ Enhanced Cart Item to support your Multi-Vendor setup
 export interface CartItem {
-  id: string;          // Unique Cart ID
-  productId: string;   // Base Product ID
+  id: string; 
+  productId: string;
   title: string;
-  variant: {
-    color: string;
-    size: string;
-  };
-  thumbnail: string;   // The generated design preview
+  variant: { color: string; size: string };
+  thumbnail: string;
   price: number;
-  currency: string;    // 'IN', 'US', 'EU', etc.
+  currency: string;
   quantity: number;
-  
-  // 🚀 CRITICAL: Store routing info for Firebase Cloud Functions
-  region: string;      
-  vendor: "qikink" | "printify" | "gelato"; 
-  
-  designData?: any;    // The JSON fabric state (for future editing)
+  region: string;
+  vendor: "qikink" | "printify" | "gelato";
+  designData?: any;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, "id">) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, delta: number) => void;
-  clearCart: () => void;
+  addItem: (item: Omit<CartItem, "id">) => Promise<void>;
+  removeItem: (id: string) => Promise<void>;
+  updateQuantity: (id: string, change: number) => Promise<void>; // ✅ Added missing function type
+  clearCart: () => Promise<void>;
   cartTotal: number;
   cartCount: number;
+  isLoading: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 1. Load from LocalStorage on mount
+  // Sync Logic (Same as before)
   useEffect(() => {
-    const saved = localStorage.getItem("vly-cart");
-    if (saved) {
-      try {
-        setItems(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to parse cart", e);
-      }
+    let unsubscribe: () => void;
+    if (user) {
+      const q = query(collection(db, `users/${user.uid}/cart`));
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        const liveItems = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as CartItem[];
+        setItems(liveItems);
+        setIsLoading(false);
+      });
+    } else {
+      const saved = localStorage.getItem("vly-cart");
+      if (saved) setItems(JSON.parse(saved));
+      setIsLoading(false);
     }
-  }, []);
+    return () => { if (unsubscribe) unsubscribe(); };
+  }, [user]);
 
-  // 2. Save to LocalStorage whenever items change
+  // Local Storage Saver
   useEffect(() => {
-    localStorage.setItem("vly-cart", JSON.stringify(items));
-  }, [items]);
+    if (!user && !isLoading) {
+      localStorage.setItem("vly-cart", JSON.stringify(items));
+    }
+  }, [items, user, isLoading]);
 
-  const addItem = (newItem: Omit<CartItem, "id">) => {
-    // Generate a unique ID
-    const id = `cart-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    setItems((prev) => [...prev, { ...newItem, id }]);
+  const addItem = async (newItem: Omit<CartItem, "id">) => {
+    if (user) {
+      await addDoc(collection(db, `users/${user.uid}/cart`), newItem);
+    } else {
+      const id = `guest-${Date.now()}`;
+      setItems((prev) => [...prev, { ...newItem, id }]);
+    }
     toast.success("Added to cart");
   };
 
-  const removeItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  const removeItem = async (id: string) => {
+    if (user) {
+      await deleteDoc(doc(db, `users/${user.uid}/cart`, id));
+    } else {
+      setItems((prev) => prev.filter((item) => item.id !== id));
+    }
     toast.info("Item removed");
   };
 
-  const updateQuantity = (id: string, delta: number) => {
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id === id) {
-          const newQty = Math.max(1, item.quantity + delta);
-          return { ...item, quantity: newQty };
-        }
-        return item;
-      })
-    );
+  // ✅ ADDED: Update Quantity Logic
+  const updateQuantity = async (id: string, change: number) => {
+    const item = items.find((i) => i.id === id);
+    if (!item) return;
+
+    const newQuantity = item.quantity + change;
+    if (newQuantity < 1) return; // Prevent going below 1
+
+    if (user) {
+      // Update Firestore
+      await updateDoc(doc(db, `users/${user.uid}/cart`, id), { quantity: newQuantity });
+    } else {
+      // Update Local State
+      setItems((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, quantity: newQuantity } : i))
+      );
+    }
   };
 
-  const clearCart = () => {
-    setItems([]);
-    localStorage.removeItem("vly-cart");
+  const clearCart = async () => {
+    if (user) {
+      const q = query(collection(db, `users/${user.uid}/cart`));
+      const snapshot = await getDocs(q);
+      const batch = writeBatch(db);
+      snapshot.docs.forEach((doc) => batch.delete(doc.ref));
+      await batch.commit();
+    } else {
+      setItems([]);
+      localStorage.removeItem("vly-cart");
+    }
   };
 
   const cartTotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, cartTotal, cartCount }}>
+    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, cartTotal, cartCount, isLoading }}>
       {children}
     </CartContext.Provider>
   );
