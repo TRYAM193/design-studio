@@ -607,7 +607,7 @@ export default function EditorPanel() {
             [currentView]: currentObjects
         };
 
-        
+        let vendor;
 
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
