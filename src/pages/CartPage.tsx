@@ -50,12 +50,12 @@ export default function CartPage() {
                       <CardContent className="p-4 flex gap-4 items-center">
                         {/* Thumbnail */}
                         <div className="h-24 w-24 bg-white rounded-lg p-2 flex-shrink-0">
-                          <img src={item.thumbnail} alt={item.productTitle} className="h-full w-full object-contain" />
+                          <img src={item.thumbnail} alt={item.title} className="h-full w-full object-contain" />
                         </div>
                         
                         {/* Details */}
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg text-slate-200 truncate">{item.productTitle}</h3>
+                          <h3 className="font-semibold text-lg text-slate-200 truncate">{item.title}</h3>
                           <p className="text-slate-400 text-sm">Size: M • Color: Black</p> {/* Placeholder for variants */}
                           <p className="text-orange-400 font-bold mt-1">₹{item.price}</p>
                         </div>
