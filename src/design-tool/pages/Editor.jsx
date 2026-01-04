@@ -369,7 +369,7 @@ export default function EditorPanel() {
                     
                     // Load into canvas
                     await new Promise(resolve => {
-                        fabricCanvas.loadFromJSON({ version: "5.3.0", objects: viewObjects }, () => {
+                        fabricCanvas.loadFromJSON({ version: '6.3.0", objects: viewObjects }, () => {
                             fabricCanvas.renderAll();
                             resolve();
                         });
