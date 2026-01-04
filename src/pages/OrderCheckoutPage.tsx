@@ -164,7 +164,7 @@ export default function OrderCheckoutPage() {
       return;
     }
 
-    let vendor;
+    let provi;
     if (shippingInfo.countryCode === 'IN') vendor = 'qikink';
     else if (shippingInfo.countryCode === 'US') vendor = 'printify';
     else vendor = 'gelato';
