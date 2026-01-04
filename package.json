@@ -48,6 +48,8 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
     "@reduxjs/toolkit": "^2.11.1",
+    "@stripe/react-stripe-js": "^5.4.1",
+    "@stripe/stripe-js": "^8.6.0",
     "@tailwindcss/vite": "^4.1.8",
     "@types/three": "^0.177.0",
     "@zumer/snapdom": "^1.7.1",

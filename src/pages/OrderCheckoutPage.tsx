@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
 import { doc, setDoc, serverTimestamp, updateDoc, collection, getDocs, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions'
-import { db } from '@/firebase';
+import { db, functions } from '@/firebase';
 
 // Data Library
 import { Country, State, City } from 'country-state-city';
