@@ -125,7 +125,7 @@ export function DashboardSidebar() {
           </div>
           {!isCollapsed && (
             <span className="font-bold text-xl text-white tracking-tight whitespace-nowrap transition-opacity duration-300">
-              BrandName
+              TRYAM
             </span>
           )}
         </Link>
