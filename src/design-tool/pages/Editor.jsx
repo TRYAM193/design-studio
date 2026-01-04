@@ -21,7 +21,7 @@ import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2, Save } from "lucide-react"; // Added Save icon
-import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle, FiChevronDown, FiDroplet,FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
+import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle, FiChevronDown, FiDroplet, FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
 import { toast } from 'sonner';
 
 const uuidv4 = () => {
@@ -65,7 +65,7 @@ export default function EditorPanel() {
     const [searchParams, setSearchParams] = useSearchParams();
     const { user } = useAuth();
     const userId = user?.uid;
-    
+
     // ✅ 2. GET CART CONTEXT
     const { addItem, updateItemContent, items: cartItems } = useCart();
 
@@ -85,7 +85,7 @@ export default function EditorPanel() {
     const urlColor = searchParams.get('color');
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
-    
+
     // ✅ 3. GET EDIT CART ID
     const editCartId = searchParams.get('editCartId');
     const [isEditMode, setIsEditMode] = useState(false);
@@ -199,10 +199,10 @@ export default function EditorPanel() {
             console.error("Error loading saved design:", error);
         }
     };
-    
+
     const navigateToTemplates = () => {
-         // ... (existing code)
-         const currentObjects = store.getState().canvas.present;
+        // ... (existing code)
+        const currentObjects = store.getState().canvas.present;
         const currentViewSnapshot = currentViewRef.current;
         const allViewsSnapshot = viewStatesRef.current;
         const backupData = {
@@ -232,9 +232,9 @@ export default function EditorPanel() {
 
             if (itemToEdit && itemToEdit.designData) {
                 console.log("Loading Cart Item for Edit:", itemToEdit);
-                
+
                 setIsEditMode(true);
-                
+
                 // 1. Restore Product Configuration
                 if (itemToEdit.variant?.color) handleColorChange(itemToEdit.variant.color);
                 if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
@@ -255,7 +255,7 @@ export default function EditorPanel() {
                 dispatch(setCanvasObjects(objectsToLoad));
             }
         }
-    }, [editCartId, cartItems, dispatch]); 
+    }, [editCartId, cartItems, dispatch]);
     // Note: Do NOT depend on fabricCanvas here directly, dispatch handles the state. 
     // The canvas listens to Redux.
 
@@ -263,7 +263,7 @@ export default function EditorPanel() {
     useEffect(() => {
         async function initProduct() {
             // ... (existing code)
-             const pid = currentDesign?.productConfig?.productId || urlProductId;
+            const pid = currentDesign?.productConfig?.productId || urlProductId;
             if (!pid) return;
 
             try {
@@ -293,14 +293,14 @@ export default function EditorPanel() {
 
 
     // ... (KEEP MERGE AND DESIGN LOAD LOGIC AS IS) ...
-     useEffect(() => {
+    useEffect(() => {
         if (!userId) return;
 
         const mergeId = location.state?.mergeDesignId;
         const isMerge = !!mergeId;
 
         if (isMerge) {
-             async function performMerge() {
+            async function performMerge() {
                 const contextJSON = sessionStorage.getItem('merge_context');
                 let targetView = 'front';
                 let currentViewObjects = [];
@@ -353,7 +353,7 @@ export default function EditorPanel() {
         }
         // ONLY LOAD designId IF NOT EDITING CART
         else if (urlDesignId && editingDesignId !== urlDesignId && !editCartId) {
-             async function loadDesign() {
+            async function loadDesign() {
                 try {
                     const designRef = doc(db, `users/${userId}/designs`, urlDesignId);
                     const designSnap = await getDoc(designRef);
@@ -386,7 +386,7 @@ export default function EditorPanel() {
     // ... (KEEP URL SYNC LOGIC, BUT SKIP IF EDITING CART TO AVOID OVERWRITES) ...
     useEffect(() => {
         if (currentDesign?.productConfig && !editCartId) {
-             const params = new URLSearchParams(searchParams);
+            const params = new URLSearchParams(searchParams);
             const { productId, variantColor, variantSize } = currentDesign.productConfig;
 
             let changed = false;
@@ -423,8 +423,85 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
+    // ✅ NEW HELPER: Fetch Product Data Manually
+    const fetchProductData = async (pid) => {
+        if (!pid) return null;
+        try {
+            const docRef = doc(db, "base_products", pid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const processedData = {
+                    ...data,
+                    print_areas: data.print_areas || { front: { width: 4500, height: 5400 } },
+                    options: data.options || { colors: [] }
+                };
+                setProductData(processedData);
+                return processedData;
+            }
+        } catch (err) {
+            console.error("Error loading product:", err);
+        }
+        return null;
+    };
+
+    // ✅ UPDATED: Use the helper for normal URL loading
+    useEffect(() => {
+        // Only run this if we are NOT in edit mode (Edit mode handles its own loading)
+        if (!editCartId) {
+            const pid = urlProductId || currentDesign?.productConfig?.productId;
+            if (pid) {
+                fetchProductData(pid).then((data) => {
+                    // Set default color only if freshly loading
+                    if (data && !urlColor && !currentDesign) {
+                        const initialColor = data.options?.colors?.[0] || "White";
+                        setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
+                    }
+                });
+            }
+        }
+    }, [urlProductId, currentDesign, editCartId]);
+
+    // ✅ NEW EFFECT: Load Cart Item -> Fetch Product -> Restore Views
+    useEffect(() => {
+        if (editCartId && cartItems.length > 0) {
+            const itemToEdit = cartItems.find(i => i.id === editCartId);
+
+            if (itemToEdit && itemToEdit.designData) {
+                setIsEditMode(true);
+
+                // 1. Restore Config (Size/Qty)
+                if (itemToEdit.quantity) setQuantity(itemToEdit.quantity);
+                if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
+                if (itemToEdit.variant?.color) {
+                    const cName = itemToEdit.variant.color;
+                    setCanvasBg(COLOR_MAP[cName] || cName);
+                }
+
+                // 2. Restore View States (CRITICAL FIX)
+                // We load the ENTIRE history (Front + Back) from the DB into local state
+                if (itemToEdit.designData.viewStates) {
+                    setViewStates(itemToEdit.designData.viewStates);
+                    // Sync the ref immediately to prevent overwrite issues
+                    viewStatesRef.current = itemToEdit.designData.viewStates;
+                }
+
+                // 3. Set Active View & Load Canvas
+                const savedView = itemToEdit.designData.currentView || 'front';
+                setCurrentView(savedView);
+
+                // Load objects for the SPECIFIC view we are looking at
+                const objectsToLoad = itemToEdit.designData.viewStates?.[savedView] || [];
+                dispatch(setCanvasObjects(objectsToLoad));
+
+                // 4. Force Fetch Product Data (This makes the sidebar appear!)
+                fetchProductData(itemToEdit.productId);
+            }
+        }
+    }, [editCartId, cartItems, dispatch]);
+
     const getCleanDataURL = () => {
-         if (!fabricCanvas) return null;
+        if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
         const originalClip = fabricCanvas.clipPath;
@@ -483,18 +560,19 @@ export default function EditorPanel() {
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
+        // 1. Snapshot current canvas
         const currentSnapshot = captureCurrentCanvas();
         if (currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
 
+        // 2. Save current JSON to state
         const currentCanvasState = store.getState().canvas.present;
-        
-        // ✅ SYNC LOGIC: Ensure we update viewStates with the latest canvas state
+
+        // ✅ SYNC FIX: Merge current state safely
         setViewStates(prev => ({ ...prev, [currentView]: currentCanvasState }));
 
+        // 3. Switch & Load
         setCurrentView(newView);
-
-        // Load new view objects
-        const nextObjects = viewStates[newView] || [];
+        const nextObjects = viewStates[newView] || []; // This now correctly grabs "Back" if it was loaded in Step 4
         dispatch(setCanvasObjects(nextObjects));
         dispatch(setHistory({ past: [], present: nextObjects, future: [] }));
     };
@@ -502,9 +580,9 @@ export default function EditorPanel() {
     const handleColorChange = (colorName) => {
         const hex = COLOR_MAP[colorName] || colorName;
         setCanvasBg(hex);
-        if(fabricCanvas) {
-             fabricCanvas.backgroundColor = hex;
-             fabricCanvas.requestRenderAll();
+        if (fabricCanvas) {
+            fabricCanvas.backgroundColor = hex;
+            fabricCanvas.requestRenderAll();
         }
     };
 
@@ -521,8 +599,8 @@ export default function EditorPanel() {
 
     const generateOrderPayload = () => {
         const finalPreview = designTextures[currentView]?.url || captureCurrentCanvas()?.url;
-        
-        // ✅ ENSURE VIEWSTATES ARE CURRENT
+
+        // ✅ MERGE FIX: Ensure payload has the ABSOLUTE LATEST canvas state
         const currentObjects = store.getState().canvas.present;
         const updatedViewStates = {
             ...viewStates,
@@ -531,7 +609,7 @@ export default function EditorPanel() {
 
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
-            title: productData.title || "Custom T-Shirt", // Renamed for CartContext compatibility
+            title: productData.title || "Custom T-Shirt",
             productId: productData.id || "unknown_product",
             variant: {
                 color: Object.keys(COLOR_MAP).find(key => COLOR_MAP[key] === canvasBg) || canvasBg,
@@ -542,11 +620,12 @@ export default function EditorPanel() {
             currency: currencyInfo.code,
             region: urlRegion,
             thumbnail: finalPreview,
-            designData: { 
-                viewStates: updatedViewStates, // ✅ Pass updated states
-                currentView 
+            // ✅ Save the MERGED view states
+            designData: {
+                viewStates: updatedViewStates,
+                currentView
             },
-            vendor: "qikink", // Default vendor
+            vendor: "qikink",
             createdAt: new Date().toISOString()
         };
     };
@@ -560,16 +639,15 @@ export default function EditorPanel() {
         setIsAddingToCart(true);
         try {
             const payload = generateOrderPayload();
-            
+
             if (isEditMode && editCartId) {
-                // 🔄 UPDATE EXISTING ITEM
+                // ✅ UPDATE MODE
                 await updateItemContent(editCartId, payload);
                 alert("Cart updated successfully!");
-                // Optional: navigation('/cart'); 
+                navigation('/cart'); // Send user back to cart
             } else {
-                // ➕ ADD NEW ITEM via Context (which handles Firestore)
+                // ✅ ADD MODE
                 await addItem(payload);
-                // toast.success("Added to Cart!");
             }
         } catch (error) {
             console.error("Error adding to cart:", error);
@@ -661,7 +739,7 @@ export default function EditorPanel() {
                     )}
 
                     <div className="top-bar consolidated-bar">
-                         {/* ... (Existing top bar controls) ... */}
+                        {/* ... (Existing top bar controls) ... */}
                         <div className="control-group">
                             <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={!past.length} style={{ opacity: past.length ? '1' : '0.5', cursor: past.length ? 'pointer' : 'default' }}><FiRotateCcw size={18} /></button>
                             <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{ opacity: future.length ? '1' : '0.5', cursor: future.length ? 'pointer' : 'default' }}><FiRotateCw size={18} /></button>
@@ -765,8 +843,8 @@ export default function EditorPanel() {
                                             key={size}
                                             onClick={() => setSelectedSize(size)}
                                             className={`py-2 text-sm font-medium rounded-md border transition-all ${selectedSize === size
-                                                    ? "border-orange-500 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(234,88,12,0.2)]"
-                                                    : "border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800"
+                                                ? "border-orange-500 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(234,88,12,0.2)]"
+                                                : "border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800"
                                                 }`}
                                         >
                                             {size}
@@ -815,38 +893,37 @@ export default function EditorPanel() {
                                 </div>
 
                                 <div className="flex gap-3 flex-col sm:flex-row">
-                                 {/* DYNAMIC CART BUTTON */}
-                                 <Button 
-                                    onClick={handleAddToCart}
-                                    disabled={isAddingToCart || !fabricCanvas}
-                                    className={`flex-1 h-12 text-base text-white border border-slate-600 ${
-                                        isEditMode 
-                                        ? "bg-blue-600 hover:bg-blue-700 border-blue-500" // Distinct color for Update
-                                        : "bg-slate-700 hover:bg-slate-600"
-                                    }`}
-                                 >
-                                    {isAddingToCart ? (
-                                        <Loader2 className="animate-spin" />
-                                    ) : isEditMode ? (
-                                        <> <Save className="mr-2 h-4 w-4" /> Update Cart </>
-                                    ) : (
-                                        <> <FiShoppingBag className="mr-2" /> Add to Cart </>
-                                    )}
-                                 </Button>
+                                    {/* DYNAMIC CART BUTTON */}
+                                    <Button
+                                        onClick={handleAddToCart}
+                                        disabled={isAddingToCart || !fabricCanvas}
+                                        className={`flex-1 h-12 text-base text-white border border-slate-600 ${isEditMode
+                                                ? "bg-blue-600 hover:bg-blue-700 border-blue-500" // Blue for Update
+                                                : "bg-slate-700 hover:bg-slate-600"
+                                            }`}
+                                    >
+                                        {isAddingToCart ? (
+                                            <Loader2 className="animate-spin" />
+                                        ) : isEditMode ? (
+                                            <> <Save className="mr-2 h-4 w-4" /> Update Cart </>
+                                        ) : (
+                                            <> <FiShoppingBag className="mr-2" /> Add to Cart </>
+                                        )}
+                                    </Button>
 
-                                 {/* BUY NOW BUTTON */}
-                                 <Button 
-                                    onClick={handleBuyNow}
-                                    disabled={isSaving || !fabricCanvas}
-                                    className="flex-1 h-12 text-base bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0"
-                                 >
-                                    {isSaving ? (
-                                        <> <Loader2 className="animate-spin mr-2" /> Processing... </>
-                                    ) : (
-                                        <> <FiShoppingCart className="mr-2" /> Buy Now </>
-                                    )}
-                                 </Button>
-                             </div>
+                                    {/* BUY NOW BUTTON */}
+                                    <Button
+                                        onClick={handleBuyNow}
+                                        disabled={isSaving || !fabricCanvas}
+                                        className="flex-1 h-12 text-base bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0"
+                                    >
+                                        {isSaving ? (
+                                            <> <Loader2 className="animate-spin mr-2" /> Processing... </>
+                                        ) : (
+                                            <> <FiShoppingCart className="mr-2" /> Buy Now </>
+                                        )}
+                                    </Button>
+                                </div>
                                 <p className="text-[10px] text-center text-slate-500 mt-2">Secure checkout powered by Stripe</p>
                             </div>
                         </div>
