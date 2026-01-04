@@ -609,7 +609,8 @@ export default function EditorPanel() {
 
         let vendor;
 
-        if (urlRegion == 'IN') 
+        if (urlRegion == 'IN') vendor = 'qikink';
+        if (urlRegion == 'US') vendor = 'printify';
 
         
 
