@@ -139,6 +139,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         setIsResetting(false);
     }
   };
+  
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#0f172a] text-white font-sans selection:bg-orange-500/30">
