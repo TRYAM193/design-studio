@@ -88,7 +88,7 @@ export default function OrderCheckoutPage() {
   // 🔒 Location Lock State
   const [isLocationLocked, setIsLocationLocked] = useState(false);
 
-const [stripePromise, setStripePromise] = useState<any>(null);
+  const [stripePromise, setStripePromise] = useState<any>(null);
   const [stripeClientSecret, setStripeClientSecret] = useState('');
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState('');
