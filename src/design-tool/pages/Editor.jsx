@@ -619,7 +619,7 @@ export default function EditorPanel() {
             price: currentPrice,
             currency: currencyInfo.code,
             region: urlRegion,
-            thumbnail: ,
+            thumbnail: productData.image,
             // ✅ Save the MERGED view states
             designData: {
                 viewStates: updatedViewStates,
