@@ -18,15 +18,22 @@ export interface CartItem {
   quantity: number;
   region: string;
   vendor: string;
-  designData?: any; // The JSON fabric state
+  designData?: any; 
 }
 
 interface CartContextType {
   items: CartItem[];
+  savedItems: CartItem[]; // <--- NEW STATE
   addItem: (item: Omit<CartItem, "id">) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
   updateQuantity: (id: string, delta: number) => Promise<void>;
-  updateItemContent: (id: string, updates: Partial<CartItem>) => Promise<void>; // <--- NEW FUNCTION
+  updateItemContent: (id: string, updates: Partial<CartItem>) => Promise<void>;
+  
+  // ✅ NEW ACTIONS
+  saveForLater: (id: string) => Promise<void>;
+  moveToCart: (id: string) => Promise<void>;
+  removeSavedItem: (id: string) => Promise<void>;
+
   clearCart: () => Promise<void>;
   cartTotal: number;
   cartCount: number;
@@ -38,9 +45,10 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [savedItems, setSavedItems] = useState<CartItem[]>([]); // <--- NEW STATE
   const [isLoading, setIsLoading] = useState(false);
 
-  // 1. Sync Logic (Same as before)
+  // 1. ACTIVE CART LISTENER
   useEffect(() => {
     if (!user?.uid) {
       setItems([]); 
@@ -56,7 +64,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [user?.uid]);
 
-  // 2. Add Item (Same as before)
+  // 2. ✅ SAVED FOR LATER LISTENER
+  useEffect(() => {
+    if (!user?.uid) {
+      setSavedItems([]);
+      return;
+    }
+    const savedRef = collection(db, `users/${user.uid}/saved_items`);
+    const unsubscribe = onSnapshot(savedRef, (snapshot) => {
+      const fetchedSaved = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as CartItem[];
+      setSavedItems(fetchedSaved);
+    });
+    return () => unsubscribe();
+  }, [user?.uid]);
+
+  // --- ACTIONS ---
+
   const addItem = async (newItem: Omit<CartItem, "id">) => {
     if (!user?.uid) {
       toast.error("Please sign in to save items.");
@@ -65,20 +88,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       const newDocRef = doc(collection(db, `users/${user.uid}/cart`));
       await setDoc(newDocRef, newItem);
-      toast.success("Saved to your cart");
+      toast.success("Added to cart");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to save");
+      toast.error("Failed to add");
     }
   };
 
-  // 3. Remove Item
   const removeItem = async (id: string) => {
     if (!user?.uid) return;
     await deleteDoc(doc(db, `users/${user.uid}/cart`, id));
   };
 
-  // 4. Update Quantity
   const updateQuantity = async (id: string, delta: number) => {
     if (!user?.uid) return;
     const item = items.find(i => i.id === id);
@@ -86,25 +107,67 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await updateDoc(doc(db, `users/${user.uid}/cart`, id), { quantity: item.quantity + delta });
   };
 
-  // 5. ✅ NEW: Update Full Content (For Editing Design)
   const updateItemContent = async (id: string, updates: Partial<CartItem>) => {
      if (!user?.uid) return;
      try {
         await updateDoc(doc(db, `users/${user.uid}/cart`, id), updates);
-        toast.success("Cart updated successfully");
+        toast.success("Cart updated");
      } catch (error) {
         console.error("Update error:", error);
-        toast.error("Failed to update cart item");
      }
   };
 
-  const clearCart = async () => {}; // Implementation pending
+  // ✅ NEW: Move from Cart -> Saved
+  const saveForLater = async (id: string) => {
+    if (!user?.uid) return;
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+
+    try {
+      // 1. Add to saved collection
+      await setDoc(doc(db, `users/${user.uid}/saved_items`, id), item);
+      // 2. Remove from active cart
+      await deleteDoc(doc(db, `users/${user.uid}/cart`, id));
+      toast.success("Saved for later");
+    } catch (error) {
+      console.error("Save error", error);
+      toast.error("Failed to save item");
+    }
+  };
+
+  // ✅ NEW: Move from Saved -> Cart
+  const moveToCart = async (id: string) => {
+    if (!user?.uid) return;
+    const item = savedItems.find(i => i.id === id);
+    if (!item) return;
+
+    try {
+      await setDoc(doc(db, `users/${user.uid}/cart`, id), item);
+      await deleteDoc(doc(db, `users/${user.uid}/saved_items`, id));
+      toast.success("Moved back to cart");
+    } catch (error) {
+      console.error("Move error", error);
+    }
+  };
+
+  // ✅ NEW: Delete Saved Item
+  const removeSavedItem = async (id: string) => {
+    if (!user?.uid) return;
+    await deleteDoc(doc(db, `users/${user.uid}/saved_items`, id));
+  };
+
+  const clearCart = async () => {}; 
 
   const cartTotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, updateItemContent, clearCart, cartTotal, cartCount, isLoading }}>
+    <CartContext.Provider value={{ 
+      items, savedItems, 
+      addItem, removeItem, updateQuantity, updateItemContent, 
+      saveForLater, moveToCart, removeSavedItem,
+      clearCart, cartTotal, cartCount, isLoading 
+    }}>
       {children}
     </CartContext.Provider>
   );
