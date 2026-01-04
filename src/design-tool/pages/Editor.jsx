@@ -18,7 +18,7 @@ import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
 import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-// import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage'; // REMOVED for speed
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2, Save } from "lucide-react";
@@ -137,17 +137,44 @@ export default function EditorPanel() {
         }
     }, [selectedId]);
 
-    // --- Loading & Merging Logic (Abbreviated for brevity - keeping logic same) ---
+    // --- Loading & Merging Logic ---
+
     const handleLoadSavedDesign = async (designItem) => {
         if (!designItem || !userId) return;
+
         try {
             const designRef = doc(db, `users/${userId}/designs`, designItem.id);
             const designSnap = await getDoc(designRef);
+
             if (!designSnap.exists()) return;
             const designData = designSnap.data();
 
-            if (designData.type === 'PRODUCT') {
-                 if (designData.productConfig?.productId === (urlProductId || productData.id)) {
+            const isBlank = designData.type === 'BLANK' || !designData.type;
+            const isProduct = designData.type === 'PRODUCT';
+
+            if (isBlank) {
+                const incomingObjects = Array.isArray(designData.canvasData)
+                    ? designData.canvasData
+                    : (designData.canvasData?.front || []);
+
+                if (incomingObjects.length > 0) {
+                    const newObjects = incomingObjects.map(obj => ({
+                        ...obj,
+                        id: uuidv4(),
+                        customId: uuidv4(),
+                        props: {
+                            ...obj.props,
+                            left: (obj.props.left || 0) + 20,
+                            top: (obj.props.top || 0) + 20
+                        }
+                    }));
+                    const currentObjects = store.getState().canvas.present;
+                    const combinedObjects = [...currentObjects, ...newObjects];
+                    dispatch(setCanvasObjects(combinedObjects));
+                }
+            }
+            else if (isProduct) {
+                if (designData.productConfig?.productId === (urlProductId || productData.id)) {
                     setCurrentDesign(designData);
                     setEditingDesignId(designData.id);
                     const savedStates = designData.canvasData || {};
@@ -156,26 +183,42 @@ export default function EditorPanel() {
                     setCurrentView(activeView);
                     const activeObjects = savedStates[activeView] || [];
                     dispatch(setCanvasObjects(activeObjects));
-                    setSearchParams(prev => { prev.set('designId', designData.id); return prev; });
+                    setSearchParams(prev => {
+                        prev.set('designId', designData.id);
+                        return prev;
+                    });
+                    setActivePanel(null);
                 }
-            } else {
-                // Legacy or blank handling
-                const objects = designData.canvasData || [];
-                dispatch(setCanvasObjects(objects));
             }
-        } catch (error) { console.error("Error loading:", error); }
+        } catch (error) {
+            console.error("Error loading saved design:", error);
+        }
     };
 
     const navigateToTemplates = () => {
         const currentObjects = store.getState().canvas.present;
+        const currentViewSnapshot = currentViewRef.current;
+        const allViewsSnapshot = viewStatesRef.current;
         const backupData = {
-            view: currentView,
-            viewStates: { ...viewStates, [currentView]: currentObjects },
+            view: currentViewSnapshot,
+            viewStates: {
+                ...allViewsSnapshot,
+                [currentViewSnapshot]: currentObjects
+            },
             timestamp: Date.now()
         };
         sessionStorage.setItem('merge_context', JSON.stringify(backupData));
-        navigation('/dashboard/templates', { state: { filterMode: 'product', filterProductId: productData.productId } });
+        navigation('/dashboard/templates', {
+            state: {
+                filterMode: 'product',
+                filterProductId: productData.productId,
+                filterColor: canvasBg,
+                filterSize: urlSize
+            }
+        });
     }
+
+    // --- Product Data Helpers ---
 
     const fetchProductData = async (pid) => {
         if (!pid) return null;
@@ -192,17 +235,27 @@ export default function EditorPanel() {
                 setProductData(processedData);
                 return processedData;
             }
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error("Error loading product:", err);
+        }
         return null;
     };
 
-    // --- Restore from Cart ---
+    // --- Load Cart Item (Edit Mode) ---
+
     useEffect(() => {
         if (editCartId && cartItems.length > 0) {
             const itemToEdit = cartItems.find(i => i.id === editCartId);
+
             if (itemToEdit && itemToEdit.designData) {
+                console.log("Loading Cart Item for Edit:", itemToEdit);
+
                 setIsEditMode(true);
-                if (itemToEdit.variant?.color) setCanvasBg(COLOR_MAP[itemToEdit.variant.color] || itemToEdit.variant.color);
+
+                if (itemToEdit.variant?.color) {
+                    const cName = itemToEdit.variant.color;
+                    setCanvasBg(COLOR_MAP[cName] || cName);
+                }
                 if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
                 if (itemToEdit.quantity) setQuantity(itemToEdit.quantity);
 
@@ -210,20 +263,138 @@ export default function EditorPanel() {
                     setViewStates(itemToEdit.designData.viewStates);
                     viewStatesRef.current = itemToEdit.designData.viewStates;
                 }
+
                 const savedView = itemToEdit.designData.currentView || 'front';
                 setCurrentView(savedView);
-                dispatch(setCanvasObjects(itemToEdit.designData.viewStates?.[savedView] || []));
+
+                const objectsToLoad = itemToEdit.designData.viewStates?.[savedView] || [];
+                dispatch(setCanvasObjects(objectsToLoad));
+                
                 fetchProductData(itemToEdit.productId);
             }
         }
     }, [editCartId, cartItems, dispatch]);
 
+
     useEffect(() => {
         if (!editCartId) {
             const pid = urlProductId || currentDesign?.productConfig?.productId;
-            if (pid) fetchProductData(pid);
+            if (pid) {
+                fetchProductData(pid).then((data) => {
+                    if (data && !urlColor && !currentDesign) {
+                        const initialColor = data.options?.colors?.[0] || "White";
+                        setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
+                    }
+                });
+            }
         }
     }, [urlProductId, currentDesign, editCartId]);
+
+
+    // --- Merge & Design Loading Effects ---
+    useEffect(() => {
+        if (!userId) return;
+
+        const mergeId = location.state?.mergeDesignId;
+        const isMerge = !!mergeId;
+
+        if (isMerge) {
+            async function performMerge() {
+                const contextJSON = sessionStorage.getItem('merge_context');
+                let targetView = 'front';
+                let currentViewObjects = [];
+                let fullHistory = {};
+
+                if (contextJSON) {
+                    try {
+                        const context = JSON.parse(contextJSON);
+                        if (Date.now() - context.timestamp < 3600000) {
+                            targetView = context.view;
+                            fullHistory = context.viewStates || {};
+                            currentViewObjects = fullHistory[targetView] || [];
+                        }
+                    } catch (e) { console.error("Restore failed", e); }
+                    sessionStorage.removeItem('merge_context');
+                }
+
+                let incomingObjects = [];
+                try {
+                    const designRef = doc(db, `users/${userId}/designs`, mergeId);
+                    const designSnap = await getDoc(designRef);
+                    if (designSnap.exists()) {
+                        const design = designSnap.data();
+                        const raw = Array.isArray(design.canvasData) ? design.canvasData : (design.canvasData?.front || []);
+
+                        if (raw.length > 0) {
+                            incomingObjects = raw.map(obj => ({
+                                ...obj,
+                                id: uuidv4(),
+                                customId: uuidv4(),
+                                props: { ...obj.props, left: (obj.props.left || 0) + 30, top: (obj.props.top || 0) + 30 }
+                            }));
+                        }
+                    }
+                } catch (e) { console.error(e); }
+
+                const finalObjectsForView = [...currentViewObjects, ...incomingObjects];
+                const finalHistory = {
+                    ...fullHistory,
+                    [targetView]: finalObjectsForView
+                };
+
+                setCurrentView(targetView);
+                setViewStates(finalHistory);
+                dispatch(setCanvasObjects(finalObjectsForView));
+
+                window.history.replaceState({}, document.title);
+            }
+            performMerge();
+        }
+        else if (urlDesignId && editingDesignId !== urlDesignId && !editCartId) {
+            async function loadDesign() {
+                try {
+                    const designRef = doc(db, `users/${userId}/designs`, urlDesignId);
+                    const designSnap = await getDoc(designRef);
+
+                    if (designSnap.exists()) {
+                        const design = designSnap.data();
+                        setCurrentDesign(design);
+                        setEditingDesignId(design.id);
+
+                        if (design.type === 'PRODUCT' && design.productConfig) {
+                            const savedStates = design.canvasData || {};
+                            setViewStates(savedStates);
+                            const activeView = design.productConfig.activeView || 'front';
+                            setCurrentView(activeView);
+                            const activeObjects = savedStates[activeView] || [];
+                            dispatch(setCanvasObjects(activeObjects));
+                        } else {
+                            const objects = design.canvasData || [];
+                            dispatch(setCanvasObjects(objects));
+                        }
+                    }
+                } catch (e) { console.error("Error loading design", e); }
+            }
+            loadDesign();
+        }
+
+    }, [urlDesignId, location.state, userId, dispatch, editCartId]);
+
+
+    useEffect(() => {
+        if (currentDesign?.productConfig && !editCartId) {
+            const params = new URLSearchParams(searchParams);
+            const { productId, variantColor, variantSize } = currentDesign.productConfig;
+
+            let changed = false;
+            if (productId && params.get('product') !== productId) { params.set('product', productId); changed = true; }
+            if (variantColor && params.get('color') !== variantColor) { params.set('color', variantColor); changed = true; }
+            if (variantSize && params.get('size') !== variantSize) { params.set('size', variantSize); changed = true; }
+            if (!params.get('region')) { params.set('region', urlRegion); changed = true; }
+
+            if (changed) setSearchParams(params, { replace: true });
+        }
+    }, [currentDesign, setSearchParams, urlRegion, editCartId]);
 
 
     useEffect(() => {
@@ -240,7 +411,9 @@ export default function EditorPanel() {
             const realHeight = productData.print_areas?.[currentView]?.height || 5400;
             const availableWidth = containerRef.current.clientWidth;
             const availableHeight = containerRef.current.clientHeight;
-            setScaleFactor(Math.min((availableWidth * 0.85) / realWidth, (availableHeight * 0.85) / realHeight));
+            const widthRatio = (availableWidth * 0.85) / realWidth;
+            const heightRatio = (availableHeight * 0.85) / realHeight;
+            setScaleFactor(Math.min(widthRatio, heightRatio));
         }
         calculateScale();
         window.addEventListener('resize', calculateScale);
@@ -248,10 +421,51 @@ export default function EditorPanel() {
     }, [productData, currentView]);
 
 
-    // --- Optimized Image Generation ---
+    // --- High Res & Canvas Utils ---
 
-    // Added 'targetWidth' for faster thumbnail generation
-    const getCleanDataURL = (targetWidth = 2400) => {
+    // ✅ UPDATED: Accepts specific view name to generate filenames correctly
+    const generateAndUploadHighRes = async (targetView = currentView) => {
+        if (!fabricCanvas) return null;
+
+        const originalBg = fabricCanvas.backgroundColor;
+        fabricCanvas.backgroundColor = null;
+
+        const borderObj = fabricCanvas.getObjects().find(obj => obj.id === 'print-area-border' || obj.customId === 'print-area-border');
+        if (borderObj) borderObj.visible = false;
+
+        try {
+            const dataUrl = fabricCanvas.toDataURL({
+                format: 'png',
+                multiplier: 4,
+                quality: 1,
+                enableRetinaScaling: true
+            });
+
+            const storage = getStorage();
+            // Unique filename for every side
+            const filename = `print_files/${user?.uid || 'guest'}/${Date.now()}_${targetView}.png`;
+            const storageRef = ref(storage, filename);
+
+            await uploadString(storageRef, dataUrl, 'data_url');
+            const downloadUrl = await getDownloadURL(storageRef);
+            return downloadUrl;
+
+        } catch (error) {
+            console.warn(`High-Res Gen Failed for ${targetView}:`, error);
+            return null;
+        } finally {
+            fabricCanvas.backgroundColor = originalBg;
+            if (borderObj) borderObj.visible = true;
+            fabricCanvas.requestRenderAll();
+        }
+    };
+
+    const getFullCanvasJSON = () => {
+        if (!fabricCanvas) return null;
+        return fabricCanvas.toJSON(['id', 'customId', 'selectable', 'lockMovementX', 'lockMovementY', 'price', 'sku']);
+    };
+
+    const getCleanDataURL = () => {
         if (!fabricCanvas) return null;
 
         const originalBg = fabricCanvas.backgroundColor;
@@ -263,34 +477,40 @@ export default function EditorPanel() {
         } else {
             fabricCanvas.backgroundColor = null;
         }
-        fabricCanvas.clipPath = null;
-        const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
-        if (borderObj) borderObj.visible = false;
 
+        fabricCanvas.clipPath = null;
+
+        const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
+        let wasBorderVisible = false;
+        if (borderObj) {
+            wasBorderVisible = borderObj.visible;
+            borderObj.visible = false;
+        }
+
+        const TARGET_WIDTH = 2400;
         const currentWidth = fabricCanvas.width;
-        const multiplier = targetWidth / currentWidth; // Calculate multiplier dynamically
+        const multiplier = TARGET_WIDTH / currentWidth;
 
         fabricCanvas.renderAll();
 
         const dataUrl = fabricCanvas.toDataURL({
             format: 'png',
-            quality: 0.8, // Reduced slightly for speed
+            quality: 1,
             multiplier: multiplier,
             enableRetinaScaling: true
         });
 
-        // Restore
         fabricCanvas.backgroundColor = originalBg;
         fabricCanvas.clipPath = originalClip;
         if (originalVpt) fabricCanvas.setViewportTransform(originalVpt);
-        if (borderObj) borderObj.visible = true;
+        if (borderObj) borderObj.visible = wasBorderVisible;
         fabricCanvas.requestRenderAll();
 
         return dataUrl;
     };
 
     const captureCurrentCanvas = () => {
-        const url = getCleanDataURL(1200); // Default preview size
+        const url = getCleanDataURL();
         if (!url) return null;
         const arr = url.split(',');
         const mime = arr[0].match(/:(.*?);/)[1];
@@ -302,12 +522,17 @@ export default function EditorPanel() {
         return { blob, url: URL.createObjectURL(blob) };
     }
 
+    // --- Actions ---
+
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
+
         const currentSnapshot = captureCurrentCanvas();
         if (currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
+
         const currentCanvasState = store.getState().canvas.present;
         setViewStates(prev => ({ ...prev, [currentView]: currentCanvasState }));
+
         setCurrentView(newView);
         const nextObjects = viewStates[newView] || []; 
         dispatch(setCanvasObjects(nextObjects));
@@ -334,87 +559,93 @@ export default function EditorPanel() {
         }, 50);
     };
 
-    // ✅ 🚀 OPTIMIZED PAYLOAD GENERATOR
-    const generateOrderPayload = async () => {
+    // ✅ REWRITTEN: Iterate over ALL views, switch canvas, capture image, restore.
+    const generateOrderPayload = async (isFinalCheckout = false) => {
         const originalView = currentView;
-        
-        // 1. Snapshot CURRENT view (Fast, no reload needed)
-        // Use 800px for thumbnails (much faster than 2400px)
-        const currentSnapshot = getCleanDataURL(800); 
+        // 1. Snapshot current state before messing with it
         const currentReduxState = store.getState().canvas.present;
-        
-        // Update local history
         const tempViewStates = { ...viewStates, [currentView]: currentReduxState };
+
+        const allViews = Object.keys(productData.print_areas || { front: {} });
         
-        // Prepare results container
-        const generatedPreviews = { ...designTextures }; 
-        if(currentSnapshot) generatedPreviews[currentView] = currentSnapshot;
+        const generatedPrintFiles = {};
+        const generatedPreviews = {};
 
-        // 2. Identify UNTOUCHED views vs EDITED views
-        // We only need to generate images for views that have objects in them.
-        // We filter 'tempViewStates' for keys that are NOT currentView and have objects > 0
-        const viewsToProcess = Object.keys(tempViewStates).filter(view => {
-            const objects = tempViewStates[view];
-            // Only process if it's not the current view AND it has objects
-            return view !== currentView && objects && objects.length > 0;
-        });
+        // Indicate processing
+        setIsGeneratingPreview(true); 
 
-        // 3. Process other views (only if necessary)
-        if (viewsToProcess.length > 0) {
-            setIsGeneratingPreview(true); // Small spinner
-            
-            try {
-                for (const view of viewsToProcess) {
-                    const viewObjects = tempViewStates[view];
-                    
-                    // Load into canvas
-                    await new Promise(resolve => {
-                        fabricCanvas.loadFromJSON({ version: "5.3.0", objects: viewObjects }, () => {
-                            fabricCanvas.renderAll();
-                            resolve();
-                        });
-                    });
+        try {
+            // 2. Loop through every view defined in product
+            for (const view of allViews) {
 
-                    // Snapshot (Fast 800px)
-                    const url = getCleanDataURL(800);
-                    if(url) generatedPreviews[view] = url;
-                }
-            } catch (e) {
-                console.error("Error generating backgrounds", e);
-            } finally {
-                // Restore Original View
-                await new Promise(resolve => {
-                    fabricCanvas.loadFromJSON({ version: "5.3.0", objects: currentReduxState }, () => {
-                        setCurrentView(originalView);
-                        dispatch(setCanvasObjects(currentReduxState));
+                // If a view has no objects, we can still generate a blank file or skip.
+                // Usually better to generate it if it's a valid print area.
+                // However, if the user never touched "back", viewObjects is empty.
+                
+                // Load this view's objects onto the MAIN canvas
+                await new Promise((resolve) => {
+                    fabricCanvas.loadFromJSON(() => {
                         fabricCanvas.renderAll();
                         resolve();
                     });
                 });
-                setIsGeneratingPreview(false);
+
+                // 3. Generate High Res Print File (for "Add to Cart")
+                if (isFinalCheckout) {
+                     const url = await generateAndUploadHighRes(view); 
+                     if (url) generatedPrintFiles[view] = url;
+                }
+                
+                // 4. Generate Thumbnail/Preview
+                const previewUrl = getCleanDataURL(); 
+                if (previewUrl) generatedPreviews[view] = previewUrl; 
             }
+
+        } catch (e) {
+            console.error("Error generating view images:", e);
+        } finally {
+            // 5. Restore the Original View so the user sees what they saw before clicking
+            const originalObjects = tempViewStates[originalView] || [];
+            await new Promise((resolve) => {
+                const jsonToLoad = { 
+                    version: "5.3.0", 
+                    objects: originalObjects 
+                };
+                fabricCanvas.loadFromJSON(jsonToLoad, () => {
+                    setCurrentView(originalView);
+                    // Also sync Redux back to be safe
+                    dispatch(setCanvasObjects(originalObjects));
+                    fabricCanvas.renderAll();
+                    resolve();
+                });
+            });
+            setIsGeneratingPreview(false);
         }
 
-        // 4. Return Payload (No High-Res Uploads here - fast return)
+        const highResGenerated = Object.keys(generatedPrintFiles).length > 0;
+
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
             title: productData.title || "Custom T-Shirt",
             productId: productData.id,
-            variant: { color: canvasBg, size: selectedSize },
+            variant: {
+                color: canvasBg,
+                size: selectedSize,
+            },
             quantity: quantity,
             price: productData.price || 0,
             currency: 'INR',
-            thumbnail: generatedPreviews['front'] || currentSnapshot || "/assets/placeholder.png",
-            
-            // Contains all view images (low res)
-            previewImages: generatedPreviews, 
-            
-            // We set this false, so Admin knows to generate from JSON
-            highResGenerated: false, 
-            
+            // Default thumbnail is the front, or the current view if front missing
+            thumbnail_files: generatedPreviews['front'] || generatedPreviews[originalView] || "/assets/placeholder.png",
+            thumbnail: productData.image,
+            // ✅ NEW: Return objects containing ALL generated images
+            printFiles: generatedPrintFiles, // { front: '...', back: '...' }
+            previewImages: generatedPreviews, // { front: 'data:image...', back: '...' }
+
+            highResGenerated: highResGenerated,
             designData: {
                 viewStates: tempViewStates, 
-                currentView: originalView
+                currentView: originalView // Restore original view pointer
             },
             vendor: "qikink",
             createdAt: new Date().toISOString()
@@ -423,9 +654,11 @@ export default function EditorPanel() {
 
     const handleAddToCart = async () => {
         if (!userId) { alert("Please login"); return; }
+
         setIsAddingToCart(true);
         try {
-            const payload = await generateOrderPayload(); // Fast generation
+            const payload = await generateOrderPayload(true);
+
             if (isEditMode && editCartId) {
                 await updateItemContent(editCartId, payload);
                 alert("Cart Updated!");
@@ -433,38 +666,42 @@ export default function EditorPanel() {
             } else {
                 await addItem(payload);
             }
+
         } catch (error) {
             console.error(error);
             alert("Error saving design");
         } finally {
             setIsAddingToCart(false);
+            setIsPreviewOpen(false);
         }
     };
 
     const handleBuyNow = async () => {
         setIsSaving(true);
-        // Fast generation (no Firebase upload)
-        const payload = await generateOrderPayload(); 
+        // For "Buy Now", we might skip high-res generation to speed up UI, 
+        // OR generate it now. Usually better to generate now to ensure data integrity.
+        // Passing 'true' to ensure we have print files ready.
+        const payload = await generateOrderPayload(true); 
         
-        try {
-             // LocalStorage has 5MB limit. 
-             // If payload is too big (many images), we might need to strip previews for LS
-             // For now, try saving.
-            localStorage.setItem('directBuyItem', JSON.stringify(payload));
-            navigation('/checkout?mode=direct');
-        } catch (e) {
-            console.error("Storage limit exceeded?", e);
-            // Fallback: Just navigate, maybe pass ID? 
-            // Ideally, we should save to DB as a 'temp_cart' item instead of LS
-            alert("Design too complex for direct buy. Adding to cart instead.");
-            await addItem(payload);
-            navigation('/cart');
-        } finally {
+        localStorage.setItem('directBuyItem', JSON.stringify(payload));
+
+        setTimeout(() => {
             setIsSaving(false);
+            setIsPreviewOpen(false);
+            navigation('/checkout?mode=direct');
+        }, 800);
+    };
+
+    const handleSaveSuccess = (savedId) => {
+        if (savedId && savedId !== editingDesignId) {
+            setEditingDesignId(savedId);
+            setSearchParams(prev => {
+                prev.set('designId', savedId);
+                return prev;
+            });
         }
     };
 
-    // ... (BrandDisplay, etc. remains same) ...
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
             <div className="logo-circle ring-1 ring-white/20 shadow-lg shadow-orange-500/20">
@@ -486,8 +723,11 @@ export default function EditorPanel() {
                 <MainToolbar
                     activePanel={activePanel}
                     onSelectTool={(tool) => {
-                        if (tool === 'templates') { navigateToTemplates(); } 
-                        else { setActivePanel(prev => prev === tool ? null : tool); }
+                        if (tool === 'templates') {
+                            navigateToTemplates();
+                        } else {
+                            setActivePanel(prev => prev === tool ? null : tool);
+                        }
                     }}
                     setSelectedId={setSelectedId}
                     setActiveTool={setActiveTool}
@@ -517,8 +757,8 @@ export default function EditorPanel() {
 
                     <div className="top-bar consolidated-bar">
                         <div className="control-group">
-                            <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={!past.length} style={{ opacity: past.length ? '1' : '0.5' }}><FiRotateCcw size={18} /></button>
-                            <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{ opacity: future.length ? '1' : '0.5' }}><FiRotateCw size={18} /></button>
+                            <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={!past.length} style={{ opacity: past.length ? '1' : '0.5', cursor: past.length ? 'pointer' : 'default' }}><FiRotateCcw size={18} /></button>
+                            <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{ opacity: future.length ? '1' : '0.5', cursor: future.length ? 'pointer' : 'default' }}><FiRotateCw size={18} /></button>
                         </div>
                         <div className="control-group divider">
                             <button className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{ opacity: !selectedId ? '0.5' : '1' }}><FiTrash2 size={18} /></button>
@@ -545,13 +785,13 @@ export default function EditorPanel() {
                                         print_areas: productData.print_areas
                                     }}
                                     currentObjects={canvasObjects}
-                                    onGetSnapshot={() => getCleanDataURL(1200)}
-                                    onSaveSuccess={() => {}}
+                                    onGetSnapshot={getCleanDataURL}
+                                    onSaveSuccess={handleSaveSuccess}
                                     currentDesignName={currentDesign?.name}
                                 />
                             )}
                             <Button onClick={handleGeneratePreview} disabled={isGeneratingPreview || !fabricCanvas} className="bg-slate-700 hover:bg-slate-600 text-white border border-white/10">
-                                {isGeneratingPreview ? <><Loader2 className="animate-spin" /> ...</> : "Preview"}
+                                {isGeneratingPreview ? <><Loader2 className="animate-spin" /> Generating...</> : "Preview"}
                             </Button>
                         </div>
                     </div>
@@ -592,7 +832,13 @@ export default function EditorPanel() {
                                         const hex = COLOR_MAP[color] || "#ccc";
                                         const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
                                         return (
-                                            <button key={color} onClick={() => handleColorChange(color)} className={`w-9 h-9 rounded-full border transition-all relative ${isActive ? "ring-2 ring-orange-500 ring-offset-2 ring-offset-[#0f172a] scale-110" : "hover:scale-110 border-slate-600"}`} style={{ backgroundColor: hex }}>
+                                            <button
+                                                key={color}
+                                                onClick={() => handleColorChange(color)}
+                                                className={`w-9 h-9 rounded-full border transition-all relative ${isActive ? "ring-2 ring-orange-500 ring-offset-2 ring-offset-[#0f172a] scale-110" : "hover:scale-110 border-slate-600"}`}
+                                                style={{ backgroundColor: hex }}
+                                                title={color}
+                                            >
                                                 {isActive && <FiCheckCircle className="text-orange-500 absolute -top-1 -right-1 bg-white rounded-full drop-shadow-md" />}
                                             </button>
                                         );
@@ -603,10 +849,18 @@ export default function EditorPanel() {
                             <div className="mb-8">
                                 <div className="flex justify-between items-center mb-3">
                                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Size</h3>
+                                    <span className="text-xs text-orange-400 cursor-pointer hover:underline">Size Chart</span>
                                 </div>
                                 <div className="grid grid-cols-4 gap-2">
                                     {AVAILABLE_SIZES.map((size) => (
-                                        <button key={size} onClick={() => setSelectedSize(size)} className={`py-2 text-sm font-medium rounded-md border transition-all ${selectedSize === size ? "border-orange-500 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(234,88,12,0.2)]" : "border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800"}`}>
+                                        <button
+                                            key={size}
+                                            onClick={() => setSelectedSize(size)}
+                                            className={`py-2 text-sm font-medium rounded-md border transition-all ${selectedSize === size
+                                                ? "border-orange-500 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(234,88,12,0.2)]"
+                                                : "border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800"
+                                                }`}
+                                        >
                                             {size}
                                         </button>
                                     ))}
@@ -633,10 +887,18 @@ export default function EditorPanel() {
                                     </div>
                                 </div>
                                 <div className="flex gap-3 flex-col sm:flex-row">
-                                    <Button onClick={handleAddToCart} disabled={isAddingToCart || !fabricCanvas} className={`flex-1 h-12 text-base text-white border border-slate-600 ${isEditMode ? "bg-blue-600 hover:bg-blue-700 border-blue-500" : "bg-slate-700 hover:bg-slate-600"}`}>
+                                    <Button
+                                        onClick={handleAddToCart}
+                                        disabled={isAddingToCart || !fabricCanvas}
+                                        className={`flex-1 h-12 text-base text-white border border-slate-600 ${isEditMode ? "bg-blue-600 hover:bg-blue-700 border-blue-500" : "bg-slate-700 hover:bg-slate-600"}`}
+                                    >
                                         {isAddingToCart ? <Loader2 className="animate-spin" /> : isEditMode ? <> <Save className="mr-2 h-4 w-4" /> Update Cart </> : <> <FiShoppingBag className="mr-2" /> Add to Cart </>}
                                     </Button>
-                                    <Button onClick={handleBuyNow} disabled={isSaving || !fabricCanvas} className="flex-1 h-12 text-base bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0">
+                                    <Button
+                                        onClick={handleBuyNow}
+                                        disabled={isSaving || !fabricCanvas}
+                                        className="flex-1 h-12 text-base bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0"
+                                    >
                                         {isSaving ? <> <Loader2 className="animate-spin mr-2" /> Processing... </> : <> <FiShoppingCart className="mr-2" /> Buy Now </>}
                                     </Button>
                                 </div>
@@ -645,7 +907,17 @@ export default function EditorPanel() {
                         </div>
                     ))}
                 </aside>
-                <ThreeDPreviewModal isOpen={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} textures={designTextures} onAddToCart={handleAddToCart} isSaving={isSaving} productId={urlProductId || currentDesign?.productConfig?.productId} productData={productData} productCategory={productData.category} selectedColor={canvasBg} />
+
+                <ThreeDPreviewModal
+                    isOpen={isPreviewOpen}
+                    onClose={() => setIsPreviewOpen(false)}
+                    textures={designTextures}
+                    onAddToCart={handleAddToCart}
+                    isSaving={isSaving}
+                    productId={urlProductId || currentDesign?.productConfig?.productId}
+                    productData={productData} productCategory={productData.category}
+                    selectedColor={canvasBg}
+                />
             </div>
         </div>
     );
