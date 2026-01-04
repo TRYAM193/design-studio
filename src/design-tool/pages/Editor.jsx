@@ -607,6 +607,8 @@ export default function EditorPanel() {
             [currentView]: currentObjects
         };
 
+        
+
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
             title: productData.title || "Custom T-Shirt",
