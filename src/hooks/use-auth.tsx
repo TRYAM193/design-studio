@@ -5,7 +5,9 @@ import {
   signInAnonymously, 
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signOut as firebaseSignOut 
+  signOut as firebaseSignOut,
+  GoogleAuthProvider,
+  signInWithPopup
 } from "firebase/auth";
 import { auth } from "@/firebase";
 
@@ -34,7 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (type: string, formData?: FormData) => {
     if (type === "anonymous") {
       await signInAnonymously(auth);
-    } else if (type === "email-password") {
+    } 
+    else if (type === "google") {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    }
+    else if (type === "email-password") {
       const email = formData?.get("email") as string;
       const password = formData?.get("password") as string;
       const isSignUp = formData?.get("isSignUp") === "true";
