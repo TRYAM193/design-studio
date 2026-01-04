@@ -13,16 +13,16 @@ import { store } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
-import { useCart } from '@/context/CartContext'; // ✅ 1. IMPORT USECART
+import { useCart } from '@/context/CartContext';
 import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
 import { db } from '@/firebase';
-import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
-import { Loader2, Save } from "lucide-react"; // Added Save icon
+import { Loader2, Save } from "lucide-react";
 import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle, FiChevronDown, FiDroplet, FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
-import { toast } from 'sonner';
 
 const uuidv4 = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -31,7 +31,6 @@ const uuidv4 = () => {
     });
 };
 
-// ... (KEEP CURRENCY_MAP AND COLOR_MAP AS IS) ...
 const CURRENCY_MAP = {
     IN: { symbol: '₹', code: 'INR' },
     US: { symbol: '$', code: 'USD' },
@@ -66,7 +65,6 @@ export default function EditorPanel() {
     const { user } = useAuth();
     const userId = user?.uid;
 
-    // ✅ 2. GET CART CONTEXT
     const { addItem, updateItemContent, items: cartItems } = useCart();
 
     const [fabricCanvas, setFabricCanvas] = useState(null);
@@ -86,7 +84,6 @@ export default function EditorPanel() {
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
 
-    // ✅ 3. GET EDIT CART ID
     const editCartId = searchParams.get('editCartId');
     const [isEditMode, setIsEditMode] = useState(false);
 
@@ -102,7 +99,6 @@ export default function EditorPanel() {
     const [currentView, setCurrentView] = useState("front");
     const [viewStates, setViewStates] = useState({});
 
-    // Track Refs for Cleanup/Backup
     const currentViewRef = useRef(currentView);
     const viewStatesRef = useRef(viewStates);
 
@@ -124,7 +120,6 @@ export default function EditorPanel() {
     const [showColorPanel, setShowColorPanel] = useState(false);
     const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-    // ... (KEEP PRICE CALCULATION LOGIC AS IS) ...
     const currencyInfo = CURRENCY_MAP[urlRegion] || CURRENCY_MAP.IN;
     let currentPrice = 0;
     if (productData) {
@@ -142,9 +137,9 @@ export default function EditorPanel() {
         }
     }, [selectedId]);
 
-    // ... (KEEP handleLoadSavedDesign AND navigateToTemplates AS IS) ...
+    // --- Loading & Merging Logic ---
+
     const handleLoadSavedDesign = async (designItem) => {
-        // ... (existing code)
         if (!designItem || !userId) return;
 
         try {
@@ -201,7 +196,6 @@ export default function EditorPanel() {
     };
 
     const navigateToTemplates = () => {
-        // ... (existing code)
         const currentObjects = store.getState().canvas.present;
         const currentViewSnapshot = currentViewRef.current;
         const allViewsSnapshot = viewStatesRef.current;
@@ -224,9 +218,32 @@ export default function EditorPanel() {
         });
     }
 
-    // ✅ 4. LOGIC TO LOAD FROM CART (EDIT MODE)
+    // --- Product Data Helpers ---
+
+    const fetchProductData = async (pid) => {
+        if (!pid) return null;
+        try {
+            const docRef = doc(db, "base_products", pid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const processedData = {
+                    ...data,
+                    print_areas: data.print_areas || { front: { width: 4500, height: 5400 } },
+                    options: data.options || { colors: [] }
+                };
+                setProductData(processedData);
+                return processedData;
+            }
+        } catch (err) {
+            console.error("Error loading product:", err);
+        }
+        return null;
+    };
+
+    // --- Load Cart Item (Edit Mode) ---
+
     useEffect(() => {
-        // Run this effect when editCartId is present and cartItems are loaded
         if (editCartId && cartItems.length > 0) {
             const itemToEdit = cartItems.find(i => i.id === editCartId);
 
@@ -236,63 +253,51 @@ export default function EditorPanel() {
                 setIsEditMode(true);
 
                 // 1. Restore Product Configuration
-                if (itemToEdit.variant?.color) handleColorChange(itemToEdit.variant.color);
+                if (itemToEdit.variant?.color) {
+                    const cName = itemToEdit.variant.color;
+                    setCanvasBg(COLOR_MAP[cName] || cName);
+                }
                 if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
                 if (itemToEdit.quantity) setQuantity(itemToEdit.quantity);
 
-                // 2. Restore View States (The syncing logic)
-                // We must set the entire state of views (front, back, etc.)
+                // 2. Restore View States
+                // Ensure we have the full history of all sides
                 if (itemToEdit.designData.viewStates) {
                     setViewStates(itemToEdit.designData.viewStates);
+                    viewStatesRef.current = itemToEdit.designData.viewStates;
                 }
 
-                // 3. Set Current View
+                // 3. Set Current View & Load Objects
                 const savedView = itemToEdit.designData.currentView || 'front';
                 setCurrentView(savedView);
 
-                // 4. Load Objects into Redux/Canvas for the current view
                 const objectsToLoad = itemToEdit.designData.viewStates?.[savedView] || [];
                 dispatch(setCanvasObjects(objectsToLoad));
+                
+                // 4. Force Product Data Load
+                fetchProductData(itemToEdit.productId);
             }
         }
     }, [editCartId, cartItems, dispatch]);
-    // Note: Do NOT depend on fabricCanvas here directly, dispatch handles the state. 
-    // The canvas listens to Redux.
 
 
     useEffect(() => {
-        async function initProduct() {
-            // ... (existing code)
-            const pid = currentDesign?.productConfig?.productId || urlProductId;
-            if (!pid) return;
-
-            try {
-                const docRef = doc(db, "base_products", pid);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setProductData({
-                        ...data,
-                        print_areas: data.print_areas || { front: { width: 4500, height: 5400 } },
-                        options: data.options || { colors: [] }
-                    });
-
-                    // Only set color if NOT in edit mode (edit mode handles it above)
-                    if (!editCartId) {
-                        const savedColor = currentDesign?.productConfig?.variantColor;
-                        const initialColor = savedColor || urlColor || (data.options?.colors?.[0] || "White");
+        // Initial Product Load (if not editing cart)
+        if (!editCartId) {
+            const pid = urlProductId || currentDesign?.productConfig?.productId;
+            if (pid) {
+                fetchProductData(pid).then((data) => {
+                    if (data && !urlColor && !currentDesign) {
+                        const initialColor = data.options?.colors?.[0] || "White";
                         setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
                     }
-                }
-            } catch (err) {
-                console.error("Error loading product:", err);
+                });
             }
         }
-        initProduct();
-    }, [urlProductId, currentDesign, editCartId]); // Added editCartId dependency
+    }, [urlProductId, currentDesign, editCartId]);
 
 
-    // ... (KEEP MERGE AND DESIGN LOAD LOGIC AS IS) ...
+    // --- Merge & Design Loading Effects ---
     useEffect(() => {
         if (!userId) return;
 
@@ -351,7 +356,6 @@ export default function EditorPanel() {
             }
             performMerge();
         }
-        // ONLY LOAD designId IF NOT EDITING CART
         else if (urlDesignId && editingDesignId !== urlDesignId && !editCartId) {
             async function loadDesign() {
                 try {
@@ -383,7 +387,6 @@ export default function EditorPanel() {
     }, [urlDesignId, location.state, userId, dispatch, editCartId]);
 
 
-    // ... (KEEP URL SYNC LOGIC, BUT SKIP IF EDITING CART TO AVOID OVERWRITES) ...
     useEffect(() => {
         if (currentDesign?.productConfig && !editCartId) {
             const params = new URLSearchParams(searchParams);
@@ -399,7 +402,7 @@ export default function EditorPanel() {
         }
     }, [currentDesign, setSearchParams, urlRegion, editCartId]);
 
-    // ... (KEEP CANVAS DIMS, SCALE, GETCLEANDATAURL, CAPTURECURRENTCANVAS AS IS) ...
+
     useEffect(() => {
         if (productData.canvas_size) {
             const area = productData.canvas_size;
@@ -423,32 +426,12 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
-    // ✅ NEW HELPER: Fetch Product Data Manually
-    const fetchProductData = async (pid) => {
-        if (!pid) return null;
-        try {
-            const docRef = doc(db, "base_products", pid);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                const processedData = {
-                    ...data,
-                    print_areas: data.print_areas || { front: { width: 4500, height: 5400 } },
-                    options: data.options || { colors: [] }
-                };
-                setProductData(processedData);
-                return processedData;
-            }
-        } catch (err) {
-            console.error("Error loading product:", err);
-        }
-        return null;
-    };
+
+    // --- High Res & Canvas Utils ---
 
     const generateAndUploadHighRes = async () => {
         if (!fabricCanvas) return null;
 
-        // 1. Prepare Canvas: Hide backgrounds/borders for clean print file
         const originalBg = fabricCanvas.backgroundColor;
         fabricCanvas.backgroundColor = null;
 
@@ -456,7 +439,6 @@ export default function EditorPanel() {
         if (borderObj) borderObj.visible = false;
 
         try {
-            // 2. Export High Res (Multiplier 4x approx 2000px)
             const dataUrl = fabricCanvas.toDataURL({
                 format: 'png',
                 multiplier: 4,
@@ -464,89 +446,23 @@ export default function EditorPanel() {
                 enableRetinaScaling: true
             });
 
-            // 3. Upload to Firebase Storage
             const storage = getStorage();
-            // Naming: userId / timestamp_view.png
             const filename = `print_files/${user?.uid || 'guest'}/${Date.now()}_${currentView}.png`;
             const storageRef = ref(storage, filename);
 
             await uploadString(storageRef, dataUrl, 'data_url');
             const downloadUrl = await getDownloadURL(storageRef);
-
-            console.log("✅ High Res Generated:", downloadUrl);
             return downloadUrl;
 
         } catch (error) {
-            console.warn("⚠️ High-Res Gen Failed (Low RAM?):", error);
-            return null; // Automation will fail, but order proceeds manually
+            console.warn("High-Res Gen Failed:", error);
+            return null;
         } finally {
-            // 4. Restore Canvas
             fabricCanvas.backgroundColor = originalBg;
             if (borderObj) borderObj.visible = true;
             fabricCanvas.requestRenderAll();
         }
     };
-
-    const getFullCanvasJSON = () => {
-        if (!fabricCanvas) return null;
-        // Include custom properties that Fabric usually ignores
-        return fabricCanvas.toJSON(['id', 'customId', 'selectable', 'lockMovementX', 'lockMovementY', 'price', 'sku']);
-    };
-
-    // ✅ UPDATED: Use the helper for normal URL loading
-    useEffect(() => {
-        // Only run this if we are NOT in edit mode (Edit mode handles its own loading)
-        if (!editCartId) {
-            const pid = urlProductId || currentDesign?.productConfig?.productId;
-            if (pid) {
-                fetchProductData(pid).then((data) => {
-                    // Set default color only if freshly loading
-                    if (data && !urlColor && !currentDesign) {
-                        const initialColor = data.options?.colors?.[0] || "White";
-                        setCanvasBg(COLOR_MAP[initialColor] || "#FFFFFF");
-                    }
-                });
-            }
-        }
-    }, [urlProductId, currentDesign, editCartId]);
-
-    // ✅ NEW EFFECT: Load Cart Item -> Fetch Product -> Restore Views
-    useEffect(() => {
-        if (editCartId && cartItems.length > 0) {
-            const itemToEdit = cartItems.find(i => i.id === editCartId);
-
-            if (itemToEdit && itemToEdit.designData) {
-                setIsEditMode(true);
-
-                // 1. Restore Config (Size/Qty)
-                if (itemToEdit.quantity) setQuantity(itemToEdit.quantity);
-                if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
-                if (itemToEdit.variant?.color) {
-                    const cName = itemToEdit.variant.color;
-                    setCanvasBg(COLOR_MAP[cName] || cName);
-                }
-
-                // 2. Restore View States (CRITICAL FIX)
-                // We load the ENTIRE history (Front + Back) from the DB into local state
-                if (itemToEdit.designData.viewStates) {
-                    setViewStates(itemToEdit.designData.viewStates);
-                    // Sync the ref immediately to prevent overwrite issues
-                    viewStatesRef.current = itemToEdit.designData.viewStates;
-                }
-
-                // 3. Set Active View & Load Canvas
-                const savedView = itemToEdit.designData.currentView || 'front';
-                setCurrentView(savedView);
-
-                // Load objects for the SPECIFIC view we are looking at
-                const objectsToLoad = itemToEdit.designData.viewStates?.[savedView] || [];
-                dispatch(setCanvasObjects(objectsToLoad));
-
-                // 4. Force Fetch Product Data (This makes the sidebar appear!)
-                fetchProductData(itemToEdit.productId);
-            }
-        }
-    }, [editCartId, cartItems, dispatch]);
 
     const getCleanDataURL = () => {
         if (!fabricCanvas) return null;
@@ -605,22 +521,24 @@ export default function EditorPanel() {
         return { blob, url: URL.createObjectURL(blob) };
     }
 
+    // --- Actions ---
+
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
 
-        // 1. Snapshot current canvas
+        // 1. Snapshot for Preview
         const currentSnapshot = captureCurrentCanvas();
         if (currentSnapshot) setDesignTextures(prev => ({ ...prev, [currentView]: currentSnapshot }));
 
-        // 2. Save current JSON to state
+        // 2. Save current Objects to state (Using Redux State)
         const currentCanvasState = store.getState().canvas.present;
 
-        // ✅ SYNC FIX: Merge current state safely
+        // 3. Sync State
         setViewStates(prev => ({ ...prev, [currentView]: currentCanvasState }));
 
-        // 3. Switch & Load
+        // 4. Switch & Load
         setCurrentView(newView);
-        const nextObjects = viewStates[newView] || []; // This now correctly grabs "Back" if it was loaded in Step 4
+        const nextObjects = viewStates[newView] || []; 
         dispatch(setCanvasObjects(nextObjects));
         dispatch(setHistory({ past: [], present: nextObjects, future: [] }));
     };
@@ -646,8 +564,6 @@ export default function EditorPanel() {
     };
 
     const generateOrderPayload = async (isFinalCheckout = false) => {
-
-        // 2. High Res Print File (Only if User is clicking "Add to Cart")
         let printFileUrl = null;
         let highResGenerated = false;
 
@@ -656,13 +572,13 @@ export default function EditorPanel() {
             highResGenerated = !!printFileUrl;
         }
 
-        // 3. Capture Current View JSON (Standard Fabric JSON, not Redux)
-        const currentViewJSON = getFullCanvasJSON();
+        // ✅ REWRITE: Use canvasObjects (Redux) instead of full JSON
+        // This ensures the saved data structure matches what handleSwitchView uses
+        const currentCanvasState = store.getState().canvas.present;
 
-        // 4. Merge into ViewStates
         const updatedViewStates = {
             ...viewStates,
-            [currentView]: currentViewJSON // Saving strict JSON now
+            [currentView]: currentCanvasState
         };
 
         return {
@@ -677,27 +593,22 @@ export default function EditorPanel() {
             price: productData.price || 0,
             currency: 'INR',
             thumbnail: productData.image || "/assets/placeholder.png",
-
-            // 🚀 AUTOMATION DATA
             printFileUrl: printFileUrl,
             highResGenerated: highResGenerated,
-
-            // 💾 RE-EDIT & MANUAL FALLBACK DATA
             designData: {
-                viewStates: updatedViewStates, // Contains full JSON for every view
+                viewStates: updatedViewStates, // Consistently Objects[]
                 currentView: currentView
             },
             vendor: "qikink",
             createdAt: new Date().toISOString()
         };
     };
-    // ✅ 5. HANDLE ADD/UPDATE
+
     const handleAddToCart = async () => {
         if (!userId) { alert("Please login"); return; }
 
         setIsAddingToCart(true);
         try {
-            // Pass 'true' to trigger High-Res generation
             const payload = await generateOrderPayload(true);
 
             if (isEditMode && editCartId) {
@@ -706,11 +617,6 @@ export default function EditorPanel() {
                 navigation('/cart');
             } else {
                 await addItem(payload);
-                // toast.success("Added to Cart");
-            }
-
-            if (!payload.highResGenerated) {
-                console.warn("Using Manual Admin Fallback");
             }
 
         } catch (error) {
@@ -721,10 +627,10 @@ export default function EditorPanel() {
             setIsPreviewOpen(false);
         }
     };
-    // ✅ ACTION 2: BUY NOW (LocalStorage + Redirect)
+
     const handleBuyNow = async () => {
         setIsSaving(true);
-        const payload = generateOrderPayload();
+        const payload = generateOrderPayload(); // Generates low-res for speed, high-res handled at checkout
         localStorage.setItem('directBuyItem', JSON.stringify(payload));
 
         setTimeout(() => {
@@ -755,8 +661,6 @@ export default function EditorPanel() {
 
     return (
         <div className="main-app-container selection:bg-orange-500 selection:text-white">
-
-            {/* ✅ COSMIC BACKGROUND */}
             <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]">
                 <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
                 <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
@@ -788,9 +692,7 @@ export default function EditorPanel() {
                     setSelectedId={setSelectedId}
                     setActiveTool={setActiveTool} />}
 
-                {/* ✅ Canvas Preview Area */}
                 <main className="preview-area relative bg-transparent flex items-center justify-center overflow-hidden" ref={containerRef}>
-
                     {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
                         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-slate-800/80 p-1.5 rounded-full border border-white/10 shadow-lg backdrop-blur-md">
                             {Object.keys(productData.print_areas).map(view => (
@@ -802,7 +704,6 @@ export default function EditorPanel() {
                     )}
 
                     <div className="top-bar consolidated-bar">
-                        {/* ... (Existing top bar controls) ... */}
                         <div className="control-group">
                             <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={!past.length} style={{ opacity: past.length ? '1' : '0.5', cursor: past.length ? 'pointer' : 'default' }}><FiRotateCcw size={18} /></button>
                             <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{ opacity: future.length ? '1' : '0.5', cursor: future.length ? 'pointer' : 'default' }}><FiRotateCw size={18} /></button>
@@ -872,7 +773,6 @@ export default function EditorPanel() {
                                 <button onClick={() => setShowColorPanel(false)} className="mobile-close-btn"><FiChevronDown size={24} /></button>
                             </div>
 
-                            {/* --- 1. COLORS --- */}
                             <div className="mb-8">
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Color</h3>
                                 <div className="grid grid-cols-5 gap-2">
@@ -894,7 +794,6 @@ export default function EditorPanel() {
                                 </div>
                             </div>
 
-                            {/* --- 2. SIZES --- */}
                             <div className="mb-8">
                                 <div className="flex justify-between items-center mb-3">
                                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Size</h3>
@@ -916,37 +815,18 @@ export default function EditorPanel() {
                                 </div>
                             </div>
 
-                            {/* --- 3. QUANTITY --- */}
                             <div className="mb-8">
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Quantity</h3>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center border border-slate-700 rounded-md bg-slate-900/50">
-                                        <button
-                                            onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                                            className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white"
-                                        >
-                                            <FiMinus size={14} />
-                                        </button>
-                                        <input
-                                            type="number"
-                                            value={quantity}
-                                            onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                                            className="w-12 text-center text-sm font-medium focus:outline-none bg-transparent text-white"
-                                        />
-                                        <button
-                                            onClick={() => setQuantity(q => q + 1)}
-                                            className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white"
-                                        >
-                                            <FiPlus size={14} />
-                                        </button>
+                                        <button onClick={() => setQuantity(q => Math.max(1, q - 1))} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white"><FiMinus size={14} /></button>
+                                        <input type="number" value={quantity} onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))} className="w-12 text-center text-sm font-medium focus:outline-none bg-transparent text-white" />
+                                        <button onClick={() => setQuantity(q => q + 1)} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white"><FiPlus size={14} /></button>
                                     </div>
-                                    <div className="text-sm text-slate-400">
-                                        {currencyInfo.symbol}{totalPrice} total
-                                    </div>
+                                    <div className="text-sm text-slate-400">{currencyInfo.symbol}{totalPrice} total</div>
                                 </div>
                             </div>
 
-                            {/* --- 4. CHECKOUT BUTTONS (UPDATED) --- */}
                             <div className="mt-auto pt-6 border-t border-slate-700">
                                 <div className="flex justify-between items-end mb-4">
                                     <div>
@@ -954,37 +834,20 @@ export default function EditorPanel() {
                                         <p className="text-2xl font-bold text-white">{currencyInfo.symbol}{totalPrice}</p>
                                     </div>
                                 </div>
-
                                 <div className="flex gap-3 flex-col sm:flex-row">
-                                    {/* DYNAMIC CART BUTTON */}
                                     <Button
                                         onClick={handleAddToCart}
                                         disabled={isAddingToCart || !fabricCanvas}
-                                        className={`flex-1 h-12 text-base text-white border border-slate-600 ${isEditMode
-                                            ? "bg-blue-600 hover:bg-blue-700 border-blue-500" // Blue for Update
-                                            : "bg-slate-700 hover:bg-slate-600"
-                                            }`}
+                                        className={`flex-1 h-12 text-base text-white border border-slate-600 ${isEditMode ? "bg-blue-600 hover:bg-blue-700 border-blue-500" : "bg-slate-700 hover:bg-slate-600"}`}
                                     >
-                                        {isAddingToCart ? (
-                                            <Loader2 className="animate-spin" />
-                                        ) : isEditMode ? (
-                                            <> <Save className="mr-2 h-4 w-4" /> Update Cart </>
-                                        ) : (
-                                            <> <FiShoppingBag className="mr-2" /> Add to Cart </>
-                                        )}
+                                        {isAddingToCart ? <Loader2 className="animate-spin" /> : isEditMode ? <> <Save className="mr-2 h-4 w-4" /> Update Cart </> : <> <FiShoppingBag className="mr-2" /> Add to Cart </>}
                                     </Button>
-
-                                    {/* BUY NOW BUTTON */}
                                     <Button
                                         onClick={handleBuyNow}
                                         disabled={isSaving || !fabricCanvas}
                                         className="flex-1 h-12 text-base bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0"
                                     >
-                                        {isSaving ? (
-                                            <> <Loader2 className="animate-spin mr-2" /> Processing... </>
-                                        ) : (
-                                            <> <FiShoppingCart className="mr-2" /> Buy Now </>
-                                        )}
+                                        {isSaving ? <> <Loader2 className="animate-spin mr-2" /> Processing... </> : <> <FiShoppingCart className="mr-2" /> Buy Now </>}
                                     </Button>
                                 </div>
                                 <p className="text-[10px] text-center text-slate-500 mt-2">Secure checkout powered by Stripe</p>
