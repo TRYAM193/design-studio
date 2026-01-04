@@ -510,7 +510,7 @@ export default function EditorPanel() {
             price: safePrice,
             currency: currencyInfo.code,
             region: urlRegion,
-            thumbnail: finalPreview || "/assets/placeholder.png",
+            thumbnail: productData.image,
             vendor: "qikink", // Default vendor
             designData: { viewStates, currentView },
         };
