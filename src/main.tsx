@@ -72,7 +72,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/generator" element={<ThumbnailGenerator />} />
             <Route path="/admin" element={<AdminProductManager />} />
             <Route path="/terms" element={<TermsConditions />} />
-
+            <Route path="/cart" element={<CartPage />} />
             {/* Dashboard Routes */}
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<DashboardHome />} />
