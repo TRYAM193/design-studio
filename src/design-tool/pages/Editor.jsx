@@ -20,7 +20,7 @@ import { doc, getDoc, addDoc, collection } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle, FiChevronDown, FiDroplet,FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
+import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle, FiChevronDown, FiDroplet, FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
 import { toast } from 'sonner';
 import { useCart } from '@/context/CartContext';
 
@@ -105,31 +105,31 @@ export default function EditorPanel() {
     const viewStatesRef = useRef(viewStates);
     useEffect(() => {
         if (editCartId && cartItems.length > 0 && fabricCanvas) {
-             const itemToEdit = cartItems.find(i => i.id === editCartId);
-             
-             if (itemToEdit && itemToEdit.designData) {
-                 // 1. Set flag
-                 setIsEditMode(true);
+            const itemToEdit = cartItems.find(i => i.id === editCartId);
 
-                 // 2. Restore View States (Front/Back)
-                 if (itemToEdit.designData.viewStates) {
-                     setViewStates(itemToEdit.designData.viewStates);
-                 }
+            if (itemToEdit && itemToEdit.designData) {
+                // 1. Set flag
+                setIsEditMode(true);
 
-                 // 3. Restore Current View
-                 const savedView = itemToEdit.designData.currentView || 'front';
-                 setCurrentView(savedView);
+                // 2. Restore View States (Front/Back)
+                if (itemToEdit.designData.viewStates) {
+                    setViewStates(itemToEdit.designData.viewStates);
+                }
 
-                 // 4. Restore Canvas Objects
-                 // Logic to load specific view objects
-                 const objectsToLoad = itemToEdit.designData.viewStates?.[savedView] || [];
-                 dispatch(setCanvasObjects(objectsToLoad));
-                 
-                 // 5. Restore Product Config (Color/Size)
-                 if (itemToEdit.variant?.color) handleColorChange(itemToEdit.variant.color);
-                 if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
-                 // Note: Ideally, we also ensure productData matches itemToEdit.productId
-             }
+                // 3. Restore Current View
+                const savedView = itemToEdit.designData.currentView || 'front';
+                setCurrentView(savedView);
+
+                // 4. Restore Canvas Objects
+                // Logic to load specific view objects
+                const objectsToLoad = itemToEdit.designData.viewStates?.[savedView] || [];
+                dispatch(setCanvasObjects(objectsToLoad));
+
+                // 5. Restore Product Config (Color/Size)
+                if (itemToEdit.variant?.color) handleColorChange(itemToEdit.variant.color);
+                if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
+                // Note: Ideally, we also ensure productData matches itemToEdit.productId
+            }
         }
     }, [editCartId, cartItems, fabricCanvas, dispatch]);
 
@@ -500,7 +500,7 @@ export default function EditorPanel() {
         const safePrice = parseFloat(currentPrice) || 0;
 
         return {
-            title: productData.title || "Custom T-Shirt", 
+            title: productData.title || "Custom T-Shirt",
             productId: productData.id || "unknown_product",
             variant: {
                 color: Object.keys(COLOR_MAP).find(key => COLOR_MAP[key] === canvasBg) || canvasBg,
@@ -508,9 +508,9 @@ export default function EditorPanel() {
             },
             quantity: quantity,
             price: safePrice,
-            currency: currencyInfo.code, 
+            currency: currencyInfo.code,
             region: urlRegion,
-            thumbnail: finalPreview || "/assets/placeholder.png", 
+            thumbnail: finalPreview || "/assets/placeholder.png",
             vendor: "qikink", // Default vendor
             designData: { viewStates, currentView },
         };
@@ -519,22 +519,30 @@ export default function EditorPanel() {
     // ✅ ACTION 1: ADD TO CART (Restricted to Users)
     const handleAddToCart = async () => {
         if (!user) {
-            // 🔒 GATEKEEPER FOR CART
-            alert("Please create an account to save your cart history!"); 
-            // Optional: navigation('/auth')
+            alert("Please create an account to save your cart history!");
             return;
         }
-        
+
         if (!fabricCanvas) return;
         setIsAddingToCart(true);
 
         try {
             const payload = generateOrderPayload();
-            await addItem(payload); // Context handles Firestore save
+
+            if (isEditMode && editCartId) {
+                // 🔄 UPDATE EXISTING ITEM
+                await updateItemContent(editCartId, payload);
+                // Optionally redirect back to cart or show success
+                // navigation('/cart'); 
+            } else {
+                // ➕ ADD NEW ITEM
+                await addItem(payload);
+            }
             setIsPreviewOpen(false);
+
         } catch (error) {
             console.error("Cart error:", error);
-            alert("Failed to add to cart");
+            alert("Failed to save to cart");
         } finally {
             setIsAddingToCart(false);
         }
@@ -544,7 +552,7 @@ export default function EditorPanel() {
     const handleBuyNow = async () => {
         if (!fabricCanvas) return;
         setIsSaving(true);
-        
+
         try {
             const payload = generateOrderPayload();
             // Save temporary "Direct Buy" item to local storage
@@ -733,8 +741,8 @@ export default function EditorPanel() {
                                             key={size}
                                             onClick={() => setSelectedSize(size)}
                                             className={`py-2 text-sm font-medium rounded-md border transition-all ${selectedSize === size
-                                                    ? "border-orange-500 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(234,88,12,0.2)]"
-                                                    : "border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800"
+                                                ? "border-orange-500 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(234,88,12,0.2)]"
+                                                : "border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800"
                                                 }`}
                                         >
                                             {size}
@@ -783,32 +791,38 @@ export default function EditorPanel() {
                                 </div>
 
                                 <div className="flex gap-3 flex-col sm:flex-row">
-                                 {/* ADD TO CART BUTTON */}
-                                 <Button 
-                                    onClick={handleAddToCart}
-                                    disabled={isAddingToCart || !fabricCanvas}
-                                    className="flex-1 h-12 text-base bg-slate-700 hover:bg-slate-600 text-white border border-slate-600"
-                                 >
-                                    {isAddingToCart ? (
-                                        <Loader2 className="animate-spin" />
-                                    ) : (
-                                        <> <FiShoppingBag className="mr-2" /> Add to Cart </>
-                                    )}
-                                 </Button>
+                                    {/* ADD TO CART BUTTON */}
+                                    <Button 
+                                        onClick={handleAddToCart}
+                                        disabled={isAddingToCart || !fabricCanvas}
+                                        className={`flex-1 h-12 text-base text-white border border-slate-600 ${
+                                            isEditMode 
+                                            ? "bg-blue-600 hover:bg-blue-700 border-blue-500" // distinct color for Edit
+                                            : "bg-slate-700 hover:bg-slate-600"
+                                        }`}
+                                     >
+                                        {isAddingToCart ? (
+                                            <Loader2 className="animate-spin" />
+                                        ) : isEditMode ? (
+                                            <> <Save className="mr-2 h-4 w-4" /> Update Cart </>
+                                        ) : (
+                                            <> <FiShoppingBag className="mr-2" /> Add to Cart </>
+                                        )}
+                                     </Button>
 
-                                 {/* BUY NOW BUTTON */}
-                                 <Button 
-                                    onClick={handleBuyNow}
-                                    disabled={isSaving || !fabricCanvas}
-                                    className="flex-1 h-12 text-base bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0"
-                                 >
-                                    {isSaving ? (
-                                        <> <Loader2 className="animate-spin mr-2" /> Processing... </>
-                                    ) : (
-                                        <> <FiShoppingCart className="mr-2" /> Buy Now </>
-                                    )}
-                                 </Button>
-                             </div>
+                                    {/* BUY NOW BUTTON */}
+                                    <Button
+                                        onClick={handleBuyNow}
+                                        disabled={isSaving || !fabricCanvas}
+                                        className="flex-1 h-12 text-base bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/40 border-0"
+                                    >
+                                        {isSaving ? (
+                                            <> <Loader2 className="animate-spin mr-2" /> Processing... </>
+                                        ) : (
+                                            <> <FiShoppingCart className="mr-2" /> Buy Now </>
+                                        )}
+                                    </Button>
+                                </div>
                                 <p className="text-[10px] text-center text-slate-500 mt-2">Secure checkout powered by Stripe</p>
                             </div>
                         </div>
