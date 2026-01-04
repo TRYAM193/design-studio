@@ -29,7 +29,7 @@ export default function HeadlessRender() {
 
             // 2. Setup Canvas (High Res 4500x5400 scaled down for browser safety if needed)
             // We render at 2400px width for quality/performance balance
-            const canvas = new fabric.Canvas(canvasRef.current, {
+            const canvas = new fabric.Canvas(canvasRef?.current, {
                 width: 2400, 
                 height: 3200,
                 backgroundColor: null // Transparent background
