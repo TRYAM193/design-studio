@@ -524,7 +524,7 @@ export default function EditorPanel() {
             productId: productData.id,
             variant: { color: canvasBg, size: selectedSize },
             quantity: quantity,
-            price: productData.price || 0,
+            price: currentPrice || 0,
             currency: 'INR',
             
             // ✅ Static Image (Instant)
@@ -547,7 +547,7 @@ export default function EditorPanel() {
     };
 
     const handleAddToCart = async () => {
-        if (!userId) { alert("Please login"); return; }
+        if (!userId) { navigation('/auth'); return;}
         setIsAddingToCart(true);
         try {
             const payload = generateOrderPayload(); // Sync function now
@@ -567,6 +567,7 @@ export default function EditorPanel() {
     };
 
     const handleBuyNow = async () => {
+        if (!userId) { navigation('/auth'); return; }
         setIsSaving(true);
         try {
              const payload = generateOrderPayload(); // Sync function now
@@ -663,7 +664,7 @@ export default function EditorPanel() {
                                     }}
                                     currentObjects={canvasObjects}
                                     onGetSnapshot={() => getCleanDataURL(1200)}
-                                    onSaveSuccess={handleSaveSuccess}
+                                    // onSaveSuccess={handleSaveSuccess}
                                     currentDesignName={currentDesign?.name}
                                 />
                             )}

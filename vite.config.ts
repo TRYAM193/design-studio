@@ -15,5 +15,9 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
+    allowedHosts: [
+      "postscorbutic-petronila-polyrhythmically.ngrok-free.dev", // The URL from your error
+      ".ngrok-free.app" // Allows other ngrok URLs if this one changes
+    ]
   },
 });

@@ -463,7 +463,7 @@ export default function CanvasEditor({
       ref={wrapperRef} 
       id="canvas-wrapper" 
       // ✅ TOUCH ACTION: NONE is critical to stop browser zooming
-      className="relative w-full h-full flex items-center justify-center bg-slate-100 overflow-hidden"
+      className="relative w-full h-full flex items-center justify-center overflow-hidden"
       style={{ touchAction: 'none' }}
     >
       <canvas ref={canvasRef} id="canvas" />

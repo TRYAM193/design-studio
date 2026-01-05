@@ -1,8 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { db } from "@/firebase";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from "firebase/firestore";
-import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
-import * as fabric from 'fabric'; // ✅ Requires 'fabric' installed in frontend
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteField } from "firebase/firestore";
 
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -11,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  Loader2, MapPin, ExternalLink, AlertCircle, CheckCircle2, Zap 
+  Loader2, MapPin, AlertCircle, CheckCircle2, Zap, RefreshCw, Terminal 
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,37 +24,16 @@ interface Order {
   provider: string;
   providerStatus?: string;
   providerOrderId?: string;
-  printFiles?: Record<string, string>; // To store generated URLs
+  botLog?: string; // We want to see what the bot is saying
+  botError?: string;
 }
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Track which order is currently generating images
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // 🎨 HIDDEN CANVAS REFS
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fabricRef = useRef<fabric.Canvas | null>(null);
-
-  // 1. Initialize Hidden Fabric Canvas (Once)
-  useEffect(() => {
-    if (canvasRef.current && !fabricRef.current) {
-        // Create a large canvas for High-Res output
-        fabricRef.current = new fabric.Canvas(canvasRef.current, {
-            width: 2400, // Print Quality Width (e.g. 8 inches @ 300dpi)
-            height: 3200 
-        });
-    }
-    // Cleanup
-    return () => {
-        fabricRef.current?.dispose();
-        fabricRef.current = null;
-    };
-  }, []);
-
-  // 2. Live Listen to Orders
+  // 1. Live Listen to Orders
   useEffect(() => {
     const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -70,89 +47,30 @@ export default function AdminOrders() {
     return () => unsubscribe();
   }, []);
 
-  // 3. Logic to Suggest Correct Provider
-  const getRecommendedProvider = (countryCode: string) => {
-    if (countryCode === 'IN') return 'qikink';
-    if (countryCode === 'US') return 'printify';
-    return 'gelato'; 
-  };
-
-  // 🚀 4. THE MANUAL GENERATOR FUNCTION
-  const handleManualProcess = async (order: Order) => {
-    if (!fabricRef.current) return;
+  // 🚀 REAL BOT TRIGGER
+  // Instead of faking it, this resets the status so the Cloud Function wakes up
+  const handleRetryBot = async (order: Order) => {
     setProcessingId(order.id);
-    toast.info("Starting High-Res Generation...");
+    toast.info("Waking up the Bot...");
 
     try {
-        const storage = getStorage();
-        const designData = order.items[0]?.designData; // Assuming single item for now
-        
-        if (!designData) throw new Error("No design data found in order");
+        const orderRef = doc(db, "orders", order.id);
 
-        const generatedFiles: Record<string, string> = {};
-        const views = ['front', 'back'];
-
-        // A. LOOP THROUGH VIEWS (Front/Back)
-        for (const view of views) {
-            const viewState = designData.viewStates?.[view];
-            
-            // Skip empty sides
-            if (!viewState || viewState.length === 0) continue;
-
-            // B. LOAD JSON TO HIDDEN CANVAS
-            await new Promise<void>((resolve) => {
-                fabricRef.current!.loadFromJSON({ version: "5.3.0", objects: viewState }, () => {
-                    // Optional: You can resize objects here if needed
-                    fabricRef.current!.renderAll();
-                    resolve();
-                });
-            });
-
-            // C. GENERATE PNG (High Res)
-            const dataUrl = fabricRef.current.toDataURL({
-                format: 'png',
-                multiplier: 1, // Already set canvas to 2400px
-                quality: 1
-            });
-
-            // D. UPLOAD TO FIREBASE
-            const filename = `orders/${order.id}/print_${view}_${Date.now()}.png`;
-            const storageRef = ref(storage, filename);
-            await uploadString(storageRef, dataUrl, 'data_url');
-            const downloadUrl = await getDownloadURL(storageRef);
-
-            generatedFiles[view] = downloadUrl;
-            console.log(`✅ Generated ${view}:`, downloadUrl);
-        }
-
-        // E. UPDATE FIRESTORE WITH PRINT FILES
-        await updateDoc(doc(db, "orders", order.id), {
-            printFiles: generatedFiles
+        // We update the document to a state that the 'onUpdate' trigger likes:
+        // status: 'placed' AND providerStatus: NOT 'synced'
+        await updateDoc(orderRef, {
+            status: 'placed',        // Ensure it looks new
+            providerStatus: 'retry', // Change status to trigger 'onUpdate'
+            botError: deleteField(), // Clear old errors
+            botLog: "Manual Retry Requested..."
         });
 
-        // F. MOCK PUSH TO PROVIDER (Replace with real API call later)
-        const targetProvider = order.provider || getRecommendedProvider(order.shippingAddress.countryCode);
-        
-        // Simulate API latency
-        await new Promise(r => setTimeout(r, 1500));
-
-        // G. MARK AS SYNCED
-        await updateDoc(doc(db, "orders", order.id), {
-            provider: targetProvider,
-            providerStatus: 'synced',
-            providerOrderId: `${targetProvider.toUpperCase()}-${Math.floor(Math.random() * 100000)}`,
-            status: 'processing'
-        });
-
-        toast.success(`Order processed & sent to ${targetProvider.toUpperCase()}`);
-
+        toast.success("Signal sent! Check logs in Firebase Console.");
     } catch (error) {
-        console.error("Manual Process Error:", error);
-        toast.error("Failed to process order");
+        console.error("Retry Error:", error);
+        toast.error("Failed to signal bot");
     } finally {
         setProcessingId(null);
-        // Clear canvas
-        fabricRef.current.clear();
     }
   };
 
@@ -163,17 +81,12 @@ export default function AdminOrders() {
   return (
     <div className="min-h-screen bg-[#0f172a] text-white p-8 font-sans selection:bg-orange-500/30">
       
-      {/* 🕵️ HIDDEN CANVAS (Off-Screen) */}
-      <div style={{ position: 'absolute', left: '-9999px', visibility: 'hidden' }}>
-        <canvas ref={canvasRef} />
-      </div>
-
       <div className="max-w-7xl mx-auto mb-8 flex justify-between items-center">
         <div>
            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-red-600">
              Order Command Center
            </h1>
-           <p className="text-slate-400 mt-1">Manage global fulfillment & routing</p>
+           <p className="text-slate-400 mt-1">Real-time Bot Monitoring</p>
         </div>
       </div>
 
@@ -188,16 +101,17 @@ export default function AdminOrders() {
                 <TableRow className="border-white/10 hover:bg-transparent">
                   <TableHead className="text-slate-400">Order ID</TableHead>
                   <TableHead className="text-slate-400">Customer</TableHead>
-                  <TableHead className="text-slate-400">Location</TableHead>
-                  <TableHead className="text-slate-400">Total</TableHead>
-                  <TableHead className="text-slate-400">Provider</TableHead>
                   <TableHead className="text-slate-400">Status</TableHead>
+                  <TableHead className="text-slate-400 w-[300px]">Bot Logs</TableHead>
                   <TableHead className="text-right text-slate-400">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orders.map((order) => {
                   const isProcessingThis = processingId === order.id;
+                  const isSynced = order.providerStatus === 'synced';
+                  const isError = order.providerStatus === 'error' || order.providerStatus === 'manual_action_needed';
+                  const isWorking = order.providerStatus === 'processing';
 
                   return (
                     <TableRow key={order.id} className="border-white/5 hover:bg-white/5 transition-colors">
@@ -207,58 +121,60 @@ export default function AdminOrders() {
 
                       <TableCell>
                           <div className="text-slate-200 font-medium">{order.shippingAddress?.fullName}</div>
+                          <div className="text-xs text-slate-500">{order.shippingAddress?.countryCode}</div>
                       </TableCell>
 
+                      {/* Status Badge */}
                       <TableCell>
-                          <div className="flex items-center gap-2 text-sm text-slate-300">
-                              <MapPin className="h-3 w-3 text-slate-500" />
-                              {order.shippingAddress?.countryCode}
-                          </div>
-                      </TableCell>
-
-                      <TableCell>
-                          <span className="font-bold text-white">₹{order.payment?.total}</span>
-                      </TableCell>
-
-                      <TableCell>
-                          <Badge className="bg-slate-800 text-slate-300">
-                                {order.provider?.toUpperCase() || 'AUTO'}
-                          </Badge>
-                      </TableCell>
-
-                      {/* Sync Status */}
-                      <TableCell>
-                          {order.providerStatus === 'synced' ? (
-                              <div className="flex items-center gap-1.5 text-xs text-green-400 bg-green-900/20 px-2 py-1 rounded-full w-fit">
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
-                                  <span>Fulfilled</span>
-                              </div>
+                          {isSynced ? (
+                              <Badge className="bg-green-900/50 text-green-400 hover:bg-green-900/50 border-green-800">
+                                  <CheckCircle2 className="w-3 h-3 mr-1" /> Fulfilled
+                              </Badge>
+                          ) : isError ? (
+                              <Badge variant="destructive" className="bg-red-900/50 text-red-400 border-red-800">
+                                  <AlertCircle className="w-3 h-3 mr-1" /> {order.providerStatus === 'manual_action_needed' ? 'Manual Check' : 'Error'}
+                              </Badge>
+                          ) : isWorking ? (
+                              <Badge className="bg-blue-900/50 text-blue-400 border-blue-800 animate-pulse">
+                                  <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> Processing...
+                              </Badge>
                           ) : (
-                              <div className="flex items-center gap-1.5 text-xs text-yellow-500">
-                                  <AlertCircle className="h-3.5 w-3.5" />
-                                  <span>Action Needed</span>
-                              </div>
+                              <Badge variant="outline" className="text-slate-500">
+                                  Pending
+                              </Badge>
                           )}
+                      </TableCell>
+
+                      {/* Bot Logs (Crucial for Debugging) */}
+                      <TableCell className="font-mono text-xs text-slate-400">
+                          <div className="flex items-start gap-2 max-w-[300px] overflow-hidden">
+                              <Terminal className="w-3 h-3 mt-1 text-orange-500 shrink-0" />
+                              <div className="flex flex-col">
+                                  <span>{order.botLog || "Waiting for bot..."}</span>
+                                  {order.botError && (
+                                    <span className="text-red-400 mt-1">{order.botError}</span>
+                                  )}
+                                  {order.providerOrderId && (
+                                      <span className="text-green-500 mt-1">ID: {order.providerOrderId}</span>
+                                  )}
+                              </div>
+                          </div>
                       </TableCell>
 
                       {/* Actions */}
                       <TableCell className="text-right">
                           <Button 
                               size="sm" 
-                              onClick={() => handleManualProcess(order)}
-                              disabled={order.providerStatus === 'synced' || isProcessingThis}
-                              className={`h-8 text-xs ${
-                                order.providerStatus === 'synced' 
-                                ? 'bg-transparent text-slate-500 border border-slate-700' 
-                                : 'bg-orange-600 hover:bg-orange-500 text-white shadow-lg shadow-orange-900/20'
-                              }`}
+                              onClick={() => handleRetryBot(order)}
+                              disabled={isSynced || isWorking || isProcessingThis}
+                              className="h-8 text-xs bg-slate-800 hover:bg-slate-700 text-white border border-white/10"
                           >
                               {isProcessingThis ? (
-                                  <><Loader2 className="mr-2 h-3 w-3 animate-spin" /> Generating...</>
-                              ) : order.providerStatus === 'synced' ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : isSynced ? (
                                   "Done"
                               ) : (
-                                  <><Zap className="mr-1 h-3 w-3" /> Process Order</>
+                                  <><Zap className="mr-1 h-3 w-3 text-yellow-400" /> Retry Bot</>
                               )}
                           </Button>
                       </TableCell>

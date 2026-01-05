@@ -148,6 +148,8 @@ export default function OrderCheckoutPage() {
     initData();
   }, [mode, user, legacyOrderData]);
 
+  console.log(items)
+
   // 2. 🌍 IP Geolocation & Restriction Logic
   useEffect(() => {
     // Only fetch if we haven't locked it yet
@@ -223,7 +225,7 @@ export default function OrderCheckoutPage() {
     const orderRef = doc(db, 'orders', orderId);
 
     // Determine Provider Logic
-    let provider = shippingInfo.countryCode === 'IN' ? 'qikink' : 'printify';
+    let provider = shippingInfo.countryCode === 'IN' ? 'qikink' : shippingInfo.countryCode === 'US' ? 'printify' : 'gelato';
 
     const newOrder = {
       userId: user?.uid || 'guest',
@@ -259,7 +261,7 @@ export default function OrderCheckoutPage() {
           amount: data.amount,
           currency: data.currency,
           order_id: data.orderId,
-          name: "TRYAM Store",
+          name: "TRYAM",
           description: "Custom T-Shirt Order",
           handler: async function (response: any) {
             // Success
@@ -280,8 +282,8 @@ export default function OrderCheckoutPage() {
         // --- STRIPE FLOW ---
         const createStripe = httpsCallable(functions, 'createStripeIntent');
         const { data }: any = await createStripe({ amount: totalPayAmount, currency: 'usd' }); // Convert currency if needed
-
-        setStripePromise(loadStripe(data.publishableKey));
+        const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+        setStripePromise(loadStripe(publishableKey));
         setStripeClientSecret(data.clientSecret);
         setShowStripeModal(true); // Open Modal
         setIsProcessing(false);
