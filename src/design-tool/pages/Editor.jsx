@@ -94,7 +94,7 @@ export default function EditorPanel() {
 
     const AVAILABLE_SIZES = productData.options?.sizes || ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 
-    const [canvasBg, setCanvasBg] = useState(urlColor);
+    const [canvasBg, setCanvasBg] = useState(COLOR_MAP[urlColor]);
     const [currentView, setCurrentView] = useState("front");
     const [viewStates, setViewStates] = useState({});
 
@@ -517,12 +517,14 @@ export default function EditorPanel() {
         // 3. Construct Payload WITHOUT GENERATING IMAGES
         // We use the static product image from Firebase as the thumbnail
         const baseImage = productData.image || productData.mockups?.front || "/assets/placeholder.png";
+        const colorName = Object.keys(COLOR_MAP).find(key => COLOR_MAP[key] === canvasBg)
+        console.log(colorName, canvasBg)
 
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
             title: productData.title || "Custom T-Shirt",
             productId: productData.id,
-            variant: { color: canvasBg, size: selectedSize },
+            variant: { color: colorName, size: selectedSize },
             quantity: quantity,
             price: currentPrice || 0,
             currency: 'INR',

@@ -93,11 +93,11 @@ export default function OrderCheckoutPage() {
   const [stripeClientSecret, setStripeClientSecret] = useState('');
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState('');
-  const email = user?.email || 'E-mail'
+  const email = user?.email
   // Shipping State
   const [shippingInfo, setShippingInfo] = useState({
     fullName: user?.displayName || '',
-    email: user?.email || email || '',
+    email: user?.email ? user.email : email,
     line1: '',
     countryCode: 'IN', // Default
     stateCode: '',
@@ -105,6 +105,10 @@ export default function OrderCheckoutPage() {
     zip: '',
     phone: ''
   });
+
+  useEffect(() => {
+    if (email) setShippingInfo({ ...shippingInfo, email: user.email })
+  }, [user])
 
   // 1. Fetch Items & User Profile
   useEffect(() => {
@@ -230,11 +234,15 @@ export default function OrderCheckoutPage() {
       return {
         ...cartItem,
         // Attach the missing maps so the bot can read them
-        vendor_maps: masterProduct?.vendor_maps || {}
+        vendor_maps: masterProduct?.vendor_maps || {},
+        print_areas: masterProduct?.print_areas || {
+          front: { width: 4500, height: 5400 }, // Fallback default
+          back: { width: 4500, height: 5400 }
+        }
       };
     });
     console.log(enrichedItems)
-    
+
     const orderId = `ORD-${Date.now()}`;
     const orderRef = doc(db, 'orders', orderId);
 
@@ -249,7 +257,7 @@ export default function OrderCheckoutPage() {
       status: 'pending_payment',
       createdAt: serverTimestamp(),
       orderId,
-      provider
+      provider: 'printify'
     };
 
     try {
@@ -363,7 +371,7 @@ export default function OrderCheckoutPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-slate-300">Email</Label>
-                    <Input name="email" value={email} onChange={handleInputChange} className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500/50" />
+                    <Input name="email" value={shippingInfo.email || 'Email'} onChange={handleInputChange} className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500/50" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-slate-300">Phone</Label>
