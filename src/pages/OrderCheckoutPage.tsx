@@ -4,7 +4,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { doc, setDoc, serverTimestamp, updateDoc, collection, getDocs, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase';
-
+// Add this import
+import { INITIAL_PRODUCTS } from '@/data/initialProducts';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // For Stripe Modal
@@ -92,16 +93,17 @@ export default function OrderCheckoutPage() {
   const [stripeClientSecret, setStripeClientSecret] = useState('');
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState('');
-
+  const email = user?.email || 'E-mail'
   // Shipping State
   const [shippingInfo, setShippingInfo] = useState({
     fullName: user?.displayName || '',
-    email: user?.email || '',
+    email: user?.email || email || '',
     line1: '',
     countryCode: 'IN', // Default
     stateCode: '',
     city: '',
     zip: '',
+    phone: ''
   });
 
   // 1. Fetch Items & User Profile
@@ -138,6 +140,7 @@ export default function OrderCheckoutPage() {
               stateCode: addr.stateCode || '',
               city: addr.city || '',
               zip: addr.zip || '',
+              phone: data.phoneNumber
             }));
           }
         } catch (err) { console.error(err); }
@@ -147,8 +150,6 @@ export default function OrderCheckoutPage() {
     };
     initData();
   }, [mode, user, legacyOrderData]);
-
-  console.log(items)
 
   // 2. 🌍 IP Geolocation & Restriction Logic
   useEffect(() => {
@@ -216,11 +217,24 @@ export default function OrderCheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) return;
-    if (!shippingInfo.line1 || !shippingInfo.city) { alert("Address incomplete."); return; }
+    if (!shippingInfo.line1 || !shippingInfo.city || !shippingInfo.stateCode) { alert("Address incomplete."); return; }
 
     setIsProcessing(true);
 
-    // 1. Create Order in Firestore (Pending)
+    // 1. Enrich Items with Vendor Maps (CRITICAL FIX 🛠️)
+    // We look up the full product details using the item's productId
+    const enrichedItems = items.map(cartItem => {
+      // Find the master product in your local file
+      const masterProduct = INITIAL_PRODUCTS.find(p => p.id === cartItem.productId);
+
+      return {
+        ...cartItem,
+        // Attach the missing maps so the bot can read them
+        vendor_maps: masterProduct?.vendor_maps || {}
+      };
+    });
+    console.log(enrichedItems)
+    
     const orderId = `ORD-${Date.now()}`;
     const orderRef = doc(db, 'orders', orderId);
 
@@ -229,7 +243,7 @@ export default function OrderCheckoutPage() {
 
     const newOrder = {
       userId: user?.uid || 'guest',
-      items,
+      items: enrichedItems, // 👈 USE THE ENRICHED ITEMS HERE
       shippingAddress: shippingInfo,
       payment: { method: paymentMethod, total: totalPayAmount, currency: currencySymbol, status: 'pending' },
       status: 'pending_payment',
@@ -239,6 +253,7 @@ export default function OrderCheckoutPage() {
     };
 
     try {
+      console.log(shippingInfo, email)
       await setDoc(orderRef, newOrder);
       setPendingOrderId(orderId);
 
@@ -255,7 +270,6 @@ export default function OrderCheckoutPage() {
 
         const createRzpOrder = httpsCallable(functions, 'createRazorpayOrder');
         const { data }: any = await createRzpOrder({ amount: totalPayAmount, currency: 'INR' });
-
         const options = {
           key: data.keyId,
           amount: data.amount,
@@ -272,7 +286,7 @@ export default function OrderCheckoutPage() {
             });
             navigate('/dashboard/orders');
           },
-          prefill: { name: shippingInfo.fullName, email: shippingInfo.email }
+          prefill: { name: shippingInfo.fullName, email: shippingInfo.email || email }
         };
         const rzp = new (window as any).Razorpay(options);
         rzp.open();
@@ -349,7 +363,11 @@ export default function OrderCheckoutPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-slate-300">Email</Label>
-                    <Input name="email" value={shippingInfo.email} onChange={handleInputChange} className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500/50" />
+                    <Input name="email" value={email} onChange={handleInputChange} className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500/50" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-slate-300">Phone</Label>
+                    <Input name="email" value={shippingInfo.phone} onChange={handleInputChange} className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500/50" />
                   </div>
                 </div>
 
