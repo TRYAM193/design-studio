@@ -23,11 +23,11 @@ export default function HeadlessRender() {
 
             const orderData = orderSnap.data();
             const item = orderData.items[0];
-            const designJson = item.designData?.viewStates?.[view];
+            const designJson = item.designData?.canvasViewStates?.[view];
 
             if (!designJson) {
                 console.error("No design JSON found for view:", view);
-                setIsReady(true); // Fail gracefully so bot doesn't hang
+                setIsReady(false); // Fail gracefully so bot doesn't hang
                 return;
             }
 
@@ -52,12 +52,18 @@ export default function HeadlessRender() {
             const TARGET_HEIGHT = originalHeight * scaleFactor;
 
             console.log(`Scaling Design: ${originalWidth}x${originalHeight} -> ${TARGET_WIDTH}x${TARGET_HEIGHT} (Zoom: ${scaleFactor})`);
+            console.log(designJson)
+            if (!canvasRef.current) {
+                console.error("Canvas ref not available");
+                setIsReady(true); // fail gracefully
+                return;
+            }
 
             // 4. Setup Canvas with Target Dimensions
             const canvas = new fabric.Canvas(canvasRef.current, {
                 width: TARGET_WIDTH,
                 height: TARGET_HEIGHT,
-                backgroundColor: null // Transparent background for PNG
+                backgroundColor: 'transparent' // Transparent background for PNG
             });
 
             // 5. Load Data & Apply Zoom

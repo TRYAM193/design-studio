@@ -86,7 +86,7 @@ createRoot(document.getElementById("root")!).render(
 
             <Route path="/checkout" element={<OrderCheckoutPage />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
-            <Route path="/render" element={<HeadlessRender />} />
+            <Route path="/render/*" element={<HeadlessRender />} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

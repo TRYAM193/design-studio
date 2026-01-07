@@ -97,6 +97,9 @@ export default function EditorPanel() {
     const [canvasBg, setCanvasBg] = useState(COLOR_MAP[urlColor]);
     const [currentView, setCurrentView] = useState("front");
     const [viewStates, setViewStates] = useState({});
+    
+    // ✅ NEW: Track Full Fabric JSON for High-Quality Rendering
+    const [canvasViewStates, setCanvasViewStates] = useState({});
 
     const currentViewRef = useRef(currentView);
     const viewStatesRef = useRef(viewStates);
@@ -176,8 +179,16 @@ export default function EditorPanel() {
                 if (designData.productConfig?.productId === (urlProductId || productData.id)) {
                     setCurrentDesign(designData);
                     setEditingDesignId(designData.id);
+                    
+                    // Restore Redux states
                     const savedStates = designData.canvasData || {};
                     setViewStates(savedStates);
+                    
+                    // ✅ NEW: Restore Canvas JSON States (if available)
+                    if (designData.canvasViewStates) {
+                        setCanvasViewStates(designData.canvasViewStates);
+                    }
+
                     const activeView = designData.productConfig.activeView || 'front';
                     setCurrentView(activeView);
                     const activeObjects = savedStates[activeView] || [];
@@ -258,9 +269,15 @@ export default function EditorPanel() {
                 if (itemToEdit.variant?.size) setSelectedSize(itemToEdit.variant.size);
                 if (itemToEdit.quantity) setQuantity(itemToEdit.quantity);
 
+                // Restore Redux states
                 if (itemToEdit.designData.viewStates) {
                     setViewStates(itemToEdit.designData.viewStates);
                     viewStatesRef.current = itemToEdit.designData.viewStates;
+                }
+                
+                // ✅ NEW: Restore Canvas JSON States
+                if (itemToEdit.designData.canvasViewStates) {
+                    setCanvasViewStates(itemToEdit.designData.canvasViewStates);
                 }
 
                 const savedView = itemToEdit.designData.currentView || 'front';
@@ -298,6 +315,7 @@ export default function EditorPanel() {
         const isMerge = !!mergeId;
 
         if (isMerge) {
+            // ... (Merge logic kept same for brevity, it uses Redux state which is fine for merging)
             async function performMerge() {
                 const contextJSON = sessionStorage.getItem('merge_context');
                 let targetView = 'front';
@@ -363,6 +381,12 @@ export default function EditorPanel() {
                         if (design.type === 'PRODUCT' && design.productConfig) {
                             const savedStates = design.canvasData || {};
                             setViewStates(savedStates);
+                            
+                            // ✅ NEW: Restore Canvas JSON States
+                            if (design.canvasViewStates) {
+                                setCanvasViewStates(design.canvasViewStates);
+                            }
+
                             const activeView = design.productConfig.activeView || 'front';
                             setCurrentView(activeView);
                             const activeObjects = savedStates[activeView] || [];
@@ -473,10 +497,17 @@ export default function EditorPanel() {
 
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
-        // Don't auto-generate previews on switch, just switch state
-        const currentCanvasState = store.getState().canvas.present;
-        setViewStates(prev => ({ ...prev, [currentView]: currentCanvasState }));
         
+        // 1. Capture Redux State (For Editor Reloads)
+        const currentReduxState = store.getState().canvas.present;
+        setViewStates(prev => ({ ...prev, [currentView]: currentReduxState }));
+
+        // 2. ✅ NEW: Capture Full Canvas JSON (For Headless Render)
+        const currentJSON = fabricCanvas.toObject(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue', 'selectable', 'lockMovementX', 'lockMovementY']);
+        const currentObjects = currentJSON.objects || [];
+        setCanvasViewStates(prev => ({ ...prev, [currentView]: currentObjects }));
+
+        // 3. Switch View
         setCurrentView(newView);
         const nextObjects = viewStates[newView] || []; 
         dispatch(setCanvasObjects(nextObjects));
@@ -505,17 +536,25 @@ export default function EditorPanel() {
 
     // ✅ 🚀 INSTANT PAYLOAD GENERATOR
     const generateOrderPayload = () => {
-        // 1. Snapshot CURRENT Redux state (The Design Objects)
+        // 1. Snapshot CURRENT Redux state (For Editor)
         const currentReduxState = store.getState().canvas.present;
-        
-        // 2. Merge it into the full view history
         const tempViewStates = { 
             ...viewStates, 
             [currentView]: currentReduxState 
         };
 
-        // 3. Construct Payload WITHOUT GENERATING IMAGES
-        // We use the static product image from Firebase as the thumbnail
+        // 2. ✅ NEW: Snapshot CURRENT Fabric JSON (For Headless Render)
+        let currentObjects = [];
+        if (fabricCanvas) {
+             const json = fabricCanvas.toObject(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue', 'selectable', 'lockMovementX', 'lockMovementY']);
+             currentObjects = json.objects || [];
+        }
+        const tempCanvasViewStates = {
+            ...canvasViewStates,
+            [currentView]: currentObjects
+        };
+
+        // 3. Construct Payload
         const baseImage = productData.image || productData.mockups?.front || "/assets/placeholder.png";
         const colorName = Object.keys(COLOR_MAP).find(key => COLOR_MAP[key] === canvasBg)
         console.log(colorName, canvasBg)
@@ -529,18 +568,14 @@ export default function EditorPanel() {
             price: currentPrice || 0,
             currency: 'INR',
             
-            // ✅ Static Image (Instant)
             thumbnail: baseImage,
-            
-            // ✅ Empty Previews (Since we aren't generating them)
             previewImages: {}, 
-            
-            // ✅ Flag for Admin to know they must generate files
             highResGenerated: false, 
             
-            // ✅ THE IMPORTANT PART: All the JSON data needed to reconstruct the design
+            // ✅ THE IMPORTANT PART: We keep BOTH states now!
             designData: {
-                viewStates: tempViewStates, 
+                viewStates: tempViewStates,       // For Editor (Redux)
+                canvasViewStates: tempCanvasViewStates, // For Renderer (Fabric JSON)
                 currentView: currentView
             },
             vendor: "qikink",
@@ -584,7 +619,7 @@ export default function EditorPanel() {
         }
     };
 
-    // ... (Render Logic) ...
+    // ... (Rest of component remains unchanged)
     const BrandDisplay = (
         <div className="header-brand toolbar-brand" onClick={() => navigation('/dashboard')} style={{ cursor: 'pointer' }}>
             <div className="logo-circle ring-1 ring-white/20 shadow-lg shadow-orange-500/20">
