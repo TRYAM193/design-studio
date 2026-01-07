@@ -4,7 +4,6 @@ import {
   FiBold, FiItalic, FiUnderline, FiSearch, FiExternalLink,
   FiLoader, FiSlash, FiCircle, FiSmile, FiFrown, FiLayers, FiFlag
 } from 'react-icons/fi';
-import WebFont from 'webfontloader';
 import CircleText from '../objectAdders/CircleText';
 import { Path } from 'fabric';
 import {
@@ -13,6 +12,7 @@ import {
 } from '../utils/shapeUtils';
 import { useRef } from 'react';
 import { processBackgroundRemoval } from '../utils/imageUtils';
+import { FONTS } from '../../data/font.js'
 
 
 const FONT_OPTIONS = ['Arial', 'Verdana', 'Tahoma', 'Georgia', 'Times New Roman', 'Courier New'];
@@ -28,15 +28,6 @@ const createFabricShadow = (color, blur, offsetX, offsetY) => {
     offsetY: offsetY || 0,
   };
 };
-
-function extractFontNameFromUrl(url) {
-  if (!url) return null;
-  const matchFamily = url.match(/family=([^&:]+)/);
-  if (matchFamily && matchFamily[1]) {
-    return decodeURIComponent(matchFamily[1].replace(/\+/g, ' '));
-  }
-  return null;
-}
 
 // Function to directly update the Fabric object without touching Redux history
 function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
@@ -130,11 +121,6 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
   const props = object?.props || {};
   const [liveProps, setLiveProps] = useState(props);
 
-  const [googleFontUrl, setGoogleFontUrl] = useState('');
-  const [showFontUrlInput, setShowFontUrlInput] = useState(false);
-  const [isFontLoading, setIsFontLoading] = useState(false);
-  const [originalFontFamily, setOriginalFontFamily] = useState(props.fontFamily || 'Arial');
-
   const [borderRadius, setBorderRadius] = useState(props.rx || props.radius || 0);
   const [circleRadius, setCircleRadius] = useState(props.radius || 150);
   const [arcAngle, setArcAngle] = useState(props.arcAngle || 120);
@@ -147,6 +133,13 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
   const supportsBorderRadius = ['rect', 'triangle', 'star', 'pentagon', 'hexagon', 'arrow', 'diamond', 'trapezoid', 'lightning'].includes(effectiveType);
   const colorCommitTimer = useRef(null);
   const [isRemovingBg, setIsRemovingBg] = useState(false);
+
+  const [currentFont, setCurrentFont] = useState(liveProps.fontFamily || 'Roboto')
+  const fontCaps = FONTS[currentFont] || { bold: false, italic: false };
+
+  const canBold = fontCaps.bold;
+  const canItalic = fontCaps.italic;
+
 
   const handleRemoveBackground = async () => {
     if (!object || type !== 'image' || !fabricCanvas || isRemovingBg) return;
@@ -191,47 +184,6 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
     }
   }, [object]);
 
-  const handleApplyFont = (fontName) => {
-    if (!fontName || isFontLoading) return;
-
-    if (FONT_OPTIONS.includes(fontName) || fontName === originalFontFamily) {
-      liveUpdateFabric(fabricCanvas, id, { fontFamily: fontName }, liveProps, object);
-      handleUpdateAndHistory('fontFamily', fontName);
-      return;
-    }
-
-    setIsFontLoading(true);
-    liveUpdateFabric(fabricCanvas, id, { fontFamily: fontName }, liveProps, object);
-
-    WebFont.load({
-      google: { families: [fontName] },
-      fontactive: (familyName) => {
-        setIsFontLoading(false);
-        handleUpdateAndHistory('fontFamily', familyName);
-      },
-      fontinactive: (familyName) => {
-        setIsFontLoading(false);
-        alert(`Failed to load font: ${familyName}. Please check the spelling.`);
-        setLiveProps(prev => ({ ...prev, fontFamily: originalFontFamily }));
-        liveUpdateFabric(fabricCanvas, id, { fontFamily: originalFontFamily }, liveProps, object);
-        handleUpdateAndHistory('fontFamily', originalFontFamily);
-      },
-      timeout: 3000
-    });
-  };
-
-  const handleUrlPaste = () => {
-    const fontName = extractFontNameFromUrl(googleFontUrl);
-    if (fontName) {
-      setLiveProps(prev => ({ ...prev, fontFamily: fontName }));
-      setGoogleFontUrl('');
-      setShowFontUrlInput(false);
-      handleApplyFont(fontName);
-    } else {
-      alert('Could not extract a valid font name from the link.');
-    }
-  };
-
   const handleUpdateAndHistory = (key, value) => {
     const updates = { [key]: value };
     const shadowKeys = ['shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY'];
@@ -249,6 +201,8 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
       return;
     }
 
+    if (key === 'fontFamily') setCurrentFont(value)
+
     updateObject(id, updates);
   };
 
@@ -265,9 +219,11 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
       propKey = 'underline';
       nextValue = !currentProps.underline;
     } else if (style === 'italic') {
+      if (!canItalic) return
       propKey = 'fontStyle';
       nextValue = currentProps.fontStyle === 'italic' ? 'normal' : 'italic';
     } else if (style === 'bold') {
+      if (!canBold) return
       propKey = 'fontWeight';
       nextValue = currentProps.fontWeight === 'bold' ? 'normal' : 'bold';
     } else {
@@ -331,14 +287,14 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
               value={liveProps.text || ''}
               onChange={(e) => handleUpdateAndHistory('text', e.target.value)}
               placeholder="Enter your text here"
-              // ✅ REMOVED hardcoded black color
+            // ✅ REMOVED hardcoded black color
             />
           </div>
 
           <h3 className="property-group-subtitle">Formatting</h3>
           <div className="control-row-buttons" style={{ marginBottom: '15px', display: type === 'circle-text' ? 'none' : 'flex' }}>
-            <button className={`style-button ${liveProps.fontWeight === 'bold' ? 'active' : ''}`} onClick={() => toggleTextStyle('bold')} title="Bold"><FiBold size={16} /></button>
-            <button className={`style-button ${liveProps.fontStyle === 'italic' ? 'active' : ''}`} onClick={() => toggleTextStyle('italic')} title="Italic"><FiItalic size={16} /></button>
+            <button disabled={!canBold} className={`style-button ${liveProps.fontWeight === 'bold' ? 'active' : ''}`} onClick={() => toggleTextStyle('bold')} title="Bold"><FiBold size={16} /></button>
+            <button disabled={!canItalic} className={`style-button ${liveProps.fontStyle === 'italic' ? 'active' : ''}`} onClick={() => toggleTextStyle('italic')} title="Italic"><FiItalic size={16} /></button>
             <button className={`style-button ${liveProps.underline ? 'active' : ''}`} onClick={() => toggleTextStyle('underline')} title="Underline"><FiUnderline size={16} /></button>
           </div>
 
@@ -404,61 +360,15 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
               />
             </div>
           )}
-          
+
           <h3 className="property-group-subtitle">Font Family</h3>
-          <div className="control-row full-width font-control-group">
-            <input
-              type="text"
-              className="text-input font-input"
-              value={liveProps.fontFamily || ''}
-              onChange={(e) => handleLiveUpdate('fontFamily', e.target.value)}
-              placeholder="Enter font name (e.g., Roboto)"
-              disabled={isFontLoading}
-              // ✅ REMOVED hardcoded color
-            />
-            <div className="font-link-helper">
-              <button
-                className="style-button primary-button apply small-button apply-button"
-                onClick={() => handleApplyFont(liveProps.fontFamily)}
-                disabled={!liveProps.fontFamily || isFontLoading}
-              >
-                {isFontLoading ? <FiLoader size={16} className="icon-spin" /> : 'Apply'}
-              </button>
-              <button className="style-button" onClick={() => setShowFontUrlInput(prev => !prev)} disabled={isFontLoading}><FiSearch size={16} /></button>
-              <a href="https://fonts.google.com/" target="_blank" rel="noopener noreferrer" className="style-button external-link-button"><FiExternalLink size={16} /></a>
-            </div>
-          </div>
-
-          {showFontUrlInput && (
-            <div className="control-row full-width font-url-input-group">
-              <p className="font-helper-text">Paste the full Google Fonts **link** or **@import** statement:</p>
-              <textarea
-                rows="2"
-                className="text-input"
-                value={googleFontUrl}
-                onChange={(e) => setGoogleFontUrl(e.target.value)}
-                placeholder="e.g., https://fonts.googleapis.com/css2?family=Roboto..."
-
-              />
-              <button
-                className="primary-button small-button"
-                onClick={handleUrlPaste}
-                disabled={!googleFontUrl.trim()}
-              >
-                Extract & Apply
-              </button>
-            </div>
-          )}
-
-          <h3 className="property-group-subtitle" style={{ marginTop: '15px' }}>System Presets</h3>
           <div className="control-row full-width">
             <select
               className="font-select"
               value={liveProps.fontFamily || 'Arial'}
               onChange={(e) => handleUpdateAndHistory('fontFamily', e.target.value)}
-              disabled={isFontLoading}
             >
-              {FONT_OPTIONS.map(font => <option key={font} value={font}>{font}</option>)}
+              {Object.keys(FONTS).map(font => <option key={font} value={font}>{font}</option>)}
             </select>
           </div>
 
