@@ -24,10 +24,10 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 449,
-      US: 19.99,
-      GB: 13.99,
-      EU: 15.99,
-      CA: 32.99
+      US: 24.99,
+      GB: 19.99,
+      EU: 20.99,
+      CA: 34.99
     },
 
     mockups: {
@@ -53,7 +53,7 @@ export const INITIAL_PRODUCTS = [
       },
       qikink: {
         // Base SKU for "Male Round Neck Half Sleeve"
-        product_id: "MRnHs", 
+        product_id: "MRnHs",
         // Qikink Color Codes (Bk=Black, Wh=White, Nb=Navy Blue, Rd=Red, Rb=Royal Blue, Gm=Grey Melange)
         color_map: { "White": "Wh", "Black": "Bk", "Navy": "Nb", "Red": "Rd", "Royal": "Rb", "Sport Grey": "Gm" }
       },
@@ -89,10 +89,10 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 699,
-      US: 23.99,
-      GB: 16.99,
-      EU: 18.99,
-      CA: 37.99
+      US: 27.99,
+      GB: 21.99,
+      EU: 22.99,
+      CA: 39.99
     },
 
     print_area_2d: {
@@ -113,7 +113,7 @@ export const INITIAL_PRODUCTS = [
       },
       qikink: {
         // Base SKU for "Unisex Classic Oversized Tee"
-        product_id: "UC22", 
+        product_id: "UC22",
         color_map: { "White": "Wh", "Black": "Bk", "Beige": "Bg" }
       },
       gelato: {
@@ -210,10 +210,10 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 449,
-      US: 19.99,
-      GB: 13.99,
-      EU: 15.99,
-      CA: 32.99
+      US: 24.99,
+      GB: 19.99,
+      EU: 20.99,
+      CA: 34.99
     },
 
     print_area_2d: {
@@ -235,7 +235,7 @@ export const INITIAL_PRODUCTS = [
       },
       qikink: {
         // Base SKU for "Female Round Neck Half Sleeve"
-        product_id: "FRnHs", 
+        product_id: "FRnHs",
         color_map: { "White": "Wh", "Black": "Bk", "Pink": "Pk", "Heather Mauve": "Mv" }
       },
       gelato: {
@@ -275,10 +275,10 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 699,
-      US: 23.99,
-      GB: 16.99,
-      EU: 18.99,
-      CA: 37.99
+      US: 27.99,
+      GB: 21.99,
+      EU: 22.99,
+      CA: 39.99
     },
 
     options: {
@@ -385,10 +385,10 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 399,
-      US: 15.99,
-      GB: 11.99,
-      EU: 12.99,
-      CA: 19.99
+      US: 19.99,
+      GB: 14.99,
+      EU: 16.99,
+      CA: 24.99
     },
 
     mockups: {
@@ -404,7 +404,7 @@ export const INITIAL_PRODUCTS = [
     },
 
     options: {
-      colors: ["White", "Black Handle"],
+      colors: ["White", "Black"],
       sizes: ["11oz"]
     },
 
@@ -447,9 +447,9 @@ export const INITIAL_PRODUCTS = [
     price: {
       IN: 399,
       US: 14.99,
-      GB: 10.99,
-      EU: 12.99,
-      CA: 19.99
+      GB: 12.99,
+      EU: 14.99,
+      CA: 20.99
     },
 
     mockups: {
