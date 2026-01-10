@@ -126,7 +126,7 @@ export default function ProductDetails() {
         }
 
         // ✅ Navigate with auto-detected region
-        navigate(`/design?product=${product.id}&color=${selectedColor}&size=${selectedSize}&region=${region}`);
+        window.open(`/design?product=${product.id}&color=${selectedColor}&size=${selectedSize}&region=${region}`);
     };
 
     if (loading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-indigo-600" /></div>;

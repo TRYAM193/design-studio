@@ -257,8 +257,9 @@ export default function OrderCheckoutPage() {
       status: 'pending_payment',
       createdAt: serverTimestamp(),
       orderId,
-      provider: 'printify'
+      provider: 'gelato'
     };
+    console.log(newOrder)
 
     try {
       console.log(shippingInfo, email)
@@ -395,9 +396,9 @@ export default function OrderCheckoutPage() {
                     <Select
                       value={shippingInfo.countryCode}
                       onValueChange={handleCountryChange}
-                      disabled={isLocationLocked}
+                      // disabled={isLocationLocked}
                     >
-                      <SelectTrigger className={`bg-slate-900/50 border-white/10 text-white ${isLocationLocked ? "opacity-50 cursor-not-allowed" : ""}`}>
+                      <SelectTrigger className={`bg-slate-900/50 border-white/10 text-white `}>
                         <SelectValue placeholder="Select Country" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 text-white border-white/10 max-h-64">
@@ -569,3 +570,5 @@ export default function OrderCheckoutPage() {
     </div>
   );
 }
+
+// ${isLocationLocked ? "opacity-50 cursor-not-allowed" : ""}

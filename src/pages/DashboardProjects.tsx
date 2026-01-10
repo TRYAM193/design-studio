@@ -32,7 +32,7 @@ export default function DashboardProjects() {
   };
 
   const handleEdit = (design: Design) => {
-    navigate('/design', { state: { designToLoad: design } });
+    window.open(`/design?designId=${design.id}`);
   };
 
   if (!isAuthenticated) {

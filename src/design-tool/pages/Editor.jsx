@@ -578,7 +578,6 @@ export default function EditorPanel() {
                 canvasViewStates: tempCanvasViewStates, // For Renderer (Fabric JSON)
                 currentView: currentView
             },
-            vendor: "qikink",
             createdAt: new Date().toISOString()
         };
     };

@@ -4,11 +4,14 @@ import { Routes, Route } from 'react-router';
 import { store } from '@/design-tool/redux/store';
 // @ts-ignore
 import EditorPanel from '@/design-tool/pages/Editor';
+import FontLoader from '@/components/FontLoader';
 
 export default function DesignEditorPage() {
   return (
     <Provider store={store}>
       <div className="w-full h-screen bg-background overflow-hidden">
+          <FontLoader />
+
         <Routes>
           <Route path="/*" element={<EditorPanel />} />
         </Routes>

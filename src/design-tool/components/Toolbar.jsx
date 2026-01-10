@@ -12,6 +12,7 @@ import {
 } from '../utils/shapeUtils';
 import { useRef } from 'react';
 import { processBackgroundRemoval } from '../utils/imageUtils';
+import { AVAILABLE_FONTS } from '@/data/font';
 import { FONTS } from '../../data/font.js'
 
 
@@ -368,7 +369,7 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
               value={liveProps.fontFamily || 'Arial'}
               onChange={(e) => handleUpdateAndHistory('fontFamily', e.target.value)}
             >
-              {Object.keys(FONTS).map(font => <option key={font} value={font}>{font}</option>)}
+              {AVAILABLE_FONTS.map(font => <option style={{fontFamily: font}} key={font} value={font}>{font}</option>)}
             </select>
           </div>
 

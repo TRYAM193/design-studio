@@ -57,9 +57,9 @@ export const INITIAL_PRODUCTS = [
         // Qikink Color Codes (Bk=Black, Wh=White, Nb=Navy Blue, Rd=Red, Rb=Royal Blue, Gm=Grey Melange)
         color_map: { "White": "Wh", "Black": "Bk", "Navy": "Nb", "Red": "Rd", "Royal": "Rb", "Sport Grey": "Gm" }
       },
-      gelato: {
-        product_uid: "apparel_classic_tee_unisex",
-        color_map: { "White": "white", "Black": "black", "Navy": "navy_blue", "Red": "red", "Royal": "royal_blue", "Sport Grey": "grey_melange" }
+      gelato: {      
+        product_uid: "apparel_product_gca_t-shirt_gsc_crewneck_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{printCode}_gildan_64000",
+        color_map: { "White": "white", "Black": "black", "Navy": "navy_blue", "Red": "red", "Royal": "royal-blue", "Sport Grey": "grey-melange" }
       }
     }
   },
@@ -91,7 +91,7 @@ export const INITIAL_PRODUCTS = [
       IN: 699,
       US: 27.99,
       GB: 21.99,
-      EU: 22.99,
+      EU: 24.99,
       CA: 39.99
     },
 
@@ -117,7 +117,7 @@ export const INITIAL_PRODUCTS = [
         color_map: { "White": "Wh", "Black": "Bk", "Beige": "Bg" }
       },
       gelato: {
-        product_uid: "apparel_heavyweight_tee",
+        product_uid: "apparel_product_gca_t-shirt_gsc_oversized_gcu_unisex_gqa_organic_gsi_{size}_gco_{color}_gpr_{printCode}_sols_03996",
         color_map: { "White": "white", "Black": "black", "Beige": "sand" }
       }
     }
@@ -176,7 +176,7 @@ export const INITIAL_PRODUCTS = [
         color_map: { "Black": "Bk", "White": "Wh", "Navy": "Nb" }
       },
       gelato: {
-        product_uid: "apparel_hoodie_classic",
+        product_uid: "apparel_product_gca_hoodie_gsc_pullover_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{printCode}_gildan_18500",
         color_map: { "Black": "black", "White": "white", "Navy": "navy" }
       }
     }
@@ -239,7 +239,7 @@ export const INITIAL_PRODUCTS = [
         color_map: { "White": "Wh", "Black": "Bk", "Pink": "Pk", "Heather Mauve": "Mv" }
       },
       gelato: {
-        product_uid: "apparel_ladies_tee",
+        product_uid: "apparel_product_gca_t-shirt_gsc_crewneck_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{printCode}_gildan_64000",
         color_map: { "White": "white", "Black": "black", "Pink": "pink", "Heather Mauve": "heather_mauve" }
       }
     }
@@ -298,7 +298,7 @@ export const INITIAL_PRODUCTS = [
         color_map: { "White": "Wh", "Black": "Bk", "Sand": "Sd" }
       },
       gelato: {
-        product_uid: "apparel_heavyweight_tee",
+        product_uid: "apparel_product_gca_t-shirt_gsc_oversized_gcu_unisex_gqa_organic_gsi_{size}_gco_{color}_gpr_{printCode}_sols_03996",
         color_map: { "White": "white", "Black": "black", "Sand": "sand" }
       }
     }
@@ -325,7 +325,7 @@ export const INITIAL_PRODUCTS = [
     price: {
       IN: 899,
       US: 39.99,
-      GB: 29.99,
+      GB: 31.99,
       EU: 34.99,
       CA: 49.99
     },
@@ -357,8 +357,8 @@ export const INITIAL_PRODUCTS = [
         color_map: { "White": "Wh", "Black": "Bk", "Pink": "Pk", "Dark Heather": "Cm" }
       },
       gelato: {
-        product_uid: "apparel_hoodie_classic",
-        color_map: { "White": "white", "Black": "black", "Pink": "light_pink", "Dark Heather": "dark_grey_heather" }
+        product_uid: "apparel_product_gca_hoodie_gsc_pullover_gcu_womens_gqa_prm_gsi_{size}_gco_{color}_gpr_{printCode}",
+        color_map: { "White": "white", "Black": "black", "Pink": "light-pink", "Dark Heather": "dark-grey-heather" }
       }
     }
   },
@@ -404,7 +404,7 @@ export const INITIAL_PRODUCTS = [
     },
 
     options: {
-      colors: ["White", "Black"],
+      colors: ["White"],
       sizes: ["11oz"]
     },
 
@@ -420,7 +420,7 @@ export const INITIAL_PRODUCTS = [
         color_map: { "White": "Wh", "Black Handle": "BkH" }
       },
       gelato: {
-        product_uid: "mug_11oz_ceramic",
+        product_uid: "mug_product_msz_11-oz_mmat_ceramic-white_cl_4-0",
         color_map: { "White": "white", "Black Handle": "black_handle" }
       }
     }
@@ -447,7 +447,7 @@ export const INITIAL_PRODUCTS = [
     price: {
       IN: 399,
       US: 14.99,
-      GB: 12.99,
+      GB: 20.99,
       EU: 14.99,
       CA: 20.99
     },
@@ -463,7 +463,7 @@ export const INITIAL_PRODUCTS = [
     },
 
     options: {
-      colors: ["Natural", "Black"],
+      colors: ["White", "Black"],
       sizes: ["One Size"]
     },
 
@@ -475,10 +475,10 @@ export const INITIAL_PRODUCTS = [
       },
       qikink: {
         product_id: "Tote",
-        color_map: { "Natural": "Nt", "Black": "Bk" }
+        color_map: { "White": "Wh", "Black": "Bk" }
       },
       gelato: {
-        product_uid: "tote_bag_canvas",
+        product_uid: "bag_product_bsc_tote-bag_bqa_clc_bsi_std-t_bco_white_bpr_{printCode}",
         color_map: { "Natural": "natural", "Black": "black" }
       }
     }

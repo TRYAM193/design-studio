@@ -78,7 +78,7 @@ export default function CartPage() {
 
   // 3. Edit Handler
   const handleEdit = (cartItemId: string) => {
-    navigate(`/design?editCartId=${cartItemId}`);
+    window.open(`/design?editCartId=${cartItemId}`);
   };
 
   return (

@@ -27,15 +27,7 @@ export default function DashboardHome() {
   ];
 
   const handleUseTemplate = (template: any) => {
-    navigate('/design', { 
-      state: { 
-        designToLoad: {
-          id: null, 
-          name: `${template.name} (Copy)`,
-          canvasJSON: template.canvasData
-        } 
-      } 
-    });
+    window.open(`/design?templateid=${template.id}`)
   };
 
   return (
@@ -130,7 +122,7 @@ export default function DashboardHome() {
                  ))
               ) : designs.length > 0 ? (
                 designs.slice(0, 5).map((design) => (
-                  <Link key={design.id} to={`/design?designId=${design.id}`}>
+                  <div key={design.id} onClick={() => window.open(`/design?designId=${design.id}`)}>
                     <Card className="group cursor-pointer hover:shadow-lg hover:shadow-blue-500/10 transition-all overflow-hidden border border-white/10 bg-slate-800/40 backdrop-blur-md rounded-xl h-full">
                       <div className="aspect-square bg-white relative flex items-center justify-center overflow-hidden p-2">
                         {design.imageData ? (
@@ -156,7 +148,7 @@ export default function DashboardHome() {
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
+                  </div>
                 ))
               ) : (
                 <div className="col-span-full py-10 text-center border border-dashed border-white/10 rounded-xl bg-white/5">
@@ -176,7 +168,7 @@ export default function DashboardHome() {
                 <Sparkles className="h-4 w-4 text-orange-400" />
                 {t("templates.title") || "Featured Templates"}
               </h2>
-              <Link to="/dashboard/templates">
+              <Link to="/dashboard/designs">
                 <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-white/5 gap-1 h-8 text-xs">
                   View All <ArrowRight className="h-3 w-3" />
                 </Button>

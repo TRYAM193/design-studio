@@ -3,7 +3,7 @@ export type Language = "en";
 export const translations: Record<Language, Record<string, string>> = {
   en: {
     "nav.home": "Home",
-    "nav.templates": "Templates",
+    "nav.designs": "Designs",
     "nav.projects": "Projects",
     "nav.products": "Products",
     "nav.orders": "Orders",
@@ -29,7 +29,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "notFound.home": "Go Home",
 
     "dashboard.welcome": "What will you print today?",
-    "dashboard.recent": "Recent designs",
+    "dashboard.recent": "Recent Projects",
     "dashboard.viewAll": "View all",
     "dashboard.startFree": "Start Designing for Free",
     "dashboard.startDesc": "Explore our templates and products. Sign in to save your work and access premium features.",
@@ -41,7 +41,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "common.notifications": "Notifications",
     
     // Templates
-    "templates.title": "Templates",
+    "templates.title": "Designs",
     "templates.search": "Search templates...",
     "templates.filterTier": "Tier",
     "templates.allTiers": "All Tiers",

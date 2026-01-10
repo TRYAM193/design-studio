@@ -61,7 +61,7 @@ export function DashboardSidebar() {
 
   const navItems = [
     { icon: Home, label: t("nav.home"), path: "/dashboard", isSpecial: false },
-    { icon: LayoutTemplate, label: t("nav.templates"), path: "/dashboard/templates", isSpecial: false },
+    { icon: LayoutTemplate, label: t("nav.designs"), path: "/dashboard/designs", isSpecial: false },
     { icon: FolderOpen, label: t("nav.projects"), path: "/dashboard/projects", isSpecial: false },
     { icon: Package, label: t("nav.orders"), path: "/dashboard/orders", isSpecial: false },
   ];
@@ -129,15 +129,16 @@ export function DashboardSidebar() {
           )}
         </Link>
 
-        <Link to="/design" className={`mb-6 w-full ${isCollapsed ? "flex justify-center" : ""}`}>
+        <div className={`mb-6 w-50 ${isCollapsed ? "flex justify-center rounded-full" : ""}`}>
           <Button
-            className={`bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg shadow-orange-900/20 transition-all duration-300 ${isCollapsed ? "h-10 w-10 rounded-xl p-0" : "w-full rounded-xl h-10 font-medium"
+          onClick={() => window.open('/design')}
+            className={`bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg shadow-orange-900/20 transition-all duration-300 ${isCollapsed ? "h-10 w-10 rounded-full p-0" : "w-full rounded-xl h-10 font-medium"
               }`}
           >
             <Plus className={`h-5 w-5 ${!isCollapsed && "mr-2"}`} />
             {!isCollapsed && "Start Designing"}
           </Button>
-        </Link>
+        </div>
 
         <nav className="flex flex-col space-y-1 w-full flex-1">
           {!isCollapsed && (
