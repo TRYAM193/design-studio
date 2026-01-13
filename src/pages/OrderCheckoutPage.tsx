@@ -257,7 +257,7 @@ export default function OrderCheckoutPage() {
       status: 'pending_payment',
       createdAt: serverTimestamp(),
       orderId,
-      provider: 'gelato'
+      provider
     };
     console.log(newOrder)
 
@@ -293,7 +293,7 @@ export default function OrderCheckoutPage() {
               'payment.status': 'paid',
               'payment.txnId': response.razorpay_payment_id
             });
-            navigate('/dashboard/orders');
+            navigate(`/orders/${orderRef.id}`);
           },
           prefill: { name: shippingInfo.fullName, email: shippingInfo.email || email }
         };
@@ -511,7 +511,7 @@ export default function OrderCheckoutPage() {
                 <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                   {items.map((item, idx) => (
                     <div key={idx} className="flex gap-4 border-b border-white/5 pb-4 last:border-0 last:pb-0">
-                      <div className="h-14 w-14 rounded-lg bg-white p-1 overflow-hidden border border-white/10 shrink-0">
+                      <div className="h-14 w-14 rounded-lg overflow-hidden border border-white/10 shrink-0">
                         <img src={item.thumbnail} alt="Preview" className="w-full h-full object-contain" />
                       </div>
                       <div className="flex-1 min-w-0 flex flex-col justify-center">

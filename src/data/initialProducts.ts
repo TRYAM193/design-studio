@@ -8,7 +8,7 @@ export const INITIAL_PRODUCTS = [
     id: "men-classic-tee",
     title: "Men's Classic Premium Tee",
     category: "Men",
-    image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-classic-tee?alt=media&token=102baeb0-9b35-4d94-a3fd-8d77735915e4',
+    image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-classic-tee?alt=media&token=eaffe62d-ccfa-4ea0-a9a9-4fb20312d00e',
     model3d: "/assets/t-shirt.glb",
     description: "A timeless classic. Soft cotton, reliable fit.",
 
