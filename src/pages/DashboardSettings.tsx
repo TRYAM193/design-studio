@@ -1,241 +1,342 @@
-import { motion } from "framer-motion";
-import { Save, User, Lock, MapPin, Phone, Building, Globe } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { db } from "@/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from "@/hooks/use-auth";
-import { useState, useEffect } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Save, User, Smartphone, MapPin, AlertTriangle, CheckCircle, Lock, Globe } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router";
-import { useTranslation } from "@/hooks/use-translation";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/firebase";
+import { PhoneVerificationModal } from "@/components/PhoneVerificationModal";
+
+// 🌍 COUNTRY DATA
+const COUNTRY_DATA: Record<string, { label: string, phone: string, flag: string }> = {
+  "IN": { label: "India", phone: "+91", flag: "🇮🇳" },
+  "US": { label: "United States", phone: "+1", flag: "🇺🇸" },
+  "CA": { label: "Canada", phone: "+1", flag: "🇨🇦" },
+  "GB": { label: "United Kingdom", phone: "+44", flag: "🇬🇧" },
+  "DE": { label: "Germany", phone: "+49", flag: "🇩🇪" },
+  "FR": { label: "France", phone: "+33", flag: "🇫🇷" },
+  "IT": { label: "Italy", phone: "+39", flag: "🇮🇹" },
+  "ES": { label: "Spain", phone: "+34", flag: "🇪🇸" },
+  "NL": { label: "Netherlands", phone: "+31", flag: "🇳🇱" },
+  "AU": { label: "Australia", phone: "+61", flag: "🇦🇺" },
+  "DEFAULT": { label: "United States", phone: "+1", flag: "🇺🇸" }
+};
 
 export default function DashboardSettings() {
-  const { user, isAuthenticated } = useAuth();
-  const { t } = useTranslation();
-  
-  const [formData, setFormData] = useState({
-    name: "",
-    phoneNumber: "",
-    // Address Fields
-    line1: "",
-    line2: "",
-    city: "",
-    state: "",
-    zip: "",
-    country: "IN", // Default to India or US as needed
-  });
-  const [isSaving, setIsSaving] = useState(false);
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
+  // Form State
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [countryCode, setCountryCode] = useState("+91");
+  const [phoneBody, setPhoneBody] = useState("");
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [detectedIsoCode, setDetectedIsoCode] = useState("IN");
+
+  const [address, setAddress] = useState({
+    line1: "", line2: "", city: "", state: "", zip: "", country: "India"
+  });
+
+  // 1. IP DETECTION
+  useEffect(() => {
+    async function detectLocation() {
+      try {
+        const res = await fetch("https://ipapi.co/json/");
+        const data = await res.json();
+        const code = data.country_code || "US";
+        const config = COUNTRY_DATA[code] || COUNTRY_DATA["DEFAULT"];
+
+        setDetectedIsoCode(code);
+        setCountryCode(prev => prev === "+91" ? config.phone : prev);
+        setAddress(prev => ({ ...prev, country: config.label }));
+      } catch (e) { console.warn("IP Detect failed"); }
+    }
+    detectLocation();
+  }, []);
+
+  // 2. FETCH DATA
   useEffect(() => {
     async function fetchProfile() {
-      if (user) {
-        try {
-          const defaultName = user.displayName || "";
-          const userDocRef = doc(db, "users", user.uid);
-          const userSnap = await getDoc(userDocRef);
+      if (!user) return;
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) {
+          const data = snap.data();
+          setFullName(data.displayName || data.fullName || "");
+          setEmail(data.email || user.email || "");
+          setIsPhoneVerified(data.phoneVerified || false);
 
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            const address = data.addressObject || {}; // Check for new structure first
-
-            setFormData({
-              name: data.name || defaultName,
-              phoneNumber: data.phoneNumber || "",
-              line1: address.line1 || data.address || "", // Fallback to old field
-              line2: address.line2 || "",
-              city: address.city || "",
-              state: address.state || "",
-              zip: address.zip || "",
-              country: address.country || "IN",
-            });
-          } else {
-            setFormData(prev => ({ ...prev, name: defaultName }));
+          if (data.phoneNumber) {
+            const known = Object.values(COUNTRY_DATA).find(c => data.phoneNumber.startsWith(c.phone));
+            if (known) {
+              setCountryCode(known.phone);
+              setPhoneBody(data.phoneNumber.replace(known.phone, ""));
+            } else {
+              setPhoneBody(data.phoneNumber);
+            }
           }
-        } catch (error) {
-          console.error("Error fetching profile:", error);
+          if (data.shippingAddress) {
+            setAddress(data.shippingAddress);
+            const savedIso = Object.keys(COUNTRY_DATA).find(key => COUNTRY_DATA[key].label === data.shippingAddress.country);
+            if (savedIso) setDetectedIsoCode(savedIso);
+          }
         }
-      }
+      } catch (e) { console.error(e); } finally { setLoading(false); }
     }
-
     fetchProfile();
   }, [user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async () => {
     if (!user) return;
-
-    setIsSaving(true);
+    setSaving(true);
     try {
-      // Save structured address for checkout reuse
-      const addressObject = {
-        line1: formData.line1,
-        line2: formData.line2,
-        city: formData.city,
-        state: formData.state,
-        zip: formData.zip,
-        country: formData.country,
-      };
-
+      const fullPhone = phoneBody ? `${countryCode}${phoneBody}` : "";
+      
+      // ✅ FIX: Use setDoc with { merge: true }
+      // This handles both CREATING (for new users) and UPDATING (for existing users)
       await setDoc(doc(db, "users", user.uid), {
-        name: formData.name,
-        phoneNumber: formData.phoneNumber,
-        addressObject, 
-        // Keep flat address for legacy support if needed, or construct it
-        address: `${formData.line1}, ${formData.city}, ${formData.state} ${formData.zip}`
+        email: user.email, // Good to ensure email is saved in DB too
+        fullName,
+        phoneNumber: fullPhone, 
+        phoneVerified: isPhoneVerified,
+        shippingAddress: address,
+        updatedAt: new Date(),
+        createdAt: new Date() // This will only set if it doesn't exist (if we used specific logic), but for simple merge it just updates. 
+        // Ideally, for createdAt, we don't want to overwrite it, but for settings, updating 'updatedAt' is enough.
       }, { merge: true });
 
-      toast.success(t("settings.success"));
+      toast.success("Profile saved successfully");
     } catch (error) {
-      toast.error(t("settings.error"));
-      console.error("Error saving profile:", error);
+      console.error(error);
+      toast.error("Failed to save profile");
     } finally {
-      setIsSaving(false);
+      setSaving(false);
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 text-center relative">
-        <div className="absolute inset-0 bg-[#0f172a] -z-20" />
-        <div className="h-24 w-24 bg-slate-800/50 rounded-full flex items-center justify-center border border-white/10 shadow-xl shadow-blue-900/20">
-          <Lock className="h-10 w-10 text-slate-400" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight text-white">{t("settings.signInTitle")}</h2>
-          <p className="text-slate-400 max-w-md mx-auto">{t("settings.signInDesc")}</p>
-        </div>
-        <Link to="/auth">
-          <Button size="lg" className="rounded-full px-8 bg-gradient-to-r from-orange-600 to-red-600 text-white font-bold">
-            {t("nav.signin")}
-          </Button>
-        </Link>
-      </div>
-    );
-  }
+  // ✨ SHARED STYLES
+  const inputStyle = "bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50 transition-all";
+  const labelStyle = "text-slate-400 text-xs uppercase font-bold tracking-wider";
+
+  if (loading) return <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-orange-500" /></div>;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 relative pb-20">
-      <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]"> 
-         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
-         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
-         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+    <div className="max-w-4xl mx-auto p-6 space-y-8 pb-20">
+
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-1">Account Settings</h1>
+          <p className="text-slate-400">Manage your profile and shipping preferences.</p>
+        </div>
+        {/* SAVE BUTTON (Top for convenience on mobile) */}
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-8 h-12 text-base font-bold rounded-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/20 border-0 transition-all transform hover:scale-105 active:scale-95"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="animate-spin mr-2 h-5 w-5" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-5 w-5" />
+              Save Changes
+            </>
+          )}
+        </Button>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-3xl font-bold tracking-tight mb-6 text-white">{t("settings.title")}</h1>
-        
-        <Card className="bg-slate-800/40 backdrop-blur-md border border-white/10 shadow-xl">
+      <div className="grid gap-6">
+
+        {/* 1. PERSONAL DETAILS */}
+        <Card className="bg-slate-900/40 border-white/5 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-white">Personal & Shipping Info</CardTitle>
-            <CardDescription className="text-slate-400">
-              Manage your default shipping address for faster checkout.
-            </CardDescription>
+            <CardTitle className="text-white flex items-center gap-2 text-lg">
+              <User className="h-5 w-5 text-blue-400" /> Personal Details
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              
-              {/* Name & Phone */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-slate-300">Full Name</Label>
-                  <div className="relative group">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
-                    <Input id="name" name="name" value={formData.name} onChange={handleChange} className="pl-10 bg-slate-900/50 border-white/10 text-white" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phoneNumber" className="text-slate-300">Phone Number</Label>
-                  <div className="relative group">
-                    <Phone className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
-                    <Input id="phoneNumber" name="phoneNumber" type="tel" value={formData.phoneNumber} onChange={handleChange} className="pl-10 bg-slate-900/50 border-white/10 text-white" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-white/10 my-4"></div>
-              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Shipping Address</h3>
-
-              {/* Street Address */}
-              <div className="space-y-2">
-                <Label htmlFor="line1" className="text-slate-300">Street Address</Label>
-                <div className="relative group">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
-                  <Input id="line1" name="line1" value={formData.line1} onChange={handleChange} placeholder="123 Main St" className="pl-10 bg-slate-900/50 border-white/10 text-white" />
-                </div>
-              </div>
-
-               <div className="space-y-2">
-                <Label htmlFor="line2" className="text-slate-300">Apartment, Suite, etc. (Optional)</Label>
-                <div className="relative group">
-                  <Building className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
-                  <Input id="line2" name="line2" value={formData.line2} onChange={handleChange} placeholder="Apt 4B" className="pl-10 bg-slate-900/50 border-white/10 text-white" />
-                </div>
-              </div>
-
-              {/* City, State, Zip */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="city" className="text-slate-300">City</Label>
-                  <Input id="city" name="city" value={formData.city} onChange={handleChange} className="bg-slate-900/50 border-white/10 text-white" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state" className="text-slate-300">State / Province</Label>
-                  <Input id="state" name="state" value={formData.state} onChange={handleChange} className="bg-slate-900/50 border-white/10 text-white" />
-                </div>
-                <div className="space-y-2 col-span-2 md:col-span-1">
-                  <Label htmlFor="zip" className="text-slate-300">Zip / Postal Code</Label>
-                  <Input id="zip" name="zip" value={formData.zip} onChange={handleChange} className="bg-slate-900/50 border-white/10 text-white" />
-                </div>
-              </div>
-
-              {/* Country */}
-              <div className="space-y-2">
-                 <Label className="text-slate-300">Country</Label>
-                 <div className="relative">
-                   <Globe className="absolute left-3 top-3 h-4 w-4 text-slate-500 z-10" />
-                   <Select value={formData.country} onValueChange={(val) => handleSelectChange("country", val)}>
-                    <SelectTrigger className="w-full pl-10 bg-slate-900/50 border-white/10 text-white">
-                      <SelectValue placeholder="Select Country" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-white/10 text-white">
-                      <SelectItem value="IN">India</SelectItem>
-                      <SelectItem value="US">United States</SelectItem>
-                      <SelectItem value="CA">Canada</SelectItem>
-                      <SelectItem value="UK">United Kingdom</SelectItem>
-                      <SelectItem value="AU">Australia</SelectItem>
-                    </SelectContent>
-                  </Select>
-                 </div>
-              </div>
-
-              {/* Save Button */}
-              <div className="flex justify-end pt-4">
-                <Button 
-                  type="submit" 
-                  disabled={isSaving}
-                  className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white border-0 shadow-lg shadow-orange-900/30 min-w-[120px]"
-                >
-                  {isSaving ? <span className="animate-spin mr-2">⏳</span> : <Save className="mr-2 h-4 w-4" />}
-                  {isSaving ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </form>
+          <CardContent className="space-y-5">
+            <div className="grid gap-2">
+              <Label className={labelStyle}>Full Name</Label>
+              <Input
+                value={fullName} onChange={(e) => setFullName(e.target.value)}
+                className={inputStyle}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label className={labelStyle}>Email Address</Label>
+              <Input value={email} disabled className="bg-slate-950/30 border-white/5 text-slate-500 cursor-not-allowed" />
+            </div>
           </CardContent>
         </Card>
-      </motion.div>
+
+        {/* 2. PHONE NUMBER */}
+        <Card className="bg-slate-900/40 border-white/5 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2 text-lg">
+              <Smartphone className="h-5 w-5 text-green-400" /> Phone Number
+            </CardTitle>
+            <CardDescription className="text-slate-500">For secure login and delivery updates.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center mb-2">
+                <Label className={labelStyle}>Contact Number</Label>
+                {phoneBody.length > 5 && (
+                  isPhoneVerified ? (
+                    <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/20 flex gap-1 items-center px-2 py-0.5 h-6">
+                      <CheckCircle className="h-3 w-3" /> Verified
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive" className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20 flex gap-1 items-center px-2 py-0.5 h-6">
+                      <AlertTriangle className="h-3 w-3" /> Unverified
+                    </Badge>
+                  )
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <Select value={countryCode} onValueChange={setCountryCode}>
+                  <SelectTrigger className={`w-[140px] ${inputStyle}`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700 text-white">
+                    {Object.entries(COUNTRY_DATA).map(([key, val]) => (
+                      key !== "DEFAULT" && (
+                        <SelectItem key={key} value={val.phone} className="focus:bg-slate-800 cursor-pointer">
+                          <span className="mr-2">{val.flag}</span> {val.label}
+                        </SelectItem>
+                      )
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Input
+                  placeholder="98765 43210"
+                  value={phoneBody}
+                  onChange={(e) => { setPhoneBody(e.target.value); setIsPhoneVerified(false); }}
+                  className={`flex-1 ${inputStyle}`}
+                  type="tel"
+                />
+
+                {!isPhoneVerified && phoneBody.length > 5 && (
+                  <Button onClick={() => setShowVerifyModal(true)} className="bg-yellow-600 hover:bg-yellow-700 text-white border-0">
+                    Verify
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 3. ADDRESS */}
+        <Card className="bg-slate-900/40 border-white/5 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center gap-2 text-lg">
+              <MapPin className="h-5 w-5 text-orange-400" /> Shipping Address
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="grid gap-2">
+              <Label className={labelStyle}>Address Line 1</Label>
+              <Input
+                placeholder="Street, House No, Building"
+                value={address.line1} onChange={(e) => setAddress({ ...address, line1: e.target.value })}
+                className={inputStyle}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label className={labelStyle}>Address Line 2 <span className="text-slate-600 ml-1 text-[10px] normal-case tracking-normal">(OPTIONAL)</span></Label>
+              <Input
+                placeholder="Apartment, Suite, Landmark"
+                value={address.line2} onChange={(e) => setAddress({ ...address, line2: e.target.value })}
+                className={inputStyle}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label className={labelStyle}>City</Label>
+                <Input
+                  value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                  className={inputStyle}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label className={labelStyle}>State / Province</Label>
+                <Input
+                  value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })}
+                  className={inputStyle}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label className={labelStyle}>Zip / Pincode</Label>
+                <Input
+                  value={address.zip} onChange={(e) => setAddress({ ...address, zip: e.target.value })}
+                  className={inputStyle}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label className={`${labelStyle} flex items-center gap-2`}>
+                  Country <Lock className="h-3 w-3 text-slate-600" />
+                </Label>
+                <div className="relative">
+                  <Input
+                    value={address.country}
+                    disabled
+                    className="bg-slate-950/30 border-white/5 text-slate-500 cursor-not-allowed pl-12 font-medium"
+                  />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xl select-none grayscale-0">
+                    {COUNTRY_DATA[detectedIsoCode]?.flag || <Globe className="h-5 w-5 text-slate-600" />}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* BOTTOM SAVE BUTTON */}
+        <div className="flex justify-end pt-4">
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-8 h-12 text-base font-bold rounded-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/20 border-0 transition-all transform hover:scale-105 active:scale-95"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="animate-spin mr-2 h-5 w-5" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-5 w-5" />
+                Save Changes
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      <PhoneVerificationModal
+        isOpen={showVerifyModal} onClose={() => setShowVerifyModal(false)}
+        onVerified={() => { setIsPhoneVerified(true); }}
+      />
     </div>
   );
 }

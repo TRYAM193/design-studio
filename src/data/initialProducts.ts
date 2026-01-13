@@ -57,7 +57,7 @@ export const INITIAL_PRODUCTS = [
         // Qikink Color Codes (Bk=Black, Wh=White, Nb=Navy Blue, Rd=Red, Rb=Royal Blue, Gm=Grey Melange)
         color_map: { "White": "Wh", "Black": "Bk", "Navy": "Nb", "Red": "Rd", "Royal": "Rb", "Sport Grey": "Gm" }
       },
-      gelato: {      
+      gelato: {
         product_uid: "apparel_product_gca_t-shirt_gsc_crewneck_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{printCode}_gildan_64000",
         color_map: { "White": "white", "Black": "black", "Navy": "navy_blue", "Red": "red", "Royal": "royal-blue", "Sport Grey": "grey-melange" }
       }
@@ -113,7 +113,7 @@ export const INITIAL_PRODUCTS = [
       },
       qikink: {
         // Base SKU for "Unisex Classic Oversized Tee"
-        product_id: "UC22",
+        product_id: "UOsMRnHs",
         color_map: { "White": "Wh", "Black": "Bk", "Beige": "Bg" }
       },
       gelato: {
@@ -172,7 +172,7 @@ export const INITIAL_PRODUCTS = [
       },
       qikink: {
         // Base SKU for "Unisex Hoodie"
-        product_id: "UH83",
+        product_id: "UHd",
         color_map: { "Black": "Bk", "White": "Wh", "Navy": "Nb" }
       },
       gelato: {
@@ -294,7 +294,7 @@ export const INITIAL_PRODUCTS = [
       },
       qikink: {
         // Same as Men's Oversized (Unisex)
-        product_id: "UC22",
+        product_id: "UOsMRnHs",
         color_map: { "White": "Wh", "Black": "Bk", "Sand": "Sd" }
       },
       gelato: {
@@ -353,7 +353,7 @@ export const INITIAL_PRODUCTS = [
       },
       qikink: {
         // Same as Men's (Unisex)
-        product_id: "UH83",
+        product_id: "UHd",
         color_map: { "White": "Wh", "Black": "Bk", "Pink": "Pk", "Dark Heather": "Cm" }
       },
       gelato: {
@@ -416,8 +416,8 @@ export const INITIAL_PRODUCTS = [
       },
       qikink: {
         // Mugs typically don't use the SKU pattern, using 'Mug' as base for ID construction
-        product_id: "Mug",
-        color_map: { "White": "Wh", "Black Handle": "BkH" }
+        product_id: "UWECM-Wh-11oz",
+        color_map: { "White": "Wh" }
       },
       gelato: {
         product_uid: "mug_product_msz_11-oz_mmat_ceramic-white_cl_4-0",
@@ -463,7 +463,7 @@ export const INITIAL_PRODUCTS = [
     },
 
     options: {
-      colors: ["White", "Black"],
+      colors: ["White"],
       sizes: ["One Size"]
     },
 
@@ -474,8 +474,8 @@ export const INITIAL_PRODUCTS = [
         color_map: { "Natural": 10, "Black": 102 }
       },
       qikink: {
-        product_id: "Tote",
-        color_map: { "White": "Wh", "Black": "Bk" }
+        product_id: "UTbNz-Wh-NA",
+        color_map: { "White": "Wh" }
       },
       gelato: {
         product_uid: "bag_product_bsc_tote-bag_bqa_clc_bsi_std-t_bco_white_bpr_{printCode}",

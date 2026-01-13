@@ -72,11 +72,11 @@ export default function DashboardOrders() {
               month: "short", day: "numeric", year: "numeric"
             }) : "N/A",
             items: data.items.map((item: any) =>
-              `${item.productId} (${item.variant?.color || 'Custom'}) x${item.quantity}`
+              `${item.title} (${item.variant?.color || 'Custom'}) x${item.quantity}`
             ),
             total: `${data.payment.currency || '$'} ${data.payment.total}`,
             status: mapBackendStatusToUI(data.status, data.providerStatus),
-            image: data.printFiles?.front || firstItem.designData?.previewImage || "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=100&auto=format&fit=crop"
+            image: firstItem.thumbnail
           };
         });
 
@@ -92,6 +92,7 @@ export default function DashboardOrders() {
       fetchOrders();
     }
   }, [user, isAuthenticated]);
+  console.log(orders)
 
   // 3. MEMOIZATION (Moved ABOVE the early return)
   // This was the cause of the error!
@@ -107,6 +108,7 @@ export default function DashboardOrders() {
 
   // Styles for Status Badges
   const getStatusStyles = (status: string) => {
+    console.log(status)
     switch (status) {
       case "Delivered": return "bg-green-500/10 text-green-400 border-green-500/20";
       case "Shipped": return "bg-blue-500/10 text-blue-400 border-blue-500/20";

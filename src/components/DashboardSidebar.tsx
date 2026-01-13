@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import {
   Home,
   LayoutTemplate,
@@ -37,6 +37,7 @@ export function DashboardSidebar() {
   const { user, signOut, isAuthenticated } = useAuth();
   const { cartCount } = useCart();
   const { t } = useTranslation();
+  const navigate = useNavigate()
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [userProfile, setUserProfile] = useState<{ name?: string; image?: string } | null>(null);
@@ -97,7 +98,10 @@ export function DashboardSidebar() {
 
       <DropdownMenuSeparator className="bg-white/10" />
 
-      <DropdownMenuItem onClick={() => signOut()} className="text-red-400 focus:bg-red-900/20 cursor-pointer m-1">
+      <DropdownMenuItem onClick={() => {
+        signOut()
+        navigate('/')
+        }} className="text-red-400 focus:bg-red-900/20 cursor-pointer m-1">
         <LogOut className="mr-2 h-4 w-4" />
         <span>{t("nav.logout")}</span>
       </DropdownMenuItem>

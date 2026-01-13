@@ -9,6 +9,7 @@ import { INITIAL_PRODUCTS } from '@/data/initialProducts';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"; // For Stripe Modal
+import { PhoneVerificationModal } from "@/components/PhoneVerificationModal";
 // Data Library
 import { Country, State, City } from 'country-state-city';
 
@@ -86,6 +87,21 @@ export default function OrderCheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'online' | 'cod'>('online');
 
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false); // Local state fallback
+
+  // Check verification on load (From User Profile)
+  useEffect(() => {
+    async function checkVerification() {
+      if (!user) return;
+      const userRef = doc(db, "users", user.uid);
+      const snap = await getDoc(userRef);
+      if (snap.exists() && snap.data().phoneVerified) {
+        setIsPhoneVerified(true);
+      }
+    }
+    checkVerification();
+  }, [user]);
   // 🔒 Location Lock State
   const [isLocationLocked, setIsLocationLocked] = useState(false);
 
@@ -396,7 +412,7 @@ export default function OrderCheckoutPage() {
                     <Select
                       value={shippingInfo.countryCode}
                       onValueChange={handleCountryChange}
-                      // disabled={isLocationLocked}
+                    // disabled={isLocationLocked}
                     >
                       <SelectTrigger className={`bg-slate-900/50 border-white/10 text-white `}>
                         <SelectValue placeholder="Select Country" />
@@ -567,6 +583,14 @@ export default function OrderCheckoutPage() {
           </div>
         </div>
       </div>
+      <PhoneVerificationModal
+        isOpen={showVerifyModal}
+        onClose={() => setShowVerifyModal(false)}
+        onVerified={(verifiedPhone) => {
+          setIsPhoneVerified(true);
+          setShippingInfo(prev => ({ ...prev, phone: verifiedPhone }))
+        }}
+      />
     </div>
   );
 }

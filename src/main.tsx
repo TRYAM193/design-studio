@@ -29,6 +29,8 @@ import CartPage from "./pages/CartPage.tsx"; // ✅ Import Provider
 import AdminOrders from "./pages/AdminOrders.tsx";
 import ProductDetails from "./pages/ProductDetails";
 import HeadlessRender from "./pages/HeadlessRender.tsx";
+import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedRoute from "./components/ProtectedRoute.tsx";
 
 function RouteSyncer() {
   const location = useLocation();
@@ -87,7 +89,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/checkout" element={<OrderCheckoutPage />} />
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/render/*" element={<HeadlessRender />} />
-
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
