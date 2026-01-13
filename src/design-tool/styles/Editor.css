@@ -157,6 +157,7 @@ html,
 
 .canvas-container {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 0px !important;
   /* Do not force bg-white here if you want transparent canvas */
 }
 

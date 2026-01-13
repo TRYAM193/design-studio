@@ -3,69 +3,70 @@ import { ArrowRight, Layers, Sparkles, Wand2, Flame, Moon, ArrowUpRight } from "
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/use-translation";
+import Footer from "@/components/Footer";
 
 export default function Landing() {
   const { t } = useTranslation();
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col font-sans selection:bg-orange-500 selection:text-white">
-      
+
       {/* ✅ BACKGROUND: COSMIC SHIVA THEME (Deep Night Blue, Saffron, Ash) */}
-      <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]"> 
-         {/* Blob 1: Neelkanth Blue (Throat/Poison) - Top Left */}
-         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[60%] rounded-full bg-blue-600/20 blur-[120px] animate-pulse" />
-         {/* Blob 2: Agni Saffron (Fire/Energy) - Top Right */}
-         <div className="absolute top-[10%] right-[-10%] w-[40%] h-[50%] rounded-full bg-orange-600/20 blur-[100px] animate-pulse delay-1000" />
-         {/* Blob 3: Bhasma Ash/Silver (Moon/Purity) - Bottom Center */}
-         <div className="absolute bottom-[-10%] left-[20%] w-[60%] h-[40%] rounded-full bg-slate-400/10 blur-[120px] animate-pulse delay-2000" />
-         {/* Stars / Dust Texture */}
-         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
+      <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]">
+        {/* Blob 1: Neelkanth Blue (Throat/Poison) - Top Left */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[60%] rounded-full bg-blue-600/20 blur-[120px] animate-pulse" />
+        {/* Blob 2: Agni Saffron (Fire/Energy) - Top Right */}
+        <div className="absolute top-[10%] right-[-10%] w-[40%] h-[50%] rounded-full bg-orange-600/20 blur-[100px] animate-pulse delay-1000" />
+        {/* Blob 3: Bhasma Ash/Silver (Moon/Purity) - Bottom Center */}
+        <div className="absolute bottom-[-10%] left-[20%] w-[60%] h-[40%] rounded-full bg-slate-400/10 blur-[120px] animate-pulse delay-2000" />
+        {/* Stars / Dust Texture */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
       </div>
 
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#0f172a]/70 backdrop-blur-xl">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-           {/* Logo */}
-           <div className="flex items-center gap-3">
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-orange-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-                <img 
-                  src="https://harmless-tapir-303.convex.cloud/api/storage/1a8853ff-ebac-480a-b68b-ffe2343bbf07" 
-                  alt="TRYAM Logo" 
-                  className="relative h-10 w-10 object-cover rounded-full shadow-lg ring-1 ring-white/20"
-                />
-              </div>
-              <span className="font-bold text-xl tracking-tight text-white">TRYAM</span>
-           </div>
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-orange-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
+              <img
+                src="https://harmless-tapir-303.convex.cloud/api/storage/1a8853ff-ebac-480a-b68b-ffe2343bbf07"
+                alt="TRYAM Logo"
+                className="relative h-10 w-10 object-cover rounded-full shadow-lg ring-1 ring-white/20"
+              />
+            </div>
+            <span className="font-bold text-xl tracking-tight text-white">TRYAM</span>
+          </div>
 
-           {/* Desktop Navigation */}
-           <nav className="hidden md:flex items-center gap-8">
-             {["Catalog", "Designs", "Help", "Contact"].map((item) => (
-                <Link key={item} to={item === "Catalog" ? "/store" : `/dashboard/${item.toLowerCase()}`} className="text-sm font-medium text-slate-300 hover:text-orange-400 transition-colors relative group">
-                  {item}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all group-hover:w-full"></span>
-                </Link>
-             ))}
-           </nav>
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-8">
+            {["Catalog", "Designs", "Help", "Contact"].map((item) => (
+              <Link key={item} to={item === "Catalog" ? "/store" : `/dashboard/${item.toLowerCase()}`} className="text-sm font-medium text-slate-300 hover:text-orange-400 transition-colors relative group">
+                {item}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange-500 transition-all group-hover:w-full"></span>
+              </Link>
+            ))}
+          </nav>
 
-           {/* Nav Actions */}
-           <div className="flex items-center gap-4">
-             <Link to="/auth">
-               <Button variant="ghost" className="text-slate-300 font-medium hover:text-white hover:bg-white/10 rounded-full px-6 transition-all">
-                 {t("nav.signin")}
-               </Button>
-             </Link>
-             <Link to="/dashboard">
-               {/* 🎨 NEW STYLED NAV BUTTON (Saffron Gradient + Shine) */}
-               <Button className="rounded-full px-6 h-10 bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/40 hover:shadow-orange-700/50 hover:scale-105 active:scale-95 transition-all duration-300 group border-0 relative overflow-hidden">
-                  <span className="relative z-10 flex items-center gap-2">
-                    {t("auth.getStarted")} <ArrowUpRight className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-                  </span>
-                  {/* Shine Effect */}
-                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out" />
-               </Button>
-             </Link>
-           </div>
+          {/* Nav Actions */}
+          <div className="flex items-center gap-4">
+            <Link to="/auth">
+              <Button variant="ghost" className="text-slate-300 font-medium hover:text-white hover:bg-white/10 rounded-full px-6 transition-all">
+                {t("nav.signin")}
+              </Button>
+            </Link>
+            <Link to="/dashboard">
+              {/* 🎨 NEW STYLED NAV BUTTON (Saffron Gradient + Shine) */}
+              <Button className="rounded-full px-6 h-10 bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/40 hover:shadow-orange-700/50 hover:scale-105 active:scale-95 transition-all duration-300 group border-0 relative overflow-hidden">
+                <span className="relative z-10 flex items-center gap-2">
+                  {t("auth.getStarted")} <ArrowUpRight className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </span>
+                {/* Shine Effect */}
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -73,7 +74,7 @@ export default function Landing() {
         {/* Hero Section */}
         <section className="pt-24 pb-32 px-4">
           <div className="container mx-auto max-w-6xl text-center space-y-8">
-            
+
             {/* Badge: Moon Silver style */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -83,7 +84,7 @@ export default function Landing() {
               <Moon className="h-3.5 w-3.5 text-blue-300 fill-blue-300 animate-pulse" />
               <span>{t("landing.hero.badge")}</span>
             </motion.div>
-            
+
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -115,36 +116,36 @@ export default function Landing() {
                 {/* 🎨 HERO CTA BUTTON: The "Trident Power" Button */}
                 <Button size="lg" className="h-16 px-10 text-lg rounded-full bg-white text-slate-900 hover:bg-blue-50 font-bold shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_50px_rgba(255,255,255,0.3)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
                   <span className="relative z-10 flex items-center gap-3">
-                    {t("landing.hero.cta")} 
+                    {t("landing.hero.cta")}
                     <div className="bg-orange-100 p-1 rounded-full group-hover:bg-orange-200 transition-colors">
-                        <Flame className="w-5 h-5 text-orange-600 fill-orange-600" />
+                      <Flame className="w-5 h-5 text-orange-600 fill-orange-600" />
                     </div>
                   </span>
                   <div className="absolute inset-0 bg-gradient-to-r from-white via-blue-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 </Button>
               </Link>
-              
+
               {/* Secondary CTA */}
               <Link to="/store">
-                 <Button variant="ghost" size="lg" className="h-16 px-8 text-lg rounded-full text-slate-300 hover:text-white hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/30 transition-all">
-                    Browse Collection
-                 </Button>
+                <Button variant="ghost" size="lg" className="h-16 px-8 text-lg rounded-full text-slate-300 hover:text-white hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/30 transition-all">
+                  Browse Collection
+                </Button>
               </Link>
             </motion.div>
 
             {/* Hero Visual */}
-             <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
               className="mt-20 rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-sm aspect-[16/9] max-w-5xl mx-auto shadow-2xl shadow-blue-900/20 overflow-hidden relative ring-1 ring-white/10 group"
             >
-               <img 
-                 src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1000&auto=format&fit=crop" 
-                 alt="Apparel Mockup" 
-                 className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000"
-               />
-               <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent" />
+              <img
+                src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1000&auto=format&fit=crop"
+                alt="Apparel Mockup"
+                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-1000"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent" />
             </motion.div>
           </div>
         </section>
@@ -164,7 +165,7 @@ export default function Landing() {
 
             <div className="grid md:grid-cols-2 gap-8">
               {/* Feature 1 */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -180,7 +181,7 @@ export default function Landing() {
               </motion.div>
 
               {/* Feature 2 */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
@@ -204,7 +205,7 @@ export default function Landing() {
           <div className="container mx-auto max-w-5xl">
             {/* CTA Background: Deep Void to Saffron Burst */}
             <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-[3rem] p-12 md:p-24 text-center relative overflow-hidden shadow-2xl shadow-black/50 border border-white/10 group">
-              
+
               {/* Background Glows */}
               <div className="absolute top-0 right-0 w-[30rem] h-[30rem] bg-orange-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-orange-500/30 transition-all duration-700"></div>
               <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-blue-600/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 group-hover:bg-blue-600/30 transition-all duration-700"></div>
@@ -224,50 +225,7 @@ export default function Landing() {
           </div>
         </section>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-12 bg-[#0f172a]/80 backdrop-blur-lg">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div className="col-span-2 space-y-4">
-              <div className="flex items-center gap-2">
-                <img 
-                  src="https://harmless-tapir-303.convex.cloud/api/storage/1a8853ff-ebac-480a-b68b-ffe2343bbf07" 
-                  alt="TRYAM Logo" 
-                  className="h-8 w-8 object-cover rounded-full shadow-sm ring-1 ring-white/20 grayscale group-hover:grayscale-0"
-                />
-                <span className="font-bold text-lg text-white">TRYAM</span>
-              </div>
-              <p className="text-slate-400 max-w-xs text-sm leading-relaxed">
-                {t("footer.description")}
-              </p>
-            </div>
-            <div>
-              <h4 className="font-bold mb-6 text-white text-sm uppercase tracking-wider">{t("footer.platform")}</h4>
-              <ul className="space-y-3 text-sm text-slate-400">
-                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("footer.designStudio")}</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("footer.aiGenerator")}</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("nav.pricing")}</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-6 text-white text-sm uppercase tracking-wider">{t("footer.company")}</h4>
-              <ul className="space-y-3 text-sm text-slate-400">
-                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("footer.about")}</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("footer.blog")}</a></li>
-                <li><a href="#" className="hover:text-orange-400 transition-colors">{t("footer.contact")}</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
-            <p>© 2025 TRYAM. {t("footer.rights")}</p>
-            <div className="flex gap-6">
-              <a href="#" className="hover:text-white transition-colors">{t("footer.privacy")}</a>
-              <a href="#" className="hover:text-white transition-colors">{t("footer.terms")}</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

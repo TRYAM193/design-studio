@@ -31,6 +31,7 @@ import ProductDetails from "./pages/ProductDetails";
 import HeadlessRender from "./pages/HeadlessRender.tsx";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
+import LegalPage from "./pages/LegalPage";
 
 function RouteSyncer() {
   const location = useLocation();
@@ -90,6 +91,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/admin/orders" element={<AdminOrders />} />
             <Route path="/render/*" element={<HeadlessRender />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/legal/:type" element={<LegalPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

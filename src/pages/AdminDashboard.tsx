@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 
 // 🔒 SECURITY: Replace with your actual email
-const ADMIN_EMAILS = ["your-email@gmail.com"]; 
+const ADMIN_EMAILS = ["tryam193@gmail.com", 'shreyaskumaraswamy2007@gmail.com']; 
 
 export default function AdminDashboard() {
   const { user } = useAuth();

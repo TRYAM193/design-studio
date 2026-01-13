@@ -1,5 +1,4 @@
 // src/data/initialProducts.ts
-
 export const INITIAL_PRODUCTS = [
   // =========================================
   // 👕 MEN'S COLLECTION
@@ -20,6 +19,26 @@ export const INITIAL_PRODUCTS = [
     canvas_size: {
       width: 420,
       height: 560
+    },
+
+    variants: {
+      qikink: {
+        colors: ['Baby Blue', 'Beige','Black', 'Bottle Green','Brick Red', 'Charcoal Melange',
+          'Coffee Brown', 'Copper','Coral', 'Flag Green','Flamingo', 'Golden Yellow','Grey Melange', 'Jade',
+          'Lavender', 'Light Baby Pink',
+          'Maroon', 'Mint',
+          'Mushroom', 'Mustard Yellow',
+          'Navy Blue', 'New Yellow',
+          'Off White', 'Olive Green',
+          'Orange', 'Peach',
+          'Petrol Blue', 'Purple',
+          'Red', 'Royal Blue',
+          'Sky Blue', 'Steel Grey',
+          'White', 'Yellow'
+        ],
+        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        sizeChart: [(36, 25), (38, 26), (40, 27), (42, 28), (44, 29), (46, 30)] // (Chest, Length)
+      }
     },
 
     price: {

@@ -10,6 +10,11 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 // ✅ Interface matches our 'initialProducts.ts' structure
+interface ProductVariants {
+    colors: string[]
+    sizes: string[]
+}
+
 interface ProductData {
     id: string;
     title: string;
@@ -18,7 +23,7 @@ interface ProductData {
     category: string;
     price: {
         IN: number;
-        US: number; 
+        US: number;
         GB: number;
         EU: number;
         CA: number;
@@ -29,10 +34,11 @@ interface ProductData {
         left?: string;
         right?: string;
     };
-    options: {
-        colors: string[];
-        sizes: string[];
-    };
+    variants: {
+        qikink: ProductVariants,
+        printify?: ProductVariants,
+        gelato?: ProductVariants
+    }
 }
 
 export default function ProductDetails() {
@@ -41,12 +47,14 @@ export default function ProductDetails() {
 
     const [product, setProduct] = useState<ProductData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [colors, setColors] = useState<string[]>([])
+    const [sizes, setSizes] = useState<string[]>([])
 
     // Selection States
     const [selectedColor, setSelectedColor] = useState<string>("");
     const [selectedSize, setSelectedSize] = useState<string>("");
     const [activeImage, setActiveImage] = useState<string>("");
-    
+
     // ✅ Region State (Default to US for global, overwritten by IP check)
     const [region, setRegion] = useState<"IN" | "US" | "GB" | "EU" | "CA">("US");
     const [checkingLocation, setCheckingLocation] = useState(true);
@@ -70,12 +78,25 @@ export default function ProductDetails() {
                 if (docSnap.exists()) {
                     const data = docSnap.data() as ProductData;
                     setProduct(data);
-                    
+
                     const initialImg = data.mockups?.front || data.image || "";
                     setActiveImage(initialImg);
 
-                    if (data.options?.colors?.length > 0) setSelectedColor(data.options.colors[0]);
-                    if (data.options?.sizes?.length > 0) setSelectedSize(data.options.sizes[0]);
+                    if (region === 'IN') {
+                        setColors(data.variants.qikink.colors)
+                        setSizes(data.variants.qikink.sizes)
+                    }
+                    else if (region === 'US') {
+                        setColors(data.variants.gelato?.colors || [])
+                        setSizes(data.variants.gelato?.sizes || [])
+                    }
+                    else {
+                        setColors(data.variants.printify?.colors || [])
+                        setSizes(data.variants.printify?.sizes || [])
+                    }
+
+                    if (colors.length > 0) setSelectedColor(colors[0]);
+                    if (sizes.length > 0) setSelectedSize(sizes[0]);
                 }
             } catch (error) {
                 console.error("Error loading product", error);
@@ -85,7 +106,7 @@ export default function ProductDetails() {
             }
         }
         fetchProduct();
-    }, [productId]);
+    }, [productId, region]);
 
     // 2️⃣ Automatic IP-Based Region Detection
     useEffect(() => {
@@ -162,10 +183,10 @@ export default function ProductDetails() {
                     {/* LEFT: Image Gallery */}
                     <div className="space-y-4">
                         <div className="aspect-[3/4] bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 relative">
-                            <img 
-                                src={activeImage || "https://placehold.co/600x800?text=No+Image"} 
-                                alt={product.title} 
-                                className="w-full h-full object-contain" 
+                            <img
+                                src={activeImage || "https://placehold.co/600x800?text=No+Image"}
+                                alt={product.title}
+                                className="w-full h-full object-contain"
                             />
                         </div>
                         {uniqueGallery.length > 1 && (
@@ -198,7 +219,7 @@ export default function ProductDetails() {
                                         <Check size={12} /> In Stock
                                     </span>
                                 </div>
-                                
+
                                 {/* ✅ Auto-Detected Region Display (No Option to Change) */}
                                 {!checkingLocation && (
                                     <div className="flex items-center gap-1 text-xs font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-full border">
@@ -207,7 +228,7 @@ export default function ProductDetails() {
                                     </div>
                                 )}
                             </div>
-                            
+
                             <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{product.title}</h1>
 
                             <p className="text-slate-600 text-lg leading-relaxed">
@@ -234,7 +255,7 @@ export default function ProductDetails() {
                                 Color: <span className="text-indigo-600 ml-1">{selectedColor}</span>
                             </span>
                             <div className="flex flex-wrap gap-3">
-                                {product.options.colors.map((color) => (
+                                {colors.map((color) => (
                                     <button
                                         key={color}
                                         onClick={() => setSelectedColor(color)}
@@ -257,7 +278,7 @@ export default function ProductDetails() {
                                 <span className="text-xs text-indigo-600 cursor-pointer hover:underline">Size Chart</span>
                             </div>
                             <div className="grid grid-cols-5 gap-3">
-                                {product.options.sizes.map((size) => (
+                                {sizes.map((size) => (
                                     <button
                                         key={size}
                                         onClick={() => setSelectedSize(size)}
@@ -282,8 +303,8 @@ export default function ProductDetails() {
                             >
                                 <Paintbrush className="w-5 h-5 mr-2" /> Start Designing
                             </Button>
-                            
-                             <p className="text-xs text-center text-slate-500 mt-3">
+
+                            <p className="text-xs text-center text-slate-500 mt-3">
                                 *This item is printed specially for you. <span className="text-red-500 font-medium">No returns for wrong sizes.</span>
                             </p>
                         </div>
