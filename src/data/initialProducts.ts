@@ -23,26 +23,51 @@ export const INITIAL_PRODUCTS = [
 
     variants: {
       qikink: {
-        colors: ['Baby Blue', 'Beige','Black', 'Bottle Green','Brick Red', 'Charcoal Melange',
-          'Coffee Brown', 'Copper','Coral', 'Flag Green','Flamingo', 'Golden Yellow','Grey Melange', 'Jade',
-          'Lavender', 'Light Baby Pink',
-          'Maroon', 'Mint',
-          'Mushroom', 'Mustard Yellow',
-          'Navy Blue', 'New Yellow',
-          'Off White', 'Olive Green',
-          'Orange', 'Peach',
-          'Petrol Blue', 'Purple',
-          'Red', 'Royal Blue',
-          'Sky Blue', 'Steel Grey',
-          'White', 'Yellow'
+        colors: [
+          'Black',
+          'White',
+          'Navy Blue',
+          'Grey Melange',
+          'Royal Blue',
+          'Red',
+          'Maroon',
+          'Bottle Green',
+          'Charcoal Melange'
         ],
         sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-        sizeChart: [(36, 25), (38, 26), (40, 27), (42, 28), (44, 29), (46, 30)] // (Chest, Length)
+        sizeChart: {
+          XS: [36, 25],
+          S: [38, 26],
+          M: [40, 27],
+          L: [42, 28],
+          XL: [44, 29],
+          XXL: [46, 30]          // (Chest, Length)
+        }
+      },
+      printify: {
+        colors: [
+          'Black',
+          'White',
+          'Navy Blue',
+          'Grey Melange',
+          'Royal Blue',
+          'Red',
+          'Maroon',
+          'Bottle Green',
+          'Charcoal Melange'
+        ],
+        sizes: ['S', 'M', 'L', 'XL'],
+        sizeChart: {
+          S: [18, 27],
+          M: [20, 29],
+          L: [22, 30],
+          XL: [24, 30]
+        }
       }
     },
 
     price: {
-      IN: 449,
+      IN: 549,
       US: 24.99,
       GB: 19.99,
       EU: 20.99,
@@ -74,20 +99,27 @@ export const INITIAL_PRODUCTS = [
         // Base SKU for "Male Round Neck Half Sleeve"
         product_id: "MRnHs",
         // Qikink Color Codes (Bk=Black, Wh=White, Nb=Navy Blue, Rd=Red, Rb=Royal Blue, Gm=Grey Melange)
-        color_map: { "White": "Wh", "Black": "Bk", "Navy": "Nb", "Red": "Rd", "Royal": "Rb", "Sport Grey": "Gm" }
+        color_map: {
+          "Black": "Bk", "White": "Wh", "Navy Blue": "Nb", "Grey Melange": "Gm", "Royal Blue": "Rb",
+          "Red": "Rd", "Maroon": "Mn", "Bottle Green": "Bt", "Charcoal Melange": "Ch"
+        }
       },
       gelato: {
         product_uid: "apparel_product_gca_t-shirt_gsc_crewneck_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{printCode}_gildan_64000",
-        color_map: { "White": "white", "Black": "black", "Navy": "navy_blue", "Red": "red", "Royal": "royal-blue", "Sport Grey": "grey-melange" }
+        color_map: {
+          "Black": "black", "White": "white", "Navy Blue": "navy", "Grey Melange": "sport-grey",
+          "Royal Blue": "royal", "Red": "red", "Maroon": "maroon", "Bottle Green": "irish-green", "Charcoal Melange": "dark-heather"
+        }
       }
     }
   },
 
   {
-    id: "men-oversized-tee",
-    title: "Men's Streetwear Oversized Tee",
-    category: "Men",
+    id: "unisex-oversized-tee",
+    title: "Unisex Streetwear Oversized Tee",
+    category: "Unisex",
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-oversized-tee?alt=media&token=3dcae3b1-042e-417b-8557-90fd177123ae',
+    image1: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-oversized-tee?alt=media&token=05ed8b7a-fbab-4394-a704-9f59ed435801',
     model3d: null,
     description: "Heavyweight cotton with a boxy, dropped-shoulder fit.",
 
@@ -114,6 +146,21 @@ export const INITIAL_PRODUCTS = [
       CA: 39.99
     },
 
+    variants: {
+      qikink: {
+        colors: ['Black', 'White'],
+        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        sizeChart: {
+          XS: [40, 27, 18],
+          S: [42, 28, 19],
+          M: [44, 29, 20],
+          L: [46, 30, 21],
+          XL: [48, 31, 22],
+          XXL: [50, 32, 23]          // (Chest, Length, Shoulder)
+        }
+      }
+    },
+
     print_area_2d: {
       front: { top: 29, left: 32.5, width: 36, height: 39 },
       back: { top: 29, left: 32.5, width: 36, height: 39 }
@@ -126,27 +173,28 @@ export const INITIAL_PRODUCTS = [
 
     vendor_maps: {
       printify: {
-        blueprint_id: "1096",
+        blueprint_id: "1382",
         print_provider_id: "29",
         color_map: { "White": 101, "Black": 102, "Beige": 15 }
       },
       qikink: {
         // Base SKU for "Unisex Classic Oversized Tee"
         product_id: "UOsMRnHs",
-        color_map: { "White": "Wh", "Black": "Bk", "Beige": "Bg" }
+        color_map: { "White": "Wh", "Black": "Bk" }
       },
       gelato: {
         product_uid: "apparel_product_gca_t-shirt_gsc_oversized_gcu_unisex_gqa_organic_gsi_{size}_gco_{color}_gpr_{printCode}_sols_03996",
-        color_map: { "White": "white", "Black": "black", "Beige": "sand" }
+        color_map: { "White": "white", "Black": "black" }
       }
     }
   },
 
   {
-    id: "men-hoodie",
-    title: "Men's Essential Hoodie",
-    category: "Men",
+    id: "unisex-hoodie",
+    title: "Unisex Essential Hoodie",
+    category: "Unisex",
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-hoodie?alt=media&token=eb24627e-f16e-4c09-b2a4-417c86fb2139',
+    image1: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-hoodie?alt=media&token=788e59c3-a0d8-489c-8603-c731023a2f10',
     model3d: null,
     description: "Cozy, durable, and perfect for layering.",
 
@@ -173,6 +221,22 @@ export const INITIAL_PRODUCTS = [
       CA: 49.99
     },
 
+    variants: {
+      qikink: {
+        colors: ['Black', 'White', 'Navy Blue', 'Grey Melange', 'Red'],
+        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
+        sizeChart: {
+          XS: [38, 25],
+          S: [40, 26],
+          M: [42, 27],
+          L: [44, 28],
+          XL: [46, 29],
+          XXL: [48, 30],
+          '3XL': [50, 31]          // (Chest, Length, Shoulder)
+        }
+      }
+    },
+
     print_area_2d: {
       front: { top: 32, left: 33.5, width: 33.5, height: 24.5 },
       back: { top: 40, left: 35, width: 32, height: 29 }
@@ -192,11 +256,11 @@ export const INITIAL_PRODUCTS = [
       qikink: {
         // Base SKU for "Unisex Hoodie"
         product_id: "UHd",
-        color_map: { "Black": "Bk", "White": "Wh", "Navy": "Nb" }
+        color_map: { "Black": "Bk", "White": "Wh", "Navy Blue": "Nb", "Grey Melange": "Gm", "Red": "Rd" }
       },
       gelato: {
         product_uid: "apparel_product_gca_hoodie_gsc_pullover_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{printCode}_gildan_18500",
-        color_map: { "Black": "black", "White": "white", "Navy": "navy" }
+        color_map: { "Black": "black", "White": "white", "Navy Blue": "navy", "Grey Melange": "sport-grey", "Red": "red" }
       }
     }
   },
@@ -218,8 +282,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     mockups: {
-      front: "/assets/mockups/men-classic-tee-front.png",
-      back: "/assets/mockups/men-classic-tee-back.png"
+      front: "/assets/mockups/women-classic-tee-front.png",
+      back: "/assets/mockups/women-classic-tee-back.png"
     },
 
     canvas_size: {
@@ -228,11 +292,30 @@ export const INITIAL_PRODUCTS = [
     },
 
     price: {
-      IN: 449,
+      IN: 549,
       US: 24.99,
       GB: 19.99,
       EU: 20.99,
       CA: 34.99
+    },
+
+    variants: {
+      qikink: {
+        colors: ['Black', 'Bottle Green', 'Charcoal Melange', 'Grey Melange',
+          'Maroon',
+          'Navy Blue',
+          'Red', 'Royal Blue', 'White',
+        ],
+        sizes: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+        sizeChart: {
+          XS: [32, 23],
+          S: [34, 24],
+          M: [36, 25],
+          L: [38, 26],
+          XL: [40, 27],
+          XXL: [42, 28]          // (Chest, Length)
+        }
+      }
     },
 
     print_area_2d: {
@@ -260,124 +343,6 @@ export const INITIAL_PRODUCTS = [
       gelato: {
         product_uid: "apparel_product_gca_t-shirt_gsc_crewneck_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{printCode}_gildan_64000",
         color_map: { "White": "white", "Black": "black", "Pink": "pink", "Heather Mauve": "heather_mauve" }
-      }
-    }
-  },
-
-  {
-    id: "women-oversized-tee",
-    title: "Women's Boyfriend Oversized Tee",
-    category: "Women",
-    image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-oversized-tee?alt=media&token=05ed8b7a-fbab-4394-a704-9f59ed435801',
-    model3d: null,
-    description: "Relaxed boyfriend fit. Style it tucked in or loose.",
-
-    print_areas: {
-      front: { width: 4500, height: 5400 },
-      back: { width: 4500, height: 5400 }
-    },
-
-    mockups: {
-      front: "/assets/mockups/men-oversized-front.png",
-      back: "/assets/mockups/men-oversized-back.png"
-    },
-
-    print_area_2d: {
-      front: { top: 29, left: 32.5, width: 36, height: 39 },
-      back: { top: 29, left: 32.5, width: 36, height: 39 }
-    },
-
-    canvas_size: {
-      width: 420,
-      height: 560
-    },
-
-    price: {
-      IN: 699,
-      US: 27.99,
-      GB: 21.99,
-      EU: 22.99,
-      CA: 39.99
-    },
-
-    options: {
-      colors: ["White", "Black", "Sand"],
-      sizes: ["S", "M", "L", "XL"]
-    },
-
-    vendor_maps: {
-      printify: {
-        blueprint_id: "1096",
-        print_provider_id: "29",
-        color_map: { "White": 101, "Black": 102, "Sand": 15 }
-      },
-      qikink: {
-        // Same as Men's Oversized (Unisex)
-        product_id: "UOsMRnHs",
-        color_map: { "White": "Wh", "Black": "Bk", "Sand": "Sd" }
-      },
-      gelato: {
-        product_uid: "apparel_product_gca_t-shirt_gsc_oversized_gcu_unisex_gqa_organic_gsi_{size}_gco_{color}_gpr_{printCode}_sols_03996",
-        color_map: { "White": "white", "Black": "black", "Sand": "sand" }
-      }
-    }
-  },
-
-  {
-    id: "women-hoodie",
-    title: "Women's Cozy Hoodie",
-    category: "Women",
-    image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-hoodie?alt=media&token=788e59c3-a0d8-489c-8603-c731023a2f10',
-    model3d: null,
-    description: "Soft fleece fabric, kangaroo pocket, standard fit.",
-
-    print_areas: {
-      front: { width: 4000, height: 4000 },
-      back: { width: 4500, height: 5400 },
-    },
-
-    canvas_size: {
-      width: 420,
-      height: 500
-    },
-
-    price: {
-      IN: 899,
-      US: 39.99,
-      GB: 31.99,
-      EU: 34.99,
-      CA: 49.99
-    },
-
-    mockups: {
-      front: "/assets/mockups/men-hoodie-front.png",
-      back: "/assets/mockups/men-hoodie-back.png",
-    },
-
-    print_area_2d: {
-      front: { top: 32, left: 33.5, width: 33.5, height: 24.5 },
-      back: { top: 40, left: 35, width: 32, height: 29 }
-    },
-
-    options: {
-      colors: ["White", "Black", "Pink", "Dark Heather"],
-      sizes: ["S", "M", "L", "XL"]
-    },
-
-    vendor_maps: {
-      printify: {
-        blueprint_id: "77",
-        print_provider_id: "29",
-        color_map: { "White": 101, "Black": 102, "Pink": 106, "Dark Heather": 108 }
-      },
-      qikink: {
-        // Same as Men's (Unisex)
-        product_id: "UHd",
-        color_map: { "White": "Wh", "Black": "Bk", "Pink": "Pk", "Dark Heather": "Cm" }
-      },
-      gelato: {
-        product_uid: "apparel_product_gca_hoodie_gsc_pullover_gcu_womens_gqa_prm_gsi_{size}_gco_{color}_gpr_{printCode}",
-        color_map: { "White": "white", "Black": "black", "Pink": "light-pink", "Dark Heather": "dark-grey-heather" }
       }
     }
   },
@@ -422,16 +387,19 @@ export const INITIAL_PRODUCTS = [
       right: { top: 13, left: 25, width: 50, height: 79 }
     },
 
-    options: {
-      colors: ["White"],
-      sizes: ["11oz"]
+    variants: {
+      qikink: {
+        colors: ["White"],
+        sizes: ["11oz"]
+      },
     },
 
     vendor_maps: {
       printify: {
-        blueprint_id: "68",
-        print_provider_id: "9",
-        color_map: { "White": 101, "Black Handle": 115 }
+        blueprint_id: "503",
+        print_provider_id: "48",
+        color_map: { "White": 101, "Black Handle": 115 },
+        variant_id: 67624,
       },
       qikink: {
         // Mugs typically don't use the SKU pattern, using 'Mug' as base for ID construction
@@ -465,7 +433,7 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 399,
-      US: 14.99,
+      US: 26.99,
       GB: 20.99,
       EU: 14.99,
       CA: 20.99
@@ -481,16 +449,21 @@ export const INITIAL_PRODUCTS = [
       back: { top: 43, left: 29, width: 40.5, height: 33.5 }
     },
 
-    options: {
-      colors: ["White"],
-      sizes: ["One Size"]
+    variants: {
+      qikink: {
+        colors: ["White"],
+        sizes: ["One Size"]
+      },
+      printify: {
+        colors: ['Natural', 'Black']
+      }
     },
 
     vendor_maps: {
       printify: {
-        blueprint_id: "472",
-        print_provider_id: "2",
-        color_map: { "Natural": 10, "Black": 102 }
+        blueprint_id: "1313",
+        print_provider_id: "29",
+        variant_id: { "Natural": 101409, "Black": 103598 }
       },
       qikink: {
         product_id: "UTbNz-Wh-NA",

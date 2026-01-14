@@ -21,6 +21,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2, Save } from "lucide-react";
+import { COLOR_MAP } from '../../lib/colorMaps'
 import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle, FiChevronDown, FiDroplet, FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
 
 const uuidv4 = () => {
@@ -36,24 +37,6 @@ const CURRENCY_MAP = {
     GB: { symbol: '£', code: 'GBP' },
     EU: { symbol: '€', code: 'EUR' },
     CA: { symbol: 'C$', code: 'CAD' }
-};
-
-const COLOR_MAP = {
-    "White": "#FFFFFF", "Natural": "#F3E5AB", "Soft Cream": "#F5F5DC", "Sand": "#C2B280", "Silver": "#C0C0C0",
-    "Black": "#000000", "Solid Black Blend": "#1a1a1a", "Black Heather": "#2D2D2D", "Charcoal": "#36454F",
-    "Dark Grey": "#4A4A4A", "Asphalt": "#505050", "Dark Heather": "#4B5563", "Dark Grey Heather": "#525252",
-    "Graphite Heather": "#374151", "Deep Heather": "#606060", "Sport Grey": "#9CA3AF", "Athletic Heather": "#9E9E9E",
-    "Ash": "#D1D5DB", "Navy": "#000080", "Heather Navy": "#34495E", "Royal": "#2563EB", "True Royal": "#1C39BB",
-    "Heather True Royal": "#4169E1", "Steel Blue": "#4682B4", "Carolina Blue": "#7BAFD4", "Heather Columbia Blue": "#7897BB",
-    "Light Blue": "#ADD8E6", "Baby Blue": "#89CFF0", "Heather Ice Blue": "#A4D3EE", "Turquoise": "#40E0D0",
-    "Aqua": "#00FFFF", "Heather Aqua": "#66CDAA", "Red": "#EF4444", "Heather Red": "#CD5C5C", "Cardinal": "#C41E3A",
-    "Maroon": "#800000", "Heliconia": "#DB2763", "Berry": "#C32148", "Pink": "#FFC0CB", "Light Pink": "#FFB6C1",
-    "Soft Pink": "#FDE9EA", "Charity Pink": "#FF69B4", "Heather Mauve": "#C18995", "Purple": "#6A0DAD",
-    "Team Purple": "#4B0082", "Heather Team Purple": "#663399", "Forest Green": "#228B22", "Forest": "#0B6623",
-    "Military Green": "#4B5320", "Army": "#454B1B", "Olive": "#808000", "Heather Olive": "#556B2F",
-    "Irish Green": "#009E60", "Kelly": "#4CBB17", "Heather Kelly": "#3CB371", "Heather Green": "#608060",
-    "Leaf": "#76904A", "Heather Mint": "#98FF98", "Gold": "#FFD700", "Yellow": "#FFFF00", "Orange": "#FFA500",
-    "Autumn": "#D2691E", "Brown": "#8B4513", "Heather Clay": "#B66A50", "Heather Peach": "#FFCBA4"
 };
 
 export default function EditorPanel() {
@@ -86,6 +69,9 @@ export default function EditorPanel() {
     const editCartId = searchParams.get('editCartId');
     const [isEditMode, setIsEditMode] = useState(false);
 
+    const [colors, setColors] = useState([])
+    const [sizes, setSizes] = useState([])
+
     const urlRegion = searchParams.get('region') || 'IN';
 
     const [productData, setProductData] = useState(false);
@@ -97,7 +83,7 @@ export default function EditorPanel() {
     const [canvasBg, setCanvasBg] = useState(COLOR_MAP[urlColor]);
     const [currentView, setCurrentView] = useState("front");
     const [viewStates, setViewStates] = useState({});
-    
+
     // ✅ NEW: Track Full Fabric JSON for High-Quality Rendering
     const [canvasViewStates, setCanvasViewStates] = useState({});
 
@@ -106,6 +92,10 @@ export default function EditorPanel() {
 
     useEffect(() => { currentViewRef.current = currentView; }, [currentView]);
     useEffect(() => { viewStatesRef.current = viewStates; }, [viewStates]);
+    useEffect(() => {
+        if (!fabricCanvas) return
+        setTimeout(() => fabricCanvas.backgroundColor = canvasBg, 500)
+    }, [urlColor])
 
     const [designTextures, setDesignTextures] = useState({
         front: { blob: null, url: null },
@@ -179,11 +169,11 @@ export default function EditorPanel() {
                 if (designData.productConfig?.productId === (urlProductId || productData.id)) {
                     setCurrentDesign(designData);
                     setEditingDesignId(designData.id);
-                    
+
                     // Restore Redux states
                     const savedStates = designData.canvasData || {};
                     setViewStates(savedStates);
-                    
+
                     // ✅ NEW: Restore Canvas JSON States (if available)
                     if (designData.canvasViewStates) {
                         setCanvasViewStates(designData.canvasViewStates);
@@ -243,6 +233,18 @@ export default function EditorPanel() {
                     options: data.options || { colors: [] }
                 };
                 setProductData(processedData);
+                if (urlRegion === 'IN') {
+                    setColors(data.variants.qikink.colors)
+                    setSizes(data.variants.qikink.sizes)
+                }
+                else if (urlRegion === 'US') {
+                    setColors(data.variants.gelato?.colors || [])
+                    setSizes(data.variants.gelato?.sizes || [])
+                }
+                else {
+                    setColors(data.variants.printify?.colors || [])
+                    setSizes(data.variants.printify?.sizes || [])
+                }
                 return processedData;
             }
         } catch (err) {
@@ -274,7 +276,7 @@ export default function EditorPanel() {
                     setViewStates(itemToEdit.designData.viewStates);
                     viewStatesRef.current = itemToEdit.designData.viewStates;
                 }
-                
+
                 // ✅ NEW: Restore Canvas JSON States
                 if (itemToEdit.designData.canvasViewStates) {
                     setCanvasViewStates(itemToEdit.designData.canvasViewStates);
@@ -285,7 +287,7 @@ export default function EditorPanel() {
 
                 const objectsToLoad = itemToEdit.designData.viewStates?.[savedView] || [];
                 dispatch(setCanvasObjects(objectsToLoad));
-                
+
                 fetchProductData(itemToEdit.productId);
             }
         }
@@ -381,7 +383,7 @@ export default function EditorPanel() {
                         if (design.type === 'PRODUCT' && design.productConfig) {
                             const savedStates = design.canvasData || {};
                             setViewStates(savedStates);
-                            
+
                             // ✅ NEW: Restore Canvas JSON States
                             if (design.canvasViewStates) {
                                 setCanvasViewStates(design.canvasViewStates);
@@ -445,18 +447,20 @@ export default function EditorPanel() {
 
     // --- Canvas Utils (Reduced for speed) ---
 
-    const getCleanDataURL = (targetWidth = 1200) => {
+    const getCleanDataURL = (targetWidth = 1200, isSave = false) => {
         // Used ONLY for 3D Preview / Manual actions, NOT for Cart/Checkout
         if (!fabricCanvas) return null;
         const originalBg = fabricCanvas.backgroundColor;
         const originalClip = fabricCanvas.clipPath;
         const originalVpt = fabricCanvas.viewportTransform;
+        if (!isSave) {
+            if (productData.title?.includes("Mug")) {
+                fabricCanvas.backgroundColor = "#FFFFFF";
+            } else {
+                fabricCanvas.backgroundColor = null;
+            }
+        } 
 
-        if (productData.title?.includes("Mug")) {
-            fabricCanvas.backgroundColor = "#FFFFFF";
-        } else {
-            fabricCanvas.backgroundColor = null;
-        }
         fabricCanvas.clipPath = null;
         const borderObj = fabricCanvas.getObjects().find(obj => obj.customId === 'print-area-border' || obj.id === 'print-area-border');
         if (borderObj) borderObj.visible = false;
@@ -483,7 +487,7 @@ export default function EditorPanel() {
     };
 
     const captureCurrentCanvas = () => {
-        const url = getCleanDataURL(1200); 
+        const url = getCleanDataURL(1200);
         if (!url) return null;
         const arr = url.split(',');
         const mime = arr[0].match(/:(.*?);/)[1];
@@ -497,7 +501,7 @@ export default function EditorPanel() {
 
     const handleSwitchView = async (newView) => {
         if (!fabricCanvas || newView === currentView) return;
-        
+
         // 1. Capture Redux State (For Editor Reloads)
         const currentReduxState = store.getState().canvas.present;
         setViewStates(prev => ({ ...prev, [currentView]: currentReduxState }));
@@ -509,7 +513,7 @@ export default function EditorPanel() {
 
         // 3. Switch View
         setCurrentView(newView);
-        const nextObjects = viewStates[newView] || []; 
+        const nextObjects = viewStates[newView] || [];
         dispatch(setCanvasObjects(nextObjects));
         dispatch(setHistory({ past: [], present: nextObjects, future: [] }));
     };
@@ -538,16 +542,16 @@ export default function EditorPanel() {
     const generateOrderPayload = () => {
         // 1. Snapshot CURRENT Redux state (For Editor)
         const currentReduxState = store.getState().canvas.present;
-        const tempViewStates = { 
-            ...viewStates, 
-            [currentView]: currentReduxState 
+        const tempViewStates = {
+            ...viewStates,
+            [currentView]: currentReduxState
         };
 
         // 2. ✅ NEW: Snapshot CURRENT Fabric JSON (For Headless Render)
         let currentObjects = [];
         if (fabricCanvas) {
-             const json = fabricCanvas.toObject(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue', 'selectable', 'lockMovementX', 'lockMovementY']);
-             currentObjects = json.objects || [];
+            const json = fabricCanvas.toObject(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue', 'selectable', 'lockMovementX', 'lockMovementY']);
+            currentObjects = json.objects || [];
         }
         const tempCanvasViewStates = {
             ...canvasViewStates,
@@ -567,11 +571,11 @@ export default function EditorPanel() {
             quantity: quantity,
             price: currentPrice || 0,
             currency: 'INR',
-            
+
             thumbnail: baseImage,
-            previewImages: {}, 
-            highResGenerated: false, 
-            
+            previewImages: {},
+            highResGenerated: false,
+
             // ✅ THE IMPORTANT PART: We keep BOTH states now!
             designData: {
                 viewStates: tempViewStates,       // For Editor (Redux)
@@ -583,7 +587,7 @@ export default function EditorPanel() {
     };
 
     const handleAddToCart = async () => {
-        if (!userId) { navigation('/auth'); return;}
+        if (!userId) { navigation('/auth'); return; }
         setIsAddingToCart(true);
         try {
             const payload = generateOrderPayload(); // Sync function now
@@ -606,10 +610,10 @@ export default function EditorPanel() {
         if (!userId) { navigation('/auth'); return; }
         setIsSaving(true);
         try {
-             const payload = generateOrderPayload(); // Sync function now
-             // Store payload in LocalStorage for checkout page
-             localStorage.setItem('directBuyItem', JSON.stringify(payload));
-             navigation('/checkout?mode=direct');
+            const payload = generateOrderPayload(); // Sync function now
+            // Store payload in LocalStorage for checkout page
+            localStorage.setItem('directBuyItem', JSON.stringify(payload));
+            navigation('/checkout?mode=direct');
         } catch (e) {
             console.error("Buy Now Error", e);
             alert("Error proceeding to checkout.");
@@ -640,7 +644,7 @@ export default function EditorPanel() {
                 <MainToolbar
                     activePanel={activePanel}
                     onSelectTool={(tool) => {
-                        if (tool === 'templates') { navigateToTemplates(); } 
+                        if (tool === 'templates') { navigateToTemplates(); }
                         else { setActivePanel(prev => prev === tool ? null : tool); }
                     }}
                     setSelectedId={setSelectedId}
@@ -699,8 +703,7 @@ export default function EditorPanel() {
                                         print_areas: productData.print_areas
                                     }}
                                     currentObjects={canvasObjects}
-                                    onGetSnapshot={() => getCleanDataURL(1200)}
-                                    // onSaveSuccess={handleSaveSuccess}
+                                    onGetSnapshot={getCleanDataURL}
                                     currentDesignName={currentDesign?.name}
                                 />
                             )}
@@ -742,7 +745,7 @@ export default function EditorPanel() {
                             <div className="mb-8">
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Color</h3>
                                 <div className="grid grid-cols-5 gap-2">
-                                    {productData.options?.colors?.length > 0 ? productData.options.colors.map((color) => {
+                                    {colors?.length > 0 ? colors.map((color) => {
                                         const hex = COLOR_MAP[color] || "#ccc";
                                         const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
                                         return (
@@ -759,7 +762,7 @@ export default function EditorPanel() {
                                     <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Size</h3>
                                 </div>
                                 <div className="grid grid-cols-4 gap-2">
-                                    {AVAILABLE_SIZES.map((size) => (
+                                    {sizes.map((size) => (
                                         <button key={size} onClick={() => setSelectedSize(size)} className={`py-2 text-sm font-medium rounded-md border transition-all ${selectedSize === size ? "border-orange-500 bg-orange-500/10 text-orange-400 shadow-[0_0_10px_rgba(234,88,12,0.2)]" : "border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-800"}`}>
                                             {size}
                                         </button>

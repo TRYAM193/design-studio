@@ -18,7 +18,7 @@ export default function SaveDesignButton({
 
   const handleConfirmSave = async (name, saveAsCopy) => {
     // 1. Capture Snapshot
-    const snapshot = onGetSnapshot ? onGetSnapshot(true) : null;
+    const snapshot = onGetSnapshot ? onGetSnapshot(1200, true) : null;
     let result;
 
     // 2. Decide: New vs Overwrite
