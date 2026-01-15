@@ -64,7 +64,7 @@ export default function ProductDetails() {
     const [showSizeChart, setShowSizeChart] = useState(false);
 
     // ✅ Region State
-    const [region, setRegion] = useState<"IN" | "US" | "GB" | "EU" | "CA">("US");
+    const [region, setRegion] = useState<"IN" | "US" | "GB" | "EU" | "CA">("IN");
     const [checkingLocation, setCheckingLocation] = useState(true);
 
     const currencyConfig = {
@@ -95,7 +95,7 @@ export default function ProductDetails() {
                         setSizes(data.variants.qikink.sizes)
                         setActiveSizeChart(data.variants.qikink.sizeChart || null);
                     }
-                    else if (region === 'US') {
+                    else if (region === 'US' || region === 'CA') {
                         setColors(data.variants.gelato?.colors || [])
                         setSizes(data.variants.gelato?.sizes || [])
                         setActiveSizeChart(data.variants.gelato?.sizeChart || null);
@@ -135,7 +135,7 @@ export default function ProductDetails() {
                 else setRegion("US");
             } catch (error) {
                 console.warn("Location detection failed, defaulting to US/Global", error);
-                setRegion("US");
+                setRegion("IN");
             } finally {
                 setCheckingLocation(false);
             }

@@ -48,20 +48,49 @@ export const INITIAL_PRODUCTS = [
         colors: [
           'Black',
           'White',
-          'Navy Blue',
-          'Grey Melange',
-          'Royal Blue',
+          'Navy',
+          'Athletic Heather',  // The standard Light Grey
+          'Dark Grey Heather', // The standard Dark Grey
+          'True Royal',
           'Red',
           'Maroon',
-          'Bottle Green',
-          'Charcoal Melange'
+          'Military Green',    // Best "Army" color
+          'Kelly',             // Standard Green
+          'Team Purple',
+          'Orange',
+          'Gold',              // Standard Yellow/Gold
+          'Pink',
+          'Baby Blue',         // Standard Light Blue
+          'Turquoise',
+          'Aqua',
+          'Natural',           // Very popular "Beige" alternative
+          'Soft Pink',
+          'Mustard',           // Often listed as "Yellow" or "Gold" - check your mapping
+          'Cardinal',
+          'Black Heather',     // Very popular
+          'Heather Mauve',     // #1 Selling Heather in US
+          'Heather Navy',
+          'Deep Heather',      // A nice mid-grey
+          'Heather True Royal',
+          'Heather Red',
+          'Heather Columbia Blue'
         ],
         sizes: ['S', 'M', 'L', 'XL'],
         sizeChart: {
-          S: [18, 27],
-          M: [20, 29],
-          L: [22, 30],
-          XL: [24, 30]
+          S: [32, 27],
+          M: [40, 29],
+          L: [44, 30],
+          XL: [48, 30]
+        }
+      },
+      gelato: {
+        colors: ['White', 'Black', 'Natural', 'Light Blue', 'Military Green', 'Irish Green', 'Royal', 'Red', 'Maroon', 'Navy'],
+        sizes: ['S', 'M', 'L', 'XL'],
+        sizeChart: {
+          S: [36, 28],
+          M: [40, 29],
+          L: [44, 30],
+          XL: [48, 31]
         }
       }
     },
@@ -84,11 +113,6 @@ export const INITIAL_PRODUCTS = [
       back: { top: 29, left: 32.5, width: 35, height: 39 }
     },
 
-    options: {
-      colors: ["White", "Black", "Navy", "Red", "Royal", "Sport Grey"],
-      sizes: ["S", "M", "L", "XL", "2XL"]
-    },
-
     vendor_maps: {
       printify: {
         blueprint_id: "12",
@@ -105,7 +129,7 @@ export const INITIAL_PRODUCTS = [
         }
       },
       gelato: {
-        product_uid: "apparel_product_gca_t-shirt_gsc_crewneck_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{printCode}_gildan_64000",
+        product_uid: "apparel_product_gca_t-shirt_gsc_crewneck_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{print_code}_gildan_64000",
         color_map: {
           "Black": "black", "White": "white", "Navy Blue": "navy", "Grey Melange": "sport-grey",
           "Royal Blue": "royal", "Red": "red", "Maroon": "maroon", "Bottle Green": "irish-green", "Charcoal Melange": "dark-heather"
@@ -140,10 +164,10 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 699,
-      US: 27.99,
-      GB: 21.99,
+      US: 33.99,
+      GB: 30.99,
       EU: 24.99,
-      CA: 39.99
+      CA: 51.99
     },
 
     variants: {
@@ -158,17 +182,39 @@ export const INITIAL_PRODUCTS = [
           XL: [48, 31, 22],
           XXL: [50, 32, 23]          // (Chest, Length, Shoulder)
         }
+      },
+      printify: {
+        colors: [
+          "Black",
+          "White",
+          "Navy",
+          "Dark Grey",
+          "Athletic Heather",
+          "Natural"
+        ],
+        sizes: ['S', 'M', 'L', 'XL'],
+        sizeChart: {
+          S: [40, 27.25],
+          M: [42, 27.25],
+          L: [46, 28.75],
+          XL: [50, 29.75]
+        }
+      },
+      gelato: {
+        colors: ['White', 'Black'],
+        sizes: ['S', 'M', 'L', 'XL'],
+        sizeChart: {
+          S: [42.5, 28.7],
+          M: [44.9, 29.5],
+          L: [47.2, 30.3],
+          XL: [49.6, 31.1]
+        }
       }
     },
 
     print_area_2d: {
       front: { top: 29, left: 32.5, width: 36, height: 39 },
       back: { top: 29, left: 32.5, width: 36, height: 39 }
-    },
-
-    options: {
-      colors: ["White", "Black", "Beige"],
-      sizes: ["S", "M", "L", "XL"]
     },
 
     vendor_maps: {
@@ -183,7 +229,7 @@ export const INITIAL_PRODUCTS = [
         color_map: { "White": "Wh", "Black": "Bk" }
       },
       gelato: {
-        product_uid: "apparel_product_gca_t-shirt_gsc_oversized_gcu_unisex_gqa_organic_gsi_{size}_gco_{color}_gpr_{printCode}_sols_03996",
+        product_uid: "apparel_product_gca_t-shirt_gsc_oversized_gcu_unisex_gqa_organic_gsi_{size}_gco_{color}_gpr_{print_code}_sols_03996",
         color_map: { "White": "white", "Black": "black" }
       }
     }
@@ -215,10 +261,10 @@ export const INITIAL_PRODUCTS = [
 
     price: {
       IN: 899,
-      US: 39.99,
-      GB: 29.99,
-      EU: 34.99,
-      CA: 49.99
+      US: 39.9,
+      GB: 29.9,
+      EU: 55.9,
+      CA: 59.9
     },
 
     variants: {
@@ -233,6 +279,38 @@ export const INITIAL_PRODUCTS = [
           XL: [46, 29],
           XXL: [48, 30],
           '3XL': [50, 31]          // (Chest, Length, Shoulder)
+        }
+      },
+      printify: {
+        colors: [
+          "Black",
+          "White",
+          "Navy",
+          "Sport Grey",
+          "Dark Heather",
+          "Charcoal",
+          "Royal",
+          "Red",
+          "Maroon",
+          "Forest Green",
+          "Military Green"
+        ],
+        sizes: ['S', 'M', 'L', 'XL'],
+        sizeChart: {
+          S: [40, 27.17],
+          M: [44, 27.95],
+          L: [48, 29.13],
+          XL: [52, 29.92]
+        }
+      },
+      gelato: {
+        colors: ['White', 'Black', 'Light Blue', 'Gold', 'Military Green', 'Irish Green', 'Royal', 'Red', 'Maroon', 'Forest Green', 'Navy'],
+        sizes: ['S', 'M', 'L', 'XL'],
+        sizeChart: {
+          S: [36, 28],
+          M: [40, 29],
+          L: [44, 30],
+          XL: [48, 31]
         }
       }
     },
@@ -258,8 +336,8 @@ export const INITIAL_PRODUCTS = [
         product_id: "UHd",
         color_map: { "Black": "Bk", "White": "Wh", "Navy Blue": "Nb", "Grey Melange": "Gm", "Red": "Rd" }
       },
-      gelato: {
-        product_uid: "apparel_product_gca_hoodie_gsc_pullover_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{printCode}_gildan_18500",
+      gelato: {       
+        product_uid: "apparel_product_gca_hoodie_gsc_pullover_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{print_code}_gildan_18500",
         color_map: { "Black": "black", "White": "white", "Navy Blue": "navy", "Grey Melange": "sport-grey", "Red": "red" }
       }
     }
@@ -315,17 +393,42 @@ export const INITIAL_PRODUCTS = [
           XL: [40, 27],
           XXL: [42, 28]          // (Chest, Length)
         }
+      },
+      printify: {
+        colors: [
+          "Black",
+          "White",
+          "Navy",
+          "Sport Grey",
+          "Dark Heather",
+          "Charcoal",
+          "Royal",
+          "Red",
+          "Forest Green"
+        ],
+        sizes: ['S', 'M', 'L', 'XL'],
+        sizeChart: {
+          S: [18, 27],
+          M: [20, 29],
+          L: [22, 30],
+          XL: [24, 30]
+        }
+      },
+      gelato: {
+        colors: ['White', 'Black', 'Natural', 'Light Blue', 'Military Green', 'Irish Green', 'Royal', 'Red', 'Maroon', 'Navy'],
+        sizes: ['S', 'M', 'L', 'XL'],
+        sizeChart: {
+          S: [36, 28],
+          M: [40, 29],
+          L: [44, 30],
+          XL: [48, 31]
+        }
       }
     },
 
     print_area_2d: {
       front: { top: 29, left: 32.5, width: 35, height: 39 },
       back: { top: 29, left: 32.5, width: 35, height: 39 }
-    },
-
-    options: {
-      colors: ["White", "Black", "Pink", "Heather Mauve"],
-      sizes: ["S", "M", "L", "XL"]
     },
 
     vendor_maps: {
@@ -341,7 +444,7 @@ export const INITIAL_PRODUCTS = [
         color_map: { "White": "Wh", "Black": "Bk", "Pink": "Pk", "Heather Mauve": "Mv" }
       },
       gelato: {
-        product_uid: "apparel_product_gca_t-shirt_gsc_crewneck_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{printCode}_gildan_64000",
+        product_uid: "apparel_product_gca_t-shirt_gsc_crewneck_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_{print_code}_gildan_64000",
         color_map: { "White": "white", "Black": "black", "Pink": "pink", "Heather Mauve": "heather_mauve" }
       }
     }
@@ -392,6 +495,14 @@ export const INITIAL_PRODUCTS = [
         colors: ["White"],
         sizes: ["11oz"]
       },
+      printify: {
+        colors: ['White'],
+        sizes: ['11oz']
+      },
+      gelato: {
+        colors: ['White'],
+        sizes: ['11oz']
+      }
     },
 
     vendor_maps: {
@@ -451,11 +562,13 @@ export const INITIAL_PRODUCTS = [
 
     variants: {
       qikink: {
-        colors: ["White"],
-        sizes: ["One Size"]
+        colors: ["White"]
       },
       printify: {
         colors: ['Natural', 'Black']
+      },
+      gelato: {
+        colors: ['White']
       }
     },
 
@@ -470,7 +583,7 @@ export const INITIAL_PRODUCTS = [
         color_map: { "White": "Wh" }
       },
       gelato: {
-        product_uid: "bag_product_bsc_tote-bag_bqa_clc_bsi_std-t_bco_white_bpr_{printCode}",
+        product_uid: "bag_product_bsc_tote-bag_bqa_clc_bsi_std-t_bco_white_bpr_{print_code}",
         color_map: { "Natural": "natural", "Black": "black" }
       }
     }

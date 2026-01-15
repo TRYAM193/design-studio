@@ -44,5 +44,34 @@ export const COLOR_MAP = {
 
   "White": "#FFFFFF",
   "Yellow": "#FFFF00",
-  "Pink": "#f905a0"
+  "Pink": "#f905a0",
+  "Navy": "#0c3671",           // Dark Blue
+  "True Royal": "#1C39BB", 
+  "Military Green": "#4B5320", // Olive/Army tone
+  "Kelly": "#059669",          // Bright Green
+  "Team Purple": "#581C87",
+  "Gold": "#FACC15",
+  "Turquoise": "#2DD4BF",
+  "Aqua": "#06B6D4",
+  "Natural": "#F3F4F6",        // Off-white/Beige tone
+  "Soft Pink": "#FCE7F3",
+  "Mustard": "#EAB308",
+  "Cardinal": "#991B1B",
+  "Athletic Heather": "#D1D5DB",   // Light Grey
+  "Dark Grey Heather": "#4B5563",  // Dark Grey
+  "Deep Heather": "#6B7280",       // Medium Grey
+  "Black Heather": "#111827",      // Almost Black
+  "Irish Green": "#00A74A",
+  "Heather Mauve": "#C084FC",      // Muted Purple/Pink
+  "Heather Navy": "#374151",       // Muted Dark Blue
+  "Heather True Royal": "#3B82F6", // Muted Bright Blue
+  "Heather Red": "#EF4444",        // Muted Red
+  "Heather Columbia Blue": "#60A5FA",          // Dark Blue
+  "Dark Grey": "#4B5563",  
+  "Sport Grey": "#D1D5DB",
+  "Dark Heather": "#4B5563",
+  "Charcoal": "#374151",
+  "Royal": "#1C39BB",
+  "Forest Green": "#114232",
+  "Light Blue": "#9BB8D3"
 }

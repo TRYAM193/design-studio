@@ -13,9 +13,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleViewDetails = () => {
     navigate(`/product/${product.id}`);
   };
-
-  // ✅ Currency Helper (You can move this to a global context later)
-  // For now, we default to India (IN) as per your strategy
+  
   const region = "IN"; 
   const currencySymbols: Record<string, string> = {
     IN: "₹",

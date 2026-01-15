@@ -87,6 +87,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     try {
       const newDocRef = doc(collection(db, `users/${user.uid}/cart`));
+      console.log(newItem)
       await setDoc(newDocRef, newItem);
       toast.success("Added to cart");
     } catch (error) {

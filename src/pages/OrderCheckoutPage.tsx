@@ -263,7 +263,7 @@ export default function OrderCheckoutPage() {
     const orderRef = doc(db, 'orders', orderId);
 
     // Determine Provider Logic
-    let provider = shippingInfo.countryCode === 'IN' ? 'qikink' : shippingInfo.countryCode === 'US' ? 'printify' : 'gelato';
+    let provider = shippingInfo.countryCode === 'IN' ? 'qikink' : shippingInfo.countryCode === 'US' || shippingInfo.countryCode === 'CA' ? 'printify' : 'gelato';
 
     const newOrder = {
       userId: user?.uid || 'guest',

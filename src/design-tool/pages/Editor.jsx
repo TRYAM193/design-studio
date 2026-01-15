@@ -31,6 +31,22 @@ const uuidv4 = () => {
     });
 };
 
+function removeUndefined(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefined);
+  } else if (obj && typeof obj === 'object') {
+    const cleaned = {};
+    for (const key in obj) {
+      if (obj[key] !== undefined) {
+        cleaned[key] = removeUndefined(obj[key]);
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+}
+
+
 const CURRENCY_MAP = {
     IN: { symbol: '₹', code: 'INR' },
     US: { symbol: '$', code: 'USD' },
@@ -237,13 +253,13 @@ export default function EditorPanel() {
                     setColors(data.variants.qikink.colors)
                     setSizes(data.variants.qikink.sizes)
                 }
-                else if (urlRegion === 'US') {
-                    setColors(data.variants.gelato?.colors || [])
-                    setSizes(data.variants.gelato?.sizes || [])
-                }
-                else {
+                else if (urlRegion === 'US'  || urlRegion === 'CA') {
                     setColors(data.variants.printify?.colors || [])
                     setSizes(data.variants.printify?.sizes || [])
+                }
+                else {
+                    setColors(data.variants.gelato?.colors || [])
+                    setSizes(data.variants.gelato?.sizes || [])
                 }
                 return processedData;
             }
@@ -509,6 +525,7 @@ export default function EditorPanel() {
         // 2. ✅ NEW: Capture Full Canvas JSON (For Headless Render)
         const currentJSON = fabricCanvas.toObject(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue', 'selectable', 'lockMovementX', 'lockMovementY']);
         const currentObjects = currentJSON.objects || [];
+        currentObjects = currentObjects.map((obj) => removeUndefined(obj))
         setCanvasViewStates(prev => ({ ...prev, [currentView]: currentObjects }));
 
         // 3. Switch View
@@ -552,6 +569,7 @@ export default function EditorPanel() {
         if (fabricCanvas) {
             const json = fabricCanvas.toObject(['customId', 'textStyle', 'textEffect', 'radius', 'effectValue', 'selectable', 'lockMovementX', 'lockMovementY']);
             currentObjects = json.objects || [];
+            currentObjects = currentObjects.map((obj) => removeUndefined(obj))
         }
         const tempCanvasViewStates = {
             ...canvasViewStates,
@@ -561,7 +579,6 @@ export default function EditorPanel() {
         // 3. Construct Payload
         const baseImage = productData.image || productData.mockups?.front || "/assets/placeholder.png";
         const colorName = Object.keys(COLOR_MAP).find(key => COLOR_MAP[key] === canvasBg)
-        console.log(colorName, canvasBg)
 
         return {
             designId: editingDesignId || `temp_${Date.now()}`,
@@ -573,7 +590,6 @@ export default function EditorPanel() {
             currency: 'INR',
 
             thumbnail: baseImage,
-            previewImages: {},
             highResGenerated: false,
 
             // ✅ THE IMPORTANT PART: We keep BOTH states now!
@@ -590,7 +606,7 @@ export default function EditorPanel() {
         if (!userId) { navigation('/auth'); return; }
         setIsAddingToCart(true);
         try {
-            const payload = generateOrderPayload(); // Sync function now
+            const payload = generateOrderPayload(); 
             if (isEditMode && editCartId) {
                 await updateItemContent(editCartId, payload);
                 alert("Cart Updated!");
