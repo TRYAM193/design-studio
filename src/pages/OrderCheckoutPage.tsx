@@ -406,15 +406,15 @@ export default function OrderCheckoutPage() {
                     <Label className="text-slate-300 flex items-center justify-between">
                       Country
                     </Label>
-                    {/* {isLocationLocked && <span className="text-[10px] text-orange-400 flex items-center gap-1"><Lock className="w-3 h-3" /> {shippingInfo.countryCode === 'IN' ? "India" : "Region"} Detected</span>} */}
+                    {isLocationLocked && <span className="text-[10px] text-orange-400 flex items-center gap-1"><Lock className="w-3 h-3" /> {shippingInfo.countryCode === 'IN' ? "India" : "Region"} Detected</span>}
 
                     {/* 🔒 Locked Select if isLocationLocked is true */}
                     <Select
                       value={shippingInfo.countryCode}
                       onValueChange={handleCountryChange}
-                    // disabled={isLocationLocked}
+                    disabled={isLocationLocked}
                     >
-                      <SelectTrigger className={`bg-slate-900/50 border-white/10 text-white `}>
+                      <SelectTrigger className={`bg-slate-900/50 border-white/10 text-white ${isLocationLocked ? "opacity-50 cursor-not-allowed" : ""} `}>
                         <SelectValue placeholder="Select Country" />
                       </SelectTrigger>
                       <SelectContent className="bg-slate-800 text-white border-white/10 max-h-64">
