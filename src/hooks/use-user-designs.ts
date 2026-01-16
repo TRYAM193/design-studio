@@ -3,6 +3,7 @@ import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/firebase";
 
 export interface Design {
+  updatedAt: any;
   id: string;
   name: string;
   imageData: string;

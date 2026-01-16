@@ -12,6 +12,11 @@ export interface PriceObject {
   CA: number;
 }
 
+export interface ProductVariants {
+  colors: Array<number>
+  sizes: Array<number>
+}
+
 export interface BaseProduct {
   id: string;
   title: string;
@@ -27,6 +32,12 @@ export interface BaseProduct {
     back?: string;
     [key: string]: string | undefined;
   };
+
+  variants: {
+    qikink: ProductVariants
+    printify: ProductVariants
+    gelato: ProductVariants
+  }
   options?: {
     colors: string[];
     sizes: string[];
@@ -65,12 +76,12 @@ export function useBaseProducts() {
             description: data.description || "",
             image: data.image || data.mockups?.front || null, 
             category: data.category || "Uncategorized",
-            price: processedPrice,
-            
+            price: processedPrice,            
             mockups: data.mockups || {},
-            options: {
-              colors: data.options?.colors || [],
-              sizes: data.options?.sizes || []
+            variants: data.variants || {
+              qikink: { colors: [], sizes: [] },
+              printify: { colors: [], sizes: [] },
+              gelato: { colors: [], sizes: [] }
             }
           });
         });

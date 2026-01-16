@@ -13,7 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function DashboardProjects() {
   const { user, isAuthenticated } = useAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   
   // Fetch real designs
   const { designs, loading } = useUserDesigns(user?.uid);

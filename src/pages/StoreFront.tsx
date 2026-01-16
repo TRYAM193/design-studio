@@ -26,12 +26,12 @@ export default function Storefront() {
       </div>
 
       {/* 1. Hero Section */}
-      <div className="relative pt-24 pb-16 px-4">
-        <div className="container mx-auto text-center space-y-6">
+      <div className="relative pt-20 pb-8 sm:pt-28 sm:pb-16 px-4">
+        <div className="container mx-auto text-center space-y-4 sm:space-y-6">
           <motion.div
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
-             className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-xs font-bold uppercase tracking-wider mb-4 shadow-[0_0_15px_rgba(234,88,12,0.2)]"
+             className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-2 shadow-[0_0_15px_rgba(234,88,12,0.2)]"
           >
               <Sparkles className="w-3 h-3" /> New Collection
           </motion.div>
@@ -40,7 +40,7 @@ export default function Storefront() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-5xl md:text-7xl font-extrabold tracking-tight text-white drop-shadow-2xl"
+            className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white drop-shadow-2xl leading-[1.1]"
           >
             Create Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">Custom Look</span>
           </motion.h1>
@@ -49,7 +49,7 @@ export default function Storefront() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed"
+            className="text-sm sm:text-base md:text-lg text-slate-400 max-w-xl mx-auto leading-relaxed px-4"
           >
             Premium quality apparel printed on demand. Select a product below to launch the design studio.
           </motion.p>
@@ -58,21 +58,21 @@ export default function Storefront() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="max-w-md mx-auto relative mt-10"
+            className="max-w-md mx-auto relative mt-8 sm:mt-10 px-2"
           >
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-5 w-5" />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4 sm:h-5 sm:w-5 z-10" />
             <Input 
               placeholder="Search hoodies, tees..." 
-              className="pl-12 h-14 text-lg shadow-xl rounded-full bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-orange-500 focus-visible:border-orange-500 backdrop-blur-md transition-all"
+              className="pl-12 sm:pl-14 h-12 sm:h-14 text-base sm:text-lg shadow-xl rounded-full bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-orange-500 focus-visible:border-orange-500 backdrop-blur-md transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </motion.div>
         </div>
-      </div>
+      </div> 
 
       {/* 2. Product Grid */}
-      <div className="container mx-auto px-4 pb-24">
+      <div className="container mx-auto px-2 sm:px-4 pb-24 max-w-7xl">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
@@ -80,15 +80,16 @@ export default function Storefront() {
           </div>
         ) : (
           <>
-            <div className="flex items-end justify-between mb-8 border-b border-white/10 pb-4">
-              <h2 className="text-2xl font-bold text-white">Featured Collection</h2>
-              <span className="text-sm font-medium text-slate-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
-                {filteredProducts.length} Items
+            <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between mb-6 sm:mb-8 border-b border-white/10 pb-4 gap-4 px-2">
+              <h2 className="text-xl sm:text-3xl font-bold text-white">Featured Collection</h2>
+              <span className="text-xs sm:text-sm font-medium text-slate-300 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+                {filteredProducts.length} Items Found
               </span>
             </div>
 
             {filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+              // ✅ GRID FIX: grid-cols-2 for mobile (<768px)
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8">
                 {filteredProducts.map((product, i) => (
                   <motion.div
                     key={product.id}
@@ -101,8 +102,8 @@ export default function Storefront() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-32 bg-slate-800/30 rounded-3xl border border-dashed border-white/10">
-                <p className="text-xl text-slate-400">No products found matching "{search}"</p>
+              <div className="text-center py-32 bg-slate-800/30 rounded-3xl border border-dashed border-white/10 mx-4">
+                <p className="text-lg sm:text-xl text-slate-400">No products found matching "{search}"</p>
                 <button 
                   onClick={() => setSearch("")}
                   className="mt-4 text-orange-500 font-medium hover:text-orange-400 hover:underline transition-colors"

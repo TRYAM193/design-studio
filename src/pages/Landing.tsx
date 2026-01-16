@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Layers, Sparkles, Wand2, Flame, Moon, ArrowUpRight } from "lucide-react";
+import { ArrowRight, Layers, Sparkles, Wand2, Flame, Moon, ArrowUpRight, Menu } from "lucide-react"; // Added Menu
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"; // Added Sheet components
 import { useTranslation } from "@/hooks/use-translation";
 import Footer from "@/components/Footer";
 
@@ -40,6 +41,7 @@ export default function Landing() {
           </div>
 
           {/* Desktop Navigation */}
+          {/* Desktop Navigation (> 768px) */}
           <nav className="hidden md:flex items-center gap-8">
             {["Catalog", "Designs", "Help", "Contact"].map((item) => (
               <Link key={item} to={item === "Catalog" ? "/store" : `/dashboard/${item.toLowerCase()}`} className="text-sm font-medium text-slate-300 hover:text-orange-400 transition-colors relative group">
@@ -50,22 +52,46 @@ export default function Landing() {
           </nav>
 
           {/* Nav Actions */}
-          <div className="flex items-center gap-4">
-            <Link to="/auth">
-              <Button variant="ghost" className="text-slate-300 font-medium hover:text-white hover:bg-white/10 rounded-full px-6 transition-all">
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Sign In (Hidden on very small phones to save space) */}
+            <Link to="/auth" className="hidden sm:block">
+              <Button variant="ghost" className="text-slate-300 font-medium hover:text-white hover:bg-white/10 rounded-full px-4 md:px-6 transition-all">
                 {t("nav.signin")}
               </Button>
             </Link>
+
             <Link to="/dashboard">
-              {/* 🎨 NEW STYLED NAV BUTTON (Saffron Gradient + Shine) */}
-              <Button className="rounded-full px-6 h-10 bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/40 hover:shadow-orange-700/50 hover:scale-105 active:scale-95 transition-all duration-300 group border-0 relative overflow-hidden">
+              <Button className="rounded-full px-4 md:px-6 h-9 md:h-10 text-sm md:text-base bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/40 hover:shadow-orange-700/50 hover:scale-105 active:scale-95 transition-all duration-300 group border-0 relative overflow-hidden">
                 <span className="relative z-10 flex items-center gap-2">
-                  {t("auth.getStarted")} <ArrowUpRight className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  {t("auth.getStarted")} <ArrowUpRight className="w-4 h-4" />
                 </span>
-                {/* Shine Effect */}
                 <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 ease-in-out" />
               </Button>
             </Link>
+
+            {/* Mobile Menu Trigger (< 768px) */}
+            <div className="md:hidden ml-2">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] bg-[#0f172a] border-white/10 p-6">
+                  <div className="flex flex-col gap-6 mt-10">
+                    {["Catalog", "Designs", "Help", "Contact"].map((item) => (
+                      <Link key={item} to={item === "Catalog" ? "/store" : `/dashboard/${item.toLowerCase()}`} className="text-lg font-medium text-slate-300 hover:text-orange-400">
+                        {item}
+                      </Link>
+                    ))}
+                    <div className="h-px bg-white/10 my-2" />
+                    <Link to="/auth" className="text-lg font-medium text-slate-300 hover:text-white">
+                      {t("nav.signin")}
+                    </Link>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </header>
@@ -89,7 +115,7 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-6xl md:text-8xl font-extrabold tracking-tighter leading-[1.1] text-white drop-shadow-2xl"
+              className="text-4xl sm:text-6xl md:text-8xl font-extrabold tracking-tighter leading-[1.1] text-white drop-shadow-2xl px-2"
             >
               {t("landing.hero.titleStart")} <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-orange-400">
@@ -110,9 +136,9 @@ export default function Landing() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8"
+              className="flex flex-col w-full sm:w-auto sm:flex-row items-center justify-center gap-4 sm:gap-6 pt-8 px-4 sm:px-0"
             >
-              <Link to="/dashboard">
+              <Link to="/dashboard" className="w-full sm:w-auto">
                 {/* 🎨 HERO CTA BUTTON: The "Trident Power" Button */}
                 <Button size="lg" className="h-16 px-10 text-lg rounded-full bg-white text-slate-900 hover:bg-blue-50 font-bold shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:shadow-[0_0_50px_rgba(255,255,255,0.3)] hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group">
                   <span className="relative z-10 flex items-center gap-3">
@@ -169,7 +195,7 @@ export default function Landing() {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="bg-slate-800/40 backdrop-blur-md rounded-[2rem] p-10 border border-white/5 shadow-xl hover:shadow-blue-500/20 transition-all hover:-translate-y-2 group"
+                className="bg-slate-800/40 backdrop-blur-md rounded-[2rem] p-6 md:p-10 border border-white/5 shadow-xl hover:shadow-blue-500/20 transition-all hover:-translate-y-2 group"
               >
                 <div className="h-14 w-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-8 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.1)] group-hover:scale-110 group-hover:bg-blue-500 group-hover:text-white transition-all duration-300">
                   <Wand2 className="h-7 w-7" />
@@ -186,7 +212,7 @@ export default function Landing() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="bg-slate-800/40 backdrop-blur-md rounded-[2rem] p-10 border border-white/5 shadow-xl hover:shadow-orange-500/20 transition-all hover:-translate-y-2 group"
+                className="bg-slate-800/40 backdrop-blur-md rounded-[2rem] p-6 md:p-10 border border-white/5 shadow-xl hover:shadow-blue-500/20 transition-all hover:-translate-y-2 group"
               >
                 <div className="h-14 w-14 bg-orange-500/10 rounded-2xl flex items-center justify-center mb-8 text-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.1)] group-hover:scale-110 group-hover:bg-orange-500 group-hover:text-white transition-all duration-300">
                   <Layers className="h-7 w-7" />
@@ -204,7 +230,7 @@ export default function Landing() {
         <section className="py-24 px-4">
           <div className="container mx-auto max-w-5xl">
             {/* CTA Background: Deep Void to Saffron Burst */}
-            <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-[3rem] p-12 md:p-24 text-center relative overflow-hidden shadow-2xl shadow-black/50 border border-white/10 group">
+            <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-[2rem] md:rounded-[3rem] p-8 py-16 md:p-24 text-center relative overflow-hidden shadow-2xl shadow-black/50 border border-white/10 group">
 
               {/* Background Glows */}
               <div className="absolute top-0 right-0 w-[30rem] h-[30rem] bg-orange-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-orange-500/30 transition-all duration-700"></div>

@@ -172,7 +172,7 @@ export default function OrderDetailsPage() {
       <div className="container max-w-6xl mx-auto px-4 py-8 relative z-10">
         
         {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b border-white/10 pb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-6 mb-6 lg:mb-8 border-b border-white/10 pb-4 lg:pb-6">
           <div className="space-y-2">
             <Link to="/dashboard/orders" className="text-slate-400 hover:text-white flex items-center gap-2 text-sm transition-colors mb-1">
               <ArrowLeft className="h-4 w-4" /> Back to Orders
@@ -186,10 +186,10 @@ export default function OrderDetailsPage() {
                <span className="flex items-center gap-2"><CreditCard className="h-4 w-4" /> Total: {order.payment?.amount || order.total} {order.currency}</span>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
            <Button 
               variant="ghost" 
-              className="text-slate-500 hover:text-white hover:bg-white/5 transition-all" 
+              className="w-full sm:w-auto text-slate-500 hover:text-white hover:bg-white/5 transition-all" 
               onClick={handleRefreshStatus} 
               disabled={refreshing}
             >
@@ -198,7 +198,7 @@ export default function OrderDetailsPage() {
             </Button>
 
             {order.providerData?.trackingUrl && (
-              <Button className="bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-900/20" asChild>
+              <Button className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-900/20" asChild>
                 <a href={order.providerData.trackingUrl} target="_blank" rel="noreferrer">
                   Track Package <ExternalLink className="h-4 w-4 ml-2" />
                 </a>
@@ -207,7 +207,7 @@ export default function OrderDetailsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
           {/* 📦 LEFT COLUMN - PRODUCT DETAILS */}
           <div className="lg:col-span-8 space-y-6">
@@ -225,7 +225,7 @@ export default function OrderDetailsPage() {
                   <div className="flex flex-col sm:flex-row gap-6">
                      
                      {/* THUMBNAIL */}
-                     <div className="w-32 h-32 sm:w-40 sm:h-40 bg-white rounded-xl overflow-hidden shrink-0 border-2 border-white/10 shadow-lg">
+                     <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 bg-white rounded-xl overflow-hidden shrink-0 border-2 border-white/10 shadow-lg">
                         <img 
                           src={item.thumbnail || item.image || item.designData?.previewImage} 
                           alt="Product Thumbnail" 
@@ -234,7 +234,7 @@ export default function OrderDetailsPage() {
                      </div>
 
                      {/* INFO GRID */}
-                     <div className="flex-1 grid grid-cols-2 gap-y-4 gap-x-6">
+                     <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
                         {/* Name - Spans full width */}
                         <div className="col-span-2 space-y-1">
                             <span className="text-xs uppercase text-slate-500 font-bold tracking-wider">Product</span>
@@ -288,15 +288,15 @@ export default function OrderDetailsPage() {
                         Note: This image shows exactly what we sent to print.
                     </p>
                     
-                    <div className="flex flex-wrap gap-4">
+                    <div className="flex flex-wrap gap-3 sm:gap-4">
                       {(order.printFiles?.front || item.designData?.previewImage) && (
-                        <div className="relative group rounded-lg overflow-hidden border border-white/10 bg-black/40 w-32 h-32">
+                        <div className="relative group rounded-lg overflow-hidden border border-white/10 bg-black/40 w-24 h-24 sm:w-32 sm:h-32">
                           <img src={order.printFiles?.front || item.designData?.previewImage} className="w-full h-full object-contain p-2" />
                           <Badge className="absolute top-1 left-1 bg-black/50 text-white text-[10px]">FRONT</Badge>
                         </div>
                       )}
                       {order.printFiles?.back && (
-                        <div className="relative group rounded-lg overflow-hidden border border-white/10 bg-black/40 w-32 h-32">
+                        <div className="relative group rounded-lg overflow-hidden border border-white/10 bg-black/40 w-24 h-24 sm:w-32 sm:h-32">
                           <img src={order.printFiles?.back} className="w-full h-full object-contain p-2" />
                           <Badge className="absolute top-1 left-1 bg-black/50 text-white text-[10px]">BACK</Badge>
                         </div>
@@ -309,9 +309,9 @@ export default function OrderDetailsPage() {
             ))}
 
             {/* HELP OPTIONS */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                {HELP_OPTIONS.map((option, i) => (
-                  <Button key={i} variant="outline" className="border-white/5 bg-slate-800/30 hover:bg-slate-800 text-slate-400 hover:text-white text-xs h-10 justify-start">
+                  <Button key={i} variant="outline" className="border-white/5 bg-slate-800/30 hover:bg-slate-800 text-slate-400 hover:text-white text-xs h-12 sm:h-10 justify-start">
                      <HelpCircle className="h-3 w-3 mr-2 opacity-50" /> {option}
                   </Button>
                ))}
@@ -319,7 +319,7 @@ export default function OrderDetailsPage() {
           </div>
 
           {/* 🚚 RIGHT COLUMN - TRACKING */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-6 sm:space-y-8 lg:space-y-8">
             <Card className="bg-slate-800/40 border-white/10 backdrop-blur-sm h-fit">
               <CardHeader className="bg-slate-800/60 border-b border-white/5 py-4">
                 <div className="flex justify-between items-center">

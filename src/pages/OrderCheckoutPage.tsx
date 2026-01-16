@@ -90,6 +90,18 @@ export default function OrderCheckoutPage() {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false); // Local state fallback
 
+  const stripeCurrencyMap: Record<string, string> = {
+    US: 'usd',
+    GB: 'gbp',
+    DE: 'eur',
+    FR: 'eur',
+    IT: 'eur',
+    ES: 'eur',
+    NL: 'eur',
+    CA: 'cad'
+  }
+
+
   // Check verification on load (From User Profile)
   useEffect(() => {
     async function checkVerification() {
@@ -238,7 +250,10 @@ export default function OrderCheckoutPage() {
   const handlePlaceOrder = async () => {
     if (items.length === 0) return;
     if (!shippingInfo.line1 || !shippingInfo.city || !shippingInfo.stateCode) { alert("Address incomplete."); return; }
-
+    if (!isPhoneVerified) {
+      setShowVerifyModal(true)
+      return
+    }
     setIsProcessing(true);
 
     // 1. Enrich Items with Vendor Maps (CRITICAL FIX 🛠️)
@@ -257,7 +272,6 @@ export default function OrderCheckoutPage() {
         }
       };
     });
-    console.log(enrichedItems)
 
     const orderId = `ORD-${Date.now()}`;
     const orderRef = doc(db, 'orders', orderId);
@@ -320,7 +334,9 @@ export default function OrderCheckoutPage() {
       } else {
         // --- STRIPE FLOW ---
         const createStripe = httpsCallable(functions, 'createStripeIntent');
-        const { data }: any = await createStripe({ amount: totalPayAmount, currency: 'usd' }); // Convert currency if needed
+        const { data }: any = await createStripe({
+          amount: totalPayAmount, currency: stripeCurrencyMap[shippingInfo.countryCode] || 'usd'
+        }); // Convert currency if needed
         const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
         setStripePromise(loadStripe(publishableKey));
         setStripeClientSecret(data.clientSecret);
@@ -363,12 +379,12 @@ export default function OrderCheckoutPage() {
         <div className="absolute bottom-0 left-0 w-[50%] h-[50%] rounded-full bg-orange-600/5 blur-[100px]" />
       </div>
 
-      <div className="max-w-6xl mx-auto p-4 md:p-8 pt-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 pt-6 pb-24 lg:pb-6">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6 pl-0 text-slate-400 hover:text-white hover:bg-transparent group">
           <ChevronLeft className="mr-1 h-4 w-4 group-hover:-translate-x-1 transition-transform" /> Back
         </Button>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
 
           <div className="lg:col-span-2 space-y-6">
             {/* SHIPPING DETAILS */}
@@ -392,7 +408,7 @@ export default function OrderCheckoutPage() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-slate-300">Phone</Label>
-                    <Input name="email" value={shippingInfo.phone} onChange={handleInputChange} className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500/50" />
+                    <Input name="phone" value={shippingInfo.phone} onChange={handleInputChange} className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500/50" />
                   </div>
                 </div>
 
@@ -401,18 +417,17 @@ export default function OrderCheckoutPage() {
                   <Input name="line1" value={shippingInfo.line1} onChange={handleInputChange} placeholder="House No, Street, Landmark" className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500/50" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-slate-300 flex items-center justify-between">
                       Country
                     </Label>
-                    {isLocationLocked && <span className="text-[10px] text-orange-400 flex items-center gap-1"><Lock className="w-3 h-3" /> {shippingInfo.countryCode === 'IN' ? "India" : "Region"} Detected</span>}
 
                     {/* 🔒 Locked Select if isLocationLocked is true */}
                     <Select
                       value={shippingInfo.countryCode}
                       onValueChange={handleCountryChange}
-                    disabled={isLocationLocked}
+                      disabled={isLocationLocked}
                     >
                       <SelectTrigger className={`bg-slate-900/50 border-white/10 text-white ${isLocationLocked ? "opacity-50 cursor-not-allowed" : ""} `}>
                         <SelectValue placeholder="Select Country" />
@@ -475,9 +490,9 @@ export default function OrderCheckoutPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-6 space-y-4">
+              <CardContent className="p-4 sm:p-6 space-y-4">
                 {/* Pay Online */}
-                <div onClick={() => setPaymentMethod('online')} className={`relative p-5 border rounded-xl cursor-pointer transition-all duration-200 group ${paymentMethod === 'online' ? 'border-orange-500 bg-gradient-to-br from-orange-500/10 to-transparent ring-1 ring-orange-500/50' : 'border-white/10 hover:bg-white/5 hover:border-white/20'}`}>
+                <div onClick={() => setPaymentMethod('online')} className={`relative p-5  min-h-[120px] border rounded-xl cursor-pointer transition-all duration-200 group ${paymentMethod === 'online' ? 'border-orange-500 bg-gradient-to-br from-orange-500/10 to-transparent ring-1 ring-orange-500/50' : 'border-white/10 hover:bg-white/5 hover:border-white/20'}`}>
                   <div className="flex items-start gap-4">
                     <div className={`p-3 rounded-xl transition-colors ${paymentMethod === 'online' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-slate-800 text-slate-400'}`}>
                       <CreditCard className="h-6 w-6" />
@@ -517,14 +532,14 @@ export default function OrderCheckoutPage() {
 
           {/* SUMMARY */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-6 border-white/10 bg-slate-800/60 backdrop-blur-xl shadow-2xl">
+            <Card className="lg:sticky lg:top-6 border-white/10 bg-slate-800/60 backdrop-blur-xl shadow-2xl">
               <CardHeader className="border-b border-white/5 pb-4 bg-slate-900/30">
                 <CardTitle className="text-white flex items-center gap-2 text-lg">
                   <ShoppingBag className="text-orange-400 h-5 w-5" /> Order Summary
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-4 mb-6 max-h-48 sm:max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                   {items.map((item, idx) => (
                     <div key={idx} className="flex gap-4 border-b border-white/5 pb-4 last:border-0 last:pb-0">
                       <div className="h-14 w-14 rounded-lg overflow-hidden border border-white/10 shrink-0">
@@ -557,13 +572,14 @@ export default function OrderCheckoutPage() {
                     <span>{currencySymbol}{totalPayAmount.toFixed(2)}</span>
                   </div>
                 </div>
-
-                <Button onClick={handlePlaceOrder} disabled={isProcessing} className="w-full mt-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 h-12 text-lg font-bold shadow-lg shadow-orange-900/20 transition-all hover:scale-[1.02]">
-                  {isProcessing ? <><Loader2 className="animate-spin mr-2 h-5 w-5" /> Processing...</> : (paymentMethod === 'cod' ? 'Place Order' : `Pay ${currencySymbol}${totalPayAmount.toFixed(2)}`)}
-                </Button>
+                <div className="hidden lg:block">
+                  <Button onClick={handlePlaceOrder} disabled={isProcessing} className="w-full mt-6 h-14 sm:h-12 text-base sm:text-lg font-bold bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 font-bold shadow-lg shadow-orange-900/20 transition-all hover:scale-[1.02]">
+                    {isProcessing ? <><Loader2 className="animate-spin mr-2 h-5 w-5" /> Processing...</> : (paymentMethod === 'cod' ? 'Place Order' : `Pay ${currencySymbol}${totalPayAmount.toFixed(2)}`)}
+                  </Button>
+                </div>
 
                 {shippingInfo.city && shippingInfo.stateCode && (
-                  <div className="mt-4 flex items-center justify-center gap-2 text-xs text-green-400 bg-green-900/20 py-2 rounded border border-green-500/20">
+                  <div className="mt-4 flex items-center justify-center gap-2 text-[11px] sm:text-xs text-green-400 bg-green-900/20 py-2 rounded border border-green-500/20">
                     <MapPin className="h-3 w-3" /> Delivering to: {shippingInfo.city}, {shippingInfo.countryCode}
                   </div>
                 )}
@@ -583,6 +599,55 @@ export default function OrderCheckoutPage() {
           </div>
         </div>
       </div>
+      {/* 📱 Mobile Sticky Pay Bar */}
+      {/* 📱 Mobile Glass Pay Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 lg:hidden">
+        <div
+          className="
+      bg-white/5
+      backdrop-blur-2xl
+      border-t border-white/10
+      shadow-[0_-8px_40px_rgba(0,0,0,0.6)]
+    "
+        >
+          <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+
+            {/* 💰 Price Info */}
+            <div className="flex flex-col leading-tight">
+              <span className="text-[11px] uppercase tracking-widest text-slate-400">
+                Total
+              </span>
+              <span className="text-lg font-bold text-white">
+                {currencySymbol}{totalPayAmount.toFixed(2)}
+              </span>
+            </div>
+
+            {/* 🔥 Pay Button */}
+            <Button
+              onClick={handlePlaceOrder}
+              disabled={isProcessing}
+              className="
+          h-12 px-6 text-base font-bold rounded-2xl
+          bg-gradient-to-r from-orange-600 to-red-600
+          hover:from-orange-500 hover:to-red-500
+          shadow-lg shadow-orange-900/40
+          transition-all duration-200
+          hover:scale-[1.02]
+        "
+            >
+              {isProcessing ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : paymentMethod === "cod" ? (
+                "Place Order"
+              ) : (
+                "Pay Now"
+              )}
+            </Button>
+
+          </div>
+        </div>
+      </div>
+
       <PhoneVerificationModal
         isOpen={showVerifyModal}
         onClose={() => setShowVerifyModal(false)}
@@ -591,6 +656,7 @@ export default function OrderCheckoutPage() {
           setShippingInfo(prev => ({ ...prev, phone: verifiedPhone }))
         }}
       />
+
     </div>
   );
 }

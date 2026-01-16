@@ -106,14 +106,13 @@ export default function DashboardOrders() {
     });
   }, [orders, searchQuery, statusFilter]);
 
-  // Styles for Status Badges
+  // Styles for Status Badges (Updated for better readability)
   const getStatusStyles = (status: string) => {
-    console.log(status)
     switch (status) {
-      case "Delivered": return "bg-green-500/10 text-green-400 border-green-500/20";
-      case "Shipped": return "bg-blue-500/10 text-blue-400 border-blue-500/20";
-      case "Processing": return "bg-orange-500/10 text-orange-400 border-orange-500/20";
-      case "Cancelled": return "bg-red-500/10 text-red-400 border-red-500/20";
+      case "Delivered": return "bg-green-500/20 text-green-400 border-green-500/30";
+      case "Shipped": return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+      case "Processing": return "bg-orange-500/20 text-orange-400 border-orange-500/30";
+      case "Cancelled": return "bg-red-500/20 text-red-400 border-red-500/30";
       default: return "bg-slate-700/50 text-slate-300 border-slate-600/50";
     }
   };
@@ -156,36 +155,37 @@ export default function DashboardOrders() {
   return (
     <div className="space-y-8 relative pb-20">
 
-      {/* ✅ BACKGROUND */}
+      {/* BACKGROUND */}
       <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
       </div>
 
+      {/* HEADER & FILTERS */}
       <div className="flex flex-col gap-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl font-bold tracking-tight text-white"
+            className="text-3xl md:text-4xl font-bold tracking-tight text-white"
           >
             {t("orders.title")}
           </motion.h1>
 
-          {/* Filter Controls */}
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
+          {/* Filter Controls (Full width on mobile for easy tapping) */}
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 placeholder={t("orders.search")}
-                className="pl-10 bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500 focus:ring-orange-500/50 focus:border-orange-500/50 h-10 rounded-full"
+                className="pl-10 bg-slate-800/50 border-white/10 text-white placeholder:text-slate-500 h-11 sm:h-10 rounded-xl w-full"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px] bg-slate-800/50 border-white/10 text-slate-200 h-10 rounded-full">
+              <SelectTrigger className="w-full sm:w-[160px] bg-slate-800/50 border-white/10 text-slate-200 h-11 sm:h-10 rounded-xl">
                 <div className="flex items-center gap-2">
                   <Filter className="h-4 w-4 text-slate-400" />
                   <SelectValue placeholder={t("orders.status")} />
@@ -202,6 +202,7 @@ export default function DashboardOrders() {
         </div>
       </div>
 
+      {/* ORDERS LIST */}
       <div className="space-y-4">
         {loading ? (
           <div className="flex justify-center py-20">
@@ -218,44 +219,47 @@ export default function DashboardOrders() {
               <Link to={`/orders/${order.id}`} state={{ orderData: order.rawData }}>
                 <Card className="overflow-hidden hover:bg-white/5 transition-colors cursor-pointer group bg-slate-800/40 backdrop-blur-md border border-white/10 shadow-lg">
                   <CardContent className="p-0">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-5 p-5 sm:p-6">
-                      {/* Image */}
-                      <div className="h-20 w-20 rounded-xl bg-slate-700 overflow-hidden flex-shrink-0 border border-white/5 shadow-inner">
-                        <img src={order.image} alt="Order Item" className="h-full w-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                      </div>
-
-                      {/* Details */}
-                      <div className="flex-1 min-w-0 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-bold text-lg text-white truncate flex items-center gap-2">
-                            {t("orders.orderNumber")}{order.id}
-                          </h3>
-                          <span className="sm:hidden font-bold text-white">{order.total}</span>
+                    <div className="flex flex-col sm:flex-row gap-5 p-5">
+                      
+                      {/* TOP PART: Image & Info */}
+                      <div className="flex items-start gap-4 flex-1">
+                        {/* Image */}
+                        <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-xl bg-slate-700 overflow-hidden flex-shrink-0 border border-white/5 shadow-inner">
+                          <img src={order.image} alt="Order Item" className="h-full w-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                         </div>
-                        <p className="text-sm text-slate-300 truncate">
-                          {order.items.join(", ")}
-                        </p>
-                        <p className="text-xs text-slate-500 flex items-center gap-1.5">
-                          <Clock className="w-3 h-3" />
-                          {t("orders.placedOn")} <span className="text-slate-400">{order.date}</span>
-                        </p>
+
+                        {/* Details */}
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-lg text-white truncate flex items-center gap-2">
+                              {t("orders.orderNumber")}{order.id}
+                            </h3>
+                          </div>
+                          
+                          <p className="text-sm text-slate-300 line-clamp-2 leading-relaxed">
+                            {order.items.join(", ")}
+                          </p>
+                          
+                          <p className="text-xs text-slate-500 flex items-center gap-1.5 pt-1">
+                            <Clock className="w-3 h-3" />
+                            {t("orders.placedOn")} <span className="text-slate-400">{order.date}</span>
+                          </p>
+                        </div>
                       </div>
 
-                      {/* Status & Total (Desktop) */}
-                      <div className="flex items-center justify-between sm:justify-end gap-6 sm:gap-8 mt-2 sm:mt-0 w-full sm:w-auto">
+                      {/* BOTTOM PART: Status & Price (Stacked on Mobile, Side by Side on Desktop) */}
+                      <div className="flex items-center justify-between sm:flex-col sm:items-end sm:justify-center sm:gap-2 mt-2 sm:mt-0 pt-4 sm:pt-0 border-t border-white/5 sm:border-0">
+                        
                         <Badge className={`px-3 py-1 text-xs font-medium border ${getStatusStyles(order.status)}`}>
                           {getStatusIcon(order.status)}
                           {order.status}
                         </Badge>
 
-                        <div className="hidden sm:block text-right">
-                          <span className="block font-bold text-white text-lg">{order.total}</span>
+                        <div className="text-right">
+                          <span className="block font-bold text-white text-lg sm:text-xl">{order.total}</span>
                         </div>
-
-                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-all">
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
                       </div>
+
                     </div>
                   </CardContent>
                 </Card>
@@ -263,7 +267,7 @@ export default function DashboardOrders() {
             </motion.div>
           ))
         ) : (
-          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-3xl bg-white/5 text-center">
+          <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-3xl bg-white/5 text-center px-6">
             <Package className="h-12 w-12 text-slate-600 mb-4" />
             <h3 className="text-xl font-bold text-white mb-2">{t("orders.noResults")}</h3>
             <p className="text-slate-400">You haven't placed any orders yet.</p>

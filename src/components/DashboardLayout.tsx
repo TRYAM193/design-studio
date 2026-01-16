@@ -13,14 +13,17 @@ export function DashboardLayout() {
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
       </div>
 
-      {/* SIDEBAR: No longer needs props */}
+      {/* SIDEBAR / BOTTOM BAR */}
       <DashboardSidebar />
 
       {/* MAIN CONTENT */}
+      {/* Mobile: pl-0 (Full width), pb-24 (Space for Bottom Bar)
+          Desktop: sm:pl-20 (Space for Collapsed Sidebar), sm:pb-0 (No Bottom Bar)
+      */}
       <main className="
         relative z-10 min-h-screen transition-all duration-300 ease-in-out
         pl-0 sm:pl-20 
-        pb-20 sm:pb-0
+        pb-24 sm:pb-0
       ">
         <div className="container mx-auto p-4 sm:p-8 max-w-7xl text-slate-200">
           <Outlet />

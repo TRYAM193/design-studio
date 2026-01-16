@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, orderBy, getDocs, limit, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebase";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Paintbrush, ChevronRight, Check, Truck, ShieldCheck, Globe } from "lucide-react";
+import { Loader2, Paintbrush, ChevronRight, Check, Truck, Star, ShieldCheck, Globe, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { COLOR_MAP } from "@/lib/colorMaps";
@@ -67,6 +67,51 @@ export default function ProductDetails() {
     const [region, setRegion] = useState<"IN" | "US" | "GB" | "EU" | "CA">("IN");
     const [checkingLocation, setCheckingLocation] = useState(true);
 
+    // Reviews
+    const [reviews, setReviews] = useState<any[]>([])
+    const [reviewsLoading, setReviewsLoading] = useState(true)
+
+    const [showReviewModal, setShowReviewModal] = useState(false)
+    const [rating, setRating] = useState(0)
+    const [name, setName] = useState("")
+    const [comment, setComment] = useState("")
+    const [aiLoading, setAiLoading] = useState(false)
+    const [autoReviewCount, setAutoReviewCount] = useState(0)
+
+    const AUTO_REVIEW_MAP: Record<number, string[]> = {
+        5: [
+            "Absolutely loved this product! The quality exceeded my expectations and the fit was perfect.",
+            "Amazing quality and design. Totally worth the purchase and I’d definitely recommend it.",
+        ],
+        4: [
+            "Really good product overall. Quality is great, just a small improvement could make it perfect.",
+            "Nice fit and material. Happy with the purchase and would buy again.",
+        ],
+        3: [
+            "Decent product. It does the job, though there’s room for improvement in some areas.",
+            "Average experience. Not bad, but not outstanding either.",
+        ],
+        2: [
+            "The product was okay but didn’t fully meet my expectations.",
+            "Quality could be improved. Hoping for better refinement in the future.",
+        ],
+        1: [
+            "Unfortunately, this product didn’t meet my expectations.",
+            "Not satisfied with the overall quality. Could be improved significantly.",
+        ],
+    }
+
+
+
+    const totalReviews = reviews.length
+
+    const averageRating =
+        totalReviews > 0
+            ? reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+            : 0
+
+
+
     const currencyConfig = {
         IN: { symbol: "₹", label: "INR" },
         US: { symbol: "$", label: "USD" },
@@ -75,6 +120,22 @@ export default function ProductDetails() {
         CA: { symbol: "C$", label: "CAD" },
     };
 
+    const fetchReviews = async () => {
+        if (!productId) return
+
+        setReviewsLoading(true)
+
+        const q = query(
+            collection(db, "base_products", productId, "reviews"),
+            orderBy("createdAt", "desc"),
+            limit(10)
+        )
+
+        const snap = await getDocs(q)
+        setReviews(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+
+        setReviewsLoading(false)
+    }
     // 1️⃣ Fetch Product Data
     useEffect(() => {
         async function fetchProduct() {
@@ -117,6 +178,7 @@ export default function ProductDetails() {
             }
         }
         fetchProduct();
+        fetchReviews();
     }, [productId, region]);
 
     // 2️⃣ Automatic IP-Based Region Detection
@@ -155,6 +217,73 @@ export default function ProductDetails() {
     if (loading) return <div className="h-screen flex items-center justify-center bg-[#090A0F]"><Loader2 className="animate-spin text-orange-500" /></div>;
     if (!product) return <div className="h-screen flex items-center justify-center bg-[#090A0F] text-slate-400">Product not found</div>;
 
+    const handleSubmitReview = async () => {
+        if (!productId) return
+
+        if (rating === 0) {
+            toast.error("Please select a rating")
+            return
+        }
+
+        if (comment.trim().length < 20) {
+            toast.error("Review must be at least 20 characters")
+            return
+        }
+
+        await addDoc(
+            collection(db, "base_products", productId, "reviews"),
+            {
+                rating,
+                name: name || "Anonymous",
+                comment,
+                verified: false,
+                createdAt: serverTimestamp(),
+            }
+        )
+
+        toast.success("Thank you for your review!")
+
+        setRating(0)
+        setName("")
+        setComment("")
+        setAutoReviewCount(0)
+        setShowReviewModal(false)
+
+        fetchReviews()
+    }
+
+    const handleAutoReview = () => {
+        if (rating === 0) {
+            toast.error("Please select a rating first")
+            return
+        }
+
+        if (autoReviewCount >= 2) {
+            toast.info("Auto review limit reached")
+            return
+        }
+
+        setAiLoading(true)
+
+        setTimeout(() => {
+            const options = AUTO_REVIEW_MAP[rating]
+            const randomText =
+                options[autoReviewCount]
+
+            setComment(randomText)
+            setAutoReviewCount((prev) => prev + 1)
+            setAiLoading(false)
+        }, 200)
+    }
+
+    const handleClose = () => {
+        setShowReviewModal(false)
+        setAutoReviewCount(0)
+        setComment('')
+        setRating(0)
+    }
+
+
     const galleryImages = [
         product.mockups?.front,
         product.mockups?.back,
@@ -171,7 +300,7 @@ export default function ProductDetails() {
     return (
         // 🌌 COSMIC BACKGROUND
         <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#1B2735] via-[#090A0F] to-[#000000] text-slate-200">
-            
+
             {/* GLASS HEADER */}
             <div className="p-4 border-b border-white/5 sticky top-0 bg-[#090A0F]/80 backdrop-blur-xl z-20 flex justify-between items-center px-4 md:px-10 shadow-lg shadow-black/50">
                 <div className="flex items-center gap-2 text-sm text-slate-400">
@@ -182,11 +311,11 @@ export default function ProductDetails() {
             </div>
 
             <div className="max-w-7xl mx-auto p-6 md:p-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:gap-16">
 
                     {/* 📸 LEFT: GALACTIC IMAGE DISPLAY */}
                     <div className="space-y-6">
-                        <div className="aspect-[3/4] bg-white/5 rounded-2xl overflow-hidden border border-white/10 relative shadow-[0_0_60px_-15px_rgba(99,102,241,0.15)] group">
+                        <div className="aspect-[4/5] sm:aspect-[3/4] bg-white/5 rounded-2xl overflow-hidden border border-white/10 relative shadow-[0_0_60px_-15px_rgba(99,102,241,0.15)] group">
                             <img
                                 src={activeImage || "https://placehold.co/600x800?text=No+Image"}
                                 alt={product.title}
@@ -194,16 +323,16 @@ export default function ProductDetails() {
                             />
                         </div>
                         {uniqueGallery.length > 1 && (
-                            <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                            <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                                 {uniqueGallery.map((img, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setActiveImage(img)}
                                         className={cn(
-                                            "w-20 h-20 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all duration-300",
-                                            activeImage === img 
-                                            ? "border-orange-500 shadow-[0_0_15px_-3px_rgba(249,115,22,0.5)] scale-105" 
-                                            : "border-white/5 hover:border-white/20 bg-white/5"
+                                            "w-16 h-16 sm:w-20 sm:h-20 snap-start rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all duration-300",
+                                            activeImage === img
+                                                ? "border-orange-500 shadow-[0_0_15px_-3px_rgba(249,115,22,0.5)] scale-105"
+                                                : "border-white/5 hover:border-white/20 bg-white/5"
                                         )}
                                     >
                                         <img src={img} alt="" className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" />
@@ -235,11 +364,11 @@ export default function ProductDetails() {
                             </div>
 
                             {/* TITLE WITH MYSTICAL GRADIENT */}
-                            <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-indigo-200 to-slate-100 drop-shadow-sm">
+                            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-indigo-200 to-slate-100 drop-shadow-sm">
                                 {product.title}
                             </h1>
 
-                            <p className="text-slate-400 text-lg leading-relaxed font-light border-l-2 border-indigo-500/30 pl-4">
+                            <p className="text-sm sm:text-base md:text-lg text-slate-400 text-lg leading-relaxed font-light border-l-2 border-indigo-500/30 pl-4">
                                 {product.description}
                             </p>
                         </div>
@@ -249,7 +378,7 @@ export default function ProductDetails() {
                             {checkingLocation ? (
                                 <span className="text-lg text-slate-500 animate-pulse">Divining price...</span>
                             ) : (
-                                <span className="text-5xl font-bold text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.3)]">
+                                <span className="text-4xl sm:text-5xl font-bold text-orange-400 drop-shadow-[0_0_15px_rgba(251,146,60,0.3)]">
                                     {currentSymbol}{currentPrice.toFixed(2)}
                                 </span>
                             )}
@@ -271,13 +400,13 @@ export default function ProductDetails() {
                                     const hex = COLOR_MAP[color as keyof typeof COLOR_MAP] || "#000000"
                                     const isActive = selectedColor === color
                                     return (
-                                        <button 
-                                            key={color} 
-                                            onClick={() => setSelectedColor(color)} 
+                                        <button
+                                            key={color}
+                                            onClick={() => setSelectedColor(color)}
                                             className={cn(
-                                                "w-10 h-10 rounded-full transition-all relative flex items-center justify-center shadow-lg",
+                                                "w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all relative flex items-center justify-center shadow-lg",
                                                 isActive ? "ring-2 ring-orange-500 ring-offset-2 ring-offset-[#090A0F] scale-110" : "hover:scale-110 ring-1 ring-white/10 hover:ring-white/30"
-                                            )} 
+                                            )}
                                             style={{ backgroundColor: hex }}
                                         >
                                             {isActive && <FiCheckCircle className="text-orange-500 absolute -top-1.5 -right-1.5 bg-[#090A0F] rounded-full text-lg shadow-sm" />}
@@ -294,18 +423,18 @@ export default function ProductDetails() {
                                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                                     Size
                                 </span>
-                                
+
                                 {activeSizeChart && (
-                                    <button 
+                                    <button
                                         onClick={() => setShowSizeChart(true)}
                                         className="text-xs text-orange-400 hover:text-orange-300 transition-colors font-semibold flex items-center gap-1.5 group"
                                     >
-                                        <Paintbrush className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" /> 
+                                        <Paintbrush className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
                                         Size Guide
                                     </button>
                                 )}
                             </div>
-                            <div className="grid grid-cols-5 gap-3">
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                                 {sizes.map((size) => (
                                     <button
                                         key={size}
@@ -342,6 +471,95 @@ export default function ProductDetails() {
                             </p>
                         </div>
 
+                        <div className="border-t border-white/10 pt-10 space-y-8">
+                            <h3 className="text-xl font-bold text-slate-200">
+                                Customer Reviews
+                            </h3>
+
+                            {reviewsLoading ? (
+                                <p className="text-slate-500">Loading reviews...</p>
+                            ) : reviews.length === 0 ? (
+                                <div className="text-center space-y-4 py-10 bg-white/5 rounded-xl border border-white/10">
+                                    <div className="flex justify-center gap-1 text-slate-600">
+                                        {[1, 2, 3, 4, 5].map(i => (
+                                            <Star key={i} className="w-6 h-6" />
+                                        ))}
+                                    </div>
+
+                                    <p className="text-slate-400">No reviews yet</p>
+
+                                    <Button onClick={() => setShowReviewModal(true)} className="rounded-full px-4 md:px-6 h-9 md:h-10 text-sm md:text-base bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/40 hover:shadow-orange-700/50 hover:scale-105 active:scale-95 transition-all duration-300 group border-0 relative overflow-hidden">
+                                        Be the first to write a review
+                                    </Button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <div className="flex gap-1">
+                                                {[1, 2, 3, 4, 5].map(i => (
+                                                    <Star
+                                                        key={i}
+                                                        className={cn(
+                                                            "w-4 h-4",
+                                                            i <= Math.round(averageRating)
+                                                                ? "fill-orange-400 text-orange-400"
+                                                                : "text-slate-600"
+                                                        )}
+                                                    />
+                                                ))}
+                                            </div>
+
+                                            <p className="text-sm text-slate-400">
+                                                {averageRating.toFixed(1)} · {totalReviews} reviews
+                                            </p>
+                                        </div>
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setShowReviewModal(true)}
+                                            className="rounded-full px-4 md:px-6 h-9 md:h-10 text-sm md:text-base bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/40 hover:shadow-orange-700/50 hover:scale-105 active:scale-95 transition-all duration-300 group border-0 relative overflow-hidden"
+                                        >
+                                            Write a review
+                                        </Button>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {reviews.map(review => (
+                                            <div
+                                                key={review.id}
+                                                className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-2"
+                                            >
+                                                <p className="font-semibold text-slate-200">
+                                                    {review.name}
+                                                </p>
+
+                                                <div className="flex gap-1">
+                                                    {[1, 2, 3, 4, 5].map(i => (
+                                                        <Star
+                                                            key={i}
+                                                            className={cn(
+                                                                "w-3.5 h-3.5",
+                                                                i <= review.rating
+                                                                    ? "fill-orange-400 text-orange-400"
+                                                                    : "text-slate-600"
+                                                            )}
+                                                        />
+                                                    ))}
+                                                </div>
+
+                                                <p className="text-sm text-slate-400">
+                                                    {review.comment}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+
                         {/* ICONS FOOTER */}
                         <div className="grid grid-cols-2 gap-4 pt-8 border-t border-white/10">
                             <div className="flex items-center gap-3 text-sm text-slate-400 group">
@@ -362,14 +580,14 @@ export default function ProductDetails() {
             {showSizeChart && activeSizeChart && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
                     <div className="bg-[#0f111a] border border-white/10 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden relative">
-                        
+
                         {/* Modal Header */}
                         <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
                             <h3 className="font-bold text-lg text-slate-200 flex items-center gap-2">
                                 <span className="w-1 h-6 bg-orange-500 rounded-full"></span>
                                 Size Guide (Inches)
                             </h3>
-                            <button 
+                            <button
                                 onClick={() => setShowSizeChart(false)}
                                 className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white"
                             >
@@ -413,6 +631,135 @@ export default function ProductDetails() {
                             <p className="text-xs text-slate-500 mt-5 text-center font-mono">
                                 *Measurements may vary by +/- 0.5 inches due to cosmic shifts.
                             </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showReviewModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+
+                    <div className="bg-[#0f111a] border border-white/10 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden relative">
+
+                        {/* ✨ MODAL HEADER (MATCHES SIZE CHART STYLE) */}
+                        <div className="p-5 border-b border-white/10 flex justify-between items-center bg-white/5">
+                            <h3 className="font-bold text-lg text-slate-200 flex items-center gap-2">
+                                <span className="w-1 h-6 bg-orange-500 rounded-full"></span>
+                                Write a Review
+                            </h3>
+                            <button
+                                onClick={handleClose}
+                                className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* 🌌 MODAL BODY */}
+                        <div className="p-6 space-y-6">
+
+                            {/* ⭐ STAR RATING */}
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+                                    Rating
+                                </p>
+                                <div className="flex gap-2">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <button
+                                            key={i}
+                                            onClick={() => setRating(i)}
+                                            className="transition-transform hover:scale-110"
+                                        >
+                                            <Star
+                                                className={cn(
+                                                    "w-6 h-6",
+                                                    rating >= i
+                                                        ? "fill-orange-400 text-orange-400 drop-shadow-[0_0_6px_rgba(251,146,60,0.6)]"
+                                                        : "text-slate-600"
+                                                )}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* 👤 NAME INPUT */}
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+                                    Name
+                                </p>
+                                <input
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Your name (optional)"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+                                />
+                            </div>
+
+                            {/* 💬 REVIEW TEXT */}
+                            <div className="space-y-2">
+                                <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+                                    Review
+                                </p>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleAutoReview}
+                                    disabled={aiLoading || autoReviewCount >= 2}
+                                    className="flex items-center gap-2 border-white/10 bg-white/5 hover:bg-white/10 text-slate-300"
+                                >
+                                    {aiLoading ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin text-orange-400" />
+                                            Generating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="w-4 h-4 text-orange-400" />
+                                            Auto-write review
+                                        </>
+                                    )}
+                                </Button>
+                                {autoReviewCount >= 2 && (
+                                    <span className="text-xs font-mono text-slate-500 flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
+                                        AI assist used up — feel free to edit manually
+                                    </span>
+                                )}
+
+
+                                <textarea
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
+                                    placeholder="Share your experience with this product..."
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 h-28 text-slate-200 placeholder:text-slate-500 resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/40"
+                                />
+                                <p className="text-[10px] text-slate-500 font-mono">
+                                    *Minimum 20 characters
+                                </p>
+                            </div>
+
+                            {/* 🔥 ACTION BUTTONS */}
+                            <div className="flex justify-end gap-3 pt-2">
+                                <Button
+                                    variant="ghost"
+                                    onClick={handleClose}
+                                    className="text-slate-400 hover:text-slate-200 hover:bg-white/10 border border-transparent hover:border-white/10 transition-all duration-200"
+                                >
+                                    Cancel
+                                </Button>
+
+                                <Button
+                                    onClick={handleSubmitReview}
+                                    className="relative overflow-hidden border-0"
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-red-600 transition-transform group-hover:scale-105"></div>
+                                    <span className="relative z-10 text-white font-semibold">
+                                        Submit Review
+                                    </span>
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>

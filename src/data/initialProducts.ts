@@ -8,7 +8,7 @@ export const INITIAL_PRODUCTS = [
     title: "Men's Classic Premium Tee",
     category: "Men",
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmen-classic-tee?alt=media&token=eaffe62d-ccfa-4ea0-a9a9-4fb20312d00e',
-    model3d: "/assets/t-shirt.glb",
+    model3d: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/3dModels%2Ft-shirt.glb?alt=media&token=8ac80d94-daaf-4b0b-85e3-cd6128c53c3d",
     description: "A timeless classic. Soft cotton, reliable fit.",
 
     print_areas: {
@@ -104,8 +104,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     mockups: {
-      front: "/assets/mockups/men-classic-tee-front.png",
-      back: "/assets/mockups/men-classic-tee-back.png"
+      front: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Ftshirt%2Fmen-classic-tee-front.png?alt=media&token=f9c2b0eb-2936-4e8d-9e40-21d459c58226",
+      back: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Ftshirt%2Fmen-classic-tee-back.png?alt=media&token=1aff134c-b429-4b20-8223-f5e9c4b655d5"
     },
 
     print_area_2d: {
@@ -153,8 +153,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     mockups: {
-      front: "/assets/mockups/men-oversized-front.png",
-      back: "/assets/mockups/men-oversized-back.png"
+      front: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Foversized-tshirt%2Fmen-oversized-front.png?alt=media&token=5dc44a83-c25e-45f0-b600-d0d6e3f63862",
+      back: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Foversized-tshirt%2Fmen-oversized-back.png?alt=media&token=50554471-8000-480f-b9d1-fd7f959f3de1"
     },
 
     canvas_size: {
@@ -250,8 +250,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     mockups: {
-      front: "/assets/mockups/men-hoodie-front.png",
-      back: "/assets/mockups/men-hoodie-back.png"
+      front: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Fhoodie%2Fmen-hoodie-front.png?alt=media&token=e30603ad-d2bd-4c7c-bc7f-8693b056eec6",
+      back: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Fhoodie%2Fmen-hoodie-back.png?alt=media&token=5ab85d3c-863e-4870-9909-7d3941955529"
     },
 
     canvas_size: {
@@ -351,7 +351,7 @@ export const INITIAL_PRODUCTS = [
     title: "Women's Fitted Premium Tee",
     category: "Women",
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fwomen-classic-tee?alt=media&token=ec5f29b8-03fc-4879-80f9-608b99adf197',
-    model3d: "/assets/t-shirt.glb",
+    model3d: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/3dModels%2Ft-shirt.glb?alt=media&token=8ac80d94-daaf-4b0b-85e3-cd6128c53c3d",
     description: "A feminine cut with shorter sleeves and a subtle waist curve.",
 
     print_areas: {
@@ -360,8 +360,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     mockups: {
-      front: "/assets/mockups/women-classic-tee-front.png",
-      back: "/assets/mockups/women-classic-tee-back.png"
+      front: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Ftshirt%2Fwomen-classic-tee-front.png?alt=media&token=72509783-e813-42b5-a84b-44374c5ec21f",
+      back: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Ftshirt%2Fwomen-classic-tee-back.png?alt=media&token=427e37fd-13c8-4302-8bf5-d1f4c000adc6"
     },
 
     canvas_size: {
@@ -458,7 +458,7 @@ export const INITIAL_PRODUCTS = [
     title: "Classic Ceramic Mug (11oz)",
     category: "Accessories",
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Fmug-ceramic-11oz?alt=media&token=7a07c2c7-78d6-4610-8e09-aee10ceb5bd1',
-    model3d: "/assets/mug.glb",
+    model3d: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/3dModels%2Fmug.glb?alt=media&token=e2c6cffb-132d-4a2c-84ab-0f239e8aa11a",
     description: "Durable ceramic mug with high-quality printing.",
 
     print_areas: {
@@ -479,9 +479,9 @@ export const INITIAL_PRODUCTS = [
     },
 
     mockups: {
-      front: "/assets/mockups/mug-front.png",
-      left: "/assets/mockups/mug-left.png",
-      right: "/assets/mockups/mug-right.png"
+      front: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Fmug%2Fmug-front.png?alt=media&token=b97278ce-579e-40de-8a7f-f5bef7424a7a",
+      left: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Fmug%2Fmug-left.png?alt=media&token=36975115-7689-4c9b-ada3-5ec61ea94aae",
+      right: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Fmug%2Fmug-right.png?alt=media&token=24896456-f472-49cb-ae91-0b9a8f9a0c03"
     },
 
     print_area_2d: {
@@ -529,7 +529,7 @@ export const INITIAL_PRODUCTS = [
     title: "Eco Canvas Tote Bag",
     category: "Accessories",
     image: 'https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/catalog%2Ftote-bag-canvas?alt=media&token=bd508609-096a-443c-a6a1-196390ceefdc',
-    model3d: "/assets/tote.glb",
+    model3d: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/3dModels%2Ftote.glb?alt=media&token=71441506-008c-4ebf-aa13-23119b8ac577",
     description: "Heavy duty canvas tote for daily use.",
 
     print_areas: {
@@ -551,8 +551,8 @@ export const INITIAL_PRODUCTS = [
     },
 
     mockups: {
-      front: "/assets/mockups/tote-bag.png",
-      back: "/assets/mockups/tote-bag.png"
+      front: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Ftote-bag%2Ftote-bag.png?alt=media&token=1362dba6-debb-40a9-a893-c20aee247e0b",
+      back: "https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/mockups%2Ftote-bag%2Ftote-bag.png?alt=media&token=1362dba6-debb-40a9-a893-c20aee247e0b"
     },
 
     print_area_2d: {

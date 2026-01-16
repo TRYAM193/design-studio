@@ -37,7 +37,7 @@ export function DashboardSidebar() {
   const { user, signOut, isAuthenticated } = useAuth();
   const { cartCount } = useCart();
   const { t } = useTranslation();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [userProfile, setUserProfile] = useState<{ name?: string; image?: string } | null>(null);
@@ -67,13 +67,14 @@ export function DashboardSidebar() {
     { icon: Package, label: t("nav.orders"), path: "/dashboard/orders", isSpecial: false },
   ];
 
+  // Mobile Menu Layout: Home, Designs | NEW (Special) | Projects, Orders
   const mobileNavItems = [
-    ...navItems.slice(0, 2),
+    ...navItems.slice(0, 3),
     { icon: Plus, label: "New", path: "/design", isSpecial: true },
-    ...navItems.slice(2, 4),
+    ...navItems.slice(3, 4),
   ];
 
-  // ✅ UPDATED: Profile Menu now includes Settings Link
+  // ✅ Profile Dropdown Menu Content
   const ProfileMenuContent = () => (
     <div className="bg-[#0f172a] text-slate-200 border border-white/10 rounded-md w-56">
       <div className="flex items-center gap-2 p-3 border-b border-white/10">
@@ -99,9 +100,9 @@ export function DashboardSidebar() {
       <DropdownMenuSeparator className="bg-white/10" />
 
       <DropdownMenuItem onClick={() => {
-        signOut()
-        navigate('/')
-        }} className="text-red-400 focus:bg-red-900/20 cursor-pointer m-1">
+        signOut();
+        navigate('/');
+      }} className="text-red-400 focus:bg-red-900/20 cursor-pointer m-1">
         <LogOut className="mr-2 h-4 w-4" />
         <span>{t("nav.logout")}</span>
       </DropdownMenuItem>
@@ -110,7 +111,7 @@ export function DashboardSidebar() {
 
   return (
     <>
-      {/* DESKTOP SIDEBAR */}
+      {/* 🖥️ DESKTOP SIDEBAR (Hidden on Mobile) */}
       <aside
         className={`hidden sm:flex fixed z-30 top-0 left-0 h-screen bg-[#0f172a]/95 backdrop-blur-xl border-r border-white/5 flex-col py-6 transition-all duration-300 ease-in-out ${isCollapsed ? "w-20 px-2 items-center" : "w-64 px-4"
           }`}
@@ -133,9 +134,10 @@ export function DashboardSidebar() {
           )}
         </Link>
 
+        {/* ✅ Start Designing Button (OPENS IN NEW TAB) */}
         <div className={`mb-6 w-50 ${isCollapsed ? "flex justify-center rounded-full" : ""}`}>
           <Button
-          onClick={() => window.open('/design')}
+            onClick={() => window.open('/design', '_blank')}
             className={`bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white shadow-lg shadow-orange-900/20 transition-all duration-300 ${isCollapsed ? "h-10 w-10 rounded-full p-0" : "w-full rounded-xl h-10 font-medium"
               }`}
           >
@@ -159,8 +161,8 @@ export function DashboardSidebar() {
                     <Button
                       variant="ghost"
                       className={`h-10 mb-1 transition-all duration-200 ${isCollapsed
-                          ? "w-10 px-0 justify-center rounded-xl"
-                          : "w-full justify-start rounded-lg"
+                        ? "w-10 px-0 justify-center rounded-xl"
+                        : "w-full justify-start rounded-lg"
                         } ${isActive(item.path)
                           ? "bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 hover:text-blue-300"
                           : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
@@ -183,8 +185,8 @@ export function DashboardSidebar() {
                   <Button
                     variant="ghost"
                     className={`h-10 transition-all duration-200 relative ${isCollapsed
-                        ? "w-10 px-0 justify-center rounded-xl"
-                        : "w-full justify-start rounded-lg"
+                      ? "w-10 px-0 justify-center rounded-xl"
+                      : "w-full justify-start rounded-lg"
                       } ${isActive('/dashboard/cart')
                         ? "bg-blue-600/10 text-blue-400"
                         : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
@@ -242,33 +244,46 @@ export function DashboardSidebar() {
         </div>
       </aside>
 
-      {/* MOBILE BOTTOM BAR */}
-      <div className="sm:hidden fixed z-50 bottom-0 left-0 w-full h-16 bg-[#0f172a]/95 backdrop-blur-xl border-t border-white/10 flex items-center justify-around px-2 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
-        {mobileNavItems.map((item) => (
-          <Link key={item.path} to={item.path}>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={
-                item.isSpecial
-                  ? "bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-full h-12 w-12 -translate-y-4 shadow-lg shadow-orange-900/50 border-4 border-[#0f172a]"
-                  : `text-slate-500 hover:text-slate-200 ${isActive(item.path) ? "text-blue-400" : ""}`
-              }
-            >
-              <item.icon className={item.isSpecial ? "h-6 w-6" : "h-5 w-5"} />
-            </Button>
-          </Link>
-        ))}
+      {/* 📱 MOBILE BOTTOM BAR (Visible < 640px) */}
+      <div className="sm:hidden fixed z-50 bottom-0 left-0 w-full h-16 bg-[#0f172a]/95 backdrop-blur-xl border-t border-white/10 flex items-center justify-around px-2 pb-[env(safe-area-inset-bottom)] shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+        {mobileNavItems.map((item) => {
+          // ✅ SPECIAL: If it's the "New" (+) button, use onClick -> window.open
+          if (item.isSpecial) {
+             return (
+               <button 
+                 key={item.path}
+                 onClick={() => window.open(item.path, '_blank')}
+                 aria-label={item.label}
+                 className="bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-full h-12 w-12 -translate-y-4 shadow-lg shadow-orange-900/50 border-4 border-[#0f172a] hover:scale-105 transition-transform flex items-center justify-center"
+               >
+                 <item.icon className="h-6 w-6" />
+               </button>
+             )
+          }
 
-        <Link to="/dashboard/cart">
+          // Normal Navigation
+          return (
+            <Link key={item.path} to={item.path} aria-label={item.label}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`text-slate-500 hover:text-slate-200 ${isActive(item.path) ? "text-blue-400 bg-blue-500/10 rounded-xl" : ""}`}
+              >
+                <item.icon className="h-5 w-5" />
+              </Button>
+            </Link>
+          )
+        })}
+
+        <Link to="/dashboard/cart" aria-label="Cart">
           <Button
             variant="ghost"
             size="icon"
-            className={`text-slate-500 hover:text-slate-200 relative ${isActive('/dashboard/cart') ? "text-blue-400" : ""}`}
+            className={`text-slate-500 hover:text-slate-200 relative ${isActive('/dashboard/cart') ? "text-blue-400 bg-blue-500/10 rounded-xl" : ""}`}
           >
             <ShoppingCart className="h-5 w-5" />
             {cartCount > 0 && (
-              <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full" />
+              <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full animate-pulse" />
             )}
           </Button>
         </Link>
@@ -276,14 +291,14 @@ export function DashboardSidebar() {
         {isAuthenticated ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 ml-1">
-                <Avatar className="h-7 w-7 border border-white/10">
+              <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 ml-1 border border-white/10">
+                <Avatar className="h-full w-full">
                   <AvatarImage src={userProfile?.image} />
                   <AvatarFallback className="bg-slate-800 text-slate-200 text-[10px]">{initials}</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="top" align="end" className="w-56 bg-[#0f172a] border-white/10 text-slate-200 p-0 mb-2">
+            <DropdownMenuContent side="top" align="end" className="w-56 bg-[#0f172a] border-white/10 text-slate-200 p-0 mb-4 mr-2">
               <ProfileMenuContent />
             </DropdownMenuContent>
           </DropdownMenu>
