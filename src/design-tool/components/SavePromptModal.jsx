@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { FiFile, FiCopy, FiX } from 'react-icons/fi';
-import "../styles/SavePromptModal.css";
+import { FiFile, FiCopy, FiX, FiSave, FiCornerUpLeft } from 'react-icons/fi';
 
 const SavePromptModal = ({ 
   isOpen, 
@@ -33,7 +32,7 @@ const SavePromptModal = ({
 
   // Handlers
   const handleUpdateClick = () => {
-    // "Update" -> Overwrite existing, keep same name (or update it if we add that field later)
+    // "Update" -> Overwrite existing, keep same name
     onConfirm(designName, false); 
   };
 
@@ -49,74 +48,125 @@ const SavePromptModal = ({
   };
 
   const modalContent = (
-    <div className="modal-backdrop">
-      <div className="modal-box">
-        <button className="close-btn" onClick={onClose}><FiX /></button>
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center px-4">
+      {/* Backdrop with Blur */}
+      <div 
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" 
+        onClick={!isSaving ? onClose : undefined}
+      />
 
-        <h3>{mode === 'choice' ? 'Save Changes' : 'Name Your Design'}</h3>
+      {/* Modal Box - Cosmic Theme */}
+      <div className="relative w-full max-w-md bg-[#0f172a] border border-white/10 rounded-2xl shadow-2xl p-6 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            {mode === 'choice' ? (
+                <>
+                    <FiSave className="text-orange-500" /> Save Changes
+                </>
+            ) : (
+                <>
+                    <FiFile className="text-orange-500" /> {isExistingDesign ? "Save Copy" : "Name Design"}
+                </>
+            )}
+          </h3>
+          <button 
+            onClick={onClose}
+            disabled={isSaving}
+            className="text-slate-400 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10"
+          >
+            <FiX size={20} />
+          </button>
+        </div>
         
         {/* --- MODE: CHOICE (Existing Design) --- */}
         {mode === 'choice' && (
-          <>
-            <p className="text-sm text-gray-500 mb-4">How would you like to save your changes?</p>
-            <div className="flex flex-col gap-3">
-              <button className="choice-btn" onClick={handleUpdateClick} disabled={isSaving}>
-                <div className="choice-icon bg-blue-50 text-blue-600"><FiFile /></div>
-                <div className="choice-info">
-                  <strong>Update Existing</strong>
-                  <span>Overwrite current file</span>
+          <div className="space-y-4">
+            <p className="text-sm text-slate-400">
+              You are editing an existing design. How would you like to proceed?
+            </p>
+            
+            <div className="grid gap-3">
+              {/* Option 1: Overwrite */}
+              <button 
+                className="flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-slate-800/50 hover:bg-slate-800 hover:border-orange-500/50 transition-all group text-left"
+                onClick={handleUpdateClick} 
+                disabled={isSaving}
+              >
+                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:text-blue-300 group-hover:scale-110 transition-transform">
+                  <FiFile size={20} />
+                </div>
+                <div>
+                  <strong className="block text-white text-sm">Update Existing</strong>
+                  <span className="text-xs text-slate-500">Overwrite the current file</span>
                 </div>
               </button>
 
-              <button className="choice-btn" onClick={handleSaveAsCopyClick} disabled={isSaving}>
-                <div className="choice-icon bg-green-50 text-green-600"><FiCopy /></div>
-                <div className="choice-info">
-                  <strong>Save as Copy</strong>
-                  <span>Create a new file</span>
+              {/* Option 2: Save as Copy */}
+              <button 
+                className="flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-slate-800/50 hover:bg-slate-800 hover:border-green-500/50 transition-all group text-left"
+                onClick={handleSaveAsCopyClick} 
+                disabled={isSaving}
+              >
+                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-400 group-hover:text-green-300 group-hover:scale-110 transition-transform">
+                  <FiCopy size={20} />
+                </div>
+                <div>
+                  <strong className="block text-white text-sm">Save as New</strong>
+                  <span className="text-xs text-slate-500">Create a separate copy</span>
                 </div>
               </button>
             </div>
-            <div className="text-right mt-3">
-                <span className="text-xs text-gray-400 cursor-pointer hover:text-gray-600" onClick={onClose}>Cancel</span>
+
+            <div className="pt-2 flex justify-end">
+                <button className="text-xs text-slate-500 hover:text-slate-300 transition-colors" onClick={onClose}>
+                    Cancel
+                </button>
             </div>
-          </>
+          </div>
         )}
 
         {/* --- MODE: INPUT (New Design OR Copy) --- */}
         {mode === 'input' && (
-          <>
-            <p className="text-sm text-gray-500 mb-2">
-              {isExistingDesign ? "Enter a name for the copy:" : "Give your design a name:"}
-            </p>
-            
-            <input 
-              type="text" 
-              className="save-name-input"
-              value={designName}
-              onChange={(e) => setDesignName(e.target.value)}
-              placeholder="Enter design name..."
-              autoFocus
-            />
+          <div className="space-y-5">
+            <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">
+                    {isExistingDesign ? "Name your copy" : "Name your design"}
+                </label>
+                <input 
+                  type="text" 
+                  className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 transition-all placeholder:text-slate-600"
+                  value={designName}
+                  onChange={(e) => setDesignName(e.target.value)}
+                  placeholder="e.g. My Awesome Shirt"
+                  autoFocus
+                />
+            </div>
 
-            <div className="modal-actions">
-              <button className="btn secondary" onClick={() => isExistingDesign ? setMode('choice') : onClose()}>
-                {isExistingDesign ? 'Back' : 'Cancel'}
-              </button>
+            <div className="flex gap-3 pt-2">
               <button 
-                className="btn primary" 
+                className="flex-1 py-3 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5 hover:text-white transition-all text-sm font-medium flex items-center justify-center gap-2"
+                onClick={() => isExistingDesign ? setMode('choice') : onClose()}
+                disabled={isSaving}
+              >
+                {isExistingDesign ? <><FiCornerUpLeft /> Back</> : 'Cancel'}
+              </button>
+              
+              <button 
+                className="flex-[2] py-3 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold shadow-lg shadow-orange-900/20 hover:shadow-orange-900/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleFinalConfirm} 
                 disabled={isSaving || !designName.trim()}
               >
                 {isSaving ? 'Saving...' : 'Save Design'}
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
   );
 
-  // ✅ THIS FIXES THE "TOP BAR" ISSUE
   return ReactDOM.createPortal(modalContent, document.body);
 };
 

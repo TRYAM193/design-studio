@@ -5,8 +5,9 @@ import SidebarSavedList from './SidebarSavedList';
 import { AiGeneratorModal } from './AiGeneratorModal';
 import addImageToCanvas from '../objectAdders/Image';
 import { FiCpu, FiType, FiUploadCloud, FiAlertTriangle, FiCheckCircle} from 'react-icons/fi';
+import LayersPanel from './LayersPanel';
 
-export default function ContextualSidebar({ activePanel, setActivePanel, addText, addHeading, addSubheading, productId, handleLoadSavedDesign, fabricCanvas, setSelectedId, setActiveTool, dpiInfo }) {
+export default function ContextualSidebar({ activePanel, setActivePanel, addText, addHeading, addSubheading, productId, handleLoadSavedDesign, fabricCanvas, setSelectedId, setActiveTool, selectedId= null, onMergeDesign, userId}) {
 
   let ContentComponent = null;
   let title = "";
@@ -25,7 +26,9 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
       ContentComponent = () => (
         <SidebarSavedList
           productId={productId}
-          onDesignSelect={handleLoadSavedDesign}
+          onLoadDesign={handleLoadSavedDesign}
+          onMergeDesign={onMergeDesign}
+          userId={userId}
         />
       );
       break;
@@ -106,6 +109,14 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
     case 'shapes':
       title = "Shapes";
       ContentComponent = () => <ShapesSidebar setActivePanel={setActivePanel} />;
+      break;
+    case 'templates':
+      title = "Templates";
+      ContentComponent = () => <>Templates Content</>
+      break;
+    case 'layers':
+      title = "Layers";
+      ContentComponent = () => <LayersPanel fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} selectedId={selectedId}/>;
       break;
     default:
       ContentComponent = null;

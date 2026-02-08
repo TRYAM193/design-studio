@@ -7,6 +7,23 @@ import { handleSaveTemp } from '../utils/saveDesign';
 
 export default function RightSidebarTabs(props) {
   const [activeTab, setActiveTab] = useState('properties');
+  if (!props.object && !props.type && !props.id) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-20 h-20 rounded-2xl bg-slate-800/30 border border-white/5 flex items-center justify-center mb-4 relative overflow-hidden group">
+             {/* Subtle Shine Effect */}
+             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+             
+             <FiLayers size={32} className="text-slate-600 group-hover:text-indigo-400 transition-colors duration-300" />
+          </div>
+          
+          <h3 className="text-sm font-bold text-slate-300 mb-1 tracking-wide">No Selection</h3>
+          <p className="text-[11px] text-slate-500 max-w-[200px] leading-relaxed">
+              Click on any element in the canvas to customize its properties, style, and effects.
+          </p>
+        </div>
+      );
+    }
 
   return (
     <div className="right-sidebar-tabs h-full flex flex-col">
@@ -46,7 +63,7 @@ export default function RightSidebarTabs(props) {
       </div>
 
       {/* Tab Content Area */}
-      <div className="tab-content-area flex-grow overflow-y-auto custom-scrollbar">
+      <div className="tab-content-area flex-grow overflow-y-auto no-scrollbar">
         {activeTab === 'properties' && (
           <Toolbar
             id={props.id}

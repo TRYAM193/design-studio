@@ -85,7 +85,7 @@ export default function CanvasEditor({
     if (productId && printDimensions?.width && printDimensions?.height) {
       return { width: printDimensions.width, height: printDimensions.height };
     }
-    return { width: 800, height: 930 };
+    return { width: 500, height: 500 };
   };
 
   // ✅ 2. FIT TO SCREEN
@@ -353,6 +353,40 @@ export default function CanvasEditor({
       if (isSyncingRef.current) return;
       updateMenuPosition();
     };
+
+    canvas.on('object:added', (e) => {
+      const obj = e.target;
+      if (!obj) return;
+
+      // 1. Force Caching ON (Fixes Opacity/Three-Layer Issue)
+      obj.set('objectCaching', true);
+
+      // 2. Fix SHAPES (Rect, Circle, Triangle, etc.)
+      // We override '_renderPaintInOrder' instead of '_render'.
+      // This keeps the shape's path definition intact (fixing the invisible bug)
+      // but forces the stroke to draw BEHIND the fill (fixing the shrinking bug).
+      if (obj._renderPaintInOrder) {
+        obj._renderPaintInOrder = function (ctx) {
+          // A. Draw Fill First
+          this._renderFill(ctx);
+
+          // B. Draw Stroke (forced BEHIND using destination-over)
+          if (this.stroke && this.strokeWidth > 0) {
+            const savedComp = ctx.globalCompositeOperation;
+            ctx.globalCompositeOperation = 'destination-over';
+            this._renderStroke(ctx);
+            ctx.globalCompositeOperation = savedComp;
+          }
+        };
+      }
+
+      // 3. Fix TEXT (i-text, textbox)
+      // We simply enforce 'stroke' first. Overriding render for text is risky/complex.
+      // This ensures text remains visible while keeping the border behind.
+      if (obj.type === 'i-text' || obj.type === 'text' || obj.type === 'textbox') {
+        obj.set('paintFirst', 'stroke');
+      }
+    });
 
     canvas.on('selection:created', handleSelection);
     canvas.on('selection:updated', handleSelection);

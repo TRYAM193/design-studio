@@ -17,16 +17,18 @@ export default function SmartDock({
   setActiveTool,
   setSelectedId,
   fabricCanvas,
-  activePanel
+  activePanel,
+  productId
 }) {
 
   const creationTools = [
-    { id: 'product', label: 'Product', icon: <Tag size={20} className="text-orange-400" /> },
+    ...(productId ? [{ id: 'product', label: 'Product', icon: <Tag size={20} className="text-orange-400" /> }] : []),
     { id: 'saved', label: 'Your Designs', icon: <BookMarkedIcon size={20} /> },
     { id: 'text', label: 'Text', icon: <Type size={20} /> },
     { id: 'shapes', label: 'Shapes', icon: <Shapes size={20} /> },
     { id: 'image', label: 'Upload', icon: <ImagePlus size={20} /> },
     { id: 'ai', label: 'TRYAM AI', icon: <Sparkles size={20} className="text-purple-400" /> },
+    { id: 'layers', label: 'Layers', icon: <Layers size={20} /> },
     { id: 'templates', label: 'Designs', icon: <LayoutGrid size={20} /> },
   ];
 

@@ -19,13 +19,14 @@ import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Undo2, Redo2 } from "lucide-react";
+import { Loader2, Save, Undo2, Redo2, Eye } from "lucide-react";
 import { COLOR_MAP } from '../../lib/colorMaps'
-import { FiTrash2, FiRotateCcw, FiRotateCw, FiSettings, FiX, FiCheckCircle, FiChevronDown, FiDroplet, FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
+import { FiTrash2, FiLayers, FiCheckCircle, FiChevronDown, FiDroplet, FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileEditorLayout from '../mobile/MobileEditorLayout';
 import { calculateImageDPI } from '../utils/dpiCalculator';
 import { toast } from 'sonner';
+import ExportButton from '../components/ExportButton';
 
 const uuidv4 = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -175,6 +176,8 @@ export default function EditorPanel() {
             }));
         }
     };
+
+    console.log(fabricCanvas?.getActiveObject(), canvasObjects)
     useEffect(() => {
         if (!fabricCanvas) return;
 
@@ -260,8 +263,46 @@ export default function EditorPanel() {
     };
     const dpiIssuesList = Object.values(dpiRegistry);
 
-    // --- Loading & Merging Logic ---
+    const handleMergeDesign = async (designItem) => {
+        if (!designItem || !userId) return;
 
+        try {
+            // ✅ USING YOUR EXACT LOGIC
+            const designRef = doc(db, `users/${userId}/designs`, designItem.id);
+            const designSnap = await getDoc(designRef);
+
+            if (!designSnap.exists()) return;
+            const designData = designSnap.data();
+
+            // Extract Objects
+            const incomingObjects = Array.isArray(designData.canvasData)
+                ? designData.canvasData
+                : (designData.canvasData?.front || []);
+
+            if (incomingObjects.length > 0) {
+                // Remap IDs and Offset
+                const newObjects = incomingObjects.map(obj => ({
+                    ...obj,
+                    id: uuidv4(),
+                    customId: uuidv4(),
+                    props: {
+                        ...obj.props,
+                        left: (obj.props.left || 0) + 20,
+                        top: (obj.props.top || 0) + 20
+                    }
+                }));
+
+                const currentObjects = store.getState().canvas.present;
+                const combinedObjects = [...currentObjects, ...newObjects];
+                dispatch(setCanvasObjects(combinedObjects));
+                setActivePanel(null); // Close sidebar on success
+            }
+        } catch (error) {
+            console.error("Error merging design:", error);
+        }
+    };
+
+    // 👇 2. EDIT LOGIC (Strictly for "Edit/Replace Design")
     const handleLoadSavedDesign = async (designItem) => {
         if (!designItem || !userId) return;
 
@@ -272,40 +313,18 @@ export default function EditorPanel() {
             if (!designSnap.exists()) return;
             const designData = designSnap.data();
 
-            const isBlank = designData.type === 'BLANK' || !designData.type;
             const isProduct = designData.type === 'PRODUCT';
+            const isBlank = designData.type === 'BLANK' || !designData.type;
 
-            if (isBlank) {
-                const incomingObjects = Array.isArray(designData.canvasData)
-                    ? designData.canvasData
-                    : (designData.canvasData?.front || []);
-
-                if (incomingObjects.length > 0) {
-                    const newObjects = incomingObjects.map(obj => ({
-                        ...obj,
-                        id: uuidv4(),
-                        customId: uuidv4(),
-                        props: {
-                            ...obj.props,
-                            left: (obj.props.left || 0) + 20,
-                            top: (obj.props.top || 0) + 20
-                        }
-                    }));
-                    const currentObjects = store.getState().canvas.present;
-                    const combinedObjects = [...currentObjects, ...newObjects];
-                    dispatch(setCanvasObjects(combinedObjects));
-                }
-            }
-            else if (isProduct) {
+            // CASE A: Load Product Design (Existing logic)
+            if (isProduct) {
                 if (designData.productConfig?.productId === (urlProductId || productData.id)) {
                     setCurrentDesign(designData);
                     setEditingDesignId(designData.id);
 
-                    // Restore Redux states
                     const savedStates = designData.canvasData || {};
                     setViewStates(savedStates);
 
-                    // ✅ NEW: Restore Canvas JSON States (if available)
                     if (designData.canvasViewStates) {
                         setCanvasViewStates(designData.canvasViewStates);
                     }
@@ -314,13 +333,27 @@ export default function EditorPanel() {
                     setCurrentView(activeView);
                     const activeObjects = savedStates[activeView] || [];
                     dispatch(setCanvasObjects(activeObjects));
+                    
                     setSearchParams(prev => {
                         prev.set('designId', designData.id);
                         return prev;
                     });
                     setActivePanel(null);
                 }
+            } 
+            // CASE B: Load Blank Design (NEW: Replace canvas instead of merge)
+            else if (isBlank) {
+                const incomingObjects = Array.isArray(designData.canvasData)
+                    ? designData.canvasData
+                    : (designData.canvasData?.front || []);
+
+                // Replace Canvas
+                dispatch(setCanvasObjects(incomingObjects));
+                setEditingDesignId(designData.id);
+                setCurrentDesign(designData);
+                setActivePanel(null);
             }
+
         } catch (error) {
             console.error("Error loading saved design:", error);
         }
@@ -793,16 +826,19 @@ export default function EditorPanel() {
 
                     {/* Conditional Check */}
                     <div className={`sidebar-container-desktop ${isSidebarOpen ? 'open' : 'closed'}`}>
-                        <ContextualSidebar activePanel={activePanel} setActivePanel={setActivePanel} addText={addText} addHeading={addHeading} addSubheading={addSubheading} productId={urlProductId || currentDesign?.productConfig?.productId}
+                        <ContextualSidebar activePanel={activePanel} setActivePanel={setActivePanel} addText={addText} addHeading={addHeading} addSubheading={addSubheading}
                             handleLoadSavedDesign={handleLoadSavedDesign} fabricCanvas={fabricCanvas}
                             setSelectedId={setSelectedId}
                             setActiveTool={setActiveTool}
+                            productId={urlProductId || currentDesign?.productConfig?.productId || (productData ? productData.id : null)}
+                            onMergeDesign={handleMergeDesign}
+                            userId={userId}
                         />
                     </div>
 
                     <main className="preview-area relative bg-transparent flex items-center justify-center overflow-hidden gap-2" ref={containerRef}>
                         {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
-                            <div className="absolute top-20 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-slate-800/80 p-1.5 rounded-full border border-white/10 shadow-lg backdrop-blur-md">
+                            <div className="absolute top-160 left-110 -translate-x-1/2 z-20 flex gap-2 bg-slate-800/80 p-1.5 rounded-full border border-white/10 shadow-lg backdrop-blur-md">
                                 {Object.keys(productData.print_areas).map(view => (
                                     <button key={view} onClick={() => handleSwitchView(view)} className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${currentView === view ? "bg-orange-600 text-white shadow-orange-900/50" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
                                         {view.replace('_', ' ')}
@@ -813,40 +849,43 @@ export default function EditorPanel() {
 
                         <div className="top-bar consolidated-bar">
                             <div className="control-group">
-                                <button className="top-bar-button" onClick={() => dispatch(undo())} disabled={!past.length} style={{ opacity: past.length ? '1' : '0.5' }}><Undo2 size={18} /></button>
-                                <button className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{ opacity: future.length ? '1' : '0.5' }}><Redo2 size={18} /></button>
+                                <button title='Undo' className="top-bar-button" onClick={() => dispatch(undo())} disabled={!past.length} style={{ opacity: past.length ? '1' : '0.5' }}><Undo2 size={18} /></button>
+                                <button title='Redo' className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{ opacity: future.length ? '1' : '0.5' }}><Redo2 size={18} /></button>
                             </div>
                             <div className="control-group divider">
-                                <button className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{ opacity: !selectedId ? '0.5' : '1' }}><FiTrash2 size={18} /></button>
+                                <button title='Delete' className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{ opacity: !selectedId ? '0.5' : '1' }}><FiTrash2 size={18} /></button>
                             </div>
-                            {!showColorPanel && !productData && (
-                                <button className="top-bar-button accent phone-only" onClick={() => setShowColorPanel(true)}><FiDroplet size={18} /> Colors</button>
-                            )}
                             <div className="control-group">
                                 {fabricCanvas && (
-                                    <SaveDesignButton
-                                        canvas={store.getState().canvas}
-                                        userId={userId}
-                                        editingDesignId={editingDesignId}
-                                        currentView={currentView}
-                                        viewStates={viewStates}
-                                        productData={{
-                                            productId: urlProductId || currentDesign?.productConfig?.productId,
-                                            color: urlColor || currentDesign?.productConfig?.variantColor,
-                                            size: urlSize || currentDesign?.productConfig?.variantSize,
-                                            print_areas: productData.print_areas
-                                        }}
-                                        currentObjects={canvasObjects}
-                                        onGetSnapshot={getCleanDataURL}
-                                        currentDesignName={currentDesign?.name}
-                                        className="h-9 px-4 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-bold shadow-lg border border-orange-400/50 hover:bg-orange-500 transition-all"
-                                        variant="ghost"
-                                    />
+                                    <>
+                                        <SaveDesignButton
+                                            canvas={store.getState().canvas}
+                                            userId={userId}
+                                            editingDesignId={editingDesignId}
+                                            currentView={currentView}
+                                            viewStates={viewStates}
+                                            productData={{
+                                                productId: urlProductId || currentDesign?.productConfig?.productId,
+                                                color: urlColor || currentDesign?.productConfig?.variantColor,
+                                                size: urlSize || currentDesign?.productConfig?.variantSize,
+                                                print_areas: productData.print_areas
+                                            }}
+                                            currentObjects={canvasObjects}
+                                            onGetSnapshot={getCleanDataURL}
+                                            currentDesignName={currentDesign?.name}
+                                            className="h-9 px-4 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-bold shadow-lg border border-orange-400/50 hover:bg-orange-500 transition-all"
+                                            variant="ghost"
+                                        />
+                                        <ExportButton
+                                            canvas={fabricCanvas}
+                                            currentDesignName={currentDesign?.name || "Untitled Design"}
+                                        />
+                                    </>
                                 )}
                                 {productData &&
-                                    (<Button onClick={handleGeneratePreview} disabled={isGeneratingPreview || !fabricCanvas} className="bg-slate-700 hover:bg-slate-600 text-white border border-white/10">
-                                        {isGeneratingPreview ? <><Loader2 className="animate-spin" /> ...</> : "Preview"}
-                                    </Button>)}
+                                    (<button title='Mockups' onClick={handleGeneratePreview} disabled={isGeneratingPreview || !fabricCanvas} className="flex items-center gap-2 rounded-xl px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-200 border border-white/10 transition-all text-xs font-medium active:scale-95">
+                                        {isGeneratingPreview ? <><Loader2 className="animate-spin" /> ...</> : <><Eye size={16} /></>}
+                                    </button>)}
                             </div>
                         </div>
 
@@ -863,10 +902,10 @@ export default function EditorPanel() {
                         />
                     </main>
 
-                    <aside className={`right-panel ${(selectedId ? showProperties : showColorPanel) ? 'active' : ''}`}>
-                        {selectedId ? (
+                    <aside className={`right-panel no-scrollbar ${(selectedId ? showProperties : showColorPanel) ? 'active' : ''}`}>
+                        {selectedId && canvasObjects && canvasObjects.length > 0 ? (
                             <RightSidebarTabs id={selectedId} type={activeTool} object={canvasObjects.find((obj) => obj.id === selectedId)} updateObject={updateObject} removeObject={removeObject} addText={addText} fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} />
-                        ) : (productData && (
+                        ) : (productData ? (
                             <div className="p-6 flex flex-col h-full overflow-y-auto">
                                 <div className="mobile-panel-header">
                                     <span className="mobile-panel-title">Product Options</span>
@@ -930,6 +969,20 @@ export default function EditorPanel() {
                                     <p className="text-[10px] text-center text-slate-500 mt-2">Secure checkout powered by Stripe</p>
                                 </div>
                             </div>
+                        ) : (!canvasObjects.length &&
+                            <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300">
+                                <div className="w-20 h-20 rounded-2xl bg-slate-800/30 border border-white/5 flex items-center justify-center mb-4 relative overflow-hidden group">
+                                    {/* Subtle Shine Effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                    <FiLayers size={32} className="text-slate-600 group-hover:text-indigo-400 transition-colors duration-300" />
+                                </div>
+
+                                <h3 className="text-sm font-bold text-slate-300 mb-1 tracking-wide">No Selection</h3>
+                                <p className="text-[11px] text-slate-500 max-w-[200px] leading-relaxed">
+                                    Click on any element in the canvas to customize its properties, style, and effects.
+                                </p>
+                            </div>
                         ))}
                     </aside>
                 </div>
@@ -980,6 +1033,8 @@ export default function EditorPanel() {
                     // --- 2. Pass Preview Function ---
                     onGeneratePreview={handleGeneratePreview}
                     isGeneratingPreview={isGeneratingPreview}
+                    updateObject={updateObject}
+                    currentDesignName={currentDesign?.name || "Untitled Design"}
 
                     // --- 3. Pass View Switcher Props ---
                     currentView={currentView}
@@ -988,6 +1043,7 @@ export default function EditorPanel() {
                     dpiIssues={dpiIssuesList} // 👈 Pass the List
                     // --- 4. Pass Product Logic (The Big One) ---
                     productProps={{
+                        id: urlProductId || currentDesign?.productConfig?.productId,
                         product: productData,
                         selectedColor: canvasBg || currentDesign?.productConfig?.variantColor, // Or your local state for color
                         setColor: handleColorChange,
@@ -1041,6 +1097,8 @@ export default function EditorPanel() {
                                 fabricCanvas={fabricCanvas}
                                 setSelectedId={setSelectedId}
                                 setActiveTool={setActiveTool}
+                                selectedId={selectedId}
+                                onMergeDesign={handleMergeDesign}
                             />
                         </div>
                     </div>

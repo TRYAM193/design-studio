@@ -70,11 +70,11 @@ export default function SaveDesignButton({
         onClick={handleSaveClick} 
         variant={variant} 
         size={size} 
+        title="Save Design"
         // ✅ Merge classes: 'gap-2' is base, 'className' overrides (e.g., text color, bg)
         className={cn("gap-2", className)} 
       >
         <CloudUpload size={16} />
-        Save
       </Button>
 
       <SavePromptModal 

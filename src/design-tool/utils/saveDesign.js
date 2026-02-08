@@ -111,3 +111,82 @@ export const handleSaveTemp = (canvas) => {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+export const exportSavedDesignImage = (designData) => {
+  if (!designData || !designData.imageData) {
+    alert("No preview image available for this design.");
+    return;
+  }
+
+  try {
+    const link = document.createElement('a');
+    link.href = designData.imageData; // The Base64 image string
+    
+    // Sanitize filename
+    const safeName = (designData.name || "design").replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    link.download = `${safeName}-preview.png`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+  } catch (error) {
+    console.error("Failed to download image:", error);
+    alert("Could not download image.");
+  }
+};
+
+export const exportReferenceImage = (canvas, fileName = 'design-preview') => {
+  if (!canvas) return;
+
+  // 1. Save current state variables
+  const activeObj = canvas.getActiveObject();
+  
+  // 2. Prepare Canvas for Snapshot
+  // Deselect everything to remove the blue bounding boxes/handles
+  canvas.discardActiveObject();
+  
+  // Find and hide the "Print Area Border" (Editor artifact)
+  const borderObj = canvas.getObjects().find(obj => 
+      obj.id === 'print-area-border' || obj.customId === 'print-area-border'
+  );
+  const wasBorderVisible = borderObj ? borderObj.visible : false;
+  
+  if (borderObj) {
+      borderObj.visible = false;
+  }
+  
+  canvas.requestRenderAll();
+
+  try {
+      // 3. Generate Image Data
+      // Multiplier: 2 provides good quality for Retina screens/Reference without creating massive Print files.
+      const dataURL = canvas.toDataURL({
+          format: 'png',
+          quality: 1,
+          multiplier: 2, 
+          enableRetinaScaling: true
+      });
+
+      // 4. Trigger Download
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = `${fileName}-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+  } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export image.");
+  } finally {
+      // 5. Restore Editor State
+      if (borderObj) {
+          borderObj.visible = wasBorderVisible;
+      }
+      if (activeObj) {
+          canvas.setActiveObject(activeObj);
+      }
+      canvas.requestRenderAll();
+  }
+};
