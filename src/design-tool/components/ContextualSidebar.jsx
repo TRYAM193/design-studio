@@ -4,10 +4,12 @@ import ShapesSidebar from './ShapesSidebar';
 import SidebarSavedList from './SidebarSavedList';
 import { AiGeneratorModal } from './AiGeneratorModal';
 import addImageToCanvas from '../objectAdders/Image';
-import { FiCpu, FiType, FiUploadCloud, FiAlertTriangle, FiCheckCircle} from 'react-icons/fi';
+import { FiCpu, FiType, FiUploadCloud, FiAlertTriangle, FiCheckCircle, FiX} from 'react-icons/fi';
 import LayersPanel from './LayersPanel';
+import SidebarTemplateList from './SidebarTemplateList';
 
-export default function ContextualSidebar({ activePanel, setActivePanel, addText, addHeading, addSubheading, productId, handleLoadSavedDesign, fabricCanvas, setSelectedId, setActiveTool, selectedId= null, onMergeDesign, userId}) {
+export default function ContextualSidebar({ activePanel, setActivePanel, addText, addHeading, addSubheading, productId, handleLoadSavedDesign, fabricCanvas, setSelectedId, setActiveTool, selectedId= null, onMergeDesign, userId, onMergeTemplate, 
+  onReplaceTemplate}) {
 
   let ContentComponent = null;
   let title = "";
@@ -110,13 +112,18 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
       title = "Shapes";
       ContentComponent = () => <ShapesSidebar setActivePanel={setActivePanel} />;
       break;
-    case 'templates':
-      title = "Templates";
-      ContentComponent = () => <>Templates Content</>
-      break;
     case 'layers':
       title = "Layers";
       ContentComponent = () => <LayersPanel fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} selectedId={selectedId}/>;
+      break;
+    case 'templates':
+      title = "Global Templates";
+      ContentComponent = () => (
+        <SidebarTemplateList 
+          onMerge={onMergeTemplate}
+          onReplace={onReplaceTemplate}
+        />
+      );
       break;
     default:
       ContentComponent = null;
@@ -134,7 +141,7 @@ export default function ContextualSidebar({ activePanel, setActivePanel, addText
           className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
           title="Close Sidebar"
         >
-          &times;
+          <FiX size={16} />
         </button>
       </div>
 

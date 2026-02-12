@@ -7,7 +7,7 @@ import {
     FiType, FiImage, FiCpu, FiSquare, FiTool, FiFolder,
     FiBell, FiAlertTriangle, FiCheckCircle, FiInfo, FiX, FiZap
 } from 'react-icons/fi';
-import { Loader2, Sparkles } from 'lucide-react'; // 👈 Import Loader
+import { Loader2, Sparkles, ImagePlusIcon, Layout } from 'lucide-react'; // 👈 Import Loader
 
 
 export default function MainToolbar({
@@ -23,7 +23,7 @@ export default function MainToolbar({
             className={'tool-button-wrapper'}
         >
             <div className={`p-2.5 rounded-2xl transition-all duration-200 ${tool === activePanel || isActive ? 'bg-white text-orange-600 border-orange-500/50' : 'text-slate-400'}`}>
-                <Icon size={24} />
+                <Icon size={24} className={`${!isActive ? 'hover:text-white' : ''}`} />
             </div>
             <span>{label}</span>
         </button>
@@ -121,12 +121,14 @@ export default function MainToolbar({
             <hr className="toolbar-divider" />
             <ToolButton icon={FiType} label="Text" isActive={activePanel === 'text'} onClick={() => onSelectTool('text')} tool='text' />
             <ImageHandler setSelectedId={setSelectedId} setActiveTool={onSelectTool} className={`tool-button-wrapper ${activePanel === 'image' ? 'active' : ''}`} fabricCanvas={fabricCanvas}>
-                <FiImage size={24} /> <span>Image</span>
+                <ImagePlusIcon size={24} /> <span>Image</span>
             </ImageHandler>
             <ToolButton icon={FiSquare} label="Shapes" isActive={activePanel === 'shapes'} onClick={() => onSelectTool('shapes')} />
+            <ToolButton icon={Layout} label='Templates' isActive={activePanel === 'templates'} onClick={() => onSelectTool('templates')}/>
             <ToolButton icon={FiCpu} label="AI" isActive={activePanel === 'ai'} onClick={() => onSelectTool('ai')} />
             <hr className="toolbar-divider" />
             <ToolButton icon={FiTool} label="More" isActive={activePanel === 'more'} onClick={() => onSelectTool('more')} />
+            
 
             <div className="flex-grow" />
 

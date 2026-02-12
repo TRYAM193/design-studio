@@ -138,7 +138,6 @@ html,
 }
 
 .tool-button-wrapper:hover {
-  background-color: rgba(255, 255, 255, 0.05);
   color: #fff;
 }
 
@@ -150,16 +149,6 @@ html,
   border-left: 3px solid #ea580c;
 }
 
-/* ===================================
-   2. CONTEXTUAL SIDEBAR (Tools)
-   =================================== */
-/* src/design-tool/styles/Editor.css */
-
-/* ... (Keep existing Main Toolbar styles) ... */
-
-/* ===================================
-   2. CONTEXTUAL SIDEBAR (Floating Glass - Desktop)
-   =================================== */
 .contextual-sidebar {
   /* FLOATING POSITIONING */
   position: absolute;
@@ -647,13 +636,6 @@ input[type="range"],
   }
 }
 
-/* src/design-tool/styles/Editor.css */
-
-/* ... existing code ... */
-
-/* ===================================
-   MOBILE STYLES (Update this section)
-   =================================== */
 @media (max-width: 768px) {
 
   /* 1. Force Contextual Sidebar to be Full Width */

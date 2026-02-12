@@ -1,46 +1,63 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Clock, Store, Sparkles, Crown, Zap, Flame, Moon } from "lucide-react";
+import { 
+  ArrowRight, Clock, Store, Sparkles, Crown, Zap, Flame, Moon, 
+  Image as ImageIcon, Plus 
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/use-auth";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router"; // Changed to react-router-dom for consistency
 import { useTranslation } from "@/hooks/use-translation";
-import { useUserDesigns } from "@/hooks/use-user-designs";
-import design001Data from "@/templates/design-001.json";
+import { useUserDesigns } from "@/hooks/use-user-designs"; // Ensure correct path
+import { useEffect, useState } from "react";
+import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
+import { db } from "@/firebase";
 
 export default function DashboardHome() {
   const { isAuthenticated, user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { designs, loading: designsLoading } = useUserDesigns(user?.uid);
 
-  const templates = [
-    {
-      id: "template-001",
-      name: "Overthinking Typo",
-      category: "T-Shirts",
-      tier: "Free",
-      image: "/templates/design-001.png",
-      isLocal: true,
-      canvasData: design001Data
-    },
-  ];
+  // 1. DATA: Recent Designs
+  const { designs: userDesigns, loading: designsLoading } = useUserDesigns(user?.uid);
 
-  const handleUseTemplate = (template: any) => {
-    window.open(`/design?templateid=${template.id}`)
-  };
+  // 2. DATA: Recommended Templates (Firestore)
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch top 10 newest templates
+    const q = query(
+      collection(db, 'templates'), 
+      orderBy('createdAt', 'desc'), 
+      limit(10)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTemplates(results);
+      setTemplatesLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // 3. HANDLERS (Open in New Tab for Performance)
+  const handleOpenDesign = (id: string) => window.open(`/design?designId=${id}`, '_blank');
+  const handleUseTemplate = (id: string) => window.open(`/design?templateId=${id}`, '_blank');
+  const handleCreateNew = () => window.open('/design', '_blank');
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-20 relative px-2 sm:px-0">
-      {/* BACKGROUND: COSMIC SHIVA THEME */}
+    <div className="space-y-8 md:space-y-12 pb-20 relative px-4 sm:px-6 md:px-10">
+      
+      {/* ✅ BACKGROUND: COSMIC SHIVA THEME */}
       <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
       </div>
 
-      {/* Hero Section */}
-      <section className="space-y-4">
+      {/* ✅ HERO SECTION (Preserved from your code) */}
+      <section className="space-y-4 pt-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
           <motion.h1
             initial={{ opacity: 0, y: 10 }}
@@ -63,7 +80,6 @@ export default function DashboardHome() {
           initial={{ opacity: 0, scale: 0.99 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          // ⚠️ FIX: Changed h-40 to h-auto for mobile so text doesn't get cut off
           className="relative group rounded-xl overflow-hidden border border-white/10 shadow-xl shadow-black/40 h-auto md:h-48"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-[#1a2035] to-slate-900" />
@@ -98,139 +114,160 @@ export default function DashboardHome() {
         </motion.div>
       </section>
 
-      {/* Main Content Area */}
+      {/* ✅ MAIN CONTENT */}
       {isAuthenticated ? (
-        <div className="space-y-8">
+        <div className="space-y-12">
 
-          {/* Recent Projects Section */}
-          <section className="space-y-4">
+          {/* SECTION 1: RECENT PROJECTS (Clean UI + Skeleton + Limit 10) */}
+          <section className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-400" />
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Clock className="h-5 w-5 text-blue-400" />
                 {t("dashboard.recent")}
               </h2>
-              <Link to="/dashboard/projects">
-                <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-white/5 gap-1 h-8 text-xs">
-                  {t("dashboard.viewAll")} <ArrowRight className="h-3 w-3" />
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-slate-400 hover:text-white hover:bg-white/5 gap-1"
+                onClick={() => navigate('/dashboard/projects')}
+              >
+                {t("dashboard.viewAll")} <ArrowRight className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* ⚠️ FIX: Grid cols 2 -> 3 -> 4 -> 5 responsive scaling */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
               {designsLoading ? (
-                [1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="h-40 bg-slate-800/50 animate-pulse rounded-xl border border-white/5" />
-                ))
-              ) : designs.length > 0 ? (
-                designs.slice(0, 5).map((design) => (
-                  <div key={design.id} onClick={() => window.open(`/design?designId=${design.id}`)}>
-                    <Card className="group cursor-pointer hover:shadow-lg hover:shadow-blue-500/10 transition-all overflow-hidden border border-white/10 bg-slate-800/40 backdrop-blur-md rounded-xl h-full">
-                      <div className="aspect-square w-full overflow-hidden bg-white relative flex items-center justify-center">
-                        {design.imageData ? (
-                          <img src={design.imageData} alt={design.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" />
-                        ) : (
-                          <div className="p-2 bg-slate-100 rounded-full">
-                            <Zap className="h-6 w-6 text-slate-400" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                          <span className="px-3 py-1 bg-white text-black rounded-full text-[10px] font-bold shadow-md">Edit</span>
-                        </div>
-                      </div>
-                      <CardContent className="p-3">
-                        <h3 className="font-bold text-slate-200 truncate text-xs">{design.name || t("dashboard.untitled")}</h3>
-                        <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1">
-                          <Clock className="h-3 w-3" />
-                          <span>
-                            {design.updatedAt
-                              ? new Date(design.updatedAt).toLocaleDateString()
-                              : "Just now"}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                // SKELETON LOADING
+                [...Array(5)].map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <Skeleton className="aspect-[3/4] w-full rounded-2xl bg-slate-800/50" />
+                    <Skeleton className="h-4 w-3/4 bg-slate-800/50" />
                   </div>
                 ))
+              ) : userDesigns && userDesigns.length > 0 ? (
+                // DESIGN CARDS (Limit 10)
+                userDesigns.slice(0, 10).map((design) => (
+                  <motion.div
+                    key={design.id}
+                    whileHover={{ y: -5 }}
+                    className="group cursor-pointer"
+                    onClick={() => handleOpenDesign(design.id)}
+                  >
+                    <div className="h-fit rounded-xl bg-slate-800/20 overflow-hidden relative border border-white/5 group-hover:border-blue-500/30 transition-all duration-300">
+                      {design.imageData ? (
+                        <img src={design.imageData} alt={design.name} className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-900/50">
+                          <Zap className="text-slate-700 w-8 h-8" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="mt-3 px-1">
+                      <h3 className="font-semibold text-slate-200 truncate text-sm group-hover:text-blue-400 transition-colors">
+                        {design.name || t("dashboard.untitled")}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {design.updatedAt ? new Date(design.updatedAt).toLocaleDateString() : "Just now"}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))
               ) : (
+                // EMPTY STATE
                 <div className="col-span-full py-10 text-center border border-dashed border-white/10 rounded-xl bg-white/5">
                   <p className="text-slate-400 text-sm mb-4">No recent designs found.</p>
-                  <Link to="/design">
-                    <Button variant="secondary" size="sm" className="bg-slate-800 text-white hover:bg-slate-700 text-xs h-8">Start Creating</Button>
-                  </Link>
+                  <Button onClick={handleCreateNew} variant="secondary" size="sm" className="bg-slate-800 text-white hover:bg-slate-700">
+                    <Plus className="mr-2 h-4 w-4" /> Start Creating
+                  </Button>
                 </div>
               )}
             </div>
           </section>
 
-          {/* Featured Templates Section */}
-          <section className="space-y-4">
+          {/* SECTION 2: FEATURED TEMPLATES (Clean UI + Skeleton + Limit 10) */}
+          <section className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-orange-400" />
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-orange-400" />
                 {t("templates.title") || "Featured Templates"}
               </h2>
-              <Link to="/dashboard/designs">
-                <Button variant="ghost" size="sm" className="text-slate-400 hover:text-white hover:bg-white/5 gap-1 h-8 text-xs">
-                  View All <ArrowRight className="h-3 w-3" />
-                </Button>
-              </Link>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-slate-400 hover:text-white hover:bg-white/5 gap-1"
+                onClick={() => navigate('/dashboard/templates')}
+              >
+                View All <ArrowRight className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* ⚠️ FIX: Grid cols 2 -> 3 -> 4 scaling */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-              {templates.map((template, i) => (
-                <motion.div
-                  key={template.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.1 }}
-                  className="group cursor-pointer"
-                >
-                  <div className="aspect-[3/4] rounded-2xl bg-slate-800/40 mb-3 h-auto overflow-hidden relative border border-white/10 shadow-lg backdrop-blur-sm">
-                    <img
-                      src={template.image}
-                      alt={template.name}
-                      className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
-                      onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/400x500/ffffff/000000?text=Template"; }}
-                    />
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                    {template.tier === "Pro" && (
-                      <div className="absolute top-2 right-2 bg-orange-500/20 backdrop-blur-md border border-orange-500/50 text-orange-600 text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1">
-                        <Crown className="h-2.5 w-2.5" /> Pro
-                      </div>
-                    )}
-
-                    {/* Mobile: Use button always visible or on tap. Desktop: Hover. */}
-                    <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-0 sm:translate-y-full sm:group-hover:translate-y-0 transition-transform duration-300">
-                      <Button
-                        size="sm"
-                        className="w-full h-7 text-xs bg-white text-slate-900 hover:bg-slate-200 font-bold shadow-sm px-3 md:px-5 md:h-10 text-sm md:text-base bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/40 hover:shadow-orange-700/50 hover:scale-105 active:scale-95 transition-all duration-300 group border-0 relative overflow-hidden"
-                        onClick={() => handleUseTemplate(template)}
-                      >
-                        Use
-                      </Button>
-                    </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
+              {templatesLoading ? (
+                // SKELETON LOADING
+                [...Array(5)].map((_, i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <Skeleton className="aspect-[3/4] w-full rounded-2xl bg-slate-800/50" />
+                    <Skeleton className="h-4 w-3/4 bg-slate-800/50" />
                   </div>
-                  <h3 className="font-medium text-slate-200 truncate px-1 text-xs">{template.name}</h3>
-                  <p className="text-[10px] text-slate-500 px-1">{template.category}</p>
-                </motion.div>
-              ))}
+                ))
+              ) : (
+                // TEMPLATE CARDS (Already limited to 10 by Query)
+                templates.map((template, i) => (
+                  <motion.div
+                    key={template.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05 }}
+                    className="group cursor-pointer"
+                    onClick={() => handleUseTemplate(template.id)}
+                  >
+                    <div className="h-fit rounded-xl bg-slate-800/20 overflow-hidden relative border border-white/5 group-hover:border-orange-500/30 transition-all duration-300">
+                      {template.thumbnailUrl || template.image ? (
+                        <img 
+                          src={template.thumbnailUrl || template.image} 
+                          alt={template.name} 
+                          className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/400x500/ffffff/000000?text=Template"; }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-slate-900/50">
+                          <ImageIcon className="text-slate-700 w-8 h-8" />
+                        </div>
+                      )}
+
+                      {/* Pro Badge */}
+                      {(template.tier === "Pro" || template.isPro) && (
+                        <div className="absolute top-3 right-3 bg-orange-500/90 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                          <Crown className="h-3 w-3" /> PRO
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-3 px-1">
+                      <h3 className="font-semibold text-slate-200 truncate text-sm group-hover:text-orange-400 transition-colors">
+                        {template.name || "Untitled Template"}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {template.category || "General"}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))
+              )}
             </div>
           </section>
 
         </div>
       ) : (
-        <section className="bg-slate-800/30 border border-white/5 rounded-2xl p-8 text-center space-y-4">
-          <h2 className="text-xl font-bold text-white">{t("dashboard.startFree")}</h2>
-          <p className="text-slate-400 max-w-md mx-auto text-sm">
+        // NON-AUTH STATE (Start Free)
+        <section className="bg-slate-800/30 border border-white/5 rounded-2xl p-10 text-center space-y-6 mt-10">
+          <h2 className="text-2xl font-bold text-white">{t("dashboard.startFree")}</h2>
+          <p className="text-slate-400 max-w-md mx-auto">
             {t("dashboard.startDesc")}
           </p>
           <Link to="/store">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-6 h-9 text-sm">
+            <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white rounded-full px-8">
               Go to Catalog
             </Button>
           </Link>

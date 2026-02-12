@@ -1,5 +1,5 @@
 import { db as firestore } from '@/firebase'; // Adjust path if needed
-import { doc, setDoc, collection } from "firebase/firestore";
+import { doc, setDoc, collection, addDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
 
 // --- HELPER: Build Data Object ---
@@ -93,24 +93,6 @@ export const overwriteDesign = async (userId, designId, currentObjects, viewStat
     setSaving(false);
   }
 };
-// --- EXPORT JSON (Temp) ---
-export const handleSaveTemp = (canvas) => {
-  if (!canvas) return;
-  const rawJSON = canvas.toJSON();
-  if(rawJSON.objects) {
-    rawJSON.objects = rawJSON.objects.filter(obj => obj.customId !== 'print-area-border');
-  }
-  const cleanJSON = removeUndefined(rawJSON);
-  const blob = new Blob([JSON.stringify(cleanJSON, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `design-${Date.now()}.json`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
 
 export const exportSavedDesignImage = (designData) => {
   if (!designData || !designData.imageData) {
@@ -136,7 +118,7 @@ export const exportSavedDesignImage = (designData) => {
   }
 };
 
-export const exportReferenceImage = (canvas, fileName = 'design-preview') => {
+export const exportReferenceImage = (canvas, fileName = 'design-preview', removeBg=false) => {
   if (!canvas) return;
 
   // 1. Save current state variables
@@ -155,7 +137,7 @@ export const exportReferenceImage = (canvas, fileName = 'design-preview') => {
   if (borderObj) {
       borderObj.visible = false;
   }
-  
+  // canvas.backgroundColor = 'transparent' //removeBg ? 'transparent' : canvas.backgroundColor || '#fff';
   canvas.requestRenderAll();
 
   try {
@@ -165,7 +147,7 @@ export const exportReferenceImage = (canvas, fileName = 'design-preview') => {
           format: 'png',
           quality: 1,
           multiplier: 2, 
-          enableRetinaScaling: true
+          enableRetinaScaling: true, 
       });
 
       // 4. Trigger Download
@@ -188,5 +170,39 @@ export const exportReferenceImage = (canvas, fileName = 'design-preview') => {
           canvas.setActiveObject(activeObj);
       }
       canvas.requestRenderAll();
+  }
+};
+
+export const saveGlobalTemplate = async (canvas, name, category = "General", objects) => {
+  if (!canvas) return;
+
+  try {
+    // 1. Generate Thumbnail
+    // We use a lower multiplier (1) for thumbnails to save space
+    canvas.discardActiveObject();
+    canvas.requestRenderAll();
+    
+    const dataURL = canvas.toDataURL({
+      format: 'png',
+      quality: 0.8,
+      multiplier: 1, 
+    });
+
+    const templateData = {
+      name: name || "Untitled Template",
+      category,
+      createdAt: Date.now(),
+      type: 'BLANK', // Always BLANK as requested
+      thumbnailUrl: dataURL, // In a real app, upload this to Storage and save the URL. For now, Base64 is okay for prototypes.
+      canvasData: objects 
+    };
+
+    // 3. Save to Root Collection
+    await addDoc(collection(firestore, "templates"), templateData);
+    alert("Template created successfully!");
+
+  } catch (error) {
+    console.error("Error saving template:", error);
+    alert("Failed to save template.");
   }
 };

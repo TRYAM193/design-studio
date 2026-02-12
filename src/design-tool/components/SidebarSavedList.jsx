@@ -1,13 +1,14 @@
-// src/design-tool/components/SidebarSavedList.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import useUserDesigns from '../hooks/useUserDesigns';
 import { exportSavedDesignImage } from '../utils/saveDesign';
+import { doc, deleteDoc } from 'firebase/firestore'; 
+import { db } from '@/firebase';
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  MoreVertical, Edit, Merge, Trash2, 
-  Loader2, FileJson, Clock, Image as ImageIcon 
+  MoreVertical, Edit, Merge, Trash2, MoreHorizontal,
+  AlertCircle, FileJson, Image as ImageIcon 
 } from 'lucide-react';
-import { doc, deleteDoc } from 'firebase/firestore'; // 👈 Import Firestore helpers
-import { db } from '@/firebase'; // 👈 Import DB instance
 
 export default function SidebarSavedList({ 
   userId,
@@ -15,28 +16,34 @@ export default function SidebarSavedList({
   onLoadDesign, 
   onMergeDesign 
 }) {
-  // 👇 FIX: Only take what the hook actually provides
   const { designs, loading } = useUserDesigns(userId);
   
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const menuRef = useRef(null);
 
+  // Close menu on outside click or scroll
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setOpenMenuId(null);
+    const handleClose = (event) => {
+      if (menuRef.current && menuRef.current.contains(event.target)) {
+        return;
       }
+      setOpenMenuId(null);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const handleScroll = () => setOpenMenuId(null);
+
+    document.addEventListener('mousedown', handleClose);
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', handleClose);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
   }, []);
 
-  // 👇 NEW: Handle Delete Locally since hook doesn't provide it
   const handleDeleteDesign = async (designId) => {
     if (!userId || !designId) return;
     try {
       await deleteDoc(doc(db, `users/${userId}/designs`, designId));
-      // Note: If useUserDesigns uses onSnapshot, the list will update automatically.
     } catch (err) {
       console.error("Error deleting design:", err);
       alert("Failed to delete design.");
@@ -62,87 +69,110 @@ export default function SidebarSavedList({
       }
     }
   };
-  console.log(designs)
 
-  // FILTERING
+  const handleOpenMenu = (e, designId) => {
+    e.stopPropagation();
+    if (openMenuId === designId) {
+      setOpenMenuId(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    setMenuPosition({
+      top: rect.top, 
+      left: rect.right + 10 
+    });
+    setOpenMenuId(designId);
+  };
+
   const filteredDesigns = (designs || []).filter(design => {
     if (productId) return true; 
     return design.type === 'BLANK' || !design.type; 
   });
 
+  // LOADING SKELETON
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-40 text-slate-500 gap-2">
-        <Loader2 className="animate-spin" size={20} />
-        <span className="text-xs">Loading designs...</span>
+      <div className="h-full overflow-hidden p-3">
+        <div className="grid grid-cols-2 gap-3">
+          {[...Array(6)].map((_, i) => (
+             <Skeleton key={i} className="aspect-square w-full rounded-xl bg-slate-800/50" />
+          ))}
+        </div>
       </div>
     );
   }
 
+  // EMPTY STATE
   if (filteredDesigns.length === 0) {
     return (
-      <div className="p-8 text-center text-slate-500 text-xs">
+      <div className="p-8 text-center text-slate-500 text-xs flex flex-col items-center gap-3">
+        <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center">
+             <FileJson size={20} className="text-slate-600" />
+        </div>
         {productId ? "No saved designs found." : "No blank designs found."}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-2 p-2 h-full overflow-y-auto custom-scrollbar pb-20">
-      {filteredDesigns.map((design) => {
-        const isBlankDesign = design.type === 'BLANK' || !design.type;
+    <div className="h-full overflow-y-auto custom-scrollbar">
+      <div className="grid grid-cols-2 gap-3 p-3 pb-24">
+        {filteredDesigns.map((design) => {
+          const isBlankDesign = design.type === 'BLANK' || !design.type;
 
-        return (
-          <div 
-            key={design.id} 
-            className="group relative flex items-center gap-3 p-2 rounded-lg bg-slate-800/40 hover:bg-slate-800 border border-white/5 hover:border-white/10 transition-all"
-          >
-            {/* Thumbnail */}
-            <div className="w-12 h-12 rounded bg-slate-900 border border-white/5 flex items-center justify-center overflow-hidden shrink-0">
-              {design.imageData ? (
-                <img src={design.imageData} alt={design.name} className="w-full h-full object-cover" />
-              ) : (
-                <FileJson size={20} className="text-slate-600" />
-              )}
-            </div>
+          return (
+            <div 
+              key={design.id} 
+              className="group relative bg-slate-800/20 border border-white/5 rounded-xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-black/40"
+            >
+              {/* Thumbnail Area - Full Card */}
+              <div className="aspect-square relative flex items-center justify-center bg-slate-900/30">
+                {design.imageData ? (
+                  <img 
+                    src={design.imageData} 
+                    alt={design.name} 
+                    className="w-full h-full object-contain p-2 transition-transform duration-500 group-hover:scale-110" 
+                  />
+                ) : (
+                  <FileJson size={24} className="text-slate-600" />
+                )}
+                
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <h4 className="text-xs font-medium text-slate-200 truncate" title={design.name}>
-                {design.name || "Untitled"}
-              </h4>
-              <div className="flex items-center gap-1 mt-0.5">
-                <Clock size={10} className="text-slate-500" />
-                <span className="text-[10px] text-slate-500 truncate">
-                  {design.updatedAt ? new Date(design.updatedAt).toLocaleDateString() : 'Unknown'}
-                </span>
+                {/* Menu Button */}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 transform translate-y-2 group-hover:translate-y-0">
+                   <button
+                    onClick={(e) => handleOpenMenu(e, design.id)}
+                    className={`p-2 rounded-full backdrop-blur-md transition-colors shadow-xl ${openMenuId === design.id ? 'opacity-100 bg-white text-orange-600' : 'text-white bg-black/60'}`}
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Menu */}
-            <div className="relative">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenMenuId(openMenuId === design.id ? null : design.id);
-                }}
-                className={`p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 transition-colors ${openMenuId === design.id ? 'bg-slate-700 text-white' : ''}`}
-              >
-                <MoreVertical size={16} />
-              </button>
-
-              {openMenuId === design.id && (
+              {/* Portal Menu */}
+              {openMenuId === design.id && ReactDOM.createPortal(
                 <div 
                   ref={menuRef}
-                  className="absolute right-0 top-8 w-40 bg-slate-900 border border-white/10 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right"
+                  style={{ 
+                    top: menuPosition.top, 
+                    left: menuPosition.left 
+                  }}
+                  className="fixed w-48 bg-slate-900 border border-white/10 rounded-xl shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-left ring-1 ring-white/5"
                 >
+                  {/* HEADER: JUST NAME CENTERED */}
+                  <div className="p-3 border-b border-white/5 bg-slate-800/50 text-center">
+                      <h4 className="text-xs font-bold text-white truncate px-1">
+                        {design.name || "Untitled"}
+                      </h4>
+                  </div>
+
                   <div className="flex flex-col py-1">
                     
-                    {/* MERGE: Only for Blank designs */}
                     {isBlankDesign && (
                       <button 
                         onClick={(e) => handleAction('merge', design, e)}
-                        className="flex items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-indigo-500/10 hover:text-indigo-400 transition-colors border-b border-white/5"
+                        className="flex items-center gap-3 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-indigo-500/10 hover:text-indigo-400 transition-colors border-b border-white/5"
                       >
                         <Merge size={14} /> 
                         <span>Merge to Canvas</span>
@@ -151,7 +181,7 @@ export default function SidebarSavedList({
 
                     <button 
                       onClick={(e) => handleAction('edit', design, e)}
-                      className="flex items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
+                      className="flex items-center gap-3 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-blue-500/10 hover:text-blue-400 transition-colors"
                     >
                       <Edit size={14} /> 
                       <span>Edit Design</span>
@@ -159,7 +189,7 @@ export default function SidebarSavedList({
 
                     <button 
                       onClick={(e) => handleAction('export', design, e)}
-                      className="flex items-center gap-2 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-green-500/10 hover:text-green-400 transition-colors"
+                      className="flex items-center gap-3 px-3 py-2.5 text-left text-xs text-slate-300 hover:bg-green-500/10 hover:text-green-400 transition-colors"
                     >
                       <ImageIcon size={14} /> 
                       <span>Export Image</span>
@@ -169,18 +199,19 @@ export default function SidebarSavedList({
 
                     <button 
                       onClick={(e) => handleAction('delete', design, e)}
-                      className="flex items-center gap-2 px-3 py-2.5 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="flex items-center gap-3 px-3 py-2.5 text-left text-xs text-red-400 hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 size={14} /> 
                       <span>Delete</span>
                     </button>
                   </div>
-                </div>
+                </div>,
+                document.body 
               )}
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 import {
   Home,
   LayoutTemplate,
+  FolderClosed,
   FolderOpen,
   Package,
   Plus,
@@ -63,7 +64,7 @@ export function DashboardSidebar() {
   const navItems = [
     { icon: Home, label: t("nav.home"), path: "/dashboard", isSpecial: false },
     { icon: LayoutTemplate, label: t("nav.designs"), path: "/dashboard/designs", isSpecial: false },
-    { icon: FolderOpen, label: t("nav.projects"), path: "/dashboard/projects", isSpecial: false },
+    { icon: FolderClosed, label: t("nav.projects"), path: "/dashboard/projects", isSpecial: false },
     { icon: Package, label: t("nav.orders"), path: "/dashboard/orders", isSpecial: false },
   ];
 
@@ -168,7 +169,13 @@ export function DashboardSidebar() {
                           : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
                         }`}
                     >
-                      <item.icon className={`h-4 w-4 ${!isCollapsed && "mr-3"}`} />
+                      {item.label === 'Projects' ?
+                        <>
+                          <item.icon className={`h-4 w-4 transition-opacity opacity-0 duration-300 ${isActive(item.path) ? "opacity-0 hidden" : "opacity-100"} ${!isCollapsed && "mr-3"}`} />
+                          <FolderOpen className={`h-4 w-4 transition-opacity opacity-0 duration-300 ${isActive(item.path) ? "opacity-100" : "opacity-0 hidden"} ${!isCollapsed && "mr-3"}`} />
+
+                        </> :
+                        <item.icon className={`h-4 w-4 ${!isCollapsed && "mr-3"}`} />}
                       {!isCollapsed && <span>{item.label}</span>}
                     </Button>
                   </Link>
@@ -249,16 +256,16 @@ export function DashboardSidebar() {
         {mobileNavItems.map((item) => {
           // ✅ SPECIAL: If it's the "New" (+) button, use onClick -> window.open
           if (item.isSpecial) {
-             return (
-               <button 
-                 key={item.path}
-                 onClick={() => window.open(item.path, '_blank')}
-                 aria-label={item.label}
-                 className="bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-full h-12 w-12 -translate-y-4 shadow-lg shadow-orange-900/50 border-4 border-[#0f172a] hover:scale-105 transition-transform flex items-center justify-center"
-               >
-                 <item.icon className="h-6 w-6" />
-               </button>
-             )
+            return (
+              <button
+                key={item.path}
+                onClick={() => window.open(item.path, '_blank')}
+                aria-label={item.label}
+                className="bg-gradient-to-br from-orange-500 to-red-600 text-white rounded-full h-12 w-12 -translate-y-4 shadow-lg shadow-orange-900/50 border-4 border-[#0f172a] hover:scale-105 transition-transform flex items-center justify-center"
+              >
+                <item.icon className="h-6 w-6" />
+              </button>
+            )
           }
 
           // Normal Navigation
@@ -269,7 +276,13 @@ export function DashboardSidebar() {
                 size="icon"
                 className={`p-2.5 text-slate-500 bg-transparent ${isActive(item.path) ? "text-orange-600 bg-white rounded-2xl" : ""}`}
               >
-                <item.icon className="h-5 w-5" />
+                {item.label === 'Projects' ?
+                  <>
+                    <item.icon className={`h-5 w-5 transition-opacity opacity-0 duration-300 ${isActive(item.path) ? "opacity-0 hidden" : "opacity-100"} `} />
+                    <FolderOpen className={`h-5 w-5 transition-opacity opacity-0 duration-300 ${isActive(item.path) ? "opacity-100" : "opacity-0 hidden"} `} />
+
+                  </> :
+                  <item.icon className={`h-5 w-5 `} />}
               </Button>
             </Link>
           )

@@ -27,6 +27,7 @@ import MobileEditorLayout from '../mobile/MobileEditorLayout';
 import { calculateImageDPI } from '../utils/dpiCalculator';
 import { toast } from 'sonner';
 import ExportButton from '../components/ExportButton';
+import SaveTemplateButton from '../components/SaveTemplateButton';
 
 const uuidv4 = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -86,7 +87,7 @@ export default function EditorPanel() {
     const urlColor = searchParams.get('color');
     const urlSize = searchParams.get('size');
     const urlDesignId = searchParams.get('designId');
-
+    const urlTemplateId = searchParams.get('templateId');
     const editCartId = searchParams.get('editCartId');
     const [isEditMode, setIsEditMode] = useState(false);
 
@@ -333,14 +334,14 @@ export default function EditorPanel() {
                     setCurrentView(activeView);
                     const activeObjects = savedStates[activeView] || [];
                     dispatch(setCanvasObjects(activeObjects));
-                    
+
                     setSearchParams(prev => {
                         prev.set('designId', designData.id);
                         return prev;
                     });
                     setActivePanel(null);
                 }
-            } 
+            }
             // CASE B: Load Blank Design (NEW: Replace canvas instead of merge)
             else if (isBlank) {
                 const incomingObjects = Array.isArray(designData.canvasData)
@@ -359,28 +360,42 @@ export default function EditorPanel() {
         }
     };
 
-    const navigateToTemplates = () => {
-        const currentObjects = store.getState().canvas.present;
-        const currentViewSnapshot = currentViewRef.current;
-        const allViewsSnapshot = viewStatesRef.current;
-        const backupData = {
-            view: currentViewSnapshot,
-            viewStates: {
-                ...allViewsSnapshot,
-                [currentViewSnapshot]: currentObjects
-            },
-            timestamp: Date.now()
-        };
-        sessionStorage.setItem('merge_context', JSON.stringify(backupData));
-        navigation('/dashboard/templates', {
-            state: {
-                filterMode: 'product',
-                filterProductId: productData.productId,
-                filterColor: canvasBg,
-                filterSize: urlSize
+    // Template Load to canvas
+    useEffect(() => {
+        const loadTemplateFromUrl = async () => {
+            // Only run if we have a template ID and we haven't loaded a design yet
+            if (!urlTemplateId) return;
+
+            try {
+                // A. Fetch the Template from the Global Collection
+                const templateRef = doc(db, 'templates', urlTemplateId);
+                const templateSnap = await getDoc(templateRef);
+
+                if (templateSnap.exists()) {
+                    const templateData = templateSnap.data();
+
+                    // B. THE JOB IS DONE HERE 👇
+                    if (templateData.canvasData) {
+                        dispatch(setCanvasObjects(templateData.canvasData));
+                    }
+
+                    // C. CRITICAL: Detach from the template
+                    // We set these to null so the system treats this as a "New Design"
+                    setEditingDesignId(null);
+                    setCurrentDesign(null);
+
+                    // Optional: Remove the ID from URL so it looks cleaner
+                    // setSearchParams({}); 
+                } else {
+                    console.error("Template not found");
+                }
+            } catch (err) {
+                console.error("Error loading template from URL:", err);
             }
-        });
-    }
+        };
+
+        loadTemplateFromUrl();
+    }, [urlTemplateId]);
 
     // --- Product Data Helpers ---
 
@@ -609,6 +624,44 @@ export default function EditorPanel() {
         return () => window.removeEventListener('resize', calculateScale);
     }, [productData, currentView]);
 
+    // Merge and Replace Template
+    const handleMergeTemplate = (template) => {
+        if (!template || !template.canvasData) return;
+
+        // Use existing merge logic: Generate new IDs and Offset
+        const newObjects = template.canvasData.map(obj => ({
+            ...obj,
+            id: uuidv4(),
+            customId: uuidv4(),
+            props: {
+                ...obj.props,
+                left: (obj.props.left || 0) + 30, // Slight offset
+                top: (obj.props.top || 0) + 30
+            }
+        }));
+
+        const currentObjects = store.getState().canvas.present;
+        dispatch(setCanvasObjects([...currentObjects, ...newObjects]));
+        setActivePanel(null);
+    };
+
+    // 2. HANDLE REPLACE TEMPLATE (Start Fresh)
+    const handleReplaceTemplate = (template) => {
+        if (!template || !template.canvasData) return;
+
+        if (window.confirm("This will replace your current design. Continue?")) {
+            // A. Load the Objects
+            dispatch(setCanvasObjects(template.canvasData));
+
+            // B. CRITICAL: Clear the ID so it saves as NEW
+            setEditingDesignId(null);
+            setCurrentDesign(null);
+
+            // Optional: Close sidebar
+            setActivePanel(null);
+        }
+    };
+
     // --- Canvas Utils (Reduced for speed) ---
 
     const getCleanDataURL = (targetWidth = 1200, isSave = false) => {
@@ -809,10 +862,7 @@ export default function EditorPanel() {
                 <div className="main full-height-main">
                     <MainToolbar
                         activePanel={activePanel}
-                        onSelectTool={(tool) => {
-                            if (tool === 'templates') { navigateToTemplates(); }
-                            else { setActivePanel(prev => prev === tool ? null : tool); }
-                        }}
+                        onSelectTool={(tool) => { setActivePanel(prev => prev === tool ? null : tool); }}
                         setSelectedId={setSelectedId}
                         setActiveTool={setActiveTool}
                         navigation={navigation}
@@ -833,6 +883,8 @@ export default function EditorPanel() {
                             productId={urlProductId || currentDesign?.productConfig?.productId || (productData ? productData.id : null)}
                             onMergeDesign={handleMergeDesign}
                             userId={userId}
+                            onMergeTemplate={handleMergeTemplate}
+                            onReplaceTemplate={handleReplaceTemplate}
                         />
                     </div>
 
@@ -880,6 +932,10 @@ export default function EditorPanel() {
                                             canvas={fabricCanvas}
                                             currentDesignName={currentDesign?.name || "Untitled Design"}
                                         />
+                                        <SaveTemplateButton
+                                            canvas={fabricCanvas}
+                                            objects={canvasObjects}
+                                        />
                                     </>
                                 )}
                                 {productData &&
@@ -903,7 +959,7 @@ export default function EditorPanel() {
                     </main>
 
                     <aside className={`right-panel no-scrollbar ${(selectedId ? showProperties : showColorPanel) ? 'active' : ''}`}>
-                        {selectedId && canvasObjects && canvasObjects.length > 0 ? (
+                        {selectedId ? (
                             <RightSidebarTabs id={selectedId} type={activeTool} object={canvasObjects.find((obj) => obj.id === selectedId)} updateObject={updateObject} removeObject={removeObject} addText={addText} fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} />
                         ) : (productData ? (
                             <div className="p-6 flex flex-col h-full overflow-y-auto">
@@ -969,7 +1025,7 @@ export default function EditorPanel() {
                                     <p className="text-[10px] text-center text-slate-500 mt-2">Secure checkout powered by Stripe</p>
                                 </div>
                             </div>
-                        ) : (!canvasObjects.length &&
+                        ) : ( !fabricCanvas?.getActiveObject() && 
                             <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300">
                                 <div className="w-20 h-20 rounded-2xl bg-slate-800/30 border border-white/5 flex items-center justify-center mb-4 relative overflow-hidden group">
                                     {/* Subtle Shine Effect */}
@@ -1098,7 +1154,10 @@ export default function EditorPanel() {
                                 setSelectedId={setSelectedId}
                                 setActiveTool={setActiveTool}
                                 selectedId={selectedId}
+                                userId={userId}
                                 onMergeDesign={handleMergeDesign}
+                                onMergeTemplate={handleMergeTemplate}
+                                onReplaceTemplate={handleReplaceTemplate}
                             />
                         </div>
                     </div>
