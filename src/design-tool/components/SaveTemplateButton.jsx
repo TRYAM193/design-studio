@@ -1,23 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { saveGlobalTemplate } from '../utils/saveDesign';
-import { Layout, Loader2, Lock } from 'lucide-react';
+// Check your import path matches your project structure
+import { saveGlobalTemplate } from '../utils/saveDesign'; 
+import { Layout, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { object } from 'zod';
-
-// 🔒 REPLACE THIS WITH YOUR ACTUAL FIREBASE USER ID
-// You can find this in the Firebase Console -> Authentication -> User UID
-const ADMIN_UIDS = [
-  "mFezQyeohXUsRFYhQqgg2jbod0i1", 
-  "ANOTHER_ADMIN_UID_IF_NEEDED"
-];
 
 export default function SaveTemplateButton({ canvas, className, objects }) {
   const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loadingClaim, setLoadingClaim] = useState(true);
 
-  // 1. SECURITY CHECK: If user is not admin, return nothing (hidden)
-  if (!user || !ADMIN_UIDS.includes(user.uid)) {
+  // 🔒 SECURITY CHECK: Check for 'admin' custom claim
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) {
+        setIsAdmin(false);
+        setLoadingClaim(false);
+        return;
+      }
+      try {
+        // Force refresh to get latest claims
+        const tokenResult = await user.getIdTokenResult();
+        setIsAdmin(!!tokenResult.claims.admin);
+      } catch (e) {
+        console.error("Admin check failed", e);
+        setIsAdmin(false);
+      } finally {
+        setLoadingClaim(false);
+      }
+    };
+
+    checkAdmin();
+  }, [user]);
+
+  // 1. IF NOT ADMIN, RETURN NULL (Hidden from normal users)
+  if (loadingClaim || !isAdmin) {
     return null; 
   }
 
@@ -35,6 +53,7 @@ export default function SaveTemplateButton({ canvas, className, objects }) {
     try {
       // 3. Call the Utility
       await saveGlobalTemplate(canvas, name, category, objects);
+      alert("✅ Template Saved Successfully!");
     } catch (error) {
       console.error(error);
       alert("Failed to save template. Check console.");

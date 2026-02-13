@@ -50,7 +50,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // 1. ACTIVE CART LISTENER
   useEffect(() => {
-    if (!user?.uid) {
+    if (!user || !user?.uid) {
       setItems([]); 
       return;
     }

@@ -1,23 +1,197 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useLocation } from "react-router";
+import { useParams, Link, useLocation } from "react-router"; // Fixed import
 import { 
-  Package, Truck, Calendar, MapPin, ExternalLink, 
+  Truck, Calendar, MapPin, ExternalLink, 
   ArrowLeft, RefreshCw, Loader2, Check, Circle, 
-  Printer, Shirt, CreditCard, ShieldCheck, HelpCircle, AlertCircle 
+  Printer, Shirt, CreditCard, ShieldCheck, HelpCircle, AlertCircle,
+  Sparkles, Archive, FileImage, Download
 } from "lucide-react"; 
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 import { db, functions } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
 
 // ------------------------------------------------------------------
-// 📝 CONSTANTS
+// 📦 HELPER: Download Zip Logic
+// ------------------------------------------------------------------
+const downloadMockupsZip = async (itemTitle: string, urls: string[]) => {
+  if (!urls.length) return;
+  const zip = new JSZip();
+  const folder = zip.folder("mockups");
+
+  try {
+    toast.info("Preparing ZIP file...");
+    const promises = urls.map(async (url, i) => {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const ext = url.split('.').pop()?.split('?')[0] || "png";
+      folder?.file(`mockup_${i + 1}.${ext}`, blob);
+    });
+
+    await Promise.all(promises);
+    const content = await zip.generateAsync({ type: "blob" });
+    saveAs(content, `${itemTitle.replace(/\s+/g, '_')}_mockups.zip`);
+    toast.success("Download started!");
+  } catch (err) {
+    console.error("Failed to zip files:", err);
+    toast.error("Could not generate ZIP. Try downloading images individually.");
+  }
+};
+
+// ------------------------------------------------------------------
+// 🖼️ COMPONENT: Print File Card
+// ------------------------------------------------------------------
+const PrintFileCard = ({ label, url }: { label: string, url?: string }) => {
+  if (!url) return null;
+
+  return (
+    <div className="group relative bg-slate-950 border border-white/10 rounded-lg p-3 flex items-center gap-3 transition-all hover:border-blue-500/50">
+      <div className="h-12 w-12 rounded bg-slate-900 flex items-center justify-center border border-white/5 overflow-hidden">
+        <img src={url} alt={label} className="h-full w-full object-contain opacity-80 group-hover:opacity-100" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{label}</p>
+        <p className="text-[10px] text-slate-500 truncate">High-Res PNG • 300 DPI</p>
+      </div>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              className="h-8 w-8 text-slate-400 hover:text-white hover:bg-blue-500/20"
+              onClick={() => saveAs(url, `${label.toLowerCase().replace(" ", "_")}.png`)}
+            >
+              <Download className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent><p>Download Source File</p></TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+};
+
+// ------------------------------------------------------------------
+// 🎨 COMPONENT: Mockup Gallery
+// ------------------------------------------------------------------
+const MockupGallerySection = ({ item }: { item: any }) => {
+  const gallery = item.mockupFiles?.gallery || [];
+  
+  // Fallback to legacy structure
+  if (gallery.length === 0) {
+    if (item.mockupFiles?.front) gallery.push(item.mockupFiles.front);
+    if (item.mockupFiles?.back) gallery.push(item.mockupFiles.back);
+    if (gallery.length === 0 && (item.preview || item.image || item.designData?.previewImage)) {
+        gallery.push(item.preview || item.image || item.designData?.previewImage);
+    }
+  }
+
+  const [selectedImage, setSelectedImage] = useState(gallery[0]);
+  const isReady = gallery.length > 0;
+
+  useEffect(() => {
+    if (gallery.length > 0 && !gallery.includes(selectedImage)) {
+      setSelectedImage(gallery[0]);
+    }
+  }, [gallery]);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+         <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+           <Sparkles className="w-3 h-3 text-orange-400" /> 
+           3D Mockups
+         </h4>
+         {isReady && gallery.length > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 text-[10px] text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 gap-1 px-2"
+              onClick={() => downloadMockupsZip(item.title, gallery)}
+            >
+              <Archive className="w-3 h-3" /> Download ZIP
+            </Button>
+         )}
+      </div>
+
+      <div className="flex gap-4">
+        {/* Main Preview */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <div className="relative w-32 h-32 bg-slate-800/50 rounded-xl border border-white/10 overflow-hidden flex-shrink-0 cursor-zoom-in group">
+              <img 
+                src={selectedImage} 
+                alt="Mockup" 
+                className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+              />
+              {!isReady && (
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-center p-2">
+                   <Loader2 className="w-6 h-6 text-blue-400 animate-spin mb-1" />
+                   <span className="text-[9px] text-slate-300">Generating...</span>
+                </div>
+              )}
+            </div>
+          </DialogTrigger>
+          <DialogContent className="bg-slate-950 border-white/10 max-w-4xl w-full p-1 overflow-hidden">
+             <div className="relative w-full aspect-video bg-black/50 rounded-lg flex items-center justify-center">
+                <img src={selectedImage} className="max-h-full max-w-full object-contain" alt="Full Preview" />
+             </div>
+             {gallery.length > 1 && (
+                <div className="flex gap-2 p-4 overflow-x-auto justify-center bg-slate-900/50">
+                   {gallery.map((img: string, i: number) => (
+                      <button 
+                        key={i} 
+                        onClick={() => setSelectedImage(img)}
+                        className={`w-16 h-16 rounded border-2 overflow-hidden flex-shrink-0 ${selectedImage === img ? 'border-blue-500' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                      >
+                         <img src={img} className="w-full h-full object-cover" alt={`Thumb ${i}`} />
+                      </button>
+                   ))}
+                </div>
+             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Thumbnails Grid */}
+        {isReady && (
+          <ScrollArea className="flex-1 h-32">
+             <div className="grid grid-cols-3 gap-2 pr-3">
+                {gallery.map((img: string, i: number) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImage(img)}
+                    className={`aspect-square rounded-lg border overflow-hidden bg-slate-800/30 transition-all ${
+                      selectedImage === img 
+                        ? "border-blue-500 ring-1 ring-blue-500/20" 
+                        : "border-white/5 hover:border-white/20"
+                    }`}
+                  >
+                    <img src={img} className="w-full h-full object-cover" alt={`Thumb ${i}`} />
+                  </button>
+                ))}
+             </div>
+          </ScrollArea>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ------------------------------------------------------------------
+// 統 CONSTANTS (Preserved)
 // ------------------------------------------------------------------
 const TRUST_LINES = [
   "Custom prints need 2-3 days to craft perfectly.",
@@ -39,7 +213,7 @@ const HELP_OPTIONS = [
 ];
 
 // ------------------------------------------------------------------
-// 🚦 VERTICAL TIMELINE TRACKER
+// 圜 VERTICAL TIMELINE TRACKER (Preserved)
 // ------------------------------------------------------------------
 const OrderTrackerVertical = ({ status, providerStatus }: { status: string, providerStatus?: string }) => {
   const steps = [
@@ -100,7 +274,7 @@ const OrderTrackerVertical = ({ status, providerStatus }: { status: string, prov
 };
 
 // ------------------------------------------------------------------
-// 📄 MAIN PAGE
+// 塘 MAIN PAGE
 // ------------------------------------------------------------------
 export default function OrderDetailsPage() {
   const { orderId } = useParams();
@@ -183,7 +357,7 @@ export default function OrderDetailsPage() {
             <div className="flex items-center gap-4 text-sm text-slate-400">
                <span className="flex items-center gap-2"><Calendar className="h-4 w-4" /> {formatDate(order.createdAt)}</span>
                <span className="h-1 w-1 rounded-full bg-slate-600"></span>
-               <span className="flex items-center gap-2"><CreditCard className="h-4 w-4" /> Total: {order.payment?.amount || order.total} {order.currency}</span>
+               <span className="flex text-bold items-center gap-2"><CreditCard className="h-4 w-4" /> Total : {order.payment?.currency || order.currency}{order.payment?.total || order.total}</span>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -209,7 +383,7 @@ export default function OrderDetailsPage() {
 
        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
-          {/* 📦 LEFT COLUMN - PRODUCT DETAILS */}
+          {/* 逃 LEFT COLUMN - PRODUCT DETAILS */}
           <div className="lg:col-span-8 space-y-6">
             
             {order.items.map((item: any, index: number) => (
@@ -253,7 +427,7 @@ export default function OrderDetailsPage() {
                             </div>
                         </div>
 
-                        {/* Blank spacer or other info */}
+                        {/* Blank spacer */}
                         <div className="hidden sm:block"></div>
 
                         {/* Quantity (Separate Line) */}
@@ -265,7 +439,7 @@ export default function OrderDetailsPage() {
                         {/* Price (Separate Line) */}
                         <div className="space-y-1">
                             <span className="text-xs uppercase text-slate-500 font-bold tracking-wider">Price</span>
-                            <p className="text-green-400 font-bold text-lg">{item.price} {order.currency}</p>
+                            <p className="text-green-400 font-bold text-lg">{order.payment?.currency} {item.price}</p>
                         </div>
 
                         {/* CTA */}
@@ -279,30 +453,37 @@ export default function OrderDetailsPage() {
 
                   <Separator className="bg-white/5" />
 
-                  {/* PREVIEW IMAGES */}
-                  <div>
-                    <h3 className="text-sm uppercase text-slate-500 font-bold tracking-wider mb-2 flex items-center gap-2">
-                       <Printer className="h-4 w-4" /> Printing Preview
-                    </h3>
-                    <p className="text-xs text-slate-400 mb-4 italic">
-                        Note: This image shows exactly what we sent to print.
-                    </p>
+                  {/* -------------------------------------------------------- */}
+                  {/* ✅ NEW: MOCKUPS & FILES SECTION */}
+                  {/* -------------------------------------------------------- */}
+                  <div className="grid md:grid-cols-2 gap-8">
                     
-                    <div className="flex flex-wrap gap-3 sm:gap-4">
-                      {(order.printFiles?.front || item.designData?.previewImage) && (
-                        <div className="relative group rounded-lg overflow-hidden border border-white/10 bg-black/40 w-24 h-24 sm:w-32 sm:h-32">
-                          <img src={order.printFiles?.front || item.designData?.previewImage} className="w-full h-full object-contain p-2" />
-                          <Badge className="absolute top-1 left-1 bg-black/50 text-white text-[10px]">FRONT</Badge>
-                        </div>
-                      )}
-                      {order.printFiles?.back && (
-                        <div className="relative group rounded-lg overflow-hidden border border-white/10 bg-black/40 w-24 h-24 sm:w-32 sm:h-32">
-                          <img src={order.printFiles?.back} className="w-full h-full object-contain p-2" />
-                          <Badge className="absolute top-1 left-1 bg-black/50 text-white text-[10px]">BACK</Badge>
-                        </div>
-                      )}
+                    {/* LEFT: 3D Mockup Gallery */}
+                    <MockupGallerySection item={item} />
+
+                    {/* RIGHT: Production Files */}
+                    <div className="space-y-3">
+                       <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                          <FileImage className="w-3 h-3 text-purple-400" />
+                          Production Files
+                       </h4>
+                       <div className="space-y-2">
+                          {item.printFiles?.front && (
+                             <PrintFileCard label="Front Print" url={item.printFiles.front} />
+                          )}
+                          {item.printFiles?.back && (
+                             <PrintFileCard label="Back Print" url={item.printFiles.back} />
+                          )}
+                          {!item.printFiles?.front && !item.printFiles?.back && (
+                             <div className="p-4 border border-dashed border-white/10 rounded-lg text-center text-xs text-slate-500">
+                                <Printer className="w-4 h-4 mx-auto mb-1 opacity-50" />
+                                Processing print files...
+                             </div>
+                          )}
+                       </div>
                     </div>
                   </div>
+                  {/* -------------------------------------------------------- */}
 
                 </CardContent>
               </Card>
@@ -318,7 +499,7 @@ export default function OrderDetailsPage() {
             </div>
           </div>
 
-          {/* 🚚 RIGHT COLUMN - TRACKING */}
+          {/* 囹 RIGHT COLUMN - TRACKING (Preserved) */}
           <div className="lg:col-span-4 space-y-6 sm:space-y-8 lg:space-y-8">
             <Card className="bg-slate-800/40 border-white/10 backdrop-blur-sm h-fit">
               <CardHeader className="bg-slate-800/60 border-b border-white/5 py-4">

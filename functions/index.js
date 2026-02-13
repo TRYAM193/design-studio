@@ -114,40 +114,77 @@ async function deletePrintifyProduct(shopId, productId) {
     console.error("Failed to delete temp product:", error.message);
   }
 }
+// ------------------------------------------------------------------
+// 🛠️ UPDATED PRINTIFY HELPERS
+// ------------------------------------------------------------------
 
-// Helper: Wait for images to appear (Polling)
-async function waitForPrintifyImages(shopId, productId, token, maxRetries = 5) {
+// 1. IMPROVED POLLING: Waits for Lifestyle Images
+async function waitForPrintifyImages(shopId, productId, token, maxRetries = 15) {
   let attempt = 0;
+  let lastImageCount = 0;
+  let stabilityCount = 0; // How many times the count hasn't changed
 
   while (attempt < maxRetries) {
     try {
       console.log(`⏳ Polling Printify Product ${productId} (Attempt ${attempt + 1}/${maxRetries})...`);
 
-      // GET product details to check image status
       const res = await axios.get(`https://api.printify.com/v1/shops/${shopId}/products/${productId}.json`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      const images = res.data.images;
+      const images = res.data.images || [];
+      const count = images.length;
 
-      // VALIDATION: Ensure we have images and they are not empty strings
-      if (images && images.length > 0 && images[0].src) {
-        console.log("✅ Images detected!");
+      // SUCCESS CRITERIA:
+      // 1. We have 3 or more images (Front + Back + At least 1 Lifestyle)
+      if (count >= 3) {
+        console.log(`✅ Detected ${count} images (Lifestyle included!)`);
         return images;
       }
+
+      // 2. STABILITY CHECK:
+      // If we have some images (e.g. 2), but the count hasn't changed for 3 checks, 
+      // Printify might simply not have any more for this specific item.
+      if (count > 0 && count === lastImageCount) {
+        stabilityCount++;
+        if (stabilityCount >= 3) {
+          console.log(`⚠️ Image count stable at ${count} for 3 checks. Returning what we have.`);
+          return images;
+        }
+      } else {
+        stabilityCount = 0; // Reset if count changed (images are still loading)
+      }
+
+      lastImageCount = count;
 
     } catch (e) {
       console.warn(`⚠️ Polling error: ${e.message}`);
     }
 
-    // Wait 1.5 seconds before next check
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Wait 2 seconds (Lifestyle images take time to render)
+    await new Promise(resolve => setTimeout(resolve, 2000));
     attempt++;
   }
 
-  return null; // Failed after retries
+  // If we timed out but found some images (e.g., just the 2 front/back), return them 
+  // so the user at least sees something.
+  if (lastImageCount > 0) {
+    console.log(`⚠️ Polling timed out. Returning ${lastImageCount} images found.`);
+    // We need to fetch one last time to get the array, or ideally we should have stored it.
+    // For simplicity in this flow, we'll try one last fetch:
+    try {
+      const finalRes = await axios.get(`https://api.printify.com/v1/shops/${shopId}/products/${productId}.json`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      return finalRes.data.images || [];
+    } catch (e) { return null; }
+  }
+
+  return null;
 }
 
+
+// 2. UPDATED GENERATOR: Forces "Generate" Endpoint
 async function getMockupsFromPrintify(item, printFiles) {
   const shopId = functions.config().printify?.shop_id;
   const token = functions.config().printify?.token;
@@ -159,7 +196,7 @@ async function getMockupsFromPrintify(item, printFiles) {
   let tempProductId = null;
 
   try {
-    // 1. UPLOAD & PREPARE (Same as before)
+    // A. UPLOAD & PREPARE
     const frontImageId = printFiles.front ? await uploadPrintifyImage(printFiles.front) : null;
     const backImageId = printFiles.back ? await uploadPrintifyImage(printFiles.back) : null;
 
@@ -176,7 +213,7 @@ async function getMockupsFromPrintify(item, printFiles) {
     }
     if (!variantId) throw new Error("No variant found");
 
-    // 2. CREATE PRODUCT
+    // B. CREATE PRODUCT
     console.log("Creating Temp Product...");
     const createRes = await axios.post(`https://api.printify.com/v1/shops/${shopId}/products.json`, {
       title: "TEMP_MOCKUP_" + Date.now(),
@@ -189,34 +226,38 @@ async function getMockupsFromPrintify(item, printFiles) {
 
     tempProductId = createRes.data.id;
 
-    // 3. TRIGGER GENERATION (Optional / Force Refresh)
-    // If you want to explicitly hit the generate endpoint, do it here. 
-    // Note: Standard API usually auto-generates, but this forces a task.
+    // C. ⚡ FORCE GENERATION (CRITICAL STEP ADDED) ⚡
+    // This tells Printify: "Hey, render ALL the fancy lifestyle shots now!"
     try {
-      // NOTE: The endpoint structure is usually /shops/{id}/products/{id}/...
-      // We wrap this in a try/catch so it doesn't break the flow if the endpoint is deprecated/changed.
-      /* await axios.post(`https://api.printify.com/v1/shops/${shopId}/products/${tempProductId}/mockups/generate.json`, {}, {
-          headers: { 'Authorization': `Bearer ${token}` }
+      console.log("⚡ Triggering full mockup generation...");
+      await axios.post(`https://api.printify.com/v1/shops/${shopId}/products/${tempProductId}/mockups/generate.json`, {}, {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      */
-      // Since the standard Create flow triggers it, we rely on Polling below to catch the result.
     } catch (genError) {
-      console.warn("Manual generation trigger skipped/failed:", genError.message);
+      console.warn("Generation trigger warning (might be auto-generating):", genError.message);
     }
 
-    // 4. POLL FOR IMAGES (The Critical Step)
-    // We do NOT just sleep. We check if they exist.
+    // D. POLL FOR IMAGES
     const validImages = await waitForPrintifyImages(shopId, tempProductId, token);
 
-    if (!validImages) {
-      throw new Error("Mockup generation timed out (images returned null)");
+    if (!validImages || validImages.length === 0) {
+      throw new Error("Mockup generation timed out");
     }
 
-    // 5. EXTRACT
-    const mockupUrls = {};
+    // E. EXTRACT GALLERY
+    // Initialize with gallery array
+    const mockupUrls = { front: null, back: null, gallery: [] };
+
     validImages.forEach(img => {
+      // 1. Push EVERYTHING to gallery (Lifestyle shots will be here)
+      if (img.src) {
+        mockupUrls.gallery.push(img.src);
+      }
+
+      // 2. Identify Front/Back for the main view
       const pos = (img.position || "").toLowerCase();
       const isDefault = img.is_default;
+
       if (isMug) {
         if (pos === 'front' || pos === 'center') mockupUrls.front = img.src;
         else if (isDefault && !mockupUrls.front) mockupUrls.front = img.src;
@@ -226,7 +267,12 @@ async function getMockupsFromPrintify(item, printFiles) {
       }
     });
 
-    // 6. DELETE (Safe now because we confirmed we have images)
+    // Fallback: If 'front' is missing but we have gallery images, use the first one
+    if (!mockupUrls.front && mockupUrls.gallery.length > 0) {
+      mockupUrls.front = mockupUrls.gallery[0];
+    }
+
+    // F. DELETE TEMP PRODUCT
     console.log(`🗑️ Deleting temp product ${tempProductId}...`);
     await deletePrintifyProduct(shopId, tempProductId);
 
@@ -235,7 +281,8 @@ async function getMockupsFromPrintify(item, printFiles) {
   } catch (error) {
     console.error("❌ Mockup Gen Failed:", error.message);
     if (tempProductId) await deletePrintifyProduct(shopId, tempProductId);
-    return { front: printFiles.front, back: printFiles.back };
+    // Return basics if advanced failed
+    return { front: printFiles.front, back: printFiles.back, gallery: [] };
   }
 }
 
@@ -451,9 +498,10 @@ async function sendToQikink(orderData, processedItems) {
     const map = item.vendor_maps.qikink;
     const colorName = item.variant?.color || item.selectedColor;
     const sizeName = item.variant?.size || item.selectedSize;
+    const isMug = item.title.toLowerCase().includes('mug')
 
     // Construct SKU
-    const finalSku = item.title.toLowerCase().includes('mug') || item.title.toLowerCase().includes('tote')
+    const finalSku = isMug || item.title.toLowerCase().includes('tote')
       ? map.product_id // Handle special Mug logic if needed
       : `${map.product_id}-${map.color_map[colorName]}-${sizeName}`;
 
@@ -484,7 +532,7 @@ async function sendToQikink(orderData, processedItems) {
 
     qikinkLineItems.push({
       search_from_my_products: 0,
-      print_type_id: 1,
+      print_type_id: isMug ? 5 : 1,
       quantity: item.quantity,
       sku: finalSku,
       price: "0",
@@ -537,36 +585,78 @@ async function sendToQikink(orderData, processedItems) {
 // 📡 4. WEBHOOK HANDLER (THE LISTENER)
 // ------------------------------------------------------------------
 exports.handleProviderWebhook = functions.https.onRequest(async (req, res) => {
-  const source = req.query.source; // ?source=printify OR ?source=gelato
+  const source = req.query.source; 
   const body = req.body;
 
-  console.log(`🔔 Webhook received from ${source}`);
+  console.log(`🔔 Webhook received from ${source} [${body.type || body.event}]`);
 
   try {
-    let internalOrderId = null;
+    // 🛡️ 1. SAFETY: Handle Printify "Ping"
+    if (body.type === 'ping' || (source === 'printify' && !body.resource)) {
+      console.log("✅ Printify Ping received. Responding 200.");
+      return res.status(200).send("Pong");
+    }
+
+    let firestoreOrderRef = null;
     let newStatus = "";
     let trackingData = {};
 
-    // A. HANDLE PRINTIFY
+    // ------------------------------------------------------
+    // A. HANDLE PRINTIFY EVENTS
+    // ------------------------------------------------------
     if (source === 'printify') {
-      // Event: 'order:shipment:created'
-      if (body.type === 'order:shipment:created' || body.type === 'order:shipment:updated') {
-        internalOrderId = body.resource.external_id; // "ORD-123456"
+      const eventType = body.type;
+      const printifyOrderId = body.resource.id; // "5a96f649b2439217d070f507"
+
+      // 1. FIND ORDER IN DB (Using the Printify ID we saved earlier)
+      const snapshot = await db.collection('orders')
+        .where('providerOrderId', '==', printifyOrderId)
+        .limit(1)
+        .get();
+
+      if (snapshot.empty) {
+        console.warn(`⚠️ No order found with providerOrderId: ${printifyOrderId}`);
+        return res.status(200).send("Order not found, skipping");
+      }
+
+      firestoreOrderRef = snapshot.docs[0].ref;
+
+      // 2. PARSE EVENTS based on your payloads
+      
+      // -> Sent to Production
+      if (eventType === 'order:sent-to-production') {
+        newStatus = 'production';
+      }
+      
+      // -> Shipped (Tracking Available)
+      else if (eventType === 'order:shipment:created') {
         newStatus = 'shipped';
+        const carrier = body.resource.data?.carrier; // Extract from 'data.carrier'
+        
         trackingData = {
-          trackingCode: body.resource.shipments?.[0]?.number,
-          trackingUrl: body.resource.shipments?.[0]?.url,
-          // Printify sends delivery date in shipments sometimes
-          estimatedDelivery: body.resource.shipments?.[0]?.delivery_estimate || null
+          trackingCode: carrier?.tracking_number,
+          trackingUrl: carrier?.tracking_url,
+          carrierName: carrier?.code
+        };
+      }
+
+      // -> Delivered
+      else if (eventType === 'order:shipment:delivered') {
+        newStatus = 'delivered';
+        const data = body.resource.data;
+        trackingData = {
+            deliveredAt: data?.delivered_at || new Date().toISOString()
         };
       }
     }
 
-    // B. HANDLE GELATO
+    // ------------------------------------------------------
+    // B. HANDLE GELATO EVENTS (Unchanged)
+    // ------------------------------------------------------
     else if (source === 'gelato') {
-      // Event: 'shipment_dispatched'
       if (body.event === 'shipment_dispatched') {
-        internalOrderId = body.orderReferenceId;
+        const gelatoId = body.orderReferenceId; // Gelato sends YOUR ID back
+        firestoreOrderRef = db.collection('orders').doc(gelatoId);
         newStatus = 'shipped';
         trackingData = {
           trackingCode: body.fulfillmentPackage?.trackingCode,
@@ -575,31 +665,33 @@ exports.handleProviderWebhook = functions.https.onRequest(async (req, res) => {
       }
     }
 
-    // UPDATE DATABASE
-    if (internalOrderId && newStatus) {
-      console.log(`📝 Updating Order ${internalOrderId} to ${newStatus}`);
+    // ------------------------------------------------------
+    // C. UPDATE DATABASE
+    // ------------------------------------------------------
+    if (firestoreOrderRef && newStatus) {
+      console.log(`📝 Updating Order to '${newStatus}'`);
+      
+      // Prepare updates
+      const updates = { status: newStatus };
 
-      const orderRef = db.collection('orders').doc(internalOrderId);
-      const orderSnap = await orderRef.get();
-
-      if (orderSnap.exists) {
-        const updates = {
-          status: newStatus,
-          'providerData.trackingCode': trackingData.trackingCode,
-          'providerData.trackingUrl': trackingData.trackingUrl
-        };
-        if (trackingData.estimatedDelivery) {
-          updates['providerData.estimatedDelivery'] = trackingData.estimatedDelivery;
-        }
-        await orderRef.update(updates);
+      // Add tracking info if available
+      if (trackingData.trackingCode) {
+        updates['providerData.trackingCode'] = trackingData.trackingCode;
+        updates['providerData.trackingUrl'] = trackingData.trackingUrl;
+        updates['providerData.carrier'] = trackingData.carrierName;
       }
+      if (trackingData.deliveredAt) {
+        updates['deliveredAt'] = trackingData.deliveredAt;
+      }
+
+      await firestoreOrderRef.update(updates);
     }
 
     res.status(200).send("Webhook Processed");
 
   } catch (error) {
     console.error("Webhook Error:", error);
-    res.status(500).send("Error");
+    res.status(200).send("Error logged");
   }
 });
 
@@ -885,4 +977,88 @@ exports.saveTshirtDesign = functions.https.onCall(async (data, context) => {
     });
     return { success: true, designId: designRef.id };
   } catch (error) { throw new functions.https.HttpsError('internal', 'Unable to save design.'); }
+});
+
+// ------------------------------------------------------------------
+// 💰 1. STRIPE WEBHOOK (Payment Confirmation)
+// ------------------------------------------------------------------
+exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = functions.config().stripe?.webhook_secret;
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
+  } catch (err) {
+    console.error(`⚠️  Webhook signature verification failed.`, err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  if (event.type === 'payment_intent.succeeded') {
+    const paymentIntent = event.data.object;
+    console.log(`💰 Stripe Payment Succeeded: ${paymentIntent.id}`);
+    
+    // Find order by Payment Intent ID and update status
+    // Note: You need to store 'paymentIntentId' in your order doc when creating it on client
+    const snapshot = await db.collection('orders').where('paymentId', '==', paymentIntent.id).get();
+    
+    if (!snapshot.empty) {
+      const orderDoc = snapshot.docs[0];
+      await orderDoc.ref.update({
+        status: 'processing', // This triggers the processNewOrder bot
+        paymentStatus: 'paid',
+        paidAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      console.log(`✅ Order ${orderDoc.id} updated to processing`);
+    } else {
+      console.warn(`⚠️ No order found for PaymentIntent ${paymentIntent.id}`);
+    }
+  }
+
+  res.json({received: true});
+});
+
+// ------------------------------------------------------------------
+// 💰 2. RAZORPAY WEBHOOK (Payment Confirmation)
+// ------------------------------------------------------------------
+exports.razorpayWebhook = functions.https.onRequest(async (req, res) => {
+  const secret = functions.config().razorpay?.webhook_secret; 
+  
+  // Validate Signature
+  const shasum = crypto.createHmac("sha256", secret);
+  shasum.update(JSON.stringify(req.body));
+  const digest = shasum.digest("hex");
+
+  if (digest !== req.headers["x-razorpay-signature"]) {
+    console.error("❌ Invalid Razorpay Signature");
+    return res.status(400).send("Invalid signature");
+  }
+
+  const event = req.body.event;
+
+  if (event === "payment.captured") {
+    const payment = req.body.payload.payment.entity;
+    const orderId = payment.notes.orderId; // Make sure to pass 'notes: { orderId: ... }' from frontend
+    
+    console.log(`💰 Razorpay Payment Captured for Order ${orderId}`);
+
+    if (orderId) {
+      try {
+        await db.collection("orders").doc(orderId).update({
+          status: "processing", // This triggers the processNewOrder bot
+          paymentStatus: "paid",
+          paymentId: payment.id,
+          paidAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`✅ Order ${orderId} updated to processing`);
+      } catch (e) {
+        console.error("Failed to update order from Razorpay webhook", e);
+        return res.status(500).send("Db Error");
+      }
+    }
+  }
+
+  res.json({ status: "ok" });
 });

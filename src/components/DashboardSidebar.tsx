@@ -12,7 +12,10 @@ import {
   LogOut,
   LogIn,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  MessageCircle,
+  HelpCircle,
+  Pencil
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
@@ -91,22 +94,35 @@ export function DashboardSidebar() {
 
       <div className="p-1">
         <Link to="/dashboard/settings">
-          <DropdownMenuItem className="cursor-pointer hover:bg-white/5 focus:bg-white/5">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </DropdownMenuItem>
+          <div className="flex p-2 items-center gap-2 hover:bg-indigo-500/10 hover:text-indigo-400">
+            <Pencil className="mr-2 h-4 w-4" />
+            <span>Edit Profile</span>
+          </div>
+        </Link>
+        <Link to="/dashboard/help">
+          {/* <DropdownMenuItem className="cursor-pointer hover:bg-indigo-500/10 hover:text-indigo-400"> */}
+          <div className="flex p-2 items-center gap-2 hover:bg-indigo-500/10 hover:text-indigo-400">
+            <HelpCircle className="mr-2 h-4 w-4 " />
+            <span>Help</span>
+          </div>
+        </Link>
+        <Link to="/dashboard/contact">
+          <div className="flex p-2 items-center gap-2 hover:bg-indigo-500/10 hover:text-indigo-400">
+            <MessageCircle className="mr-2 h-4 w-4" />
+            <span>Contact</span>
+          </div>
         </Link>
       </div>
 
       <DropdownMenuSeparator className="bg-white/10" />
 
-      <DropdownMenuItem onClick={() => {
+      <div onClick={() => {
         signOut();
         navigate('/');
-      }} className="text-red-400 focus:bg-red-900/20 cursor-pointer m-1">
+      }} className="flex items-center p-2 gap-2 text-red-400 hover:bg-red-900/20 cursor-pointer">
         <LogOut className="mr-2 h-4 w-4" />
         <span>{t("nav.logout")}</span>
-      </DropdownMenuItem>
+      </div>
     </div>
   );
 

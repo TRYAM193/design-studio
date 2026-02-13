@@ -213,7 +213,7 @@ export default function OrderCheckoutPage() {
 
   // --- LOCATION LIBRARIES ---
   const countries = useMemo(() => {
-    const allowedCodes = ['IN', 'US', 'GB', 'CA', 'DE', 'FR', 'IT', 'ES', 'NL', 'BE', 'AU'];
+    const allowedCodes = ['IN', 'US', 'GB', 'CA'];
     return Country.getAllCountries().filter(c => allowedCodes.includes(c.isoCode));
   }, []);
 

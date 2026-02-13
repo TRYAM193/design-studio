@@ -30,8 +30,12 @@ import AdminOrders from "./pages/AdminOrders.tsx";
 import ProductDetails from "./pages/ProductDetails";
 import HeadlessRender from "./pages/HeadlessRender.tsx";
 import AdminDashboard from "./pages/AdminDashboard";
-import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import LegalPage from "./pages/LegalPage";
+import HelpPage from "./pages/HelpPage";
+import ContactPage from "./pages/ContactPage";
+import DashboardContact from "./pages/DashboardContact";
+import DashboardHelp from "./pages/DashboardHelp";
+import AdminRoute from "./components/AdminRoute";
 
 function RouteSyncer() {
   const location = useLocation();
@@ -65,6 +69,8 @@ createRoot(document.getElementById("root")!).render(
           <RouteSyncer />
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/help" element={<HelpPage />} />
+            <Route path="/contact" element={<ContactPage />} />
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
 
             {/* Store Routes */}
@@ -74,7 +80,6 @@ createRoot(document.getElementById("root")!).render(
 
             <Route path="/design/*" element={<DesignEditorPage />} />
             <Route path="/generator" element={<ThumbnailGenerator />} />
-            <Route path="/admin" element={<AdminProductManager />} />
             <Route path="/terms" element={<TermsConditions />} />
             {/* Dashboard Routes */}
             <Route path="/dashboard" element={<DashboardLayout />}>
@@ -85,12 +90,19 @@ createRoot(document.getElementById("root")!).render(
               <Route path="orders" element={<DashboardOrders />} />
               <Route path="pricing" element={<DashboardPricing />} />
               <Route path="settings" element={<DashboardSettings />} />
+              <Route path="help" element={<DashboardHelp />} />
+              <Route path="contact" element={<DashboardContact />} />
             </Route>
 
             <Route path="/checkout" element={<OrderCheckoutPage />} />
-            <Route path="/admin/orders" element={<AdminOrders />} />
+
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminProductManager />} />
+              <Route path="/admin/orders" element={<AdminOrders />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            </Route>
+
             <Route path="/render/*" element={<HeadlessRender />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/legal/:type" element={<LegalPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

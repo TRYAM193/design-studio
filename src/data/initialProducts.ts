@@ -520,7 +520,7 @@ export const INITIAL_PRODUCTS = [
       },
       qikink: {
         // Mugs typically don't use the SKU pattern, using 'Mug' as base for ID construction
-        product_id: "UWECM-Wh-11oz",
+        product_id: "UWCM-Wh-11 OZ",
         color_map: { "White": "Wh" }
       },
       gelato: {
@@ -549,7 +549,7 @@ export const INITIAL_PRODUCTS = [
     },
 
     price: {
-      IN: 399,
+      IN: 449,
       US: 26.99,
       GB: 20.99,
       EU: 14.99,

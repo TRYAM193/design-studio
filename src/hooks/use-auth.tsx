@@ -8,17 +8,18 @@ import {
   signOut as firebaseSignOut,
   GoogleAuthProvider,
   signInWithPopup,
-  sendPasswordResetEmail // ✅ Import this
+  sendPasswordResetEmail
 } from "firebase/auth";
 import { auth } from "@/firebase";
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  isLoading: boolean;
+  isLoading: boolean; // Legacy support
+  loading: boolean;   // ✅ Added for consistency with AdminRoute/ProtectedRoute
   user: User | null;
   signIn: (type: string, formData?: any) => Promise<void>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>; // ✅ Add type definition
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -60,13 +61,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
   };
 
-  // ✅ New Function: Reset Password
   const resetPassword = async (email: string) => {
     await sendPasswordResetEmail(auth, email);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated: !!user, isLoading, user, signIn, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated: !!user, 
+      isLoading, 
+      loading: isLoading, // ✅ Map loading to isLoading
+      user, 
+      signIn, 
+      signOut, 
+      resetPassword 
+    }}>
       {children}
     </AuthContext.Provider>
   );
