@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useLocation } from "react-router"; // Fixed import
+import { useParams, Link, useLocation } from "react-router";
 import { 
   Truck, Calendar, MapPin, ExternalLink, 
   ArrowLeft, RefreshCw, Loader2, Check, Circle, 
@@ -191,7 +191,7 @@ const MockupGallerySection = ({ item }: { item: any }) => {
 };
 
 // ------------------------------------------------------------------
-// 統 CONSTANTS (Preserved)
+// 統 CONSTANTS
 // ------------------------------------------------------------------
 const TRUST_LINES = [
   "Custom prints need 2-3 days to craft perfectly.",
@@ -213,7 +213,7 @@ const HELP_OPTIONS = [
 ];
 
 // ------------------------------------------------------------------
-// 圜 VERTICAL TIMELINE TRACKER (Preserved)
+// 圜 VERTICAL TIMELINE TRACKER
 // ------------------------------------------------------------------
 const OrderTrackerVertical = ({ status, providerStatus }: { status: string, providerStatus?: string }) => {
   const steps = [
@@ -336,6 +336,14 @@ export default function OrderDetailsPage() {
     return date.toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  // --------------------------------------------------------------
+  // 💰 CALCULATION: Get Total for JUST this specific order/shipment
+  // --------------------------------------------------------------
+  const specificOrderTotal = order?.items?.reduce((acc: number, item: any) => {
+    return acc + (Number(item.price) * Number(item.quantity));
+  }, 0) || 0;
+
+
   if (loading) return <div className="min-h-screen bg-[#0f172a] flex items-center justify-center"><Loader2 className="animate-spin text-orange-500 h-8 w-8" /></div>;
   if (!order) return <div className="text-white text-center pt-20">Order not found</div>;
 
@@ -357,7 +365,11 @@ export default function OrderDetailsPage() {
             <div className="flex items-center gap-4 text-sm text-slate-400">
                <span className="flex items-center gap-2"><Calendar className="h-4 w-4" /> {formatDate(order.createdAt)}</span>
                <span className="h-1 w-1 rounded-full bg-slate-600"></span>
-               <span className="flex text-bold items-center gap-2"><CreditCard className="h-4 w-4" /> Total : {order.payment?.currency || order.currency}{order.payment?.total || order.total}</span>
+               {/* 💰 UPDATED: Shows specific total for this split order */}
+               <span className="flex text-bold items-center gap-2">
+                 <CreditCard className="h-4 w-4" /> 
+                 Total : {order.payment?.currency || order.currency}{specificOrderTotal.toFixed(2)}
+               </span>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -409,7 +421,7 @@ export default function OrderDetailsPage() {
 
                      {/* INFO GRID */}
                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
-                        {/* Name - Spans full width */}
+                        {/* Name */}
                         <div className="col-span-2 space-y-1">
                             <span className="text-xs uppercase text-slate-500 font-bold tracking-wider">Product</span>
                             <p className="text-white font-medium text-lg leading-tight">{item.title}</p>
@@ -430,13 +442,13 @@ export default function OrderDetailsPage() {
                         {/* Blank spacer */}
                         <div className="hidden sm:block"></div>
 
-                        {/* Quantity (Separate Line) */}
+                        {/* Quantity */}
                         <div className="space-y-1">
                             <span className="text-xs uppercase text-slate-500 font-bold tracking-wider">Quantity</span>
                             <p className="text-white font-medium text-lg">{item.quantity}</p>
                         </div>
                         
-                        {/* Price (Separate Line) */}
+                        {/* Price */}
                         <div className="space-y-1">
                             <span className="text-xs uppercase text-slate-500 font-bold tracking-wider">Price</span>
                             <p className="text-green-400 font-bold text-lg">{order.payment?.currency} {item.price}</p>
@@ -454,7 +466,7 @@ export default function OrderDetailsPage() {
                   <Separator className="bg-white/5" />
 
                   {/* -------------------------------------------------------- */}
-                  {/* ✅ NEW: MOCKUPS & FILES SECTION */}
+                  {/* MOCKUPS & FILES SECTION */}
                   {/* -------------------------------------------------------- */}
                   <div className="grid md:grid-cols-2 gap-8">
                     
@@ -499,7 +511,7 @@ export default function OrderDetailsPage() {
             </div>
           </div>
 
-          {/* 囹 RIGHT COLUMN - TRACKING (Preserved) */}
+          {/* 囹 RIGHT COLUMN - TRACKING */}
           <div className="lg:col-span-4 space-y-6 sm:space-y-8 lg:space-y-8">
             <Card className="bg-slate-800/40 border-white/10 backdrop-blur-sm h-fit">
               <CardHeader className="bg-slate-800/60 border-b border-white/5 py-4">

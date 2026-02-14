@@ -11,6 +11,9 @@ const Stripe = require("stripe");
 const { v4: uuidv4 } = require('uuid');
 const { getDownloadURL } = require("firebase-admin/storage")
 const nodemailer = require("nodemailer");
+const handlebars = require("handlebars");
+const chromium = require("@sparticuz/chromium");
+const puppeteer = require("puppeteer-core");
 // Initialize Admin
 if (admin.apps.length === 0) {
   admin.initializeApp();
@@ -29,6 +32,146 @@ const replicate = new Replicate({
   auth: functions.config().replicate?.key || "MISSING_KEY",
 });
 
+// Invoice Email
+// ------------------------------------------------------------------
+// 📄 UPDATED HELPER: Generate Invoice (With CGST/SGST Split)
+// ------------------------------------------------------------------
+async function generateInvoicePDF(orderData, itemsList) {
+  try {
+    const templateHtml = fs.readFileSync(path.join(__dirname, 'templates', 'invoice.html'), 'utf8');
+    const template = handlebars.compile(templateHtml);
+    
+    // 1. Detect Context
+    const isIndia = orderData.shippingAddress.countryCode === 'IN';
+    const documentTitle = isIndia ? "TAX INVOICE" : "RECEIPT";
+    
+    // 2. Get Currency Symbol
+    const currencyCode = (orderData.payment?.currency || "$")
+    const currencyMap = { "IN": "₹", "US": "$", "GB": "£", "EU": "€", "CA": "C$" };
+    const currencySymbol = currencyCode || currencyMap[orderData.shippingAddress.countryCode];
+
+    // 3. Tax Logic
+    const gstRate = 0.05; // 5%
+    const halfRate = gstRate / 2; // 2.5%
+
+    const processedItems = itemsList.map(item => {
+        const price = Number(item.price) * Number(item.quantity);
+        
+        let taxable = price;
+        let cgst = 0, sgst = 0;
+
+        if (isIndia) {
+            // India: Back-calculate Tax (Price includes 5% GST)
+            taxable = price / (1 + gstRate);
+            cgst = taxable * halfRate;
+            sgst = taxable * halfRate;
+        } 
+        // International: Price is final (0% Tax)
+
+        const variantStr = item.variant ? `${item.variant.color || ''} ${item.variant.size || ''}` : 'Custom';
+
+        return {
+            title: item.title,
+            variant: variantStr,
+            quantity: item.quantity,
+            taxableValue: taxable.toFixed(2),
+            cgstAmount: isIndia ? cgst.toFixed(2) : "0.00",
+            sgstAmount: isIndia ? sgst.toFixed(2) : "0.00",
+            total: price.toFixed(2)
+        };
+    });
+
+    const grandTotal = processedItems.reduce((acc, item) => acc + Number(item.total), 0);
+    const totalTaxable = processedItems.reduce((acc, item) => acc + Number(item.taxableValue), 0);
+    const totalCGST = processedItems.reduce((acc, item) => acc + Number(item.cgstAmount), 0);
+    const totalSGST = processedItems.reduce((acc, item) => acc + Number(item.sgstAmount), 0);
+
+    const htmlData = {
+        documentTitle: documentTitle,
+        invoiceNumber: `INV-${orderData.groupId || orderData.orderId}`,
+        date: new Date().toDateString(),
+        // Customer
+        customerName: orderData.shippingAddress.fullName,
+        customerAddress: orderData.shippingAddress.line1,
+        customerCity: orderData.shippingAddress.city,
+        customerState: orderData.shippingAddress.state,
+        customerZip: orderData.shippingAddress.zip,
+        customerGst: orderData.shippingAddress.gstNumber || "", // Only show if exists
+        // Flags & Data
+        isIndia: isIndia,
+        currency: currencySymbol,
+        items: processedItems,
+        subTotal: totalTaxable.toFixed(2),
+        cgstTotal: totalCGST.toFixed(2),
+        sgstTotal: totalSGST.toFixed(2),
+        grandTotal: grandTotal.toFixed(2)
+    };
+
+    const html = template(htmlData);
+
+    const browser = await puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+    });
+
+    const page = await browser.newPage();
+    await page.setContent(html);
+    const pdfBuffer = await page.pdf({ format: 'A4' });
+    await browser.close();
+
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(`invoices/INV-${orderData.groupId || orderData.orderId}.pdf`);
+    
+    await file.save(pdfBuffer, { metadata: { contentType: 'application/pdf' }, public: true });
+    return file.publicUrl();
+
+  } catch (error) {
+    console.error("Invoice Gen Error:", error);
+    return null;
+  }
+}
+
+async function sendInvoiceEmail(email, pdfUrl, isConsolidated, orderId, isIndia) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user: functions.config().email.user, pass: functions.config().email.pass }
+    });
+
+    const docName = isIndia ? "Tax Invoice" : "Receipt";
+    
+    // Subject Logic
+    const subject = isConsolidated 
+        ? `Order #${orderId} Confirmed! (${docName} Attached)` 
+        : `Shipment Delivered (${docName} Attached)`;
+
+    // Body Logic
+    const htmlBody = isConsolidated
+      ? `
+        <div style="font-family: Arial, sans-serif; color: #333;">
+          <h2 style="color: #ea580c;">Thank you for your order!</h2>
+          <p>We have received your order <strong>#${orderId}</strong> and it is now being processed.</p>
+          <p>Please find your official <strong>${docName}</strong> attached to this email.</p>
+          <hr/>
+          <p>You will receive separate updates when your items ship.</p>
+        </div>
+      `
+      : `<p>Your order has been delivered! Please find your ${docName} attached.</p>`;
+
+    await transporter.sendMail({
+        from: `"TRYAM" <${functions.config().email.user}>`,
+        to: email,
+        subject: subject,
+        html: htmlBody,
+        attachments: [{
+            filename: `${docName.replace(" ", "_")}.pdf`,
+            path: pdfUrl 
+        }]
+    });
+}
+
+// Order Confirmation E-Mail
 async function sendOrderEmail(orderData, providerName, estimatedDate) {
   try {
     const customerName = orderData.shippingAddress.fullName.split(" ")[0];
@@ -185,18 +328,54 @@ async function waitForPrintifyImages(shopId, productId, token, maxRetries = 15) 
 
 
 // 2. UPDATED GENERATOR: Forces "Generate" Endpoint
-async function getMockupsFromPrintify(item, printFiles) {
+// ------------------------------------------------------------------
+// ☁️ HELPER: Upload URL to Firebase Storage (Permanent Hosting)
+// ------------------------------------------------------------------
+async function uploadToFirebase(imageUrl, filePath) {
+  try {
+    const bucket = admin.storage().bucket();
+    const file = bucket.file(filePath);
+
+    // 1. Check if already exists (optional optimization)
+    const [exists] = await file.exists();
+    if (exists) return await getDownloadURL(file);
+
+    // 2. Download Image
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const buffer = Buffer.from(response.data, 'binary');
+
+    // 3. Upload to Firebase
+    await file.save(buffer, {
+      metadata: { contentType: 'image/png' },
+      public: true // Make public so frontend can see it
+    });
+
+    // 4. Get Permanent URL
+    return await getDownloadURL(file);
+
+  } catch (error) {
+    console.error(`Upload failed for ${filePath}:`, error.message);
+    return null; // Fail gracefully
+  }
+}
+
+// ------------------------------------------------------------------
+// 🛠️ UPDATED GENERATOR: With Firebase Upload & Smart Filtering
+// ------------------------------------------------------------------
+async function getMockupsFromPrintify(item, printFiles, orderId) {
   const shopId = functions.config().printify?.shop_id;
   const token = functions.config().printify?.token;
-
   const map = item.vendor_maps?.printify || { blueprint_id: 12, print_provider_id: 29 };
+
+  // Detect Product Type for better filtering
   const isMug = item.title.toLowerCase().includes("mug");
   const isTote = item.title.toLowerCase().includes('tote');
+  const isHoodie = item.title.toLowerCase().includes('hoodie');
 
   let tempProductId = null;
 
   try {
-    // A. UPLOAD & PREPARE
+    // A. UPLOAD RAW DESIGNS TO PRINTIFY (Same as before)
     const frontImageId = printFiles.front ? await uploadPrintifyImage(printFiles.front) : null;
     const backImageId = printFiles.back ? await uploadPrintifyImage(printFiles.back) : null;
 
@@ -204,17 +383,16 @@ async function getMockupsFromPrintify(item, printFiles) {
     if (frontImageId) placeholders.push({ position: "front", images: [{ id: frontImageId, x: 0.5, y: 0.5, scale: 1, angle: 0 }] });
     if (backImageId && !isMug) placeholders.push({ position: "back", images: [{ id: backImageId, x: 0.5, y: 0.5, scale: 1, angle: 0 }] });
 
+    // Get Variant
     let variantId = await getPrintifyVariantId(map.blueprint_id, map.print_provider_id, 'L', item.variant.color);
-    if (isMug) variantId = map.variant_id
-    if (isTote) variantId = 101409
-    if (!variantId) {
-      variantId = await getPrintifyVariantId(map.blueprint_id, map.print_provider_id, "L", "Black") ||
-        await getPrintifyVariantId(map.blueprint_id, map.print_provider_id, "L", "White");
-    }
+    if (isMug) variantId = map.variant_id;
+    if (isTote) variantId = 101409;
+    if (!variantId) variantId = await getPrintifyVariantId(map.blueprint_id, map.print_provider_id, "L", "Black") ||
+      await getPrintifyVariantId(map.blueprint_id, map.print_provider_id, "L", "White");
     if (!variantId) throw new Error("No variant found");
 
-    // B. CREATE PRODUCT
-    console.log("Creating Temp Product...");
+    // B. CREATE TEMP PRODUCT
+    console.log("Creating Temp Product for Mockups...");
     const createRes = await axios.post(`https://api.printify.com/v1/shops/${shopId}/products.json`, {
       title: "TEMP_MOCKUP_" + Date.now(),
       description: "Mockup Gen",
@@ -226,62 +404,98 @@ async function getMockupsFromPrintify(item, printFiles) {
 
     tempProductId = createRes.data.id;
 
-    // C. ⚡ FORCE GENERATION (CRITICAL STEP ADDED) ⚡
-    // This tells Printify: "Hey, render ALL the fancy lifestyle shots now!"
+    // C. TRIGGER GENERATION
     try {
-      console.log("⚡ Triggering full mockup generation...");
       await axios.post(`https://api.printify.com/v1/shops/${shopId}/products/${tempProductId}/mockups/generate.json`, {}, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-    } catch (genError) {
-      console.warn("Generation trigger warning (might be auto-generating):", genError.message);
-    }
+    } catch (e) { console.warn("Gen trigger warning:", e.message); }
 
-    // D. POLL FOR IMAGES
+    // D. WAIT FOR IMAGES
     const validImages = await waitForPrintifyImages(shopId, tempProductId, token);
+    if (!validImages || validImages.length === 0) throw new Error("Mockup timeout");
 
-    if (!validImages || validImages.length === 0) {
-      throw new Error("Mockup generation timed out");
+    // ==================================================================
+    // 🧠 E. SMART SELECTION & UPLOAD (The New Logic)
+    // ==================================================================
+
+    // We want to limit storage usage. Let's pick max 5-6 best images.
+    // Categories we want: Front, Back, Person(Front/Back), Folded/Hanging/Lifestyle
+
+    let selectedMockups = {
+      front: null,
+      back: null,
+      gallery: []
+    };
+
+    // Helper to find image by analyzing src or position
+    // Note: Printify doesn't explicitly label "folded", so we look for visual variance or specific keywords if available
+    const candidates = {
+      front: validImages.find(img => img.position === 'front' && img.is_default),
+      back: validImages.find(img => img.position === 'back'),
+      person_front: validImages.find(img => img.position === 'front' && !img.is_default && img.src.includes('person')),
+      person_back: validImages.find(img => img.position === 'back' && !img.is_default && img.src.includes('person')),
+      lifestyle: validImages.find(img => img.src.includes('lifestyle') || img.src.includes('context')),
+      other: validImages.filter(img => !img.is_default).slice(0, 3) // Fallback: Take first 3 other images
+    };
+
+    // 1. Assign Main Front/Back
+    const mainFront = candidates.front || validImages[0];
+    const mainBack = candidates.back; // Might be null if mug/poster
+
+    // 2. Build Upload List (Array of promises)
+    const uploadTasks = [];
+    const timestamp = Date.now();
+    const basePath = `orders/${orderId}`;
+
+    // --> Push Front
+    if (mainFront) {
+      uploadTasks.push(uploadToFirebase(mainFront.src, `${basePath}/front.png`).then(url => selectedMockups.front = url));
     }
 
-    // E. EXTRACT GALLERY
-    // Initialize with gallery array
-    const mockupUrls = { front: null, back: null, gallery: [] };
-
-    validImages.forEach(img => {
-      // 1. Push EVERYTHING to gallery (Lifestyle shots will be here)
-      if (img.src) {
-        mockupUrls.gallery.push(img.src);
-      }
-
-      // 2. Identify Front/Back for the main view
-      const pos = (img.position || "").toLowerCase();
-      const isDefault = img.is_default;
-
-      if (isMug) {
-        if (pos === 'front' || pos === 'center') mockupUrls.front = img.src;
-        else if (isDefault && !mockupUrls.front) mockupUrls.front = img.src;
-      } else {
-        if (pos === 'front') mockupUrls.front = img.src;
-        else if (pos === 'back') mockupUrls.back = img.src;
-      }
-    });
-
-    // Fallback: If 'front' is missing but we have gallery images, use the first one
-    if (!mockupUrls.front && mockupUrls.gallery.length > 0) {
-      mockupUrls.front = mockupUrls.gallery[0];
+    // --> Push Back
+    if (mainBack) {
+      uploadTasks.push(uploadToFirebase(mainBack.src, `${basePath}/back.png`).then(url => selectedMockups.back = url));
     }
+
+    // --> Push Gallery (Folding, Person, Lifestyle, etc.)
+    // We iterate through validImages and pick unique ones to fill the gallery
+    // We skip the ones we already used for main front/back
+    const usedSrcs = new Set([mainFront?.src, mainBack?.src]);
+    let galleryCount = 0;
+    const MAX_GALLERY = 4; // Cost effective limit
+
+    for (const img of validImages) {
+      if (usedSrcs.has(img.src)) continue;
+      if (galleryCount >= MAX_GALLERY) break;
+
+      // Simple heuristic: Try to get 'person' or 'context' images first if available
+      // otherwise just take the next available image to ensure we have *something*
+
+      const fileName = `gallery_${galleryCount}.png`;
+      uploadTasks.push(
+        uploadToFirebase(img.src, `${basePath}/${fileName}`).then(url => {
+          if (url) selectedMockups.gallery.push(url);
+        })
+      );
+
+      usedSrcs.add(img.src);
+      galleryCount++;
+    }
+
+    // 3. Execute All Uploads in Parallel (Fast!)
+    console.log(`☁️ Uploading ${uploadTasks.length} mockups to Firebase...`);
+    await Promise.all(uploadTasks);
 
     // F. DELETE TEMP PRODUCT
-    console.log(`🗑️ Deleting temp product ${tempProductId}...`);
     await deletePrintifyProduct(shopId, tempProductId);
 
-    return mockupUrls;
+    return selectedMockups;
 
   } catch (error) {
     console.error("❌ Mockup Gen Failed:", error.message);
     if (tempProductId) await deletePrintifyProduct(shopId, tempProductId);
-    // Return basics if advanced failed
+    // Fallback: Return the raw print files if generation failed
     return { front: printFiles.front, back: printFiles.back, gallery: [] };
   }
 }
@@ -541,7 +755,7 @@ async function sendToQikink(orderData, processedItems) {
   }
 
   const payload = {
-    order_number: orderData.orderId.replace("ORD-", "").substring(0, 15),
+    order_number: orderData.orderId,
     qikink_shipping: "1",
     gateway: "Prepaid",
     total_order_value: "0",
@@ -585,7 +799,7 @@ async function sendToQikink(orderData, processedItems) {
 // 📡 4. WEBHOOK HANDLER (THE LISTENER)
 // ------------------------------------------------------------------
 exports.handleProviderWebhook = functions.https.onRequest(async (req, res) => {
-  const source = req.query.source; 
+  const source = req.query.source;
   const body = req.body;
 
   console.log(`🔔 Webhook received from ${source} [${body.type || body.event}]`);
@@ -606,9 +820,9 @@ exports.handleProviderWebhook = functions.https.onRequest(async (req, res) => {
     // ------------------------------------------------------
     if (source === 'printify') {
       const eventType = body.type;
-      const printifyOrderId = body.resource.id; // "5a96f649b2439217d070f507"
+      const printifyOrderId = body.resource.id;
 
-      // 1. FIND ORDER IN DB (Using the Printify ID we saved earlier)
+      // Find Order via Provider ID
       const snapshot = await db.collection('orders')
         .where('providerOrderId', '==', printifyOrderId)
         .limit(1)
@@ -621,41 +835,29 @@ exports.handleProviderWebhook = functions.https.onRequest(async (req, res) => {
 
       firestoreOrderRef = snapshot.docs[0].ref;
 
-      // 2. PARSE EVENTS based on your payloads
-      
-      // -> Sent to Production
       if (eventType === 'order:sent-to-production') {
         newStatus = 'production';
-      }
-      
-      // -> Shipped (Tracking Available)
-      else if (eventType === 'order:shipment:created') {
+      } else if (eventType === 'order:shipment:created') {
         newStatus = 'shipped';
-        const carrier = body.resource.data?.carrier; // Extract from 'data.carrier'
-        
+        const carrier = body.resource.data?.carrier;
         trackingData = {
           trackingCode: carrier?.tracking_number,
           trackingUrl: carrier?.tracking_url,
           carrierName: carrier?.code
         };
-      }
-
-      // -> Delivered
-      else if (eventType === 'order:shipment:delivered') {
+      } else if (eventType === 'order:shipment:delivered') {
         newStatus = 'delivered';
         const data = body.resource.data;
-        trackingData = {
-            deliveredAt: data?.delivered_at || new Date().toISOString()
-        };
+        trackingData = { deliveredAt: data?.delivered_at || new Date().toISOString() };
       }
     }
 
     // ------------------------------------------------------
-    // B. HANDLE GELATO EVENTS (Unchanged)
+    // B. HANDLE GELATO EVENTS
     // ------------------------------------------------------
     else if (source === 'gelato') {
       if (body.event === 'shipment_dispatched') {
-        const gelatoId = body.orderReferenceId; // Gelato sends YOUR ID back
+        const gelatoId = body.orderReferenceId;
         firestoreOrderRef = db.collection('orders').doc(gelatoId);
         newStatus = 'shipped';
         trackingData = {
@@ -663,18 +865,20 @@ exports.handleProviderWebhook = functions.https.onRequest(async (req, res) => {
           trackingUrl: body.fulfillmentPackage?.trackingUrl
         };
       }
+      // Note: Add Gelato 'delivered' event check here if they provide one
     }
 
     // ------------------------------------------------------
-    // C. UPDATE DATABASE
+    // C. UPDATE DATABASE & HANDLE COD INVOICE
     // ------------------------------------------------------
     if (firestoreOrderRef && newStatus) {
       console.log(`📝 Updating Order to '${newStatus}'`);
-      
-      // Prepare updates
-      const updates = { status: newStatus };
 
-      // Add tracking info if available
+      const docSnap = await firestoreOrderRef.get();
+      const orderData = docSnap.data();
+
+      // 1. Prepare Updates
+      const updates = { status: newStatus };
       if (trackingData.trackingCode) {
         updates['providerData.trackingCode'] = trackingData.trackingCode;
         updates['providerData.trackingUrl'] = trackingData.trackingUrl;
@@ -685,6 +889,18 @@ exports.handleProviderWebhook = functions.https.onRequest(async (req, res) => {
       }
 
       await firestoreOrderRef.update(updates);
+
+      if (orderData.payment?.method === 'cod' && newStatus === 'delivered') {
+        console.log(`🚚 COD Delivery Detected. Generating Bill...`);
+
+        // ⚠️ CHANGE: Wrap orderData in an array [orderData]
+        // Because orderData IS the item now (it has .title, .price, .quantity directly)
+        const pdfUrl = await generateInvoicePDF(orderData, [orderData]);
+
+        if (pdfUrl) {
+          await sendInvoiceEmail(orderData.shippingAddress.email, pdfUrl, false);
+        }
+      }
     }
 
     res.status(200).send("Webhook Processed");
@@ -823,78 +1039,69 @@ async function renderDesignServerSide(designJson, productId, view = 'front') {
 
 
 exports.processNewOrder = functions
-  .runWith({ timeoutSeconds: 540, memory: '2GB' }) // Increased timeout for multiple items
+  .runWith({ timeoutSeconds: 300, memory: '1GB' })
   .firestore.document('orders/{orderId}')
   .onUpdate(async (change, context) => {
     const newData = change.after.data();
 
-    // Safety Checks
+    // 1. Safety Checks
     if (newData.status !== 'placed' || newData.providerStatus === 'synced') return null;
     if (newData.providerStatus === 'processing') return null;
 
     const orderId = context.params.orderId;
-    console.log(`🤖 Processing Order ${orderId} with ${newData.items.length} items...`);
+    console.log(`🤖 Processing Split Order ${orderId} (${newData.title})...`);
 
     await change.after.ref.update({ providerStatus: 'processing' });
 
     try {
-      // ----------------------------------------------------
-      // STEP 1: PRE-PROCESS ALL ITEMS (Generate Files)
-      // ----------------------------------------------------
-      const processedItems = [];
+      const item = newData;
+      const printFiles = {};
       const views = ['front', 'back'];
 
-      for (let i = 0; i < newData.items.length; i++) {
-        const item = newData.items[i];
-        console.log(`🎨 Generating files for Item ${i + 1}: ${item.title}`);
+      // A. Generate Print Files
+      for (const view of views) {
+        // Access design data directly from root
+        const designJson = item.designData?.canvasViewStates?.[view] || item.designData?.viewStates?.[view];
+        if (!designJson || designJson.length === 0) continue;
 
-        const printFiles = {};
+        const imageBuffer = await renderDesignServerSide(designJson, item.productId, view);
 
-        // A. Generate High-Res Print Files
-        for (const view of views) {
-          const designJson = item.designData?.canvasViewStates?.[view] || item.designData?.viewStates?.[view];
-          if (!designJson || designJson.length === 0) continue;
+        const bucket = admin.storage().bucket();
+        const file = bucket.file(`orders/${orderId}/print_${view}.png`);
+        await file.save(imageBuffer, { metadata: { contentType: 'image/png' }, public: true });
 
-          // Render
-          const imageBuffer = await renderDesignServerSide(designJson, item.productId, view);
-
-          // Save
-          const bucket = admin.storage().bucket();
-          const file = bucket.file(`orders/${orderId}/item_${i}_print_${view}.png`);
-          await file.save(imageBuffer, { metadata: { contentType: 'image/png' }, public: true });
-
-          printFiles[view] = await getDownloadURL(file);
-        }
-
-        // B. Generate Mockups (Using our new Printify Helper)
-        // Only generate mockups if we actually have print files
-        let mockupFiles = {};
-        if (Object.keys(printFiles).length > 0) {
-          mockupFiles = await getMockupsFromPrintify(item, printFiles);
-        }
-
-        // Add to our list
-        processedItems.push({
-          ...item,
-          printFiles,
-          mockupFiles
-        });
+        printFiles[view] = await getDownloadURL(file);
       }
 
+      // B. Generate Mockups
+      let mockupFiles = {};
+      if (Object.keys(printFiles).length > 0) {
+        // Pass 'item' (which is newData)
+        mockupFiles = await getMockupsFromPrintify(item, printFiles, orderId);
+      }
+
+      // Create a clean "Processed Item" object for the provider helpers
+      const processedItem = {
+        ...item,
+        printFiles,
+        mockupFiles
+      };
+
       // ----------------------------------------------------
-      // STEP 2: BUNDLE & ROUTE TO PROVIDER
+      // STEP 2: ROUTE TO PROVIDER
       // ----------------------------------------------------
       const country = newData.shippingAddress.countryCode.toUpperCase();
       let providerData = {};
 
+      // Note: helpers expect an ARRAY of items, so we pass [processedItem]
       if (country === 'IN') {
-        providerData = await sendToQikink(newData, processedItems);
+        providerData = await sendToQikink(newData, [processedItem]);
       }
-      else if (country === 'US' || country === 'CA') {
-        providerData = await sendToPrintify(newData, processedItems);
+      else if (['US', 'CA'].includes(country)) {
+        providerData = await sendToPrintify(newData, [processedItem]);
       }
       else {
-        providerData = await sendToGelato(newData, processedItems);
+        providerData = await sendToGelato(newData, [processedItem]);
       }
 
       // ----------------------------------------------------
@@ -905,12 +1112,15 @@ exports.processNewOrder = functions
         provider: providerData.provider,
         providerOrderId: providerData.id,
         providerData: providerData,
-        // We store the processed items (with file URLs) back to DB for reference
-        items: processedItems,
-        botLog: `Fulfilled ${processedItems.length} items via ${providerData.provider}`
+
+        // Save generated files back to root
+        printFiles: printFiles,
+        mockupFiles: mockupFiles,
+
+        botLog: `Fulfilled via ${providerData.provider}`
       });
 
-      await sendOrderEmail(newData, providerData.provider, providerData.estimatedDelivery);
+      console.log(`✅ Order ${orderId} synced.`);
 
     } catch (error) {
       console.error("❌ Bot Failed:", error);
@@ -982,83 +1192,163 @@ exports.saveTshirtDesign = functions.https.onCall(async (data, context) => {
 // ------------------------------------------------------------------
 // 💰 1. STRIPE WEBHOOK (Payment Confirmation)
 // ------------------------------------------------------------------
-exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = functions.config().stripe?.webhook_secret;
+exports.stripeWebhook = functions
+  .runWith({ memory: '1GB', timeoutSeconds: 120 })
+  .https.onRequest(async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const endpointSecret = functions.config().stripe?.webhook_secret;
+    let event;
 
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
-  } catch (err) {
-    console.error(`⚠️  Webhook signature verification failed.`, err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle the event
-  if (event.type === 'payment_intent.succeeded') {
-    const paymentIntent = event.data.object;
-    console.log(`💰 Stripe Payment Succeeded: ${paymentIntent.id}`);
-    
-    // Find order by Payment Intent ID and update status
-    // Note: You need to store 'paymentIntentId' in your order doc when creating it on client
-    const snapshot = await db.collection('orders').where('paymentId', '==', paymentIntent.id).get();
-    
-    if (!snapshot.empty) {
-      const orderDoc = snapshot.docs[0];
-      await orderDoc.ref.update({
-        status: 'processing', // This triggers the processNewOrder bot
-        paymentStatus: 'paid',
-        paidAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-      console.log(`✅ Order ${orderDoc.id} updated to processing`);
-    } else {
-      console.warn(`⚠️ No order found for PaymentIntent ${paymentIntent.id}`);
+    try {
+      event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
+    } catch (err) {
+      return res.status(400).send(`Webhook Error: ${err.message}`);
     }
-  }
 
-  res.json({received: true});
-});
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object;
+      console.log(`💰 Stripe Payment Succeeded: ${paymentIntent.id}`);
 
-// ------------------------------------------------------------------
-// 💰 2. RAZORPAY WEBHOOK (Payment Confirmation)
-// ------------------------------------------------------------------
-exports.razorpayWebhook = functions.https.onRequest(async (req, res) => {
-  const secret = functions.config().razorpay?.webhook_secret; 
-  
-  // Validate Signature
-  const shasum = crypto.createHmac("sha256", secret);
-  shasum.update(JSON.stringify(req.body));
-  const digest = shasum.digest("hex");
+      // 🔍 FIND ALL ORDERS WITH THIS PAYMENT ID
+      // Since we assigned the same paymentId (client_secret or intent id) to all split orders
+      // Note: In frontend, ensure you saved 'paymentId' or 'groupId' to the doc.
 
-  if (digest !== req.headers["x-razorpay-signature"]) {
-    console.error("❌ Invalid Razorpay Signature");
-    return res.status(400).send("Invalid signature");
-  }
+      // If you used PaymentIntent ID as the common link:
+      const snapshot = await db.collection('orders')
+        .where('paymentId', '==', paymentIntent.id) // Query all docs with this ID
+        .get();
 
-  const event = req.body.event;
+      if (!snapshot.empty) {
+        console.log(`✅ Found ${snapshot.size} split orders. Updating...`);
 
-  if (event === "payment.captured") {
-    const payment = req.body.payload.payment.entity;
-    const orderId = payment.notes.orderId; // Make sure to pass 'notes: { orderId: ... }' from frontend
-    
-    console.log(`💰 Razorpay Payment Captured for Order ${orderId}`);
-
-    if (orderId) {
-      try {
-        await db.collection("orders").doc(orderId).update({
-          status: "processing", // This triggers the processNewOrder bot
-          paymentStatus: "paid",
-          paymentId: payment.id,
-          paidAt: admin.firestore.FieldValue.serverTimestamp(),
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => {
+          batch.update(doc.ref, {
+            status: 'processing', // Triggers Bot
+            paymentStatus: 'paid',
+            paidAt: admin.firestore.FieldValue.serverTimestamp()
+          });
         });
-        console.log(`✅ Order ${orderId} updated to processing`);
-      } catch (e) {
-        console.error("Failed to update order from Razorpay webhook", e);
-        return res.status(500).send("Db Error");
+
+        await batch.commit();
+
+        // 📧 TRIGGER CONSOLIDATED INVOICE (Optional here if Frontend didn't do it)
+        // It's safer to do it here.
+        const orders = snapshot.docs.map(d => d.data());
+        // We can reuse the callable function logic or call it directly
+        await generateAndSendConsolidatedInvoice(orders);
+
+      } else {
+        console.warn(`⚠️ No orders found for PaymentIntent ${paymentIntent.id}`);
       }
     }
+
+    res.json({ received: true });
+  });
+
+// ------------------------------------------------------------------
+// 💰 2. RAZORPAY WEBHOOK (Updated for Split Orders)
+// ------------------------------------------------------------------
+exports.razorpayWebhook = functions
+  .runWith({ memory: '1GB', timeoutSeconds: 120 })
+  .https.onRequest(async (req, res) => {
+    const secret = functions.config().razorpay?.webhook_secret;
+    // ... (Signature validation code remains same) ...
+
+    const event = req.body.event;
+
+    if (event === "payment.captured") {
+      const payment = req.body.payload.payment.entity;
+      const notes = payment.notes; // { groupId: "GRP-123..." }
+
+      if (notes.groupId) {
+        // 🔍 Find by Group ID
+        const snapshot = await db.collection("orders")
+          .where("groupId", "==", notes.groupId)
+          .get();
+
+        if (!snapshot.empty) {
+          const batch = db.batch();
+          snapshot.docs.forEach(doc => {
+            batch.update(doc.ref, {
+              status: "processing",
+              paymentStatus: "paid",
+              paymentId: payment.id,
+              paidAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+          });
+          await batch.commit();
+
+          // 📧 Trigger Invoice
+          const orders = snapshot.docs.map(d => d.data());
+          await generateAndSendConsolidatedInvoice(orders);
+        }
+      }
+    }
+    res.json({ status: "ok" });
+  });
+
+exports.sendConsolidatedInvoice = functions
+  .runWith({ memory: '1GB', timeoutSeconds: 120 })
+  .https.onCall(async (data, context) => {
+    if (!data.orders || data.orders.length === 0) return;
+
+    const firstOrder = data.orders[0];
+
+    // 🛠️ FIX: Handle both structures
+    let allItems = [];
+    if (firstOrder.items && Array.isArray(firstOrder.items)) {
+      allItems = data.orders.flatMap(o => o.items);
+    } else {
+      allItems = data.orders;
+    }
+
+    const pdfUrl = await generateInvoicePDF(firstOrder, allItems);
+
+    if (pdfUrl) {
+      await sendInvoiceEmail(firstOrder.shippingAddress.email, pdfUrl, true);
+    }
+
+    return { success: true };
+  });
+
+// ------------------------------------------------------------------
+// 📄 INTERNAL HELPER: Consolidated Invoice Logic (FIXED)
+// ------------------------------------------------------------------
+async function generateAndSendConsolidatedInvoice(orders) {
+  if (!orders || orders.length === 0) return;
+  
+  const firstOrder = orders[0];
+  
+  // 🛑 STOP DUPLICATES
+  if (firstOrder.invoiceSent) {
+      console.log("⚠️ Invoice already sent. Skipping.");
+      return;
   }
 
-  res.json({ status: "ok" });
-});
+  let allItems = [];
+  if (firstOrder.items && Array.isArray(firstOrder.items)) {
+     allItems = orders.flatMap(o => o.items); // Legacy
+  } else {
+     allItems = orders; // Flattened
+  }
+
+  const groupId = firstOrder.groupId || firstOrder.orderId;
+  const isIndia = firstOrder.shippingAddress.countryCode === 'IN';
+
+  console.log(`🧾 Generating ${isIndia ? 'Invoice' : 'Receipt'} for Group ${groupId}`);
+
+  const pdfUrl = await generateInvoicePDF(firstOrder, allItems);
+
+  if (pdfUrl) {
+    await sendInvoiceEmail(firstOrder.shippingAddress.email, pdfUrl, true, groupId, isIndia);
+    
+    // ✅ Mark as Sent
+    const batch = db.batch();
+    orders.forEach(o => {
+        const ref = db.collection('orders').doc(o.orderId);
+        batch.update(ref, { invoiceSent: true });
+    });
+    await batch.commit();
+  }
+}

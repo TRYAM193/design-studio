@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    body {
+      font-family: 'Helvetica', sans-serif;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      font-size: 50px;
+      font-weight: bold;
+      color: #020100;
+      text-transform: uppercase;
+    }
+
+    .logo-img {
+      height: 50px;
+      margin-right: 0px;
+      vertical-align: middle;
+      position: relative;
+      top: -5px;
+    }
+
+    .invoice-details {
+      text-align: right;
+    }
+
+    .invoice-details h2 {
+      margin: 0 0 5px 0;
+      color: #666;
+      font-size: 16px;
+      text-transform: uppercase;
+    }
+
+    .bill-to {
+      background: #f9fafb;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #eee;
+      padding: 12px 8px;
+      text-align: left;
+      font-size: 12px;
+    }
+
+    th {
+      background-color: #f3f4f6;
+      color: #333;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .totals {
+      margin-left: auto;
+      width: 300px;
+      text-align: right;
+    }
+
+    .totals p {
+      margin: 5px 0;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .grand-total {
+      font-size: 18px;
+      font-weight: bold;
+      color: #000000;
+      border-top: 2px solid #000000;
+      padding-top: 10px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <div class="logo">
+      <img
+        src="https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/LOGO-noBG.png?alt=media&token=28681735-0c49-4769-a280-9615e674ba0a"
+        alt="TRYAM" style="font-size: x-small;" class="logo-img">
+      TRYAM
+    </div>
+    <div class="invoice-details">
+      <h2>{{documentTitle}}</h2>
+      <p><strong>#:</strong> {{invoiceNumber}}</p>
+      <p><strong>Date:</strong> {{date}}</p>
+    </div>
+  </div>
+
+  <div class="bill-to">
+    <strong>Billed To:</strong><br>
+    {{customerName}}<br>
+    {{customerAddress}}<br>
+    {{customerCity}}, {{customerState}} - {{customerZip}}<br>
+    {{#if customerGst}}
+    <br><strong>GSTIN:</strong> {{customerGst}}
+    {{/if}}
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th width="40%">Item / Description</th>
+        <th width="10%">Qty</th>
+
+        {{#if isIndia}}
+        <th class="text-right">Taxable</th>
+        <th class="text-right">CGST (2.5%)</th>
+        <th class="text-right">SGST (2.5%)</th>
+        {{else}}
+        <th class="text-right">Unit Price</th>
+        {{/if}}
+
+        <th class="text-right">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each items}}
+      <tr>
+        <td>
+          <strong>{{this.title}}</strong><br>
+          <span style="color: #888;">{{this.variant}}</span>
+        </td>
+        <td>{{this.quantity}}</td>
+
+        {{#if ../isIndia}}
+        <td class="text-right">{{../currency}}{{this.taxableValue}}</td>
+        <td class="text-right">{{../currency}}{{this.cgstAmount}}</td>
+        <td class="text-right">{{../currency}}{{this.sgstAmount}}</td>
+        {{else}}
+        <td class="text-right">{{../currency}}{{this.taxableValue}}</td>
+        {{/if}}
+
+        <td class="text-right"><strong>{{../currency}}{{this.total}}</strong></td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    {{#if isIndia}}
+    <p>Subtotal (Taxable): {{currency}}{{subTotal}}</p>
+    <p>CGST Total: {{currency}}{{cgstTotal}}</p>
+    <p>SGST Total: {{currency}}{{sgstTotal}}</p>
+    {{/if}}
+
+    <div class="grand-total">
+      Total: {{currency}}{{grandTotal}}
+    </div>
+  </div>
+
+  <div style="margin-top: 50px; text-align: center; color: #aaa; font-size: 11px;">
+    <p>Thank you for shopping with TryAm!</p>
+    <p>This is a computer-generated {{documentTitle}}.</p>
+  </div>
+</body>
+
+</html>

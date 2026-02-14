@@ -54,7 +54,7 @@ export default function AdminOrders() {
     toast.info("Waking up the Bot...");
 
     try {
-        const orderRef = doc(db, "orders", order.id);
+        const orderRef = doc(db, "orders", order.orderId);
 
         // We update the document to a state that the 'onUpdate' trigger likes:
         // status: 'placed' AND providerStatus: NOT 'synced'

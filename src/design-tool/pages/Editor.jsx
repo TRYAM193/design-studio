@@ -972,7 +972,7 @@ export default function EditorPanel() {
                                     <div className="grid grid-cols-5 gap-2">
                                         {colors?.length > 0 ? colors.map((color) => {
                                             const hex = COLOR_MAP[color] || "#ccc";
-                                            const isActive = canvasBg.toLowerCase() === hex.toLowerCase();
+                                            const isActive = canvasBg?.toLowerCase() === hex?.toLowerCase();
                                             return (
                                                 <button key={color} onClick={() => handleColorChange(color)} className={`w-9 h-9 rounded-full border transition-all relative ${isActive ? "ring-2 ring-orange-500 ring-offset-2 ring-offset-[#0f172a] scale-110" : "hover:scale-110 border-slate-600"}`} style={{ backgroundColor: hex }}>
                                                     {isActive && <FiCheckCircle className="text-orange-500 absolute -top-1 -right-1 bg-white rounded-full drop-shadow-md" />}

@@ -18,6 +18,56 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// ------------------------------------------------------------------
+// 💀 SKELETON COMPONENTS
+// ------------------------------------------------------------------
+const CartItemSkeleton = () => (
+  <div className="w-full bg-slate-800/40 border border-white/5 rounded-xl overflow-hidden p-4 sm:p-6 flex gap-4 sm:gap-6 items-start animate-pulse">
+    {/* Image Skeleton */}
+    <div className="h-24 w-24 sm:h-32 sm:w-32 bg-slate-700/50 rounded-xl shrink-0" />
+    
+    <div className="flex-1 space-y-4 py-1">
+      {/* Title & Price */}
+      <div className="flex justify-between items-start gap-4">
+        <div className="h-6 w-1/2 bg-slate-700/50 rounded" />
+        <div className="h-6 w-20 bg-slate-700/50 rounded" />
+      </div>
+      
+      {/* Variants */}
+      <div className="flex gap-2">
+        <div className="h-5 w-12 bg-slate-700/30 rounded" />
+        <div className="h-5 w-16 bg-slate-700/30 rounded" />
+      </div>
+
+      {/* Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mt-auto pt-2">
+        <div className="h-8 w-24 bg-slate-700/30 rounded-lg" />
+        <div className="flex gap-4">
+          <div className="h-4 w-12 bg-slate-700/30 rounded" />
+          <div className="h-4 w-12 bg-slate-700/30 rounded" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const SummarySkeleton = () => (
+  <div className="bg-slate-800/40 border border-white/5 rounded-xl p-6 space-y-6 animate-pulse">
+    <div className="h-6 w-32 bg-slate-700/50 rounded mb-4" />
+    <div className="space-y-3">
+      <div className="flex justify-between"><div className="h-4 w-20 bg-slate-700/30 rounded" /><div className="h-4 w-16 bg-slate-700/30 rounded" /></div>
+      <div className="flex justify-between"><div className="h-4 w-20 bg-slate-700/30 rounded" /><div className="h-4 w-16 bg-slate-700/30 rounded" /></div>
+      <div className="flex justify-between"><div className="h-4 w-24 bg-slate-700/30 rounded" /><div className="h-4 w-16 bg-slate-700/30 rounded" /></div>
+    </div>
+    <div className="h-[1px] bg-slate-700/30 my-4" />
+    <div className="flex justify-between"><div className="h-6 w-16 bg-slate-700/50 rounded" /><div className="h-6 w-24 bg-slate-700/50 rounded" /></div>
+    <div className="h-12 w-full bg-slate-700/50 rounded-lg mt-4" />
+  </div>
+);
+
+// ------------------------------------------------------------------
+// 🛒 MAIN PAGE
+// ------------------------------------------------------------------
 export default function CartPage() {
   const {
     items,
@@ -34,17 +84,28 @@ export default function CartPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // 1. Loading State
+  // 1. Loading State (Now using Skeletons)
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center text-white gap-4">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
-        <p className="text-slate-400">Loading your cart...</p>
+      <div className="min-h-screen bg-[#0f172a] text-white p-4 md:p-8 pt-24 pb-24">
+        <div className="max-w-7xl mx-auto">
+          <div className="h-10 w-48 bg-slate-700/50 rounded mb-8 animate-pulse" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              <CartItemSkeleton />
+              <CartItemSkeleton />
+              <CartItemSkeleton />
+            </div>
+            <div className="lg:col-span-1">
+              <SummarySkeleton />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // 2. Guest State (Since we moved to Firestore-only Cart)
+  // 2. Guest State
   if (!user) {
     return (
       <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center text-white p-4">
@@ -59,16 +120,12 @@ export default function CartPage() {
           <div className="flex gap-4 justify-center">
             <Link to="/auth">
               <Button size="lg" className="rounded-full px-4 md:px-6 h-9 md:h-10 text-sm md:text-base bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/40 hover:shadow-orange-700/50 hover:scale-105 active:scale-95 transition-all duration-300 group border-0 relative overflow-hidden">
-                <span className="relative z-10 flex items-center gap-2">
-                  Sign In
-                </span>
+                <span className="relative z-10 flex items-center gap-2">Sign In</span>
               </Button>
             </Link>
             <Link to="/design">
-              <Button variant="outline" size="lg" className="rounded-full px-4 md:px-6 h-9 md:h-10 text-sm md:text-base bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/40 hover:shadow-orange-700/50 hover:scale-105 active:scale-95 transition-all duration-300 group border-0 relative overflow-hidden">
-                <span className="relative z-10 flex items-center gap-2">
-                  Continue Designing
-                </span>
+              <Button variant="outline" size="lg" className="rounded-full px-4 md:px-6 h-9 md:h-10 text-sm md:text-base border-white/10 hover:bg-white/5">
+                Continue Designing
               </Button>
             </Link>
           </div>
@@ -92,6 +149,7 @@ export default function CartPage() {
       <div className="fixed inset-0 -z-10 w-full h-full pointer-events-none">
         <div className="absolute top-0 right-0 w-[50%] h-[50%] rounded-full bg-blue-600/5 blur-[120px]" />
         <div className="absolute bottom-0 left-0 w-[50%] h-[50%] rounded-full bg-orange-600/5 blur-[100px]" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
       </div>
 
       <div className="max-w-7xl mx-auto">
@@ -107,9 +165,9 @@ export default function CartPage() {
             </div>
             <h2 className="text-xl font-semibold text-slate-300">Your cart is empty</h2>
             <p className="text-slate-500 max-w-sm">Looks like you haven't added any custom tees yet. Start designing!</p>
-            <Link to="/store">
+            <Link to="/design">
               <Button size="lg" className="bg-orange-600 hover:bg-orange-700 mt-4 rounded-full px-8 shadow-lg shadow-orange-900/20">
-                Browse Catalog
+                Start Designing
               </Button>
             </Link>
           </div>
@@ -132,7 +190,6 @@ export default function CartPage() {
                         exit={{ opacity: 0, x: -50 }}
                       >
                         <Card className="bg-slate-800/50 border-white/10 overflow-hidden group hover:border-white/20 transition-all">
-                          {/* FLEX ROW: Image Left, Details Right (Standard E-commerce layout) */}
                           <CardContent className="p-3 sm:p-6 flex flex-row gap-4 sm:gap-6 items-start">
 
                             {/* Thumbnail */}
@@ -158,7 +215,7 @@ export default function CartPage() {
                                   <span className="px-2 py-0.5 bg-slate-900 rounded border border-white/5 text-xs sm:text-sm flex items-center gap-1">
                                     <span
                                       className="w-2.5 h-2.5 rounded-full border border-white/10"
-                                      style={{ backgroundColor: item.variant.color }} // Assuming color is a CSS string or hex
+                                      style={{ backgroundColor: item.variant.color }}
                                     />
                                     {item.variant.color}
                                   </span>
@@ -172,7 +229,6 @@ export default function CartPage() {
                                     onClick={() => updateQuantity(item.id, -1)}
                                     className="p-1.5 hover:text-white text-slate-400 disabled:opacity-30 transition-colors"
                                     disabled={item.quantity <= 1}
-                                    aria-label="Decrease quantity"
                                   >
                                     <Minus size={14} />
                                   </button>
@@ -180,7 +236,6 @@ export default function CartPage() {
                                   <button
                                     onClick={() => updateQuantity(item.id, 1)}
                                     className="p-1.5 hover:text-white text-slate-400 transition-colors"
-                                    aria-label="Increase quantity"
                                   >
                                     <Plus size={14} />
                                   </button>
@@ -191,7 +246,6 @@ export default function CartPage() {
                                   <button
                                     onClick={() => handleEdit(item.id)}
                                     className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-blue-400 transition-colors"
-                                    title="Edit Design"
                                   >
                                     <Pencil size={16} /> <span className="hidden sm:inline">Edit</span>
                                   </button>
@@ -201,7 +255,6 @@ export default function CartPage() {
                                   <button
                                     onClick={() => saveForLater(item.id)}
                                     className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-orange-400 transition-colors"
-                                    title="Save for Later"
                                   >
                                     <Heart size={16} /> <span className="hidden sm:inline">Save</span>
                                   </button>
@@ -211,7 +264,6 @@ export default function CartPage() {
                                   <button
                                     onClick={() => removeItem(item.id)}
                                     className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-red-400 transition-colors"
-                                    title="Remove Item"
                                   >
                                     <Trash2 size={16} /> <span className="hidden sm:inline">Remove</span>
                                   </button>
@@ -236,7 +288,6 @@ export default function CartPage() {
                   <div className="space-y-4">
                     {savedItems.map((item) => (
                       <div key={item.id} className="flex gap-4 p-4 rounded-xl border border-dashed border-white/10 bg-slate-900/20 hover:bg-slate-900/40 transition-colors relative group">
-                        {/* Thumbnail */}
                         <div className="h-16 w-16 sm:h-20 sm:w-20 bg-white rounded-lg p-2 flex-shrink-0 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
                           <img src={item.thumbnail} alt={item.title} className="h-full w-full object-contain" />
                         </div>

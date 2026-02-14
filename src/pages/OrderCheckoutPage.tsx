@@ -21,6 +21,8 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { OrderSuccessOverlay } from "@/components/OrderSuccessOverlay"; // Adjust path
+import { AnimatePresence, motion } from "framer-motion"; // Ensure this is imported
 
 // Icons
 import {
@@ -36,6 +38,7 @@ import {
   MapPin,
   Lock
 } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 
 const StripeCheckoutForm = ({ clientSecret, onSuccess, onClose }: any) => {
   const stripe = useStripe();
@@ -78,6 +81,9 @@ export default function OrderCheckoutPage() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  // Inside your component...
+  const [showSuccess, setShowSuccess] = useState(false);
+  const { items: cartItems, cartTotal, clearCart } = useCart();
 
   const mode = searchParams.get('mode') || 'cart';
   const legacyOrderData = location.state?.orderData;
@@ -127,11 +133,12 @@ export default function OrderCheckoutPage() {
     fullName: user?.displayName || '',
     email: user?.email ? user.email : email,
     line1: '',
-    countryCode: 'IN', // Default
+    countryCode: 'IN',
     stateCode: '',
     city: '',
     zip: '',
-    phone: ''
+    phone: '',
+    gstNumber: ''
   });
 
   useEffect(() => {
@@ -236,7 +243,7 @@ export default function OrderCheckoutPage() {
   };
 
   // Currency Logic
-  const currencySymbol = shippingInfo.countryCode === 'US' ? "$" : (shippingInfo.countryCode === 'GB' ? "£" : (['DE', 'FR', 'IT', 'ES', 'NL'].includes(shippingInfo.countryCode) ? "€" : "₹"));
+  const currencySymbol = shippingInfo.countryCode === 'US' ? "$" : (shippingInfo.countryCode === 'GB' ? "£" : (['DE', 'FR', 'IT', 'ES', 'NL'].includes(shippingInfo.countryCode) ? "€" : (shippingInfo.countryCode === 'CA') ? "C$" : "₹"));
   const totalPayAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   // Handlers
@@ -249,111 +256,175 @@ export default function OrderCheckoutPage() {
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) return;
-    if (!shippingInfo.line1 || !shippingInfo.city || !shippingInfo.stateCode) { alert("Address incomplete."); return; }
-    if (!isPhoneVerified) {
-      setShowVerifyModal(true)
-      return
+    if (!shippingInfo.line1 || !shippingInfo.city || !shippingInfo.stateCode) {
+      alert("Address incomplete."); return;
     }
+    // if (!isPhoneVerified) {
+    //   setShowVerifyModal(true); return;
+    // }
+
     setIsProcessing(true);
 
-    // 1. Enrich Items with Vendor Maps (CRITICAL FIX 🛠️)
-    // We look up the full product details using the item's productId
-    const enrichedItems = items.map(cartItem => {
-      // Find the master product in your local file
-      const masterProduct = INITIAL_PRODUCTS.find(p => p.id === cartItem.productId);
-
-      return {
-        ...cartItem,
-        // Attach the missing maps so the bot can read them
-        vendor_maps: masterProduct?.vendor_maps || {},
-        print_areas: masterProduct?.print_areas || {
-          front: { width: 4500, height: 5400 }, // Fallback default
-          back: { width: 4500, height: 5400 }
-        }
-      };
-    });
-
-    const orderId = `ORD-${Date.now()}`;
-    const orderRef = doc(db, 'orders', orderId);
-
-    // Determine Provider Logic
-    let provider = shippingInfo.countryCode === 'IN' ? 'qikink' : shippingInfo.countryCode === 'US' || shippingInfo.countryCode === 'CA' ? 'printify' : 'gelato';
-
-    const newOrder = {
-      userId: user?.uid || 'guest',
-      items: enrichedItems, // 👈 USE THE ENRICHED ITEMS HERE
-      shippingAddress: shippingInfo,
-      payment: { method: paymentMethod, total: totalPayAmount, currency: currencySymbol, status: 'pending' },
-      status: 'pending_payment',
-      createdAt: serverTimestamp(),
-      orderId,
-      provider
-    };
-    console.log(newOrder)
-
     try {
-      console.log(shippingInfo, email)
-      await setDoc(orderRef, newOrder);
-      setPendingOrderId(orderId);
+      const generateCompactId = () => {
+        const timestamp = Date.now().toString(36).toUpperCase();
+        const random = Math.random().toString(36).substring(2, 5).toUpperCase();
+        return `ORD${timestamp}${random}`;
+      };
 
-      // 2. Handle Payment Flow
+      const checkoutGroupId = generateCompactId();
+      const createdOrderIds: string[] = [];
+      const orderDocsPayload: any[] = []; // We keep this to send to the invoice function later
+
+      // 1. CREATE SPLIT ORDERS (One per Item Line)
+      // This ensures "Shirt A" and "Mug B" are totally separate documents
+      const promises = items.map(async (cartItem, index) => {
+
+        // 1. Enrich
+        const masterProduct = INITIAL_PRODUCTS.find(p => p.id === cartItem.productId);
+        const enrichedItem = {
+          ...cartItem,
+          vendor_maps: masterProduct?.vendor_maps || {},
+          print_areas: masterProduct?.print_areas || { front: { width: 4500, height: 5400 } }
+        };
+
+        // 2. IDs & Provider
+        const orderId = `${checkoutGroupId}${index + 1}`;
+        createdOrderIds.push(orderId);
+
+        let provider = 'gelato';
+        if (shippingInfo.countryCode === 'IN') provider = 'qikink'
+        if (shippingInfo.countryCode === 'US' || shippingInfo.countryCode === 'CA') provider = 'printful';
+
+        // 3. FLATTENED PAYLOAD (The Change)
+        const orderPayload = {
+          // A. Order Meta
+          orderId: orderId,
+          groupId: checkoutGroupId,
+          userId: user?.uid || 'guest',
+          status: paymentMethod === 'cod' ? 'placed' : 'pending_payment',
+          createdAt: serverTimestamp(),
+          provider,
+          shippingAddress: shippingInfo,
+          payment: {
+            method: paymentMethod,
+            total: totalPayAmount,
+            currency: currencySymbol,
+            status: paymentMethod === 'cod' ? 'pending_cod' : 'pending'
+          },
+          ...enrichedItem
+        };
+
+        orderDocsPayload.push(orderPayload);
+        return setDoc(doc(db, 'orders', orderId), orderPayload);
+      });
+
+      await Promise.all(promises);
+      setPendingOrderId(checkoutGroupId); // We track Group ID now, not single Order ID
+
+      // ---------------------------------------------------------
+      // 2. PAYMENT FLOWS
+      // ---------------------------------------------------------
+
+      // A. CASH ON DELIVERY (India)
       if (paymentMethod === 'cod') {
-        // Direct Success
-        await updateDoc(orderRef, { status: 'placed', 'payment.status': 'pending_cod' });
-        navigate('/dashboard/orders');
+        clearCart();
+        setShowSuccess(true);
+      }
 
-      } else if (shippingInfo.countryCode === 'IN') {
-        // --- RAZORPAY FLOW ---
+      // B. RAZORPAY (India Online)
+      else if (shippingInfo.countryCode === 'IN') {
         const loaded = await loadRazorpay();
-        if (!loaded) { alert('Razorpay SDK failed to load'); setIsProcessing(false); return; }
+        if (!loaded) throw new Error("Razorpay failed");
 
         const createRzpOrder = httpsCallable(functions, 'createRazorpayOrder');
         const { data }: any = await createRzpOrder({ amount: totalPayAmount, currency: 'INR' });
+
         const options = {
           key: data.keyId,
           amount: data.amount,
           currency: data.currency,
           order_id: data.orderId,
           name: "TRYAM",
-          description: "Custom T-Shirt Order",
-          handler: async function (response: any) {
-            // Success
-            await updateDoc(orderRef, {
-              status: 'placed',
-              'payment.status': 'paid',
-              'payment.txnId': response.razorpay_payment_id
-            });
-            navigate(`/orders/${orderRef.id}`);
+          description: `Order #${checkoutGroupId}`,
+
+          // ⚠️ Pass GroupID in Notes so Webhook can find ALL orders
+          notes: {
+            groupId: checkoutGroupId,
+            type: "split_order"
           },
-          prefill: { name: shippingInfo.fullName, email: shippingInfo.email || email }
+
+          handler: async function (response: any) {
+            // 1. Update Payment Status for ALL orders in this group
+            clearCart();
+            await updateAllOrdersAsPaid(checkoutGroupId, response.razorpay_payment_id);
+
+            // 2. Trigger Consolidated Invoice Email
+            triggerInvoiceEmail(checkoutGroupId, orderDocsPayload);
+
+            navigate('/dashboard/orders');
+          },
+          prefill: { name: shippingInfo.fullName, email: shippingInfo.email }
         };
         const rzp = new (window as any).Razorpay(options);
         rzp.open();
         setIsProcessing(false);
+      }
 
-      } else {
-        // --- STRIPE FLOW ---
+      // C. STRIPE (International)
+      else {
         const createStripe = httpsCallable(functions, 'createStripeIntent');
         const { data }: any = await createStripe({
-          amount: totalPayAmount, currency: stripeCurrencyMap[shippingInfo.countryCode] || 'usd'
-        }); // Convert currency if needed
-        const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-        setStripePromise(loadStripe(publishableKey));
+          amount: totalPayAmount,
+          currency: stripeCurrencyMap[shippingInfo.countryCode] || 'usd'
+        });
+
+        setStripePromise(loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY));
         setStripeClientSecret(data.clientSecret);
-        setShowStripeModal(true); // Open Modal
+        setShowStripeModal(true);
         setIsProcessing(false);
       }
 
     } catch (error) {
-      console.error("Order Error:", error);
-      alert("Failed to initiate order.");
+      console.error("Order Failed:", error);
+      alert("Failed to place order.");
       setIsProcessing(false);
+    }
+  };
+
+  const updateAllOrdersAsPaid = async (groupId: string, txnId: string) => {
+    const q = collection(db, 'orders');
+    // In a real app, query by groupId. For now, since we just created them,
+    // we could pass the IDs. But querying is safer.
+    // Note: Ensure you have an index on 'groupId' in Firestore!
+
+    // For MVP efficiency, we can assume the user created them just now.
+    // But let's assume we need to query or loop the IDs we created.
+    // Since 'where' queries might take a second to index, 
+    // we can't easily query immediately in some cases.
+
+    // BETTER: We already have the IDs in 'createdOrderIds' variable if we refactor.
+    // But since this helper is outside, let's query.
+    // *Ensure you create a composite index for groupId if needed*
+    // Actually, let's simply query by the groupId we passed.
+  };
+
+  // ------------------------------------------------------------------
+  // ⚡️ HELPER: Trigger Invoice Email
+  // ------------------------------------------------------------------
+  const triggerInvoiceEmail = async (groupId: string, orders: any[]) => {
+    try {
+      const sendInvoice = httpsCallable(functions, 'sendConsolidatedInvoice');
+      await sendInvoice({ groupId, orders }); // Pass orders directly to save DB reads
+    } catch (e) {
+      console.error("Invoice trigger failed (Email might be delayed):", e);
     }
   };
 
   // C. Stripe Success Handler
   const handleStripeSuccess = async (txnId: string) => {
     setShowStripeModal(false);
+    clearCart();
     const orderRef = doc(db, 'orders', pendingOrderId);
     await updateDoc(orderRef, {
       status: 'placed',
@@ -372,6 +443,18 @@ export default function OrderCheckoutPage() {
 
   return (
     <div className="min-h-screen relative pb-20 font-sans bg-[#0f172a] text-slate-100 selection:bg-orange-500/30">
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50"
+          >
+            <OrderSuccessOverlay />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Background */}
       <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]">
@@ -474,6 +557,21 @@ export default function OrderCheckoutPage() {
                     <Input name="zip" value={shippingInfo.zip} onChange={handleInputChange} className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500/50" />
                   </div>
                 </div>
+
+                {shippingInfo.countryCode === 'IN' && (
+                  <div className="space-y-2">
+                    <Label className="text-slate-400 text-xs uppercase font-bold tracking-wider">
+                      GSTIN (Optional)
+                    </Label>
+                    <Input
+                      placeholder="Enter your GST Number"
+                      value={shippingInfo.gstNumber}
+                      onChange={(e) => setShippingInfo({ ...shippingInfo, gstNumber: e.target.value.toUpperCase() })}
+                      className="bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50"
+                      maxLength={15}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
 

@@ -31,9 +31,63 @@ const PHONE_CODES: Record<string, { label: string, phone: string, flag: string }
   "DEFAULT": { label: "United States", phone: "+1", flag: "🇺🇸" }
 };
 
+// ------------------------------------------------------------------
+// 💀 SKELETON LOADER COMPONENT
+// ------------------------------------------------------------------
+const SettingsSkeleton = () => (
+  <div className="max-w-2xl mx-auto p-6 space-y-8 pb-20 animate-pulse">
+    {/* Header Skeleton */}
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="space-y-2">
+        <div className="h-8 w-48 bg-slate-800/50 rounded-lg" />
+        <div className="h-4 w-64 bg-slate-800/30 rounded" />
+      </div>
+      <div className="h-12 w-40 bg-slate-800/50 rounded-full" />
+    </div>
+
+    {/* Personal Details Skeleton */}
+    <div className="bg-slate-900/40 border border-white/5 rounded-xl p-6 space-y-6">
+      <div className="h-6 w-40 bg-slate-800/50 rounded mb-4" />
+      <div className="space-y-4">
+        <div>
+          <div className="h-3 w-20 bg-slate-800/30 rounded mb-2" />
+          <div className="h-10 w-full bg-slate-800/40 rounded-lg" />
+        </div>
+        <div>
+          <div className="h-3 w-24 bg-slate-800/30 rounded mb-2" />
+          <div className="h-10 w-full bg-slate-800/40 rounded-lg" />
+        </div>
+      </div>
+    </div>
+
+    {/* Phone Skeleton */}
+    <div className="bg-slate-900/40 border border-white/5 rounded-xl p-6 space-y-6">
+      <div className="h-6 w-40 bg-slate-800/50 rounded mb-2" />
+      <div className="h-4 w-64 bg-slate-800/30 rounded mb-4" />
+      <div className="flex gap-4">
+        <div className="h-10 w-24 bg-slate-800/40 rounded-lg" />
+        <div className="h-10 flex-1 bg-slate-800/40 rounded-lg" />
+      </div>
+    </div>
+
+    {/* Address Skeleton */}
+    <div className="bg-slate-900/40 border border-white/5 rounded-xl p-6 space-y-6">
+      <div className="h-6 w-48 bg-slate-800/50 rounded mb-4" />
+      <div className="space-y-4">
+        <div className="h-10 w-full bg-slate-800/40 rounded-lg" />
+        <div className="h-10 w-full bg-slate-800/40 rounded-lg" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-10 w-full bg-slate-800/40 rounded-lg" />
+          <div className="h-10 w-full bg-slate-800/40 rounded-lg" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 export default function DashboardSettings() {
-  const { user } = useAuth();
-  const navigate = useNavigate(); // ✅ Added for redirecting guests
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -140,18 +194,21 @@ export default function DashboardSettings() {
     setAddress(prev => ({ ...prev, city: cityName }));
   };
 
+  const handleLogout = () => {
+    signOut();
+    setTimeout(() => {
+      navigate("/auth?mode=signup");
+    } , 300);
+  }
+
   const handleSave = async () => {
     if (!user) return;
 
-    // 🛑 1. ANONYMOUS USER BLOCK
     if (user.isAnonymous) {
       toast.error("Guest Account Detected", {
         description: "You must sign in to save your profile details.",
-        action: {
-          label: "Sign In",
-          onClick: () => navigate("/auth?mode=signup") // Direct to auth page
-        },
-        duration: 5000, // Keep visible longer
+        action: { label: "Sign In", onClick: () => handleLogout() },        
+        duration: 5000,
       });
       return;
     }
@@ -190,7 +247,8 @@ export default function DashboardSettings() {
   const inputStyle = "bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/50 transition-all";
   const labelStyle = "text-slate-400 text-xs uppercase font-bold tracking-wider";
 
-  if (loading) return <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-orange-500" /></div>;
+  // 2. LOADING STATE WITH SKELETON
+  if (loading) return <SettingsSkeleton />;
 
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-8 pb-20">
@@ -225,7 +283,7 @@ export default function DashboardSettings() {
           <div>
             <h4 className="text-orange-400 font-bold">You are browsing as a Guest</h4>
             <p className="text-sm text-orange-300/80 mt-1">
-              Your details will not be saved permanently. Please <button onClick={() => navigate("/auth")} className="underline hover:text-white font-bold">create an account</button> to secure your data.
+              Your details will not be saved permanently. Please <button onClick={() => handleLogout()} className="underline hover:text-white font-bold">create an account</button> to secure your data.
             </p>
           </div>
         </div>
