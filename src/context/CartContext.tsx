@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { db } from "@/firebase";
-import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, setDoc, deleteDoc, updateDoc, getDocs } from "firebase/firestore";
 
 export interface CartItem {
   id: string;
@@ -18,7 +18,7 @@ export interface CartItem {
   quantity: number;
   region: string;
   vendor: string;
-  designData?: any; 
+  designData?: any;
 }
 
 interface CartContextType {
@@ -28,13 +28,13 @@ interface CartContextType {
   removeItem: (id: string) => Promise<void>;
   updateQuantity: (id: string, delta: number) => Promise<void>;
   updateItemContent: (id: string, updates: Partial<CartItem>) => Promise<void>;
-  
+
   // ✅ NEW ACTIONS
   saveForLater: (id: string) => Promise<void>;
   moveToCart: (id: string) => Promise<void>;
   removeSavedItem: (id: string) => Promise<void>;
 
-  clearCart: () => Promise<void>;
+  clearCart: () => Promise<void>; // ✅ This will now work
   cartTotal: number;
   cartCount: number;
   isLoading: boolean;
@@ -51,7 +51,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // 1. ACTIVE CART LISTENER
   useEffect(() => {
     if (!user || !user?.uid) {
-      setItems([]); 
+      setItems([]);
       return;
     }
     setIsLoading(true);
@@ -109,13 +109,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const updateItemContent = async (id: string, updates: Partial<CartItem>) => {
-     if (!user?.uid) return;
-     try {
-        await updateDoc(doc(db, `users/${user.uid}/cart`, id), updates);
-        toast.success("Cart updated");
-     } catch (error) {
-        console.error("Update error:", error);
-     }
+    if (!user?.uid) return;
+    try {
+      await updateDoc(doc(db, `users/${user.uid}/cart`, id), updates);
+      toast.success("Cart updated");
+    } catch (error) {
+      console.error("Update error:", error);
+    }
   };
 
   // ✅ NEW: Move from Cart -> Saved
@@ -157,17 +157,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
     await deleteDoc(doc(db, `users/${user.uid}/saved_items`, id));
   };
 
-  const clearCart = async () => {}; 
+  const clearCart = async () => {
+    if (!user?.uid) return;
+    try {
+      // 1. Get all documents in the cart collection
+      const cartRef = collection(db, `users/${user.uid}/cart`);
+      const snapshot = await getDocs(cartRef);
+
+      // 2. Delete them one by one (in parallel)
+      const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+
+      console.log("Cart cleared successfully from Firestore");
+    } catch (error) {
+      console.error("Failed to clear cart:", error);
+    }
+  };
 
   const cartTotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ 
-      items, savedItems, 
-      addItem, removeItem, updateQuantity, updateItemContent, 
+    <CartContext.Provider value={{
+      items, savedItems,
+      addItem, removeItem, updateQuantity, updateItemContent,
       saveForLater, moveToCart, removeSavedItem,
-      clearCart, cartTotal, cartCount, isLoading 
+      clearCart, cartTotal, cartCount, isLoading
     }}>
       {children}
     </CartContext.Provider>

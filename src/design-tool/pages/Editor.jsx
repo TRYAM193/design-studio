@@ -788,7 +788,7 @@ export default function EditorPanel() {
             variant: { color: colorName, size: selectedSize },
             quantity: quantity,
             price: currentPrice || 0,
-            currency: 'INR',
+            currency: currencyInfo,
 
             thumbnail: baseImage,
             highResGenerated: false,
@@ -905,7 +905,7 @@ export default function EditorPanel() {
                                 <button title='Redo' className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{ opacity: future.length ? '1' : '0.5' }}><Redo2 size={18} /></button>
                             </div>
                             <div className="control-group divider">
-                                <button title='Delete' className="top-bar-button danger" onClick={() => removeObject(selectedId)} style={{ opacity: !selectedId ? '0.5' : '1' }}><FiTrash2 size={18} /></button>
+                                <button title='Delete' className="top-bar-button danger" onClick={() => removeObject(selectedId, setSelectedId, setActiveTool)} style={{ opacity: !selectedId ? '0.5' : '1' }}><FiTrash2 size={18} /></button>
                             </div>
                             <div className="control-group">
                                 {fabricCanvas && (
@@ -1025,7 +1025,7 @@ export default function EditorPanel() {
                                     <p className="text-[10px] text-center text-slate-500 mt-2">Secure checkout powered by Stripe</p>
                                 </div>
                             </div>
-                        ) : ( !fabricCanvas?.getActiveObject() && 
+                        ) : (!fabricCanvas?.getActiveObject() &&
                             <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300">
                                 <div className="w-20 h-20 rounded-2xl bg-slate-800/30 border border-white/5 flex items-center justify-center mb-4 relative overflow-hidden group">
                                     {/* Subtle Shine Effect */}

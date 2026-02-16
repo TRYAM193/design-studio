@@ -134,6 +134,8 @@ export default function OrderCheckoutPage() {
     email: user?.email ? user.email : email,
     line1: '',
     countryCode: 'IN',
+    country: 'India',
+    state: '',
     stateCode: '',
     city: '',
     zip: '',
@@ -170,13 +172,18 @@ export default function OrderCheckoutPage() {
           if (userDoc.exists()) {
             const data = userDoc.data();
             const addr = data.addressObject || {};
+            const resolvedCountry = Country.getCountryByCode(addr.countryCode || 'IN')?.name;
+            const resolvedState = State.getStateByCodeAndCountry(addr.stateCode || '', addr.countryCode || 'IN')?.name;
             setShippingInfo(prev => ({
               ...prev,
               fullName: data.name || prev.fullName,
               line1: addr.line1 || '',
               // We will override this below if IP check passes
               countryCode: addr.countryCode || 'IN',
+              country: addr.country || resolvedCountry || 'India', // ✅ Load or Resolve
+              
               stateCode: addr.stateCode || '',
+              state: addr.state || resolvedState || '',
               city: addr.city || '',
               zip: addr.zip || '',
               phone: data.phoneNumber
@@ -204,11 +211,14 @@ export default function OrderCheckoutPage() {
           setShippingInfo(prev => ({
             ...prev,
             countryCode: 'IN',
-            // If the saved state/city isn't Indian, clear them to prevent mismatches
+            country: 'India', // ✅ Explicitly set name
+            
+            // Only clear state if we switched countries
             stateCode: prev.countryCode !== 'IN' ? '' : prev.stateCode,
+            state: prev.countryCode !== 'IN' ? '' : prev.state,
             city: prev.countryCode !== 'IN' ? '' : prev.city
           }));
-          setIsLocationLocked(true); // 🔒 Lock the dropdown
+          setIsLocationLocked(true); 
         }
       } catch (error) {
         console.warn("Could not fetch IP location, defaulting to open selection.");
@@ -250,8 +260,33 @@ export default function OrderCheckoutPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShippingInfo({ ...shippingInfo, [e.target.name]: e.target.value });
   };
-  const handleCountryChange = (value: string) => setShippingInfo({ ...shippingInfo, countryCode: value, stateCode: '', city: '' });
-  const handleStateChange = (value: string) => setShippingInfo({ ...shippingInfo, stateCode: value, city: '' });
+
+  const handleCountryChange = (value: string) => {
+    // 1. Find the Name object from the library
+    const countryData = Country.getCountryByCode(value);
+
+    setShippingInfo({
+      ...shippingInfo,
+      countryCode: value,
+      country: countryData?.name || value, // ✅ Save Name
+
+      // Reset State/City when country changes
+      stateCode: '',
+      state: '',
+      city: ''
+    });
+  }
+  const handleStateChange = (value: string) => {
+    // 1. Find the Name object
+    const stateData = State.getStateByCodeAndCountry(value, shippingInfo.countryCode);
+
+    setShippingInfo({ 
+        ...shippingInfo, 
+        stateCode: value, 
+        state: stateData?.name || value, // ✅ Save Name
+        city: '' 
+    });
+  };
   const handleCityChange = (value: string) => setShippingInfo({ ...shippingInfo, city: value });
 
   const handlePlaceOrder = async () => {
@@ -302,7 +337,7 @@ export default function OrderCheckoutPage() {
           orderId: orderId,
           groupId: checkoutGroupId,
           userId: user?.uid || 'guest',
-          status: paymentMethod === 'cod' ? 'placed' : 'pending_payment',
+          status: paymentMethod === 'cod' ? 'processing' : 'pending_payment',
           createdAt: serverTimestamp(),
           provider,
           shippingAddress: shippingInfo,
@@ -354,14 +389,8 @@ export default function OrderCheckoutPage() {
             type: "split_order"
           },
 
-          handler: async function (response: any) {
-            // 1. Update Payment Status for ALL orders in this group
+          handler: async function () {
             clearCart();
-            await updateAllOrdersAsPaid(checkoutGroupId, response.razorpay_payment_id);
-
-            // 2. Trigger Consolidated Invoice Email
-            triggerInvoiceEmail(checkoutGroupId, orderDocsPayload);
-
             navigate('/dashboard/orders');
           },
           prefill: { name: shippingInfo.fullName, email: shippingInfo.email }
@@ -389,35 +418,6 @@ export default function OrderCheckoutPage() {
       console.error("Order Failed:", error);
       alert("Failed to place order.");
       setIsProcessing(false);
-    }
-  };
-
-  const updateAllOrdersAsPaid = async (groupId: string, txnId: string) => {
-    const q = collection(db, 'orders');
-    // In a real app, query by groupId. For now, since we just created them,
-    // we could pass the IDs. But querying is safer.
-    // Note: Ensure you have an index on 'groupId' in Firestore!
-
-    // For MVP efficiency, we can assume the user created them just now.
-    // But let's assume we need to query or loop the IDs we created.
-    // Since 'where' queries might take a second to index, 
-    // we can't easily query immediately in some cases.
-
-    // BETTER: We already have the IDs in 'createdOrderIds' variable if we refactor.
-    // But since this helper is outside, let's query.
-    // *Ensure you create a composite index for groupId if needed*
-    // Actually, let's simply query by the groupId we passed.
-  };
-
-  // ------------------------------------------------------------------
-  // ⚡️ HELPER: Trigger Invoice Email
-  // ------------------------------------------------------------------
-  const triggerInvoiceEmail = async (groupId: string, orders: any[]) => {
-    try {
-      const sendInvoice = httpsCallable(functions, 'sendConsolidatedInvoice');
-      await sendInvoice({ groupId, orders }); // Pass orders directly to save DB reads
-    } catch (e) {
-      console.error("Invoice trigger failed (Email might be delayed):", e);
     }
   };
 

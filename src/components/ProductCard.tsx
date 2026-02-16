@@ -3,6 +3,7 @@ import { BaseProduct } from "@/hooks/use-base-products";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useNavigate } from "react-router";
 import { Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface ProductCardProps {
   product: BaseProduct;
@@ -10,12 +11,12 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const navigate = useNavigate();
+  const [region, setRegion] = useState("IN"); 
   
   const handleViewDetails = () => {
-    navigate(`/product/${product.id}`);
+    navigate(`/product/${product.id}`, { state: { region } });
   };
   
-  const region = "IN"; 
   const currencySymbols: Record<string, string> = {
     IN: "₹",
     US: "$",
@@ -23,6 +24,27 @@ export function ProductCard({ product }: ProductCardProps) {
     EU: "€",
     CA: "C$"
   };
+
+  useEffect(() => {
+      // Only fetch if we haven't locked it yet
+      const fetchLocation = async () => {
+        try {
+          const res = await fetch('https://ipapi.co/json/');
+          const data = await res.json();
+  
+          // Logic: If user is in India, Force India.
+          // You can add 'OR data.country_code === "US"' if you want to lock US users too.
+          if (data.country_code === 'US') setRegion('US');
+          else if (data.country_code === 'CA') setRegion('CA');
+          else if (data.country_code === 'GB') setRegion('GB');
+
+        } catch (error) {
+          console.warn("Could not fetch IP location, defaulting to open selection.");
+        }
+      };
+        fetchLocation();
+    }, []);
+  
 
   const symbol = currencySymbols[region] || "₹";
   const priceValue = product.price?.[region as keyof typeof product.price] || 0;

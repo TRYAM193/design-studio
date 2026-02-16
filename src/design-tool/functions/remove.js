@@ -1,7 +1,7 @@
 import { store } from '../redux/store';
 import { setCanvasObjects } from '../redux/canvasSlice';
 
-export default function removeObject(id) {
+export default function removeObject(id, setSelectedId, setActiveTool) {
   if (!id) return;
 
   const state = store.getState();
@@ -10,4 +10,6 @@ export default function removeObject(id) {
   const updatedObjects = canvasObjects.filter((obj) => obj.id !== id);
 
   store.dispatch(setCanvasObjects(updatedObjects));
+  setSelectedId(null);
+  setActiveTool(null);
 }

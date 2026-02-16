@@ -18,6 +18,14 @@ export default defineConfig({
     allowedHosts: [
       "postscorbutic-petronila-polyrhythmically.ngrok-free.dev", // The URL from your error
       ".ngrok-free.app" // Allows other ngrok URLs if this one changes
-    ]
-  },
+    ],
+    proxy: {
+      // Proxy requests from '/api' to 'https://ipapi.co'
+      '/api': {
+        target: 'https://ipapi.co',
+        changeOrigin: true, // Needed for virtual hosted sites
+        rewrite: (path) => path.replace(/^\/api/, ''), // Remove '/api' prefix when forwarding
+      },
+    },
+  }
 });

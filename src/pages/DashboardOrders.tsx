@@ -68,6 +68,20 @@ export default function DashboardOrders() {
     }
   };
 
+  function formatDate(isoString: string) {
+    if (!isoString) return "N/A";
+    const date = new Date(isoString);
+
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  }
+
   // 2. FETCH REAL ORDERS
   useEffect(() => {
     async function fetchOrders() {
@@ -87,21 +101,21 @@ export default function DashboardOrders() {
 
           // NEW SPLIT ORDER LOGIC
           if (data.title || data.productId) {
-             const qty = Number(data.quantity) || 1;
-             const price = Number(data.price) || 0;
-             displayTitle = data.title;
-             displayImage = data.thumbnail || data.image || data.designData?.previewImage;
-             specificTotal = price * qty;
-             const variantStr = data.variant ? `${data.variant.color || ''} ${data.variant.size || ''}` : 'Custom';
-             itemDescription = `${displayTitle} (${variantStr}) x${qty}`;
-          } 
+            const qty = Number(data.quantity) || 1;
+            const price = Number(data.price) || 0;
+            displayTitle = data.title;
+            displayImage = data.thumbnail || data.image || data.designData?.previewImage;
+            specificTotal = price * qty;
+            const variantStr = data.variant ? `${data.variant.color || ''} ${data.variant.size || ''}` : 'Custom';
+            itemDescription = `${displayTitle} (${variantStr}) x${qty}`;
+          }
           // LEGACY ORDER LOGIC
           else if (data.items && data.items.length > 0) {
-             const firstItem = data.items[0];
-             displayTitle = firstItem.title;
-             displayImage = firstItem.thumbnail;
-             specificTotal = data.items.reduce((acc: number, item: any) => acc + (Number(item.price) * Number(item.quantity)), 0);
-             itemDescription = data.items.map((item: any) => `${item.title} x${item.quantity}`).join(", ");
+            const firstItem = data.items[0];
+            displayTitle = firstItem.title;
+            displayImage = firstItem.thumbnail;
+            specificTotal = data.items.reduce((acc: number, item: any) => acc + (Number(item.price) * Number(item.quantity)), 0);
+            itemDescription = data.items.map((item: any) => `${item.title} x${item.quantity}`).join(", ");
           }
 
           if (specificTotal === 0 && data.payment?.total) specificTotal = data.payment.total;
@@ -136,6 +150,7 @@ export default function DashboardOrders() {
     });
   }, [orders, searchQuery, statusFilter]);
 
+  console.log(filteredOrders)
   const getStatusStyles = (status: string) => {
     switch (status) {
       case "Delivered": return "bg-green-500/20 text-green-400 border-green-500/30";
@@ -214,7 +229,7 @@ export default function DashboardOrders() {
           // 🚀 TRUE EMPTY STATE (No Orders placed ever)
           <div className="flex flex-col items-center justify-center py-24 border border-dashed border-white/10 rounded-3xl bg-slate-800/20 text-center px-6">
             <div className="h-24 w-24 bg-slate-800 rounded-full flex items-center justify-center mb-6 shadow-inner border border-white/5">
-               <ShoppingBag className="h-10 w-10 text-orange-500" />
+              <ShoppingBag className="h-10 w-10 text-orange-500" />
             </div>
             <h3 className="text-2xl font-bold text-white mb-2">You haven't placed any orders yet</h3>
             <p className="text-slate-400 max-w-sm mb-8">
@@ -261,7 +276,7 @@ export default function DashboardOrders() {
                           <p className="text-sm text-slate-300 line-clamp-2 leading-relaxed">{order.description}</p>
                           <p className="text-xs text-slate-500 flex items-center gap-1.5 pt-1">
                             <Clock className="w-3 h-3" />
-                            {t("orders.placedOn")} <span className="text-slate-400">{order.date}</span>
+                            {t("orders.placedOn")} <span className="text-slate-400">{formatDate(order.rawData.createdAt)}</span>
                           </p>
                         </div>
                       </div>

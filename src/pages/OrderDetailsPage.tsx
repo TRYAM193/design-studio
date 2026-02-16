@@ -4,7 +4,7 @@ import {
   Truck, Calendar, MapPin, ExternalLink, 
   ArrowLeft, RefreshCw, Loader2, Check, Circle, 
   Printer, Shirt, CreditCard, ShieldCheck, HelpCircle, AlertCircle,
-  Sparkles, Archive, FileImage, Download
+  Sparkles, Archive, FileImage, Download, Phone, Mail, MessageSquare
 } from "lucide-react"; 
 
 import { Button } from "@/components/ui/button";
@@ -12,11 +12,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { db, functions } from "@/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -90,10 +94,11 @@ const PrintFileCard = ({ label, url }: { label: string, url?: string }) => {
 const MockupGallerySection = ({ item }: { item: any }) => {
   const gallery = item.mockupFiles?.gallery || [];
   
-  // Fallback to legacy structure
+  // Fallback to legacy structure or standard previews if gallery empty
   if (gallery.length === 0) {
     if (item.mockupFiles?.front) gallery.push(item.mockupFiles.front);
     if (item.mockupFiles?.back) gallery.push(item.mockupFiles.back);
+    // Use root level preview/image/designData if present
     if (gallery.length === 0 && (item.preview || item.image || item.designData?.previewImage)) {
         gallery.push(item.preview || item.image || item.designData?.previewImage);
     }
@@ -133,7 +138,7 @@ const MockupGallerySection = ({ item }: { item: any }) => {
           <DialogTrigger asChild>
             <div className="relative w-32 h-32 bg-slate-800/50 rounded-xl border border-white/10 overflow-hidden flex-shrink-0 cursor-zoom-in group">
               <img 
-                src={selectedImage} 
+                src={selectedImage || "/placeholder.png"} 
                 alt="Mockup" 
                 className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
               />
@@ -191,29 +196,181 @@ const MockupGallerySection = ({ item }: { item: any }) => {
 };
 
 // ------------------------------------------------------------------
-// 統 CONSTANTS
+// 🛠️ SUPPORT MODAL COMPONENT (Unified Logic)
 // ------------------------------------------------------------------
-const TRUST_LINES = [
-  "Custom prints need 2-3 days to craft perfectly.",
-  "Good things take time. Your unique item is being made.",
-  "Quality checks ensure your custom order arrives flawless."
-];
+const SupportModal = ({ isOpen, onClose, mode, order, onSuccess }: any) => {
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // Address State
+    const [address, setAddress] = useState(order?.shippingAddress || {});
+    
+    // Ticket State
+    const [issueType, setIssueType] = useState("");
+    const [description, setDescription] = useState("");
 
-const QUALITY_LINES = [
-  "We use premium materials for a lasting fit.",
-  "Every item is hand-checked before shipping."
-];
+    // Reset when opening
+    useEffect(() => {
+        if (isOpen && order) {
+            setAddress(order.shippingAddress || {});
+            setIssueType("");
+            setDescription("");
+        }
+    }, [isOpen, order]);
 
-const HELP_OPTIONS = [
-  "Track my package",
-  "Report a problem", 
-  "Change shipping address",
-  "Request a refund",
-  "Contact Support"
-];
+    const handleAddressUpdate = async () => {
+        setIsLoading(true);
+        try {
+            const orderRef = doc(db, "orders", order.id);
+            await updateDoc(orderRef, {
+                shippingAddress: address,
+                // 🚨 Alert Admin: Address changed after order placement!
+                providerStatus: "manual_action_needed", 
+                botError: "User updated address manually. Verify before shipping.",
+                updatedAt: serverTimestamp()
+            });
+            toast.success("Address updated! We've alerted the shipping team.");
+            onSuccess();
+            onClose();
+        } catch (error) {
+            toast.error("Failed to update address.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleTicketSubmit = async () => {
+        if (!issueType || !description) {
+            toast.error("Please fill in all fields.");
+            return;
+        }
+        setIsLoading(true);
+        try {
+            // Create a Support Ticket linked to this order
+            await addDoc(collection(db, "support_tickets"), {
+                userId: order.userId || "guest",
+                orderId: order.id,
+                orderNumber: order.orderId,
+                type: mode === "TICKET_REFUND" ? "Refund Request" : issueType,
+                description: description,
+                status: "open",
+                createdAt: serverTimestamp()
+            });
+            toast.success("Support ticket created. We will contact you shortly.");
+            onClose();
+        } catch (error) {
+            toast.error("Failed to submit ticket.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (mode === "ADDRESS_UPDATE") {
+        return (
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="bg-slate-900 border-slate-700 text-white">
+                    <DialogHeader>
+                        <DialogTitle>Update Shipping Address</DialogTitle>
+                        <DialogDescription className="text-slate-400">
+                            Updates are only possible before the item is printed.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 py-2">
+                        <div className="space-y-1">
+                            <Label>Full Name</Label>
+                            <Input value={address.fullName} onChange={(e) => setAddress({...address, fullName: e.target.value})} className="bg-slate-800 border-slate-600"/>
+                        </div>
+                        <div className="space-y-1">
+                            <Label>Address Line 1</Label>
+                            <Input value={address.line1} onChange={(e) => setAddress({...address, line1: e.target.value})} className="bg-slate-800 border-slate-600"/>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                                <Label>City</Label>
+                                <Input value={address.city} onChange={(e) => setAddress({...address, city: e.target.value})} className="bg-slate-800 border-slate-600"/>
+                            </div>
+                            <div className="space-y-1">
+                                <Label>Pincode</Label>
+                                <Input value={address.zip} onChange={(e) => setAddress({...address, zip: e.target.value})} className="bg-slate-800 border-slate-600"/>
+                            </div>
+                        </div>
+                         <div className="space-y-1">
+                            <Label>Phone</Label>
+                            <Input value={address.phone} onChange={(e) => setAddress({...address, phone: e.target.value})} className="bg-slate-800 border-slate-600"/>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                        <Button onClick={handleAddressUpdate} disabled={isLoading} className="bg-orange-600 hover:bg-orange-700">
+                            {isLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <MapPin className="mr-2 h-4 w-4"/>}
+                            Update Address
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
+    // TICKET MODAL (Problem or Refund)
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="bg-slate-900 border-slate-700 text-white">
+                <DialogHeader>
+                    <DialogTitle>
+                        {mode === "TICKET_REFUND" ? "Request a Refund" : "Report a Problem"}
+                    </DialogTitle>
+                    <DialogDescription className="text-slate-400">
+                        We're sorry you're facing issues. Please describe the problem below.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                    {mode !== "TICKET_REFUND" && (
+                        <div className="space-y-2">
+                            <Label>Issue Type</Label>
+                            <Select onValueChange={setIssueType}>
+                                <SelectTrigger className="bg-slate-800 border-slate-600">
+                                    <SelectValue placeholder="Select an issue..." />
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                                    <SelectItem value="Print Quality">Print Quality Issue</SelectItem>
+                                    <SelectItem value="Wrong Item">Received Wrong Item</SelectItem>
+                                    <SelectItem value="Damaged">Item Damaged on Arrival</SelectItem>
+                                    <SelectItem value="Missing">Package Never Arrived</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+                    
+                    <div className="space-y-2">
+                        <Label>Description</Label>
+                        <Textarea 
+                            placeholder="Please provide details (e.g., 'The print is peeling off' or 'I received size M instead of L')."
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="bg-slate-800 border-slate-600 min-h-[100px]"
+                        />
+                    </div>
+
+                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-md text-xs text-blue-200 flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                        <p>Our support team usually responds within 24 hours via email. We might ask for photos if the item is damaged.</p>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                    <Button onClick={handleTicketSubmit} disabled={isLoading} className="bg-red-600 hover:bg-red-700 text-white">
+                        {isLoading ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <MessageSquare className="mr-2 h-4 w-4"/>}
+                        Submit Ticket
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 // ------------------------------------------------------------------
-// 圜 VERTICAL TIMELINE TRACKER
+// 📊 VERTICAL TIMELINE TRACKER
 // ------------------------------------------------------------------
 const OrderTrackerVertical = ({ status, providerStatus }: { status: string, providerStatus?: string }) => {
   const steps = [
@@ -274,7 +431,21 @@ const OrderTrackerVertical = ({ status, providerStatus }: { status: string, prov
 };
 
 // ------------------------------------------------------------------
-// 塘 MAIN PAGE
+// ⚙️ CONSTANTS
+// ------------------------------------------------------------------
+const TRUST_LINES = [
+  "Custom prints need 2-3 days to craft perfectly.",
+  "Good things take time. Your unique item is being made.",
+  "Quality checks ensure your custom order arrives flawless."
+];
+
+const QUALITY_LINES = [
+  "We use premium materials for a lasting fit.",
+  "Every item is hand-checked before shipping."
+];
+
+// ------------------------------------------------------------------
+// 🛍️ MAIN PAGE
 // ------------------------------------------------------------------
 export default function OrderDetailsPage() {
   const { orderId } = useParams();
@@ -284,6 +455,9 @@ export default function OrderDetailsPage() {
   const [order, setOrder] = useState<any>(initialOrder || null);
   const [loading, setLoading] = useState(!initialOrder);
   const [refreshing, setRefreshing] = useState(false);
+
+  // 🛠️ SUPPORT MODAL STATE
+  const [modalMode, setModalMode] = useState<"NONE" | "ADDRESS_UPDATE" | "TICKET_PROBLEM" | "TICKET_REFUND">("NONE");
 
   const fetchOrder = async () => {
     if (!orderId) return;
@@ -324,6 +498,42 @@ export default function OrderDetailsPage() {
     }
   };
 
+  // 🔘 BUTTON CLICK HANDLER
+  const handleSupportClick = (action: string) => {
+    if (!order) return;
+
+    switch (action) {
+        case "Track my package":
+            if (order.providerData?.trackingUrl) {
+                window.open(order.providerData.trackingUrl, "_blank");
+            } else {
+                toast.info("Tracking not available yet. Please wait for the 'Shipped' status.");
+            }
+            break;
+        
+        case "Change shipping address":
+            if (order.status === "shipped" || order.status === "delivered") {
+                toast.error("Cannot change address. Order has already been shipped.");
+            } else {
+                setModalMode("ADDRESS_UPDATE");
+            }
+            break;
+        
+        case "Report a problem":
+            setModalMode("TICKET_PROBLEM");
+            break;
+
+        case "Request a refund":
+            setModalMode("TICKET_REFUND");
+            break;
+
+        case "Contact Support":
+            const subject = encodeURIComponent(`Question about Order #${order.orderId || order.id}`);
+            window.open(`mailto:support@yourbrand.com?subject=${subject}`, "_blank");
+            break;
+    }
+  };
+
   const getDeliveryConfidence = () => {
     if (order?.status === 'delivered') return "Delivered";
     if (order?.status === 'shipped') return "On track";
@@ -336,21 +546,36 @@ export default function OrderDetailsPage() {
     return date.toLocaleDateString("en-US", { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  // --------------------------------------------------------------
-  // 💰 CALCULATION: Get Total for JUST this specific order/shipment
-  // --------------------------------------------------------------
-  const specificOrderTotal = order?.items?.reduce((acc: number, item: any) => {
-    return acc + (Number(item.price) * Number(item.quantity));
-  }, 0) || 0;
-
+  const specificOrderTotal = order 
+    ? (Number(order.price) * Number(order.quantity)) 
+    : 0;
+  
+  const currencySymbol = order?.payment?.currency || order?.currency || '$';
 
   if (loading) return <div className="min-h-screen bg-[#0f172a] flex items-center justify-center"><Loader2 className="animate-spin text-orange-500 h-8 w-8" /></div>;
   if (!order) return <div className="text-white text-center pt-20">Order not found</div>;
+
+  const HELP_OPTIONS = [
+    "Track my package",
+    "Report a problem", 
+    "Change shipping address",
+    "Request a refund",
+    "Contact Support"
+  ];
 
   return (
     <div className="min-h-screen bg-[#0f172a] pb-20 relative font-sans">
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none mix-blend-overlay"></div>
       
+      {/* 🟢 MOUNT THE MODAL */}
+      <SupportModal 
+        isOpen={modalMode !== "NONE"} 
+        onClose={() => setModalMode("NONE")} 
+        mode={modalMode} 
+        order={order}
+        onSuccess={fetchOrder} // Refresh data after update
+      />
+
       <div className="container max-w-6xl mx-auto px-4 py-8 relative z-10">
         
         {/* HEADER */}
@@ -362,14 +587,19 @@ export default function OrderDetailsPage() {
             <h1 className="text-3xl font-extrabold text-white flex items-center gap-3">
               Order #{order.id}
             </h1>
-            <div className="flex items-center gap-4 text-sm text-slate-400">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
                <span className="flex items-center gap-2"><Calendar className="h-4 w-4" /> {formatDate(order.createdAt)}</span>
-               <span className="h-1 w-1 rounded-full bg-slate-600"></span>
-               {/* 💰 UPDATED: Shows specific total for this split order */}
-               <span className="flex text-bold items-center gap-2">
-                 <CreditCard className="h-4 w-4" /> 
-                 Total : {order.payment?.currency || order.currency}{specificOrderTotal.toFixed(2)}
+               <span className="hidden sm:inline h-1 w-1 rounded-full bg-slate-600"></span>
+               <span className="flex text-bold items-center gap-2 text-white">
+                 <CreditCard className="h-4 w-4 text-orange-400" /> 
+                 Total : {currencySymbol}{specificOrderTotal.toFixed(2)}
                </span>
+               <span className="hidden sm:inline h-1 w-1 rounded-full bg-slate-600"></span>
+               {order.groupId && (
+                  <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded">
+                     Group: {order.groupId}
+                  </span>
+               )}
             </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -395,11 +625,10 @@ export default function OrderDetailsPage() {
 
        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
-          {/* 逃 LEFT COLUMN - PRODUCT DETAILS */}
+          {/* 🛍️ LEFT COLUMN - PRODUCT DETAILS */}
           <div className="lg:col-span-8 space-y-6">
             
-            {order.items.map((item: any, index: number) => (
-              <Card key={index} className="bg-slate-800/40 border-white/10 backdrop-blur-sm overflow-hidden">
+            <Card className="bg-slate-800/40 border-white/10 backdrop-blur-sm overflow-hidden">
                 <CardHeader className="bg-slate-800/60 border-b border-white/5 pb-4">
                   <CardTitle className="text-white flex items-center gap-2 text-lg">
                     <Shirt className="h-5 w-5 text-orange-400" /> 
@@ -411,9 +640,9 @@ export default function OrderDetailsPage() {
                   <div className="flex flex-col sm:flex-row gap-6">
                      
                      {/* THUMBNAIL */}
-                     <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 bg-white rounded-xl overflow-hidden shrink-0 border-2 border-white/10 shadow-lg">
+                     <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 bg-white rounded-xl overflow-hidden shrink-0 border-2 border-white/10 shadow-lg relative group">
                         <img 
-                          src={item.thumbnail || item.image || item.designData?.previewImage} 
+                          src={order.thumbnail || order.image || order.designData?.previewImage || "/placeholder.png"} 
                           alt="Product Thumbnail" 
                           className="w-full h-full object-contain"
                         />
@@ -421,40 +650,34 @@ export default function OrderDetailsPage() {
 
                      {/* INFO GRID */}
                      <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
-                        {/* Name */}
                         <div className="col-span-2 space-y-1">
                             <span className="text-xs uppercase text-slate-500 font-bold tracking-wider">Product</span>
-                            <p className="text-white font-medium text-lg leading-tight">{item.title}</p>
+                            <p className="text-white font-medium text-lg leading-tight">{order.title || order.productTitle || "Custom Product"}</p>
                             <p className="text-[10px] text-green-400 flex items-center gap-1 mt-1">
                                <ShieldCheck className="h-3 w-3" /> {QUALITY_LINES[0]}
                             </p>
                         </div>
                         
-                        {/* Specs */}
                         <div className="space-y-1">
                             <span className="text-xs uppercase text-slate-500 font-bold tracking-wider">Variant</span>
                             <div className="flex items-center gap-2 mt-1">
-                               <Badge variant="secondary" className="bg-slate-700 text-white">{item.variant?.size || "L"}</Badge>
-                               <Badge variant="secondary" className="bg-slate-700 text-white capitalize">{item.variant?.color || "Black"}</Badge>
+                               <Badge variant="secondary" className="bg-slate-700 text-white">{order.variant?.size || "L"}</Badge>
+                               <Badge variant="secondary" className="bg-slate-700 text-white capitalize">{order.variant?.color || "Black"}</Badge>
                             </div>
                         </div>
 
-                        {/* Blank spacer */}
                         <div className="hidden sm:block"></div>
 
-                        {/* Quantity */}
                         <div className="space-y-1">
                             <span className="text-xs uppercase text-slate-500 font-bold tracking-wider">Quantity</span>
-                            <p className="text-white font-medium text-lg">{item.quantity}</p>
+                            <p className="text-white font-medium text-lg">{order.quantity}</p>
                         </div>
                         
-                        {/* Price */}
                         <div className="space-y-1">
                             <span className="text-xs uppercase text-slate-500 font-bold tracking-wider">Price</span>
-                            <p className="text-green-400 font-bold text-lg">{order.payment?.currency} {item.price}</p>
+                            <p className="text-green-400 font-bold text-lg">{currencySymbol} {order.price}</p>
                         </div>
 
-                        {/* CTA */}
                         <div className="col-span-2 pt-2">
                            <Button size="sm" variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-0">
                                Buy Again
@@ -465,28 +688,22 @@ export default function OrderDetailsPage() {
 
                   <Separator className="bg-white/5" />
 
-                  {/* -------------------------------------------------------- */}
                   {/* MOCKUPS & FILES SECTION */}
-                  {/* -------------------------------------------------------- */}
                   <div className="grid md:grid-cols-2 gap-8">
-                    
-                    {/* LEFT: 3D Mockup Gallery */}
-                    <MockupGallerySection item={item} />
-
-                    {/* RIGHT: Production Files */}
+                    <MockupGallerySection item={order} />
                     <div className="space-y-3">
                        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
                           <FileImage className="w-3 h-3 text-purple-400" />
                           Production Files
                        </h4>
                        <div className="space-y-2">
-                          {item.printFiles?.front && (
-                             <PrintFileCard label="Front Print" url={item.printFiles.front} />
+                          {order.printFiles?.front && (
+                             <PrintFileCard label="Front Print" url={order.printFiles.front} />
                           )}
-                          {item.printFiles?.back && (
-                             <PrintFileCard label="Back Print" url={item.printFiles.back} />
+                          {order.printFiles?.back && (
+                             <PrintFileCard label="Back Print" url={order.printFiles.back} />
                           )}
-                          {!item.printFiles?.front && !item.printFiles?.back && (
+                          {!order.printFiles?.front && !order.printFiles?.back && (
                              <div className="p-4 border border-dashed border-white/10 rounded-lg text-center text-xs text-slate-500">
                                 <Printer className="w-4 h-4 mx-auto mb-1 opacity-50" />
                                 Processing print files...
@@ -495,23 +712,26 @@ export default function OrderDetailsPage() {
                        </div>
                     </div>
                   </div>
-                  {/* -------------------------------------------------------- */}
 
                 </CardContent>
               </Card>
-            ))}
 
-            {/* HELP OPTIONS */}
+            {/* 🟢 FUNCTIONAL HELP BUTTONS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
                {HELP_OPTIONS.map((option, i) => (
-                  <Button key={i} variant="outline" className="border-white/5 bg-slate-800/30 hover:bg-slate-800 text-slate-400 hover:text-white text-xs h-12 sm:h-10 justify-start">
+                  <Button 
+                    key={i} 
+                    variant="outline" 
+                    className="border-white/5 bg-slate-800/30 hover:bg-slate-800 text-slate-400 hover:text-white text-xs h-12 sm:h-10 justify-start"
+                    onClick={() => handleSupportClick(option)}
+                  >
                      <HelpCircle className="h-3 w-3 mr-2 opacity-50" /> {option}
                   </Button>
                ))}
             </div>
           </div>
 
-          {/* 囹 RIGHT COLUMN - TRACKING */}
+          {/* 🚚 RIGHT COLUMN - TRACKING */}
           <div className="lg:col-span-4 space-y-6 sm:space-y-8 lg:space-y-8">
             <Card className="bg-slate-800/40 border-white/10 backdrop-blur-sm h-fit">
               <CardHeader className="bg-slate-800/60 border-b border-white/5 py-4">
@@ -548,7 +768,7 @@ export default function OrderDetailsPage() {
                    {order.providerData?.trackingCode && (
                      <div className="pt-2 mt-2 border-t border-white/10">
                         <p className="text-xs text-slate-500 uppercase font-bold mb-1">Tracking Number</p>
-                        <p className="text-white font-mono bg-black/30 p-2 rounded text-center select-all">
+                        <p className="text-white font-mono bg-black/30 p-2 rounded text-center select-all text-xs break-all">
                            {order.providerData.trackingCode}
                         </p>
                      </div>
@@ -564,15 +784,18 @@ export default function OrderDetailsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 text-sm text-slate-300 leading-relaxed">
-                 <p className="font-bold text-white text-base mb-1">{order.shippingAddress.fullName}</p>
-                 <p>{order.shippingAddress.line1}</p>
-                 {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
-                 <p>{order.shippingAddress.city}, {order.shippingAddress.state}</p>
-                 <p>{order.shippingAddress.zip}, {order.shippingAddress.country}</p>
+                 <p className="font-bold text-white text-base mb-1">{order.shippingAddress?.fullName || "Guest"}</p>
+                 <p>{order.shippingAddress?.line1}</p>
+                 {order.shippingAddress?.line2 && <p>{order.shippingAddress.line2}</p>}
+                 <p>{order.shippingAddress?.city}, {order.shippingAddress?.stateCode}</p>
+                 <p>{order.shippingAddress?.zip}, {order.shippingAddress?.countryCode}</p>
+                 {order.shippingAddress?.phone && <p className="mt-2 text-slate-400 text-xs"> <Phone className="h-3 w-3 inline mr-1" /> {order.shippingAddress.phone}</p>}
+                 
                  <div className="mt-4 pt-4 border-t border-white/5">
-                    <p className="text-xs text-orange-400 flex items-center gap-1">
-                       <AlertCircle className="h-3 w-3" /> Wrong address? Contact support immediately.
-                    </p>
+                    {/* Updated Alert Logic */}
+                    <button onClick={() => handleSupportClick("Change shipping address")} className="text-xs text-orange-400 flex items-center gap-1 hover:underline">
+                       <AlertCircle className="h-3 w-3" /> Wrong address? Click here to fix.
+                    </button>
                  </div>
               </CardContent>
             </Card>

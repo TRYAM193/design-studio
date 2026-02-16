@@ -1,7 +1,7 @@
 // src/utils/canvasActions.js
 import { v4 as uuidv4 } from 'uuid';
 
-export const handleCanvasAction = (action, selectedIds, canvasObjects, dispatch, setCanvasObjects) => {
+export const handleCanvasAction = (action, selectedIds, canvasObjects, dispatch, setCanvasObjects, setActiveTool, setSelectedId) => {
   if (!selectedIds || selectedIds.length === 0 || !canvasObjects) return;
 
   // We operate on a copy of the array
@@ -12,6 +12,8 @@ export const handleCanvasAction = (action, selectedIds, canvasObjects, dispatch,
     case 'delete':
       // Filter OUT any object that is in the selectedIds list
       newObjects = newObjects.filter(obj => !selectedIds.includes(obj.id));
+      setActiveTool(null);
+      setSelectedId(null);
       break;
 
     // --- DUPLICATE (Multi) ---

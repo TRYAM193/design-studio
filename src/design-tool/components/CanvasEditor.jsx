@@ -552,7 +552,9 @@ export default function CanvasEditor({
       selectedObjectUUIDs,
       store.getState().canvas.present,
       dispatch,
-      setCanvasObjects
+      setCanvasObjects,
+      setActiveTool,
+      setSelectedId
     );
   };
 

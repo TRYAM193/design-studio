@@ -10,10 +10,10 @@ const Razorpay = require("razorpay");
 const Stripe = require("stripe");
 const { v4: uuidv4 } = require('uuid');
 const { getDownloadURL } = require("firebase-admin/storage")
-const nodemailer = require("nodemailer");
 const handlebars = require("handlebars");
 const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer-core");
+const { Resend } = require('resend');
 // Initialize Admin
 if (admin.apps.length === 0) {
   admin.initializeApp();
@@ -32,98 +32,164 @@ const replicate = new Replicate({
   auth: functions.config().replicate?.key || "MISSING_KEY",
 });
 
-// Invoice Email
+const resend = new Resend(functions.config().resend.key);
+
 // ------------------------------------------------------------------
-// 📄 UPDATED HELPER: Generate Invoice (With CGST/SGST Split)
+// 📄 UTILS: Number to Words (Simple Implementation)
+// ------------------------------------------------------------------
+function numberToWords(amount, currency) {
+  const units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+  const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  function convertGroup(n) {
+    let str = "";
+    if (n >= 100) { str += units[Math.floor(n / 100)] + " Hundred "; n %= 100; }
+    if (n >= 20) { str += tens[Math.floor(n / 10)] + " "; n %= 10; }
+    if (n >= 10) { str += teens[n - 10] + " "; n = 0; }
+    if (n > 0) { str += units[n] + " "; }
+    return str.trim();
+  }
+
+  // Basic implementation for MVP (Handling integers up to thousands)
+  const integerPart = Math.floor(amount);
+  const words = convertGroup(integerPart);
+
+  const currencyName = currency === '$' ? "Dollars" : (currency === '₹' ? "Rupees" : "Units");
+  return `${words} ${currencyName} Only`;
+}
+
+// ------------------------------------------------------------------
+// 📄 HELPER: Generate Invoice (Updated for New Design)
 // ------------------------------------------------------------------
 async function generateInvoicePDF(orderData, itemsList) {
   try {
+    const settingsDoc = await admin.firestore().collection('settings').doc('invoice').get();
+
+    // Default fallback in case DB is empty
+    const companyData = settingsDoc.exists ? settingsDoc.data() : {
+      companyName: "TRYAM",
+      address: "Default Address",
+      gstin: "",
+      phone: "+91 82170 37173",
+      email: "tryam193@gmail.com",
+    };
+
     const templateHtml = fs.readFileSync(path.join(__dirname, 'templates', 'invoice.html'), 'utf8');
     const template = handlebars.compile(templateHtml);
-    
-    // 1. Detect Context
+
+    // 1. Context & Currency
     const isIndia = orderData.shippingAddress.countryCode === 'IN';
     const documentTitle = isIndia ? "TAX INVOICE" : "RECEIPT";
-    
-    // 2. Get Currency Symbol
-    const currencyCode = (orderData.payment?.currency || "$")
+    const currencyCode = (orderData.payment?.currency || "$");
     const currencyMap = { "IN": "₹", "US": "$", "GB": "£", "EU": "€", "CA": "C$" };
     const currencySymbol = currencyCode || currencyMap[orderData.shippingAddress.countryCode];
 
-    // 3. Tax Logic
-    const gstRate = 0.05; // 5%
-    const halfRate = gstRate / 2; // 2.5%
+    // 2. Tax Logic
+    const gstRate = 0.05;
+    const halfRate = gstRate / 2;
 
-    const processedItems = itemsList.map(item => {
-        const price = Number(item.price) * Number(item.quantity);
-        
-        let taxable = price;
-        let cgst = 0, sgst = 0;
+    const processedItems = itemsList.map((item, index) => {
+      const quantity = Number(item.quantity);
+      const lineTotal = Number(item.price) * quantity;
 
-        if (isIndia) {
-            // India: Back-calculate Tax (Price includes 5% GST)
-            taxable = price / (1 + gstRate);
-            cgst = taxable * halfRate;
-            sgst = taxable * halfRate;
-        } 
-        // International: Price is final (0% Tax)
+      let ratePerItem = Number(item.price);
+      let taxableTotal = lineTotal;
+      let cgst = 0, sgst = 0;
 
-        const variantStr = item.variant ? `${item.variant.color || ''} ${item.variant.size || ''}` : 'Custom';
+      if (isIndia) {
+        // Back-calculate: Price includes 5% GST
+        // Taxable Value = Total / 1.05
+        taxableTotal = lineTotal / (1 + gstRate);
+        const taxableRate = taxableTotal / quantity;
 
-        return {
-            title: item.title,
-            variant: variantStr,
-            quantity: item.quantity,
-            taxableValue: taxable.toFixed(2),
-            cgstAmount: isIndia ? cgst.toFixed(2) : "0.00",
-            sgstAmount: isIndia ? sgst.toFixed(2) : "0.00",
-            total: price.toFixed(2)
-        };
+        cgst = taxableTotal * halfRate;
+        sgst = taxableTotal * halfRate;
+
+        // For the table, we show the Taxable Rate
+        ratePerItem = taxableRate;
+      }
+
+      const variantStr = item.variant ? `${item.variant.color || ''} ${item.variant.size || ''}`.trim() : '';
+
+      return {
+        slNo: index + 1,
+        title: item.title,
+        variant: variantStr,
+        quantity: quantity,
+        rate: ratePerItem.toFixed(2), // Unit Price (Taxable if India)
+        amount: taxableTotal.toFixed(2), // Total Taxable Amount
+        cgst: cgst.toFixed(2),
+        sgst: sgst.toFixed(2)
+      };
     });
 
-    const grandTotal = processedItems.reduce((acc, item) => acc + Number(item.total), 0);
-    const totalTaxable = processedItems.reduce((acc, item) => acc + Number(item.taxableValue), 0);
-    const totalCGST = processedItems.reduce((acc, item) => acc + Number(item.cgstAmount), 0);
-    const totalSGST = processedItems.reduce((acc, item) => acc + Number(item.sgstAmount), 0);
+    // 3. Totals
+    const grandTotal = itemsList.reduce((acc, item) => acc + (Number(item.price) * Number(item.quantity)), 0);
+
+    // For India: Subtotal is the sum of Taxable Values
+    // For Intl: Subtotal is the Grand Total
+    const subTotal = isIndia
+      ? processedItems.reduce((acc, item) => acc + Number(item.amount), 0)
+      : grandTotal;
+
+    const totalCGST = processedItems.reduce((acc, item) => acc + Number(item.cgst), 0);
+    const totalSGST = processedItems.reduce((acc, item) => acc + Number(item.sgst), 0);
+
+    // 4. Words
+    const amountInWords = numberToWords(grandTotal, currencySymbol);
 
     const htmlData = {
-        documentTitle: documentTitle,
-        invoiceNumber: `INV-${orderData.groupId || orderData.orderId}`,
-        date: new Date().toDateString(),
-        // Customer
-        customerName: orderData.shippingAddress.fullName,
-        customerAddress: orderData.shippingAddress.line1,
-        customerCity: orderData.shippingAddress.city,
-        customerState: orderData.shippingAddress.state,
-        customerZip: orderData.shippingAddress.zip,
-        customerGst: orderData.shippingAddress.gstNumber || "", // Only show if exists
-        // Flags & Data
-        isIndia: isIndia,
-        currency: currencySymbol,
-        items: processedItems,
-        subTotal: totalTaxable.toFixed(2),
-        cgstTotal: totalCGST.toFixed(2),
-        sgstTotal: totalSGST.toFixed(2),
-        grandTotal: grandTotal.toFixed(2)
+      documentTitle,
+      invoiceNumber: `INV-${orderData.groupId || orderData.orderId}`,
+      date: new Date().toDateString(),
+
+      // Seller Info (Your Company)
+      companyName: companyData.companyName,
+      companyAddress: companyData.address,
+      companyGst: companyData.gstin,
+      companyPhone: companyData.phone,
+      companyEmail: companyData.email,
+
+      // Buyer Info
+      customerName: orderData.shippingAddress.fullName,
+      customerAddress: orderData.shippingAddress.line1,
+      customerCity: orderData.shippingAddress.city,
+      customerZip: orderData.shippingAddress.zip,
+      customerState: orderData.shippingAddress.state || "",
+      customerCountry: orderData.shippingAddress.countryCode || "",
+      customerGst: orderData.shippingAddress.gstNumber || null,
+
+      // Data
+      isIndia,
+      currency: currencySymbol,
+      items: processedItems,
+
+      // Footer Stats
+      subTotal: subTotal.toFixed(2),
+      cgstTotal: totalCGST.toFixed(2),
+      sgstTotal: totalSGST.toFixed(2),
+      grandTotal: grandTotal.toFixed(2),
+      amountInWords: amountInWords
     };
 
     const html = template(htmlData);
 
     const browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
 
     const page = await browser.newPage();
     await page.setContent(html);
-    const pdfBuffer = await page.pdf({ format: 'A4' });
+    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
     await browser.close();
 
     const bucket = admin.storage().bucket();
     const file = bucket.file(`invoices/INV-${orderData.groupId || orderData.orderId}.pdf`);
-    
+
     await file.save(pdfBuffer, { metadata: { contentType: 'application/pdf' }, public: true });
     return file.publicUrl();
 
@@ -134,82 +200,84 @@ async function generateInvoicePDF(orderData, itemsList) {
 }
 
 async function sendInvoiceEmail(email, pdfUrl, isConsolidated, orderId, isIndia) {
-    const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user: functions.config().email.user, pass: functions.config().email.pass }
-    });
+  const docName = isIndia ? "Tax Invoice" : "Receipt";
 
-    const docName = isIndia ? "Tax Invoice" : "Receipt";
-    
-    // Subject Logic
-    const subject = isConsolidated 
-        ? `Order #${orderId} Confirmed! (${docName} Attached)` 
-        : `Shipment Delivered (${docName} Attached)`;
+  // Subject Logic
+  const subject = isConsolidated
+    ? `Order #${orderId} Confirmed! (${docName} Attached)`
+    : `Shipment Delivered (${docName} Attached)`;
 
-    // Body Logic
-    const htmlBody = isConsolidated
-      ? `
+  // Body Logic
+  const htmlBody = `
         <div style="font-family: Arial, sans-serif; color: #333;">
           <h2 style="color: #ea580c;">Thank you for your order!</h2>
-          <p>We have received your order <strong>#${orderId}</strong> and it is now being processed.</p>
-          <p>Please find your official <strong>${docName}</strong> attached to this email.</p>
+          <p>We have received your order <strong>#${orderId}</strong>.</p>
+          <p>Since you paid online, your official <strong>${docName}</strong> is attached to this email.</p>
           <hr/>
           <p>You will receive separate updates when your items ship.</p>
+          <a href="http://localhost:5173/orders/${orderId}" style="background-color: #ea580c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Track Order</a>
         </div>
-      `
-      : `<p>Your order has been delivered! Please find your ${docName} attached.</p>`;
+    `;
 
-    await transporter.sendMail({
-        from: `"TRYAM" <${functions.config().email.user}>`,
-        to: email,
-        subject: subject,
-        html: htmlBody,
-        attachments: [{
-            filename: `${docName.replace(" ", "_")}.pdf`,
-            path: pdfUrl 
-        }]
+  try {
+    await resend.emails.send({
+      from: 'TRYAM Support <onboarding@resend.dev>', // ✅ Use your verified domain
+      to: email,
+      subject: subject,
+      html: htmlBody,
+      attachments: [
+        {
+          filename: `${docName.replace(" ", "_")}.pdf`,
+          path: pdfUrl // Resend can fetch the PDF directly from your Firebase URL
+        }
+      ]
     });
+    console.log(`✅ Invoice Email sent to ${email}`);
+  } catch (error) {
+    console.error("❌ Resend Failed:", error);
+  }
 }
 
-// Order Confirmation E-Mail
-async function sendOrderEmail(orderData, providerName, estimatedDate) {
-  try {
-    const customerName = orderData.shippingAddress.fullName.split(" ")[0];
-    const orderId = orderData.orderId;
-    const email = orderData.shippingAddress.email;
+// ------------------------------------------------------------------
+// 📧 EMAIL 2: COD ORDER (Simple Confirmation - No PDF)
+// ------------------------------------------------------------------
+// 💡 Call this function immediately when a COD order is placed
+async function sendCODConfirmation(orderData) {
+  const email = orderData.shippingAddress.email;
+  const orderId = orderData.orderId || orderData.groupId;
+  const customerName = orderData.shippingAddress.fullName.split(" ")[0];
 
-    // Use Gmail App Password
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: functions.config().email?.user,
-        pass: functions.config().email?.pass
-      }
-    });
-
-    const html = `
+  const htmlBody = `
       <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #ea580c;">Order Confirmed! 🚀</h2>
+        <h2 style="color: #ea580c;">Order Placed Successfully! 🚚</h2>
         <p>Hi ${customerName},</p>
-        <p>Your custom order <strong>#${orderId}</strong> has been received and sent to production.</p>
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-        <p><strong>Provider:</strong> ${providerName}</p>
-        <p><strong>Est. Delivery:</strong> ${new Date(estimatedDate).toDateString()}</p>
+        <p>Your Cash on Delivery order <strong>#${orderId}</strong> has been confirmed.</p>
+        
+        <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin:0; font-weight:bold;">Amount to Pay on Delivery:</p>
+            <h3 style="margin:5px 0 0 0; color: #111;">₹${orderData.price * orderData.quantity}</h3>
+        </div>
+
+        <p style="color: #666; font-size: 13px;">
+            Note: Your Tax Invoice will be generated and emailed to you once the item is delivered.
+        </p>
+        
         <br/>
-        <a href="https://your-app.com/orders/${orderId}" style="background-color: #ea580c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Track Order</a>
+        <a href="http://localhost:5173/orders/${orderId}" style="background-color: #ea580c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Track Order</a>
       </div>
     `;
 
-    await transporter.sendMail({
-      from: `"TryAm Store" <${functions.config().email?.user}>`,
+  try {
+    await resend.emails.send({
+      from: 'TRYAM Orders <onboarding@resend.dev>',
       to: email,
-      subject: `Order #${orderId} Confirmed!`,
-      html: html
+      subject: `Order #${orderId} Confirmed (COD)`,
+      html: htmlBody
+      // ❌ No attachments for COD yet
     });
-    console.log(`📧 Email sent to ${email}`);
-
+    console.log(`✅ COD Confirmation sent to ${email}`);
   } catch (error) {
-    console.error("Email Failed:", error);
+    console.error("❌ Resend COD Failed:", error);
   }
 }
 
@@ -1096,6 +1164,9 @@ exports.processNewOrder = functions
       // Note: helpers expect an ARRAY of items, so we pass [processedItem]
       if (country === 'IN') {
         providerData = await sendToQikink(newData, [processedItem]);
+        if (newData.payment.method === 'cod' && newData.paymentStatus === 'cod_approved') {
+          sendCODConfirmation(newData)
+        }
       }
       else if (['US', 'CA'].includes(country)) {
         providerData = await sendToPrintify(newData, [processedItem]);
@@ -1224,7 +1295,7 @@ exports.stripeWebhook = functions
         const batch = db.batch();
         snapshot.docs.forEach(doc => {
           batch.update(doc.ref, {
-            status: 'processing', // Triggers Bot
+            status: 'placed', // Triggers Bot
             paymentStatus: 'paid',
             paidAt: admin.firestore.FieldValue.serverTimestamp()
           });
@@ -1271,7 +1342,7 @@ exports.razorpayWebhook = functions
           const batch = db.batch();
           snapshot.docs.forEach(doc => {
             batch.update(doc.ref, {
-              status: "processing",
+              status: "placed",
               paymentStatus: "paid",
               paymentId: payment.id,
               paidAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1292,23 +1363,7 @@ exports.sendConsolidatedInvoice = functions
   .runWith({ memory: '1GB', timeoutSeconds: 120 })
   .https.onCall(async (data, context) => {
     if (!data.orders || data.orders.length === 0) return;
-
-    const firstOrder = data.orders[0];
-
-    // 🛠️ FIX: Handle both structures
-    let allItems = [];
-    if (firstOrder.items && Array.isArray(firstOrder.items)) {
-      allItems = data.orders.flatMap(o => o.items);
-    } else {
-      allItems = data.orders;
-    }
-
-    const pdfUrl = await generateInvoicePDF(firstOrder, allItems);
-
-    if (pdfUrl) {
-      await sendInvoiceEmail(firstOrder.shippingAddress.email, pdfUrl, true);
-    }
-
+    await generateAndSendConsolidatedInvoice(data.orders);
     return { success: true };
   });
 
@@ -1317,20 +1372,20 @@ exports.sendConsolidatedInvoice = functions
 // ------------------------------------------------------------------
 async function generateAndSendConsolidatedInvoice(orders) {
   if (!orders || orders.length === 0) return;
-  
+
   const firstOrder = orders[0];
-  
+
   // 🛑 STOP DUPLICATES
   if (firstOrder.invoiceSent) {
-      console.log("⚠️ Invoice already sent. Skipping.");
-      return;
+    console.log("⚠️ Invoice already sent. Skipping.");
+    return;
   }
 
   let allItems = [];
   if (firstOrder.items && Array.isArray(firstOrder.items)) {
-     allItems = orders.flatMap(o => o.items); // Legacy
+    allItems = orders.flatMap(o => o.items); // Legacy
   } else {
-     allItems = orders; // Flattened
+    allItems = orders; // Flattened
   }
 
   const groupId = firstOrder.groupId || firstOrder.orderId;
@@ -1342,12 +1397,12 @@ async function generateAndSendConsolidatedInvoice(orders) {
 
   if (pdfUrl) {
     await sendInvoiceEmail(firstOrder.shippingAddress.email, pdfUrl, true, groupId, isIndia);
-    
+
     // ✅ Mark as Sent
     const batch = db.batch();
     orders.forEach(o => {
-        const ref = db.collection('orders').doc(o.orderId);
-        batch.update(ref, { invoiceSent: true });
+      const ref = db.collection('orders').doc(o.orderId);
+      batch.update(ref, { invoiceSent: true });
     });
     await batch.commit();
   }

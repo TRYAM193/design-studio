@@ -2,184 +2,282 @@
 <html>
 
 <head>
+  <meta charset="utf-8" />
+  <title>Invoice</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
     body {
-      font-family: 'Helvetica', sans-serif;
-      color: #333;
-      line-height: 1.6;
+      font-family: 'Inter', sans-serif;
+      color: #1a1a1a;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px;
+      background: #fff;
+      line-height: 1.4;
     }
 
+    /* HEADER */
     .header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 30px;
+      margin-bottom: 40px;
     }
 
-    .logo {
-      font-size: 50px;
-      font-weight: bold;
-      color: #020100;
-      text-transform: uppercase;
-    }
-
-    .logo-img {
-      height: 50px;
-      margin-right: 0px;
-      vertical-align: middle;
-      position: relative;
-      top: -5px;
-    }
-
-    .invoice-details {
-      text-align: right;
-    }
-
-    .invoice-details h2 {
+    .logo-section h1 {
+      font-size: 28px;
+      font-weight: 800;
       margin: 0 0 5px 0;
-      color: #666;
-      font-size: 16px;
+      letter-spacing: -0.5px;
       text-transform: uppercase;
     }
 
-    .bill-to {
-      background: #f9fafb;
-      padding: 20px;
-      border-radius: 8px;
+    .logo-section p {
+      font-size: 12px;
+      color: #555;
+      margin: 2px 0;
+    }
+
+    .doc-title {
+      text-align: right;
+      font-size: 18px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #1a1a1a;
+    }
+
+    /* INFO STRIP */
+    .info-strip {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+      padding: 10px 0;
       margin-bottom: 30px;
       font-size: 13px;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    /* BILL TO */
+    .bill-to {
       margin-bottom: 30px;
     }
 
-    th,
-    td {
-      border-bottom: 1px solid #eee;
-      padding: 12px 8px;
-      text-align: left;
+    .bill-to h3 {
       font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      margin: 0 0 5px 0;
+    }
+
+    .bill-to p {
+      margin: 2px 0;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* TABLE */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
     }
 
     th {
-      background-color: #f3f4f6;
-      color: #333;
-      font-weight: bold;
-      text-transform: uppercase;
-      font-size: 11px;
+      background-color: #2e3b4e;
+      color: white;
+      padding: 10px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #eee;
+      font-size: 13px;
+      vertical-align: top;
     }
 
     .text-right {
       text-align: right;
     }
 
-    .totals {
-      margin-left: auto;
-      width: 300px;
-      text-align: right;
+    .text-center {
+      text-align: center;
     }
 
-    .totals p {
-      margin: 5px 0;
+    /* FOOTER TOTALS */
+    .footer-section {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .amount-words {
+      width: 50%;
+      font-size: 12px;
+    }
+
+    .amount-words span {
+      display: block;
+      margin-top: 5px;
+      font-style: italic;
+      color: #555;
+      font-weight: 500;
+    }
+
+    .totals-box {
+      width: 40%;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
       font-size: 13px;
-      color: #666;
     }
 
     .grand-total {
-      font-size: 18px;
-      font-weight: bold;
-      color: #000000;
-      border-top: 2px solid #000000;
-      padding-top: 10px;
+      border-top: 2px solid #1a1a1a;
+      border-bottom: 2px solid #1a1a1a;
+      padding: 10px 0;
       margin-top: 10px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    /* FOOTER NOTES */
+    .bottom-note {
+      margin-top: 60px;
+      text-align: center;
+      font-size: 11px;
+      color: #888;
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+    }
+
+    .logo-icon {
+      color: #1a1a1a;
+      margin-right: 8px;
     }
   </style>
 </head>
 
 <body>
+
   <div class="header">
-    <div class="logo">
-      <img
-        src="https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/LOGO-noBG.png?alt=media&token=28681735-0c49-4769-a280-9615e674ba0a"
-        alt="TRYAM" style="font-size: x-small;" class="logo-img">
-      TRYAM
+    <div class="logo-section">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+        <img
+          src="https://firebasestorage.googleapis.com/v0/b/tryam-5bff4.firebasestorage.app/o/LOGO-noBG.png?alt=media&token=28681735-0c49-4769-a280-9615e674ba0a"
+          alt="Logo" style="width: 40px; height: 40px; object-fit: contain;" />
+
+        <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase;">
+          TRYAM
+        </h1>
+      </div>
+      <p><strong>{{companyName}}</strong></p>
+      <p>{{companyAddress}}</p>
+      {{#if isIndia}}
+      <p>GSTIN: {{companyGst}}</p>
+      {{/if}}
+      <p>Phone: {{companyPhone}}</p>
+      <p>Email: {{companyEmail}}</p>
     </div>
-    <div class="invoice-details">
-      <h2>{{documentTitle}}</h2>
-      <p><strong>#:</strong> {{invoiceNumber}}</p>
-      <p><strong>Date:</strong> {{date}}</p>
+    <div class="doc-title">
+      {{documentTitle}}
     </div>
   </div>
 
+  <div class="info-strip">
+    <div><strong>Invoice No:</strong> {{invoiceNumber}}</div>
+    <div><strong>Date:</strong> {{date}}</div>
+  </div>
+
   <div class="bill-to">
-    <strong>Billed To:</strong><br>
-    {{customerName}}<br>
-    {{customerAddress}}<br>
-    {{customerCity}}, {{customerState}} - {{customerZip}}<br>
+    <h3>Bill To:</h3>
+    <p><strong>{{customerName}}</strong></p>
+    <p>{{customerAddress}}</p>
+    <p>{{customerCity}}, {{customerState}} - {{customerZip}}</p>
+    <p>{{customerCountry}}</p>
     {{#if customerGst}}
-    <br><strong>GSTIN:</strong> {{customerGst}}
+    <p><strong>GSTIN:</strong> {{customerGst}}</p>
     {{/if}}
   </div>
 
   <table>
     <thead>
       <tr>
-        <th width="40%">Item / Description</th>
-        <th width="10%">Qty</th>
-
-        {{#if isIndia}}
-        <th class="text-right">Taxable</th>
-        <th class="text-right">CGST (2.5%)</th>
-        <th class="text-right">SGST (2.5%)</th>
-        {{else}}
-        <th class="text-right">Unit Price</th>
-        {{/if}}
-
-        <th class="text-right">Total</th>
+        <th width="8%" class="text-center">Sl No</th>
+        <th width="45%">Item Description</th>
+        <th width="10%" class="text-center">Qty</th>
+        <th width="15%" class="text-right">Rate ({{currency}})</th>
+        <th width="22%" class="text-right">Amount ({{currency}})</th>
       </tr>
     </thead>
     <tbody>
       {{#each items}}
       <tr>
+        <td class="text-center">{{this.slNo}}</td>
         <td>
-          <strong>{{this.title}}</strong><br>
-          <span style="color: #888;">{{this.variant}}</span>
+          <strong>{{this.title}}</strong>
+          <div style="font-size: 11px; color: #666; margin-top: 2px;">
+            {{this.variant}}
+          </div>
         </td>
-        <td>{{this.quantity}}</td>
-
-        {{#if ../isIndia}}
-        <td class="text-right">{{../currency}}{{this.taxableValue}}</td>
-        <td class="text-right">{{../currency}}{{this.cgstAmount}}</td>
-        <td class="text-right">{{../currency}}{{this.sgstAmount}}</td>
-        {{else}}
-        <td class="text-right">{{../currency}}{{this.taxableValue}}</td>
-        {{/if}}
-
-        <td class="text-right"><strong>{{../currency}}{{this.total}}</strong></td>
+        <td class="text-center">{{this.quantity}}</td>
+        <td class="text-right">{{this.rate}}</td>
+        <td class="text-right">{{this.amount}}</td>
       </tr>
       {{/each}}
     </tbody>
   </table>
 
-  <div class="totals">
-    {{#if isIndia}}
-    <p>Subtotal (Taxable): {{currency}}{{subTotal}}</p>
-    <p>CGST Total: {{currency}}{{cgstTotal}}</p>
-    <p>SGST Total: {{currency}}{{sgstTotal}}</p>
-    {{/if}}
+  <div class="footer-section">
 
-    <div class="grand-total">
-      Total: {{currency}}{{grandTotal}}
+    <div class="amount-words">
+      <strong>Amount in Words:</strong>
+      <span>{{amountInWords}}</span>
+
+      {{#if isIndia}}
+      <div style="margin-top: 20px;">
+        <strong>Tax Breakdown:</strong><br>
+        CGST (2.5%): {{currency}} {{cgstTotal}}<br>
+        SGST (2.5%): {{currency}} {{sgstTotal}}
+      </div>
+      {{/if}}
+    </div>
+
+    <div class="totals-box">
+      <div class="total-row">
+        <span>Subtotal:</span>
+        <span>{{currency}} {{subTotal}}</span>
+      </div>
+
+      {{#if isIndia}}
+      <div class="total-row" style="color: #555;">
+        <span>CGST (2.5%):</span>
+        <span>{{currency}} {{cgstTotal}}</span>
+      </div>
+      <div class="total-row" style="color: #555;">
+        <span>SGST (2.5%):</span>
+        <span>{{currency}} {{sgstTotal}}</span>
+      </div>
+      {{/if}}
+
+      <div class="total-row grand-total">
+        <span>Grand Total:</span>
+        <span>{{currency}} {{grandTotal}}</span>
+      </div>
     </div>
   </div>
 
-  <div style="margin-top: 50px; text-align: center; color: #aaa; font-size: 11px;">
-    <p>Thank you for shopping with TryAm!</p>
-    <p>This is a computer-generated {{documentTitle}}.</p>
+  <div class="bottom-note">
+    <p>Thank you for shopping with <strong>TRYAM</strong>!</p>
+    <p>*This is a computer-generated {{documentTitle}}.</p>
   </div>
+
 </body>
 
 </html>

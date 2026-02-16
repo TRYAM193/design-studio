@@ -15,7 +15,8 @@ import {
   ChevronRight,
   MessageCircle,
   HelpCircle,
-  Pencil
+  Pencil,
+  UserCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/hooks/use-translation";
@@ -45,6 +46,9 @@ export function DashboardSidebar() {
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [userProfile, setUserProfile] = useState<{ name?: string; image?: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loadingClaim, setLoadingClaim] = useState(true);
+
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -61,10 +65,34 @@ export function DashboardSidebar() {
     return () => unsub();
   }, [user?.uid]);
 
+  useEffect(() => {
+      const checkAdmin = async () => {
+        if (!user) {
+          setIsAdmin(false);
+          setLoadingClaim(false);
+          return;
+        }
+        try {
+          // Force refresh to get latest claims
+          const tokenResult = await user.getIdTokenResult();
+          setIsAdmin(!!tokenResult.claims.admin);
+        } catch (e) {
+          console.error("Admin check failed", e);
+          setIsAdmin(false);
+        } finally {
+          setLoadingClaim(false);
+        }
+      };
+  
+      checkAdmin();
+    }, [user]);
+  
+
   const displayName = userProfile?.name || user?.displayName || user?.email?.split("@")[0] || "User";
   const initials = displayName?.charAt(0).toUpperCase();
 
   const navItems = [
+    ...(isAdmin ? [{icon: UserCircle, label: 'Admin', path: "/admin/dashboard", isSpecial: false}] : []),
     { icon: Home, label: t("nav.home"), path: "/dashboard", isSpecial: false },
     { icon: LayoutTemplate, label: t("nav.designs"), path: "/dashboard/designs", isSpecial: false },
     { icon: FolderClosed, label: t("nav.projects"), path: "/dashboard/projects", isSpecial: false },
@@ -75,7 +103,7 @@ export function DashboardSidebar() {
   const mobileNavItems = [
     ...navItems.slice(0, 3),
     { icon: Plus, label: "New", path: "/design", isSpecial: true },
-    ...navItems.slice(3, 4),
+    ...navItems.slice(3, 5),
   ];
 
   // ✅ Profile Dropdown Menu Content

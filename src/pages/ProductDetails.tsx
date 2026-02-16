@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useLocation } from "react-router";
 import { doc, getDoc, collection, query, orderBy, getDocs, limit, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/firebase";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { COLOR_MAP } from "@/lib/colorMaps";
 import { FiCheckCircle } from "react-icons/fi";
+import { Skeleton } from "@/components/ui/skeleton";
+import { getRegionFromIP } from "@/lib/ipDetect";
 
 // ✅ Interface matches our 'initialProducts.ts' structure
 interface ProductVariants {
@@ -48,6 +50,7 @@ interface ProductData {
 export default function ProductDetails() {
     const { productId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [product, setProduct] = useState<ProductData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -184,23 +187,23 @@ export default function ProductDetails() {
     // 2️⃣ Automatic IP-Based Region Detection
     useEffect(() => {
         async function detectRegion() {
-            try {
-                const response = await fetch("https://ipapi.co/json/");
-                const data = await response.json();
-                const country = data.country_code;
-                const currency = data.currency;
+            const data = location.state as { region?: string };
+            if (data?.region && ["IN", "US", "GB", "CA"].includes(data.region)) {
+                setRegion(data.region as "IN" | "US" | "GB" | "CA");
+                setCheckingLocation(false);
+                return;
+            }
 
-                if (country === "IN") setRegion("IN");
-                else if (country === "GB") setRegion("GB");
-                else if (country === "CA") setRegion("CA");
-                else if (currency === "EUR") setRegion("EU");
-                else setRegion("US");
+            try {
+                const regionFromIp = await getRegionFromIP();
+                setRegion(regionFromIp);
             } catch (error) {
-                console.warn("Location detection failed, defaulting to US/Global", error);
+                console.warn("Could not detect location, defaulting to IN");
                 setRegion("IN");
             } finally {
                 setCheckingLocation(false);
             }
+
         }
         detectRegion();
     }, []);
@@ -211,10 +214,54 @@ export default function ProductDetails() {
             toast.error("Please select a color and size first.");
             return;
         }
+        localStorage.setItem('region', region);
         window.open(`/design?product=${product.id}&color=${selectedColor}&size=${selectedSize}&region=${region}`);
     };
 
-    if (loading) return <div className="h-screen flex items-center justify-center bg-[#090A0F]"><Loader2 className="animate-spin text-orange-500" /></div>;
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-[#090A0F] text-slate-200">
+                <div className="p-4 border-b border-white/5 flex justify-between items-center px-4 md:px-10">
+                    <Skeleton className="w-32 h-6 bg-white/5" />
+                    <Skeleton className="w-8 h-8 rounded-full bg-white/5" />
+                </div>
+                <div className="max-w-7xl mx-auto p-6 md:p-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+                        {/* Left: Image Skeleton */}
+                        <Skeleton className="aspect-[3/4] rounded-2xl bg-white/5 w-full" />
+                        {/* Right: Details Skeleton */}
+                        <div className="space-y-8 pt-4">
+                            <div className="flex justify-between">
+                                <Skeleton className="w-24 h-6 rounded-full bg-white/5" />
+                                <Skeleton className="w-32 h-8 rounded-full bg-white/5" />
+                            </div>
+                            <Skeleton className="w-3/4 h-12 bg-white/5" /> {/* Title */}
+                            <div className="space-y-2">
+                                <Skeleton className="w-full h-4 bg-white/5" />
+                                <Skeleton className="w-full h-4 bg-white/5" />
+                                <Skeleton className="w-2/3 h-4 bg-white/5" />
+                            </div>
+                            <Skeleton className="w-40 h-12 bg-white/5" /> {/* Price */}
+                            <Separator className="bg-white/5" />
+                            <div className="space-y-4">
+                                <Skeleton className="w-20 h-4 bg-white/5" />
+                                <div className="flex gap-3">
+                                    {[1, 2, 3, 4].map(i => <Skeleton key={i} className="w-10 h-10 rounded-full bg-white/5" />)}
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <Skeleton className="w-20 h-4 bg-white/5" />
+                                <div className="grid grid-cols-5 gap-3">
+                                    {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 rounded-xl bg-white/5" />)}
+                                </div>
+                            </div>
+                            <Skeleton className="w-full h-16 rounded-lg bg-white/5" /> {/* Button */}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
     if (!product) return <div className="h-screen flex items-center justify-center bg-[#090A0F] text-slate-400">Product not found</div>;
 
     const handleSubmitReview = async () => {
