@@ -36,6 +36,8 @@ import ContactPage from "./pages/ContactPage";
 import DashboardContact from "./pages/DashboardContact";
 import DashboardHelp from "./pages/DashboardHelp";
 import AdminRoute from "./components/AdminRoute";
+import BannedPage from "./pages/BannedPage.tsx";
+import ProtectedRoute from "./components/ProtectedRoute.tsx";
 
 function RouteSyncer() {
   const location = useLocation();
@@ -68,40 +70,43 @@ createRoot(document.getElementById("root")!).render(
         <BrowserRouter>
           <RouteSyncer />
           <Routes>
+            <Route path="/banned" element={<BannedPage />} />
             <Route path="/" element={<Landing />} />
             <Route path="/help" element={<HelpPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
-
-            {/* Store Routes */}
             <Route path="/store" element={<Storefront />} />
             <Route path="/product/:productId" element={<ProductDetails />} /> {/* ✅ ADDED THIS */}
-            <Route path="orders/:orderId" element={<OrderDetailsPage />} />
-
-            <Route path="/design/*" element={<DesignEditorPage />} />
-            <Route path="/generator" element={<ThumbnailGenerator />} />
             <Route path="/terms" element={<TermsConditions />} />
-            {/* Dashboard Routes */}
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<DashboardHome />} />
-              <Route path="cart" element={<CartPage />} />
-              <Route path="designs" element={<DashboardTemplates />} />
-              <Route path="projects" element={<DashboardProjects />} />
-              <Route path="orders" element={<DashboardOrders />} />
-              <Route path="pricing" element={<DashboardPricing />} />
-              <Route path="settings" element={<DashboardSettings />} />
-              <Route path="help" element={<DashboardHelp />} />
-              <Route path="contact" element={<DashboardContact />} />
+
+            <Route element={<ProtectedRoute />}>
+              {/* Store Routes */}
+              <Route path="/design/*" element={<DesignEditorPage />} />
+              <Route path="orders/:orderId" element={<OrderDetailsPage />} />
+
+              <Route path="/generator" element={<ThumbnailGenerator />} />
+              {/* Dashboard Routes */}
+              <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route index element={<DashboardHome />} />
+                <Route path="cart" element={<CartPage />} />
+                <Route path="designs" element={<DashboardTemplates />} />
+                <Route path="projects" element={<DashboardProjects />} />
+                <Route path="orders" element={<DashboardOrders />} />
+                <Route path="pricing" element={<DashboardPricing />} />
+                <Route path="settings" element={<DashboardSettings />} />
+                <Route path="help" element={<DashboardHelp />} />
+                <Route path="contact" element={<DashboardContact />} />
+              </Route>
+
+              <Route path="/checkout" element={<OrderCheckoutPage />} />
+
+              <Route element={<AdminRoute />}>
+                <Route path="/admin" element={<AdminProductManager />} />
+                <Route path="/admin/orders" element={<AdminOrders />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              </Route>
+
             </Route>
-
-            <Route path="/checkout" element={<OrderCheckoutPage />} />
-
-            <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<AdminProductManager />} />
-              <Route path="/admin/orders" element={<AdminOrders />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            </Route>
-
             <Route path="/render/*" element={<HeadlessRender />} />
             <Route path="/legal/:type" element={<LegalPage />} />
             <Route path="*" element={<NotFound />} />

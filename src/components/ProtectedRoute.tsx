@@ -1,14 +1,10 @@
 import { ReactNode } from "react";
-import { Navigate, useLocation } from "react-router";
+import { Navigate, useLocation, Outlet } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
-interface Props {
-  children: ReactNode;
-}
-
-export default function ProtectedRoute({ children }: Props) {
-  const { user} = useAuth(); // Your custom hook that checks Firebase
+export default function ProtectedRoute() {
+  const { user, userProfile} = useAuth(); // Your custom hook that checks Firebase
   const location = useLocation();
 
   // 1. Loading State: Don't kick them out while Firebase is still thinking
@@ -26,6 +22,10 @@ export default function ProtectedRoute({ children }: Props) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
+  if (user && userProfile?.isBanned) {
+    return <Navigate to="/banned" replace />;
+  }
+
   // 3. Success: Render the protected page
-  return <>{children}</>;
+  return <Outlet />;
 }

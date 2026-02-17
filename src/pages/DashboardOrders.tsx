@@ -19,6 +19,7 @@ import { useTranslation } from "@/hooks/use-translation";
 // 🔥 FIREBASE IMPORTS
 import { collection, query, where, orderBy, getDocs } from "firebase/firestore";
 import { db } from "@/firebase";
+import { formatDate } from "@/lib/formatOrderDate";
 
 // ------------------------------------------------------------------
 // 💀 SKELETON LOADER
@@ -67,20 +68,6 @@ export default function DashboardOrders() {
       default: return 'Processing';
     }
   };
-
-  function formatDate(isoString: string) {
-    if (!isoString) return "N/A";
-    const date = new Date(isoString);
-
-    return date.toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  }
 
   // 2. FETCH REAL ORDERS
   useEffect(() => {

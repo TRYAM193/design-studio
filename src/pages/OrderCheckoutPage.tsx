@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '@/hooks/use-auth';
-import { doc, setDoc, serverTimestamp, updateDoc, collection, getDocs, getDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, updateDoc, collection, getDocs, getDoc, query, writeBatch, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions'
 import { db, functions } from '@/firebase';
 // Add this import
@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { OrderSuccessOverlay } from "@/components/OrderSuccessOverlay"; // Adjust path
 import { AnimatePresence, motion } from "framer-motion"; // Ensure this is imported
+import { toast } from 'sonner';
 
 // Icons
 import {
@@ -36,7 +37,8 @@ import {
   Smartphone,
   CheckCircle2,
   MapPin,
-  Lock
+  AlertCircle
+
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
@@ -95,6 +97,11 @@ export default function OrderCheckoutPage() {
 
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false); // Local state fallback
+
+  const [isCODAvailable, setIsCODAvailable] = useState(true)
+  // Regex for Indian GSTIN
+  const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+  const [gstError, setGstError] = useState("");
 
   const stripeCurrencyMap: Record<string, string> = {
     US: 'usd',
@@ -181,7 +188,7 @@ export default function OrderCheckoutPage() {
               // We will override this below if IP check passes
               countryCode: addr.countryCode || 'IN',
               country: addr.country || resolvedCountry || 'India', // ✅ Load or Resolve
-              
+
               stateCode: addr.stateCode || '',
               state: addr.state || resolvedState || '',
               city: addr.city || '',
@@ -196,6 +203,53 @@ export default function OrderCheckoutPage() {
     };
     initData();
   }, [mode, user, legacyOrderData]);
+
+  // ---------------------------------------------------------
+  // ✅ UNIVERSAL SUCCESS HANDLER (Updates DB Client-Side)
+  // ---------------------------------------------------------
+  const handlePaymentSuccess = async (txnId: string) => {
+    setIsProcessing(true);
+    try {
+      // 1. The 'pendingOrderId' is actually the GROUP ID (e.g., ORD123)
+      // We need to find ALL sub-orders (ORD1231, ORD1232)
+      const q = query(collection(db, "orders"), where("groupId", "==", pendingOrderId));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        console.error("No orders found for group:", pendingOrderId);
+        navigate('/dashboard/orders');
+        return;
+      }
+
+      // 2. Batch Update ALL items in the cart
+      const batch = writeBatch(db);
+
+      snapshot.docs.forEach((docSnapshot) => {
+        batch.update(docSnapshot.ref, {
+          status: 'placed',
+          'payment.status': 'paid',
+          'payment.transactionId': txnId,
+          providerStatus: 'pending', // 🟢 Triggers the Qikink/Printify Bot
+          updatedAt: serverTimestamp()
+        });
+      });
+
+      await batch.commit();
+      console.log("✅ All orders marked as paid locally.");
+
+      // 3. Cleanup & Redirect
+      setShowStripeModal(false);
+      clearCart();
+      navigate('/dashboard/orders');
+
+    } catch (error) {
+      console.error("Client-side update failed:", error);
+      alert("Payment successful, but order status update failed. Please contact support.");
+      navigate('/dashboard/orders');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // 2. 🌍 IP Geolocation & Restriction Logic
   useEffect(() => {
@@ -212,13 +266,13 @@ export default function OrderCheckoutPage() {
             ...prev,
             countryCode: 'IN',
             country: 'India', // ✅ Explicitly set name
-            
+
             // Only clear state if we switched countries
             stateCode: prev.countryCode !== 'IN' ? '' : prev.stateCode,
             state: prev.countryCode !== 'IN' ? '' : prev.state,
             city: prev.countryCode !== 'IN' ? '' : prev.city
           }));
-          setIsLocationLocked(true); 
+          setIsLocationLocked(true);
         }
       } catch (error) {
         console.warn("Could not fetch IP location, defaulting to open selection.");
@@ -256,6 +310,8 @@ export default function OrderCheckoutPage() {
   const currencySymbol = shippingInfo.countryCode === 'US' ? "$" : (shippingInfo.countryCode === 'GB' ? "£" : (['DE', 'FR', 'IT', 'ES', 'NL'].includes(shippingInfo.countryCode) ? "€" : (shippingInfo.countryCode === 'CA') ? "C$" : "₹"));
   const totalPayAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
+  if (totalPayAmount >= 3000) setIsCODAvailable(false)
+
   // Handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShippingInfo({ ...shippingInfo, [e.target.name]: e.target.value });
@@ -280,11 +336,11 @@ export default function OrderCheckoutPage() {
     // 1. Find the Name object
     const stateData = State.getStateByCodeAndCountry(value, shippingInfo.countryCode);
 
-    setShippingInfo({ 
-        ...shippingInfo, 
-        stateCode: value, 
-        state: stateData?.name || value, // ✅ Save Name
-        city: '' 
+    setShippingInfo({
+      ...shippingInfo,
+      stateCode: value,
+      state: stateData?.name || value, // ✅ Save Name
+      city: ''
     });
   };
   const handleCityChange = (value: string) => setShippingInfo({ ...shippingInfo, city: value });
@@ -297,6 +353,14 @@ export default function OrderCheckoutPage() {
     // if (!isPhoneVerified) {
     //   setShowVerifyModal(true); return;
     // }
+
+    if (shippingInfo.countryCode === 'IN' && shippingInfo.gstNumber) {
+        if (!GST_REGEX.test(shippingInfo.gstNumber)) {
+            setGstError("Invalid Format. Ex: 22AAAAA0000A1Z5");
+            toast.error("Please fix the GST Number");
+            return;
+        }
+    }
 
     setIsProcessing(true);
 
@@ -389,9 +453,8 @@ export default function OrderCheckoutPage() {
             type: "split_order"
           },
 
-          handler: async function () {
-            clearCart();
-            navigate('/dashboard/orders');
+          handler: async function (response: any) {
+            await handlePaymentSuccess(response.razorpay_payment_id);
           },
           prefill: { name: shippingInfo.fullName, email: shippingInfo.email }
         };
@@ -423,15 +486,7 @@ export default function OrderCheckoutPage() {
 
   // C. Stripe Success Handler
   const handleStripeSuccess = async (txnId: string) => {
-    setShowStripeModal(false);
-    clearCart();
-    const orderRef = doc(db, 'orders', pendingOrderId);
-    await updateDoc(orderRef, {
-      status: 'placed',
-      'payment.status': 'paid',
-      'payment.txnId': txnId
-    });
-    navigate('/dashboard/orders');
+    await handlePaymentSuccess(txnId);
   };
 
   if (loadingItems) return (
@@ -560,14 +615,25 @@ export default function OrderCheckoutPage() {
 
                 {shippingInfo.countryCode === 'IN' && (
                   <div className="space-y-2">
-                    <Label className="text-slate-400 text-xs uppercase font-bold tracking-wider">
-                      GSTIN (Optional)
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-slate-400 text-xs uppercase font-bold tracking-wider">GSTIN (Optional)</Label>
+                      {/* 🔴 ERROR INDICATOR */}
+                      {gstError && (
+                        <span className="text-red-400 text-xs flex items-center gap-1 animate-pulse">
+                          <AlertCircle className="h-3 w-3" /> {gstError}
+                        </span>
+                      )}
+                    </div>
                     <Input
-                      placeholder="Enter your GST Number"
+                      placeholder="Ex: 22AAAAA0000A1Z5"
                       value={shippingInfo.gstNumber}
-                      onChange={(e) => setShippingInfo({ ...shippingInfo, gstNumber: e.target.value.toUpperCase() })}
-                      className="bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50"
+                      onChange={(e) => {
+                        const val = e.target.value.toUpperCase().replace(/\s/g, '');
+                        setShippingInfo({ ...shippingInfo, gstNumber: val });
+                        if (gstError) setGstError(""); // Clear error on type
+                      }}
+                      // 🔴 RED BORDER IF ERROR
+                      className={`bg-slate-950/50 border-white/10 text-white placeholder:text-slate-600 focus:border-orange-500/50 ${gstError ? "border-red-500 focus:border-red-500" : ""}`}
                       maxLength={15}
                     />
                   </div>
@@ -610,20 +676,21 @@ export default function OrderCheckoutPage() {
                   </div>
                 </div>
                 {/* COD */}
-                <div onClick={() => setPaymentMethod('cod')} className={`relative p-5 border rounded-xl cursor-pointer transition-all duration-200 ${paymentMethod === 'cod' ? 'border-orange-500 bg-gradient-to-br from-orange-500/10 to-transparent ring-1 ring-orange-500/50' : 'border-white/10 hover:bg-white/5 hover:border-white/20'}`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl transition-colors ${paymentMethod === 'cod' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-slate-800 text-slate-400'}`}>
-                      <Truck className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className={`font-bold text-lg ${paymentMethod === 'cod' ? 'text-white' : 'text-slate-300'}`}>Cash on Delivery</h3>
-                        {paymentMethod === 'cod' && <CheckCircle2 className="text-orange-500 h-5 w-5" />}
+                {isCODAvailable &&
+                  <div onClick={() => setPaymentMethod('cod')} className={`relative p-5 border rounded-xl cursor-pointer transition-all duration-200 ${paymentMethod === 'cod' ? 'border-orange-500 bg-gradient-to-br from-orange-500/10 to-transparent ring-1 ring-orange-500/50' : 'border-white/10 hover:bg-white/5 hover:border-white/20'}`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-xl transition-colors ${paymentMethod === 'cod' ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-slate-800 text-slate-400'}`}>
+                        <Truck className="h-6 w-6" />
                       </div>
-                      <p className="text-slate-400 text-sm">Pay in cash when your order arrives.</p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className={`font-bold text-lg ${paymentMethod === 'cod' ? 'text-white' : 'text-slate-300'}`}>Cash on Delivery</h3>
+                          {paymentMethod === 'cod' && <CheckCircle2 className="text-orange-500 h-5 w-5" />}
+                        </div>
+                        <p className="text-slate-400 text-sm">Pay in cash when your order arrives.</p>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </div>}
               </CardContent>
             </Card>
           </div>

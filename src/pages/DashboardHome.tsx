@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
-import { 
-  ArrowRight, Clock, Store, Sparkles, Crown, Zap, Flame, Moon, 
-  Image as ImageIcon, Plus 
+import {
+  ArrowRight, Clock, Store, Sparkles, Crown, Zap, Flame, Moon,
+  Image as ImageIcon, Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +14,7 @@ import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestor
 import { db } from "@/firebase";
 
 export default function DashboardHome() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, userProfile } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -28,8 +28,8 @@ export default function DashboardHome() {
   useEffect(() => {
     // Fetch top 10 newest templates
     const q = query(
-      collection(db, 'templates'), 
-      orderBy('createdAt', 'desc'), 
+      collection(db, 'templates'),
+      orderBy('createdAt', 'desc'),
       limit(10)
     );
 
@@ -48,7 +48,7 @@ export default function DashboardHome() {
 
   return (
     <div className="space-y-8 md:space-y-12 pb-20 relative px-4 sm:px-6 md:px-10">
-      
+
       {/* ✅ BACKGROUND: COSMIC SHIVA THEME */}
       <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
@@ -125,9 +125,9 @@ export default function DashboardHome() {
                 <Clock className="h-5 w-5 text-blue-400" />
                 {t("dashboard.recent")}
               </h2>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-slate-400 hover:text-white hover:bg-white/5 gap-1"
                 onClick={() => navigate('/dashboard/projects')}
               >
@@ -191,9 +191,9 @@ export default function DashboardHome() {
                 <Sparkles className="h-5 w-5 text-orange-400" />
                 {t("templates.title") || "Featured Templates"}
               </h2>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="text-slate-400 hover:text-white hover:bg-white/5 gap-1"
                 onClick={() => navigate('/dashboard/templates')}
               >
@@ -224,9 +224,9 @@ export default function DashboardHome() {
                   >
                     <div className="h-fit rounded-xl bg-slate-800/20 overflow-hidden relative border border-white/5 group-hover:border-orange-500/30 transition-all duration-300">
                       {template.thumbnailUrl || template.image ? (
-                        <img 
-                          src={template.thumbnailUrl || template.image} 
-                          alt={template.name} 
+                        <img
+                          src={template.thumbnailUrl || template.image}
+                          alt={template.name}
                           className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
                           onError={(e) => { (e.target as HTMLImageElement).src = "https://placehold.co/400x500/ffffff/000000?text=Template"; }}
                         />
@@ -243,7 +243,7 @@ export default function DashboardHome() {
                         </div>
                       )}
                     </div>
-                    
+
                     <div className="mt-3 px-1">
                       <h3 className="font-semibold text-slate-200 truncate text-sm group-hover:text-orange-400 transition-colors">
                         {template.name || "Untitled Template"}

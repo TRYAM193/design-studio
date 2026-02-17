@@ -199,40 +199,209 @@ async function generateInvoicePDF(orderData, itemsList) {
   }
 }
 
-async function sendInvoiceEmail(email, pdfUrl, isConsolidated, orderId, isIndia) {
+// ------------------------------------------------------------------
+// 📧 UNIFIED EMAIL FUNCTION (Handles Confirmation, Invoice, & Friendly Delivery)
+// ------------------------------------------------------------------
+// ------------------------------------------------------------------
+// 📧 UNIFIED EMAIL FUNCTION (Handles Confirmation, Invoice, & Friendly Delivery)
+// ------------------------------------------------------------------
+async function sendInvoiceEmail(email, pdfUrl, isConsolidated, orderId, isIndia, customerName) {
   const docName = isIndia ? "Tax Invoice" : "Receipt";
+  let subject = "";
+  let htmlBody = "";
+  let attachments = [];
 
-  // Subject Logic
-  const subject = isConsolidated
-    ? `Order #${orderId} Confirmed! (${docName} Attached)`
-    : `Shipment Delivered (${docName} Attached)`;
+  // CASE 1: FRIENDLY DELIVERY (Online Order - No PDF)
+  // Used when: Payment was already done online, just saying "It's here!"
+  if (!pdfUrl) {
+    subject = `Shipment Delivered 🚀`;
+    htmlBody = `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
 
-  // Body Logic
-  const htmlBody = `
-        <div style="font-family: Arial, sans-serif; color: #333;">
-          <h2 style="color: #ea580c;">Thank you for your order!</h2>
-          <p>We have received your order <strong>#${orderId}</strong>.</p>
-          <p>Since you paid online, your official <strong>${docName}</strong> is attached to this email.</p>
-          <hr/>
-          <p>You will receive separate updates when your items ship.</p>
-          <a href="http://localhost:5173/orders/${orderId}" style="background-color: #ea580c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Track Order</a>
-        </div>
-    `;
+  <h2 style="color: #ea580c; margin-bottom: 12px;">
+    Your Order Has Been Delivered 📦
+  </h2>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Hello ${customerName},
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    We’re happy to inform you that your order <strong>#${orderId}</strong> has been successfully delivered.
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Every order we create is handled with care, and we truly hope you’re delighted with your custom design.
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    If you enjoyed your experience, we’d really appreciate you taking a moment to leave a review. Your feedback helps us improve and helps other customers make confident choices.
+  </p>
+
+  <div style="margin: 30px 0;">
+    <a href="https://tryam193.com/orders/${orderId}"
+       style="background-color: #1a1a1a; color: #ffffff; padding: 12px 22px; text-decoration: none; border-radius: 6px; font-size: 14px; display: inline-block; margin-right: 10px;">
+      View Your Order
+    </a>
+
+    <a href="https://tryam193.com/orders/${orderId}"
+       style="background-color: #ea580c; color: #ffffff; padding: 12px 22px; text-decoration: none; border-radius: 6px; font-size: 14px; display: inline-block;">
+      Leave a Review
+    </a>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    If you have any questions, concerns, or need assistance, simply reply to this email — we’re always here to help.
+  </p>
+
+  <p style="font-size: 14px; color: #555; line-height: 1.6;">
+    Thank you for choosing us and for trusting our work. Your support truly means a lot to us.
+  </p>
+
+  <p style="font-size: 14px; color: #555;">
+    Warm regards,<br/>
+    <strong>Team TRYAM</strong>
+  </p>
+
+</div> `;
+  }
+
+  // CASE 2: WITH PDF (Invoice or Receipt)
+  else {
+    // Setup Attachment
+    attachments.push({
+      filename: `${docName.replace(" ", "_")}.pdf`,
+      path: pdfUrl
+    });
+
+    // Sub-Case A: ORDER CONFIRMATION (Online Purchase)
+    // Used when: User just paid online.
+    if (isConsolidated) {
+      subject = `Order #${orderId} Confirmed! (${docName} Attached)`;
+      htmlBody = `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
+
+  <h2 style="color: #ea580c; margin-bottom: 12px;">
+    Thank You for Your Order! 🧾
+  </h2>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Hello ${customerName},
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    We’re pleased to confirm that we’ve successfully received your order
+    <strong>#${orderId}</strong>.
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Since your payment was completed online, your official
+    <strong>${docName}</strong> is attached to this email for your records.
+  </p>
+
+  <hr style="border: 0; border-top: 1px solid #eee; margin: 24px 0;" />
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Our team has started processing your order. You’ll receive further updates
+    as your items move through production and shipping.
+  </p>
+
+  <div style="margin: 28px 0;">
+    <a href="https://tryam193.com/orders/${orderId}"
+       style="background-color: #ea580c; color: #ffffff; padding: 12px 22px; text-decoration: none; border-radius: 6px; font-size: 14px; display: inline-block;">
+      Track Your Order
+    </a>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    If you notice any issues or need assistance, you can report them directly
+    from the Track Order page for faster resolution.
+  </p>
+
+  <p style="font-size: 14px; color: #555; line-height: 1.6;">
+    Thank you for choosing us and for trusting our work.
+  </p>
+
+  <p style="font-size: 14px; color: #555;">
+    Warm regards,<br/>
+    <strong>Team TRYAM</strong>
+  </p>
+
+</div>
+
+          `;
+    }
+    // Sub-Case B: COD DELIVERY (Payment collected, so send Invoice now)
+    // Used when: COD order is marked as delivered.
+    else {
+      subject = `Shipment Delivered 📦 (${docName} Attached)`;
+      htmlBody = `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
+
+  <h2 style="color: #ea580c; margin-bottom: 12px;">
+    Your Order Has Been Delivered 🚀
+  </h2>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Hello ${customerName},
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    We’re happy to let you know that your order
+    <strong>#${orderId}</strong> has been successfully delivered.
+  </p>
+
+  <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 22px 0; border-left: 4px solid #ea580c;">
+    <p style="margin: 0; font-size: 15px; line-height: 1.6;">
+      Since this was a <strong>Cash on Delivery</strong> order and payment was completed upon delivery,
+      your official <strong>${docName}</strong> is attached to this email for your records.
+    </p>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    We hope you’re happy with your custom product and that it meets your expectations.
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    If you enjoyed your experience, we’d truly appreciate it if you could take a moment to leave a review.
+    Your feedback helps us improve and helps other customers make confident choices.
+  </p>
+
+  <div style="margin: 30px 0;">
+    <a href="https://tryam193.com/orders/${orderId}"
+       style="background-color: #1a1a1a; color: #ffffff; padding: 12px 22px; text-decoration: none; border-radius: 6px; font-size: 14px; display: inline-block;">
+      View Your Order
+    </a>
+  </div>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    If you notice any issues with your order or need assistance, you can report them
+    directly from your order page in the app or website.
+  </p>
+
+  <p style="font-size: 14px; color: #555; line-height: 1.6;">
+    Thank you for choosing us and for your support.
+  </p>
+
+  <p style="font-size: 14px; color: #555;">
+    Warm regards,<br/>
+    <strong>Team TRYAM</strong>
+  </p>
+
+</div>`;
+    }
+  }
 
   try {
+    // ⚠️ REMEMBER: Use 'onboarding@resend.dev' if testing, 'support@tryam193.com' if live.
     await resend.emails.send({
-      from: 'TRYAM Support <onboarding@resend.dev>', // ✅ Use your verified domain
+      from: 'TRYAM Support <onboarding@resend.dev>',
       to: email,
       subject: subject,
       html: htmlBody,
-      attachments: [
-        {
-          filename: `${docName.replace(" ", "_")}.pdf`,
-          path: pdfUrl // Resend can fetch the PDF directly from your Firebase URL
-        }
-      ]
+      attachments: attachments
     });
-    console.log(`✅ Invoice Email sent to ${email}`);
+    console.log(`✅ Email sent to ${email} (Subject: ${subject})`);
   } catch (error) {
     console.error("❌ Resend Failed:", error);
   }
@@ -248,23 +417,61 @@ async function sendCODConfirmation(orderData) {
   const customerName = orderData.shippingAddress.fullName.split(" ")[0];
 
   const htmlBody = `
-      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-        <h2 style="color: #ea580c;">Order Placed Successfully! 🚚</h2>
-        <p>Hi ${customerName},</p>
-        <p>Your Cash on Delivery order <strong>#${orderId}</strong> has been confirmed.</p>
-        
-        <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin:0; font-weight:bold;">Amount to Pay on Delivery:</p>
-            <h3 style="margin:5px 0 0 0; color: #111;">₹${orderData.price * orderData.quantity}</h3>
-        </div>
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
 
-        <p style="color: #666; font-size: 13px;">
-            Note: Your Tax Invoice will be generated and emailed to you once the item is delivered.
-        </p>
-        
-        <br/>
-        <a href="http://localhost:5173/orders/${orderId}" style="background-color: #ea580c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Track Order</a>
-      </div>
+  <h2 style="color: #ea580c; margin-bottom: 12px;">
+    Order Confirmed – Cash on Delivery 🚚
+  </h2>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    Hi ${customerName},
+  </p>
+
+  <p style="font-size: 15px; line-height: 1.6;">
+    We’re happy to confirm your <strong>Cash on Delivery</strong> order
+    <strong>#${orderId}</strong>.
+  </p>
+
+  <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 22px 0;">
+    <p style="margin: 0; font-size: 14px; font-weight: bold;">
+      Amount to Pay on Delivery
+    </p>
+    <h3 style="margin: 6px 0 0 0; color: #111;">
+      ₹${orderData.price * orderData.quantity}
+    </h3>
+  </div>
+
+  <p style="font-size: 14px; color: #555; line-height: 1.6;">
+    Please keep the exact amount ready at the time of delivery for a smooth handover.
+  </p>
+
+  <p style="font-size: 14px; color: #555; line-height: 1.6;">
+    Your tax invoice will be generated and emailed to you once the order has been
+    successfully delivered.
+  </p>
+
+  <div style="margin: 28px 0;">
+    <a href="http://localhost:5173/orders/${orderId}"
+       style="background-color: #ea580c; color: #ffffff; padding: 12px 22px; text-decoration: none; border-radius: 6px; font-size: 14px; display: inline-block;">
+      View Order Details
+    </a>
+  </div>
+
+  <p style="font-size: 14px; line-height: 1.6;">
+    You can view order updates or report any issues directly from your order page.
+  </p>
+
+  <p style="font-size: 14px; color: #555;">
+    Thank you for placing your order with us.
+  </p>
+
+  <p style="font-size: 14px; color: #555;">
+    Warm regards,<br/>
+    <strong>Team TRYAM</strong>
+  </p>
+
+</div>
+
     `;
 
   try {
@@ -957,18 +1164,6 @@ exports.handleProviderWebhook = functions.https.onRequest(async (req, res) => {
       }
 
       await firestoreOrderRef.update(updates);
-
-      if (orderData.payment?.method === 'cod' && newStatus === 'delivered') {
-        console.log(`🚚 COD Delivery Detected. Generating Bill...`);
-
-        // ⚠️ CHANGE: Wrap orderData in an array [orderData]
-        // Because orderData IS the item now (it has .title, .price, .quantity directly)
-        const pdfUrl = await generateInvoicePDF(orderData, [orderData]);
-
-        if (pdfUrl) {
-          await sendInvoiceEmail(orderData.shippingAddress.email, pdfUrl, false);
-        }
-      }
     }
 
     res.status(200).send("Webhook Processed");
@@ -1263,101 +1458,145 @@ exports.saveTshirtDesign = functions.https.onCall(async (data, context) => {
 // ------------------------------------------------------------------
 // 💰 1. STRIPE WEBHOOK (Payment Confirmation)
 // ------------------------------------------------------------------
-exports.stripeWebhook = functions
-  .runWith({ memory: '1GB', timeoutSeconds: 120 })
-  .https.onRequest(async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    const endpointSecret = functions.config().stripe?.webhook_secret;
-    let event;
+exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.rawBody, sig, functions.config().stripe.webhook_secret);
+  } catch (err) {
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const orderId = session.metadata.orderId;
+    const amountPaid = session.amount_total / 100; // Stripe is in cents
 
     try {
-      event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
-    } catch (err) {
-      return res.status(400).send(`Webhook Error: ${err.message}`);
-    }
+      // 1. 🔍 FETCH DATABASE ORDER
+      const orderRef = db.collection('orders').doc(orderId);
+      const doc = await orderRef.get();
 
-    if (event.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data.object;
-      console.log(`💰 Stripe Payment Succeeded: ${paymentIntent.id}`);
+      if (!doc.exists) return res.status(404).send("Order missing");
 
-      // 🔍 FIND ALL ORDERS WITH THIS PAYMENT ID
-      // Since we assigned the same paymentId (client_secret or intent id) to all split orders
-      // Note: In frontend, ensure you saved 'paymentId' or 'groupId' to the doc.
+      const expectedAmount = doc.data().payment.total;
 
-      // If you used PaymentIntent ID as the common link:
-      const snapshot = await db.collection('orders')
-        .where('paymentId', '==', paymentIntent.id) // Query all docs with this ID
-        .get();
+      // 2. 🛡️ FRAUD CHECK
+      if (Math.abs(amountPaid - expectedAmount) > 1) {
+        const fraudMsg = `FRAUD DETECTED: Order ${orderId} paid ${amountPaid} but expected ${expectedAmount}`;
+        console.error(`🚨 ${fraudMsg}`);
 
-      if (!snapshot.empty) {
-        console.log(`✅ Found ${snapshot.size} split orders. Updating...`);
-
-        const batch = db.batch();
-        snapshot.docs.forEach(doc => {
-          batch.update(doc.ref, {
-            status: 'placed', // Triggers Bot
-            paymentStatus: 'paid',
-            paidAt: admin.firestore.FieldValue.serverTimestamp()
-          });
+        // 1. Flag the Order
+        await orderRef.update({
+          status: 'fraud_alert',
+          fraudReason: fraudMsg,
+          payment: { ...orderData.payment, status: 'fraud_flagged' }
         });
 
-        await batch.commit();
+        // 2. 🚫 BAN THE USER PERMANENTLY
+        const userId = orderData.userId;
+        if (userId && userId !== 'guest') {
+          await db.collection('users').doc(userId).update({
+            isBanned: true,
+            banReason: "Payment Tampering / Fraud Attempt",
+            bannedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          console.log(`🔨 BANNED User ${userId} for tampering with payments.`);
+        }
 
-        // 📧 TRIGGER CONSOLIDATED INVOICE (Optional here if Frontend didn't do it)
-        // It's safer to do it here.
-        const orders = snapshot.docs.map(d => d.data());
-        // We can reuse the callable function logic or call it directly
-        await generateAndSendConsolidatedInvoice(orders);
-
-      } else {
-        console.warn(`⚠️ No orders found for PaymentIntent ${paymentIntent.id}`);
+        // 3. Stop processing
+        return res.status(200).send("Fraud Detected - User Banned");
       }
-    }
 
-    res.json({ received: true });
-  });
+      // 3. ✅ SUCCESS
+      await orderRef.update({
+        status: 'placed',
+        'payment.status': 'paid',
+        providerStatus: 'pending'
+      });
+
+      await generateAndSendConsolidatedInvoice([doc.data()]);
+
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  res.json({ received: true });
+});
 
 // ------------------------------------------------------------------
 // 💰 2. RAZORPAY WEBHOOK (Updated for Split Orders)
 // ------------------------------------------------------------------
-exports.razorpayWebhook = functions
-  .runWith({ memory: '1GB', timeoutSeconds: 120 })
-  .https.onRequest(async (req, res) => {
-    const secret = functions.config().razorpay?.webhook_secret;
-    // ... (Signature validation code remains same) ...
+exports.razorpayWebhook = functions.https.onRequest(async (req, res) => {
+  const signature = req.headers["x-razorpay-signature"];
+  const secret = functions.config().razorpay?.webhook_secret;
 
-    const event = req.body.event;
+  // 1. Verify Signature (Standard Security)
+  if (!Razorpay.validateWebhookSignature(JSON.stringify(req.body), signature, secret)) {
+    return res.status(400).send("Invalid Signature");
+  }
 
-    if (event === "payment.captured") {
-      const payment = req.body.payload.payment.entity;
-      const notes = payment.notes; // { groupId: "GRP-123..." }
+  const payload = req.body.payload.payment.entity;
+  const orderId = payload.notes.orderId; // Ensure you passed 'notes: { orderId }' from frontend
+  const amountPaid = payload.amount / 100; // Razorpay is in paise
 
-      if (notes.groupId) {
-        // 🔍 Find by Group ID
-        const snapshot = await db.collection("orders")
-          .where("groupId", "==", notes.groupId)
-          .get();
+  try {
+    // 2. 🔍 FETCH DATABASE ORDER
+    const orderRef = db.collection('orders').doc(orderId);
+    const doc = await orderRef.get();
 
-        if (!snapshot.empty) {
-          const batch = db.batch();
-          snapshot.docs.forEach(doc => {
-            batch.update(doc.ref, {
-              status: "placed",
-              paymentStatus: "paid",
-              paymentId: payment.id,
-              paidAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-          });
-          await batch.commit();
+    if (!doc.exists) return res.status(404).send("Order not found");
 
-          // 📧 Trigger Invoice
-          const orders = snapshot.docs.map(d => d.data());
-          await generateAndSendConsolidatedInvoice(orders);
-        }
+    const orderData = doc.data();
+    const expectedAmount = orderData.payment.total;
+
+    // 3. 🛡️ FRAUD CHECK (The Fix)
+    // We allow a small buffer (e.g. 1 rupee) for rounding errors, but rarely needed.
+    if (Math.abs(amountPaid - expectedAmount) > 1) {
+      const fraudMsg = `FRAUD DETECTED: Order ${orderId} paid ${amountPaid} but expected ${expectedAmount}`;
+      console.error(`🚨 ${fraudMsg}`);
+
+      // 1. Flag the Order
+      await orderRef.update({
+        status: 'fraud_alert',
+        fraudReason: fraudMsg,
+        payment: { ...orderData.payment, status: 'fraud_flagged' }
+      });
+
+      // 2. 🚫 BAN THE USER PERMANENTLY
+      const userId = orderData.userId;
+      if (userId && userId !== 'guest') {
+        await db.collection('users').doc(userId).update({
+          isBanned: true,
+          banReason: "Payment Tampering / Fraud Attempt",
+          bannedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        console.log(`🔨 BANNED User ${userId} for tampering with payments.`);
       }
+
+      // 3. Stop processing
+      return res.status(200).send("Fraud Detected - User Banned");
     }
-    res.json({ status: "ok" });
-  });
+
+    // 4. ✅ SUCCESS: Update Order
+    await orderRef.update({
+      status: 'placed',
+      'payment.status': 'paid',
+      'payment.transactionId': payload.id,
+      providerStatus: 'pending' // Triggers the Bot
+    });
+
+    // 5. Send Invoice
+    await generateAndSendConsolidatedInvoice([orderData]);
+
+    res.status(200).send("OK");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error");
+  }
+});
 
 exports.sendConsolidatedInvoice = functions
   .runWith({ memory: '1GB', timeoutSeconds: 120 })
@@ -1396,7 +1635,7 @@ async function generateAndSendConsolidatedInvoice(orders) {
   const pdfUrl = await generateInvoicePDF(firstOrder, allItems);
 
   if (pdfUrl) {
-    await sendInvoiceEmail(firstOrder.shippingAddress.email, pdfUrl, true, groupId, isIndia);
+    await sendInvoiceEmail(firstOrder.shippingAddress.email, pdfUrl, true, groupId, isIndia, firstOrder.shippingAddress.fullName);
 
     // ✅ Mark as Sent
     const batch = db.batch();
@@ -1407,3 +1646,183 @@ async function generateAndSendConsolidatedInvoice(orders) {
     await batch.commit();
   }
 }
+
+// Trigger Support Ticket Response E-Mail
+exports.onTicketReply = functions.firestore
+  .document('support_tickets/{ticketId}')
+  .onUpdate(async (change, context) => {
+    const newData = change.after.data();
+    const oldData = change.before.data();
+
+    // 1. Check if a NEW message was added
+    const newMessages = newData.messages || [];
+    const oldMessages = oldData.messages || [];
+
+    if (newMessages.length <= oldMessages.length) return null; // No new message
+
+    // 2. Check if the LAST message is from ADMIN
+    const lastMessage = newMessages[newMessages.length - 1];
+    if (lastMessage.sender !== 'admin') return null; // Ignore user messages
+
+    console.log(`💬 Admin replied to Ticket ${context.params.ticketId}. Sending email...`);
+
+    // 3. Get User Email (Fetch linked Order to be safe)
+    const orderSnap = await db.collection('orders').doc(newData.orderId).get();
+    if (!orderSnap.exists) return null;
+
+    const userEmail = orderSnap.data().shippingAddress.email;
+    const customerName = orderSnap.data().shippingAddress.fullName.split(" ")[0];
+
+    // 4. Send Email via Resend
+    const htmlBody = `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #ea580c;">New Reply from Support 💬</h2>
+        <p>Hi ${customerName},</p>
+        <p>We have replied to your ticket regarding Order <strong>#${newData.orderNumber}</strong>.</p>
+        
+        <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ea580c;">
+            <p style="margin:0; font-style:italic;">"${lastMessage.text}"</p>
+        </div>
+
+        <a href="https://localhost:5173/orders/${newData.orderId}" style="background-color: #1a1a1a; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reply in App</a>
+      </div>
+    `;
+
+    try {
+      await resend.emails.send({
+        from: 'TRYAM Support <onboarding@resend.dev>', // Use 'onboarding@resend.dev' for testing
+        to: 'tryam193@gmail.com',
+        subject: `Update on Ticket #${newData.orderNumber}`,
+        html: htmlBody
+      });
+      console.log(`✅ Notification sent to ${userEmail}`);
+    } catch (error) {
+      console.error("❌ Failed to send notification:", error);
+    }
+  });
+
+// Check Qikink status bot
+exports.pollQikinkOrders = functions.runWith({ timeoutSeconds: 540, memory: '1GB' })
+  .pubsub.schedule('every 3 hours')
+  .onRun(async (context) => {
+    console.log("🤖 Qikink Polling Bot Started...");
+
+    const activeStatuses = ['placed', 'processing', 'printing', 'production', 'shipped'];
+
+    // 1. FETCH ORDERS
+    const snapshot = await db.collection('orders')
+      .where('provider', '==', 'qikink')
+      .where('status', 'in', activeStatuses)
+      .get();
+
+    if (snapshot.empty) return null;
+
+    // 2. AUTH
+    let token;
+    try { token = await getQikinkAccessToken(); } catch (e) { return null; }
+    const clientId = functions.config().qikink?.client_id;
+
+    const batch = db.batch();
+    let updateCount = 0;
+
+    // 3. CHECK STATUSES
+    const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    for (const order of orders) {
+      if (!order.providerOrderId) continue;
+
+      try {
+        const res = await axios.get(`${QIKINK_BASE_URL}/api/order/status?order_number=${order.providerOrderId}`, {
+          headers: { 'ClientId': clientId, 'Accesstoken': token }
+        });
+
+        const qData = res.data;
+        if (!qData || !qData.status) continue;
+
+        const qStatus = qData.status.toLowerCase();
+        let newStatus = order.status;
+        let trackingUpdates = {};
+
+        // Map Status
+        if (qStatus.includes('print') || qStatus.includes('process')) newStatus = 'printing';
+        else if (qStatus.includes('dispatch') || qStatus.includes('ship')) {
+          newStatus = 'shipped';
+          if (qData.tracking_link || qData.awb_number) {
+            trackingUpdates = {
+              'providerData.trackingUrl': qData.tracking_link || order.providerData?.trackingUrl,
+              'providerData.trackingCode': qData.awb_number || order.providerData?.trackingCode,
+              'providerData.courier': qData.courier_name || order.providerData?.courier
+            };
+          }
+        }
+        else if (qStatus.includes('deliver')) {
+          newStatus = 'delivered';
+          trackingUpdates = { deliveredAt: admin.firestore.FieldValue.serverTimestamp() };
+        }
+        else if (qStatus.includes('cancel')) newStatus = 'cancelled';
+        else if (qStatus.includes('rto')) {
+          newStatus = 'cancelled';
+          trackingUpdates = { botLog: "RTO Detected" };
+        }
+
+        // 4. UPDATE DETECTED
+        if (newStatus !== order.status || (trackingUpdates['providerData.trackingCode'] && !order.providerData?.trackingCode)) {
+
+          const orderRef = db.collection('orders').doc(order.id);
+          let updateData = {
+            status: newStatus,
+            ...trackingUpdates,
+            lastPolledAt: admin.firestore.FieldValue.serverTimestamp()
+          };
+
+          // 🚚 SPLIT DELIVERY LOGIC
+          if (newStatus === 'delivered' && order.status !== 'delivered') {
+            const customerName = order.shippingAddress.fullName || ''
+
+            if (order.payment?.method === 'cod' || order.isCod) {
+              console.log(`🇮🇳 Sending COD Invoice for ${order.id}...`);
+
+              // Force Single Invoice
+              const singleOrderContext = { ...order, groupId: null };
+
+              try {
+                const pdfUrl = await generateInvoicePDF(singleOrderContext, [order]);
+                if (pdfUrl) {
+                  // Call with PDF URL -> Sends "Delivered + Attachment"
+                  await sendInvoiceEmail(
+                    order.shippingAddress.email,
+                    pdfUrl,
+                    false, // isConsolidated
+                    order.orderId,
+                    true,
+                    customerName   // isIndia
+                  );
+                  updateData.invoiceSent = true;
+                }
+              } catch (err) { console.error(`Invoice Gen Failed:`, err); }
+            }
+
+            // SCENARIO B: ONLINE ORDER -> Send Friendly Email
+            else {
+              console.log(`🎉 Sending Friendly Delivery Email for ${order.id}...`);
+
+              // Call with NULL PDF -> Sends "Friendly Text Only"
+              await sendInvoiceEmail(
+                order.shippingAddress.email,
+                null,  // <--- NULL triggers the friendly mode
+                false,
+                order.orderId,
+                true,
+                customerName
+              );
+            }
+          }
+
+          batch.update(orderRef, updateData);
+          updateCount++;
+        }
+      } catch (err) { console.error(`Poll Error ${order.orderId}:`, err.message); }
+    }
+
+    if (updateCount > 0) await batch.commit();
+  });
