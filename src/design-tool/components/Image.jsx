@@ -22,13 +22,14 @@ export default function ImageHandler({ setSelectedId, setActiveTool, children, c
 
     if (file && file.type.startsWith('image')) {
       const localBlobUrl = URL.createObjectURL(file);
-
+      
       // 2. Pass the Blob URL to your Image Adder
       // Your saveDesign.js will detect this "blob:" prefix later and upload it to Firebase.
       if (localBlobUrl) {
         Image(localBlobUrl, setSelectedId, setActiveTool, fabricCanvas);
       }
-
+      
+      // URL.revokeObjectURL(localBlobUrl)
       // 3. Reset the input so the user can upload the same file again if they deleted it
       event.target.value = '';
     }

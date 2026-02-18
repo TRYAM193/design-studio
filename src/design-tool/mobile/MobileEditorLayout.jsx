@@ -11,7 +11,7 @@ import {
 import ExportButton from '../components/ExportButton';
 
 export default function MobileEditorLayout({
-    children, fabricCanvas, selectedId, setSelectedId, activeTool, updateObject,
+    children, fabricCanvas, selectedId, setSelectedId, updateDpiForObject, updateObject,
     setActiveTool, setActivePanel, activePanel, navigation, canvasObjects,
     onUndo, onRedo, canUndo, canRedo, saveButton, onGeneratePreview,
     isGeneratingPreview, currentView, onSwitchView, availableViews = ['front', 'back'],
@@ -75,7 +75,6 @@ export default function MobileEditorLayout({
 
     const hasCritical = dpiIssues.some(i => i.status === 'poor');
     const hasImages = dpiIssues.length > 0;
-    console.log(fabricCanvas, productProps, currentDesignName)
 
     return (
         <div className="flex flex-col h-[100dvh] w-full bg-[#0f172a] relative overflow-hidden">
@@ -177,8 +176,8 @@ export default function MobileEditorLayout({
                 </div>
             )}
             {productProps.id && activePanel === 'product' && <ProductDrawer {...productProps} onClose={() => setActivePanel(null)} />}
-            <PropertyControlBox activeProperty={activeProperty} object={selectedObject} onClose={() => setActiveProperty(null)} fabricCanvas={fabricCanvas} updateObject={updateObject} />
-            <SmartDock mode={selectedId ? 'edit' : 'create'} selectedObject={selectedObject} onSelectTool={handleToolSelect} onSelectProperty={(prop) => setActiveProperty(prop === activeProperty ? null : prop)} onDeselect={handleDeselect} setActiveTool={setActiveTool} setSelectedId={setSelectedId} fabricCanvas={fabricCanvas} activePanel={activePanel} productId={productProps.id} />
+            <PropertyControlBox activeProperty={activeProperty} object={selectedObject} onClose={() => setActiveProperty(null)} fabricCanvas={fabricCanvas} updateObject={updateObject} updateDpiForObject={updateDpiForObject} printDimensions={productProps.printDimensions} />
+            <SmartDock mode={selectedId ? 'edit' : 'create'} selectedObject={selectedObject} onSelectTool={handleToolSelect} onSelectProperty={(prop) => setActiveProperty(prop === activeProperty ? null : prop)} onDeselect={handleDeselect} setActiveTool={setActiveTool} setSelectedId={setSelectedId} fabricCanvas={fabricCanvas} activePanel={activePanel}  productId={productProps.id} />
         </div>
     );
 }

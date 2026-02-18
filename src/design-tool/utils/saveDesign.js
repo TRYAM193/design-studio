@@ -1,13 +1,64 @@
-import { db as firestore } from '@/firebase'; // Adjust path if needed
+import { db as firestore, storage } from '@/firebase'; // Adjust path if needed
 import { doc, setDoc, collection, addDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from "uuid";
+import { getDownloadURL, uploadBytes, ref } from "firebase/storage"
+
+// Upload the images to Storage
+const uploadToStorage = async (imgURL, fileLocation) => {
+  const storageRef = ref(storage, `${fileLocation}.png`);
+
+  let blob;
+
+  // 1️⃣ data URL (canvas.toDataURL)
+  if (typeof imgURL === "string" && imgURL.startsWith("data:")) {
+    blob = dataURLtoBlob(imgURL);
+  }
+
+  // 2️⃣ blob URL (URL.createObjectURL)
+  else if (typeof imgURL === "string" && imgURL.startsWith("blob:")) {
+    const response = await fetch(imgURL);
+    blob = await response.blob();
+  }
+
+  // 3️⃣ File or Blob
+  else if (imgURL instanceof Blob) {
+    blob = imgURL;
+  }
+
+  else {
+    throw new Error("Unsupported image source type");
+  }
+
+  await uploadBytes(storageRef, blob, {
+    contentType: blob.type || "image/png",
+  });
+
+  return await getDownloadURL(storageRef);
+};
+
+
+const dataURLtoBlob = (dataURL) => {
+  const arr = dataURL.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+
+  return new Blob([u8arr], { type: mime });
+};
+
+
 
 // --- HELPER: Build Data Object ---
 const buildDesignDoc = (id, currentObjects, viewStates, productData, currentView, isNew, thumbnailDataUrl, name) => {
   const now = Date.now();
-  
+
   // Clean objects
-  const cleanObjects = (currentObjects || []).filter(obj => 
+  const cleanObjects = (currentObjects || []).filter(obj =>
     obj.id !== 'print-area-border' && obj.customId !== 'print-area-border'
   );
 
@@ -22,7 +73,7 @@ const buildDesignDoc = (id, currentObjects, viewStates, productData, currentView
     // === PRODUCT MODE ===
     designDoc = {
       type: 'PRODUCT',
-      canvasData: finalViewStates, 
+      canvasData: finalViewStates,
       productConfig: {
         productId: productData.productId,
         variantColor: productData.color || null,
@@ -57,7 +108,7 @@ export const saveNewDesign = async (userId, currentObjects, viewStates, productD
   setSaving(true);
   try {
     const newId = uuidv4(); // Generate new ID
-    
+
     const designDoc = buildDesignDoc(newId, currentObjects, viewStates, productData, currentView, true, thumbnailDataUrl, name);
     designDoc.userId = userId; // Explicitly set User ID
 
@@ -81,7 +132,7 @@ export const overwriteDesign = async (userId, designId, currentObjects, viewStat
   try {
     // ✅ Pass 'name' to the builder
     const designDoc = buildDesignDoc(designId, currentObjects, viewStates, productData, currentView, false, thumbnailDataUrl, name);
-    
+
     const designRef = doc(firestore, `users/${userId}/designs`, designId);
     await setDoc(designRef, designDoc, { merge: true });
 
@@ -103,73 +154,73 @@ export const exportSavedDesignImage = (designData) => {
   try {
     const link = document.createElement('a');
     link.href = designData.imageData; // The Base64 image string
-    
+
     // Sanitize filename
     const safeName = (designData.name || "design").replace(/[^a-z0-9]/gi, '_').toLowerCase();
     link.download = `${safeName}-preview.png`;
-    
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
   } catch (error) {
     console.error("Failed to download image:", error);
     alert("Could not download image.");
   }
 };
 
-export const exportReferenceImage = (canvas, fileName = 'design-preview', removeBg=false) => {
+export const exportReferenceImage = (canvas, fileName = 'design-preview', removeBg = false) => {
   if (!canvas) return;
 
   // 1. Save current state variables
   const activeObj = canvas.getActiveObject();
-  
+
   // 2. Prepare Canvas for Snapshot
   // Deselect everything to remove the blue bounding boxes/handles
   canvas.discardActiveObject();
-  
+
   // Find and hide the "Print Area Border" (Editor artifact)
-  const borderObj = canvas.getObjects().find(obj => 
-      obj.id === 'print-area-border' || obj.customId === 'print-area-border'
+  const borderObj = canvas.getObjects().find(obj =>
+    obj.id === 'print-area-border' || obj.customId === 'print-area-border'
   );
   const wasBorderVisible = borderObj ? borderObj.visible : false;
-  
+
   if (borderObj) {
-      borderObj.visible = false;
+    borderObj.visible = false;
   }
   // canvas.backgroundColor = 'transparent' //removeBg ? 'transparent' : canvas.backgroundColor || '#fff';
   canvas.requestRenderAll();
 
   try {
-      // 3. Generate Image Data
-      // Multiplier: 2 provides good quality for Retina screens/Reference without creating massive Print files.
-      const dataURL = canvas.toDataURL({
-          format: 'png',
-          quality: 1,
-          multiplier: 2, 
-          enableRetinaScaling: true, 
-      });
+    // 3. Generate Image Data
+    // Multiplier: 2 provides good quality for Retina screens/Reference without creating massive Print files.
+    const dataURL = canvas.toDataURL({
+      format: 'png',
+      quality: 1,
+      multiplier: 2,
+      enableRetinaScaling: true,
+    });
 
-      // 4. Trigger Download
-      const link = document.createElement('a');
-      link.href = dataURL;
-      link.download = `${fileName}-${Date.now()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    // 4. Trigger Download
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = `${fileName}-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
   } catch (error) {
-      console.error("Export failed:", error);
-      alert("Failed to export image.");
+    console.error("Export failed:", error);
+    alert("Failed to export image.");
   } finally {
-      // 5. Restore Editor State
-      if (borderObj) {
-          borderObj.visible = wasBorderVisible;
-      }
-      if (activeObj) {
-          canvas.setActiveObject(activeObj);
-      }
-      canvas.requestRenderAll();
+    // 5. Restore Editor State
+    if (borderObj) {
+      borderObj.visible = wasBorderVisible;
+    }
+    if (activeObj) {
+      canvas.setActiveObject(activeObj);
+    }
+    canvas.requestRenderAll();
   }
 };
 
@@ -181,21 +232,55 @@ export const saveGlobalTemplate = async (canvas, name, category = "General", obj
     // We use a lower multiplier (1) for thumbnails to save space
     canvas.discardActiveObject();
     canvas.requestRenderAll();
-    
-    const dataURL = canvas.toDataURL({
+
+    const dataURL = await canvas.toDataURL({
       format: 'png',
       quality: 0.8,
-      multiplier: 1, 
+      multiplier: 1,
     });
 
+    const templateId = `TEMP-${uuidv4()}`
+    const mainLoc = `templates/${templateId}`
+    const thumbnailURL = await uploadToStorage(dataURL, `${mainLoc}/thumbnail`)
+
+    const modifiedObjects = await Promise.all(
+      objects.map(async (obj, i) => {
+        if (obj.type !== "image") {
+          return { ...obj }
+        }
+
+        const objSRC = obj.props?.src
+        if (!objSRC) {
+          return { ...obj }
+        }
+
+        const storedURL = await uploadToStorage(
+          objSRC,
+          `${mainLoc}/image-${i + 1}`
+        )
+
+        return {
+          ...obj,
+          props: {
+            ...obj.props,
+            src: storedURL
+          }
+        }
+      })
+    )
+
+
     const templateData = {
+      id: templateId,
       name: name || "Untitled Template",
       category,
       createdAt: Date.now(),
       type: 'BLANK', // Always BLANK as requested
-      thumbnailUrl: dataURL, // In a real app, upload this to Storage and save the URL. For now, Base64 is okay for prototypes.
-      canvasData: objects 
+      thumbnailUrl: thumbnailURL,
+      canvasData: modifiedObjects
     };
+
+    console.log(templateData)
 
     // 3. Save to Root Collection
     await addDoc(collection(firestore, "templates"), templateData);

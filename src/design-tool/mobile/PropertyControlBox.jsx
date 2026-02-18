@@ -5,13 +5,14 @@ import {
     Ban, Circle, Smile, Frown, Flag,
     Loader2, Eraser, ArrowUp, ArrowDown,
     ArrowUpFromLine, ArrowDownToLine, ImagePlus,
-    Type, Droplets, Move, Sun
-} from 'lucide-react'; // Added icons for the new UI
+    Type, Droplets, Move, Sun, Maximize2, CheckCircle2
+} from 'lucide-react'; 
 import { AVAILABLE_FONTS } from '@/data/font';
 import { COLOR_MAP } from '@/lib/colorMaps';
 import { Path } from 'fabric';
 import CircleText from '@/design-tool/objectAdders/CircleText';
 import { processBackgroundRemoval } from '@/design-tool/utils/imageUtils';
+import { calculateImageDPI } from '@/design-tool/utils/dpiCalculator'; // ✅ Added Import
 import {
     getStarPoints, getPolygonPoints, getTrianglePoints, getRoundedPathFromPoints,
     getArrowPoints, getDiamondPoints, getTrapezoidPoints, getLightningPoints
@@ -77,6 +78,7 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
 
     existing.set(finalUpdates);
 
+    // Text Special Case
     if (existing.type === 'text') {
         if (finalUpdates.text !== undefined || finalUpdates.fontFamily !== undefined || finalUpdates.fontSize !== undefined) {
             existing.initDimensions();
@@ -104,30 +106,30 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
     fabricCanvas.requestRenderAll();
 }
 
-// Helper for shadow (needed if not imported)
 const createFabricShadow = (color, blur, offsetX, offsetY) => {
     if ((!blur || blur === 0) && (offsetX === 0) && (offsetY === 0)) return null;
     return { color: color || '#000000', blur: blur || 0, offsetX: offsetX || 0, offsetY: offsetY || 0 };
 };
 
 
-// --- 2. NEW SCRUBBABLE SLIDER (MOBILE & TOUCH FRIENDLY) ---
+// --- 2. IMPROVED LIVE SLIDER (Float Support) ---
 const LiveSlider = ({ label, value, min, max, step, object, propKey, updateObject, fabricCanvas, displayMultiplier = 1, onCommitOverride }) => {
     const startX = useRef(0);
     const startVal = useRef(0);
     const [localVal, setLocalVal] = useState(value ?? 0);
 
-    // Sync external changes
     useEffect(() => { setLocalVal(value ?? 0); }, [value, object.id]);
 
     const updateValue = (newVal) => {
-        // Clamp
         if (min !== undefined) newVal = Math.max(min, newVal);
         if (max !== undefined) newVal = Math.min(max, newVal);
 
+        // ✅ Float Precision Fix
+        const decimals = step < 1 ? 2 : 0;
+        newVal = parseFloat(newVal.toFixed(decimals));
+
         setLocalVal(newVal);
 
-        // Live Update Fabric
         const fabricValue = newVal / displayMultiplier;
         const props = object.props || object;
         liveUpdateFabric(fabricCanvas, object.id, { [propKey]: fabricValue }, props, object);
@@ -136,6 +138,10 @@ const LiveSlider = ({ label, value, min, max, step, object, propKey, updateObjec
     const commitValue = (finalVal) => {
         if (min !== undefined) finalVal = Math.max(min, finalVal);
         if (max !== undefined) finalVal = Math.min(max, finalVal);
+        
+        // ✅ Float Precision Fix
+        const decimals = step < 1 ? 2 : 0;
+        finalVal = parseFloat(finalVal.toFixed(decimals));
 
         const fabricVal = finalVal / displayMultiplier;
 
@@ -146,7 +152,7 @@ const LiveSlider = ({ label, value, min, max, step, object, propKey, updateObjec
         }
     };
 
-    // --- MOUSE EVENTS ---
+    // --- MOUSE ---
     const handleMouseDown = (e) => {
         e.preventDefault();
         startX.current = e.clientX;
@@ -158,65 +164,31 @@ const LiveSlider = ({ label, value, min, max, step, object, propKey, updateObjec
 
     const handleMouseMove = (e) => {
         const delta = (e.clientX - startX.current) * step;
-        updateValue(Math.round(startVal.current + delta));
+        updateValue(startVal.current + delta); // No Math.round here for floats
     };
 
     const handleMouseUp = (e) => {
         document.body.style.cursor = 'default';
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
-        // We can use the current localVal for commit
-        // But to be safe (closure staleness), let's calc one last time or use ref
         const delta = (e.clientX - startX.current) * step;
-        commitValue(Math.round(startVal.current + delta));
+        commitValue(startVal.current + delta);
     };
 
-    // --- TOUCH EVENTS (Mobile Scrubbing) ---
+    // --- TOUCH ---
     const handleTouchStart = (e) => {
-        // Don't prevent default immediately to allow tap, but for drag we need control
         startX.current = e.touches[0].clientX;
         startVal.current = localVal;
         document.addEventListener('touchmove', handleTouchMove, { passive: false });
-        document.addEventListener('touchend', handleTouchEnd);
+        document.addEventListener('touchend', safeTouchEnd);
     };
 
     const handleTouchMove = (e) => {
-        e.preventDefault(); // Stop scrolling while scrubbing
-        // Slower sensitivity for touch
+        e.preventDefault();
         const delta = (e.touches[0].clientX - startX.current) * step * 0.8;
-        updateValue(Math.round(startVal.current + delta));
+        updateValue(startVal.current + delta);
     };
 
-    const handleTouchEnd = (e) => {
-        document.removeEventListener('touchmove', handleTouchMove);
-        document.removeEventListener('touchend', handleTouchEnd);
-        // Since we don't have event coordinates in touchend, we rely on the last state update
-        // However, state might be async. A ref tracker is better.
-        // For simplicity, we trigger commit with the last known good calculation if we tracked it, 
-        // OR we just assume the live update worked and just sync the DB.
-        // Let's re-calculate delta from the touch list if possible? No.
-        // Let's just commit the current 'localVal'. Note: closure might see old val.
-        // SAFEST: Just trigger the parent update with the value we *pushed* to it? 
-        // Actually, updateObject is enough.
-        // To be perfectly safe, we'll re-read the last value from a ref in a real app, 
-        // but here we can just fire the commit with the value currently in the input (via blur) or just the last calculated.
-
-        // workaround: Since updateValue updated localVal, and React batches, 
-        // we might not have it here. But we don't need 'e'. We just need to tell Redux "Save this".
-        // We will pass the startVal + delta logic if we tracked delta.
-        // Let's simply allow the user to lift finger, and we commit the last live value.
-        // We'll update the object with the *calculated* value from the last move.
-        // For this code, we'll rely on the input's onBlur/Commit or just firing it.
-        // Let's use the 'onCommit' prop style by passing the last value we set.
-        // Since we can't easily get it, we'll assume the last 'liveUpdateFabric' call set the visual state, 
-        // so we just need to persist it.
-
-        // Actually, let's just use the `value` prop from the parent if it updated? No.
-        // We will trigger a commit using the last set value.
-        // We can store `lastTouchValue` in a ref.
-    };
-
-    // Ref to track latest value for touch end commit
     const latestVal = useRef(value);
     useEffect(() => { latestVal.current = localVal; }, [localVal]);
 
@@ -228,34 +200,26 @@ const LiveSlider = ({ label, value, min, max, step, object, propKey, updateObjec
 
     return (
         <div className="flex items-center gap-3 mb-3 animate-in fade-in duration-300">
-            {/* 1. Draggable Label */}
             <div
                 className="flex items-center gap-1.5 w-20 cursor-ew-resize touch-none select-none text-slate-400 active:text-orange-400 transition-colors"
                 onMouseDown={handleMouseDown}
-                onTouchStart={(e) => {
-                    startX.current = e.touches[0].clientX;
-                    startVal.current = localVal;
-                    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-                    document.addEventListener('touchend', safeTouchEnd);
-                }}
+                onTouchStart={handleTouchStart}
             >
-                {/* Optional Icon mapping based on label could go here */}
                 <span className="text-[11px] font-bold uppercase tracking-wider truncate">{label}</span>
             </div>
 
-            {/* 2. Visual Input Bar */}
             <div className="flex-1 relative h-9 bg-slate-800/50 rounded-lg border border-white/5 overflow-hidden group hover:border-white/20 transition-all">
-                {/* Progress Fill */}
-                <div
-                    className="absolute top-0 left-0 h-full bg-orange-500/10 pointer-events-none transition-all duration-75"
-                    style={{ width: `${Math.min(100, Math.max(0, ((localVal - min) / (max - min)) * 100))}%` }}
-                />
-
-                {/* Number Input */}
+                {min !== undefined && max !== undefined && (
+                    <div
+                        className="absolute top-0 left-0 h-full bg-orange-500/10 pointer-events-none transition-all duration-75"
+                        style={{ width: `${Math.min(100, Math.max(0, ((localVal - min) / (max - min)) * 100))}%` }}
+                    />
+                )}
                 <input
                     type="number"
+                    step={step}
                     className="w-full h-full bg-transparent text-sm font-medium text-white px-3 focus:outline-none text-right relative z-10 appearance-none m-0"
-                    value={Math.round(localVal) || 0}
+                    value={step < 1 ? Number(localVal).toFixed(2) : Math.round(localVal)}
                     onChange={(e) => updateValue(Number(e.target.value))}
                     onBlur={(e) => commitValue(Number(e.target.value))}
                     onKeyDown={(e) => e.key === 'Enter' && commitValue(Number(e.currentTarget.value))}
@@ -266,7 +230,7 @@ const LiveSlider = ({ label, value, min, max, step, object, propKey, updateObjec
 };
 
 // --- 3. MAIN COMPONENT ---
-export default function PropertyControlBox({ activeProperty, object, updateObject, onClose, fabricCanvas }) {
+export default function PropertyControlBox({ activeProperty, object, updateObject, onClose, fabricCanvas, updateDpiForObject, printDimensions={w: 4500, h: 5400} }) {
     if (!activeProperty || !object) return null;
 
     const fileInputRef = useRef(null);
@@ -274,6 +238,36 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
 
     const getValue = (key) => object.props?.[key] ?? object[key];
     const handleUpdate = (key, value) => updateObject(object.id, { [key]: value });
+
+    // --- AUTO DPI HANDLER ---
+    const handleAutoDpi = () => {
+        if (!object || !fabricCanvas || object.type !== 'image') return;
+
+        const currentScaleX = getValue('scaleX') || 1;
+        const currentScaleY = getValue('scaleY') || 1;
+        console.log(printDimensions)
+        // Use canvas width as proxy for Print Area Width (Standard for this app)
+        const dpiInfo = calculateImageDPI(
+            { ...object, width: object.props.width, height: object.props.height, scaleX: currentScaleX, scaleY: currentScaleY, getScaledWidth: () => object.props.width * currentScaleX, getScaledHeight: () => object.props.height * currentScaleY },
+            fabricCanvas.width,
+            fabricCanvas.height,
+            printDimensions.w, 
+            printDimensions.h
+        );
+
+        if (dpiInfo && dpiInfo.dpi < 300) {
+            const correctionFactor = dpiInfo.dpi / 300;
+            const newScaleX = currentScaleX * correctionFactor;
+            const newScaleY = currentScaleY * correctionFactor;
+
+            // Update Fabric Live
+            liveUpdateFabric(fabricCanvas, object.id, { scaleX: newScaleX, scaleY: newScaleY }, object.props, object);
+            
+            // Commit to Redux
+            updateObject(object.id, { scaleX: newScaleX, scaleY: newScaleY });
+            updateDpiForObject(fabricCanvas.getObjects().find(o => o.customId === object.id))
+        }
+    };
 
     // --- RENDERERS ---
 
@@ -289,10 +283,6 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
                         style={{ backgroundColor: hex }}
                     />
                 ))}
-                <div className="relative w-10 h-10 rounded-full shrink-0 bg-gradient-to-br from-pink-500 via-red-500 to-yellow-500 border-2 border-white/20 flex items-center justify-center">
-                    <input type="color" className="absolute inset-0 opacity-0 w-full h-full" onChange={(e) => handleUpdate(targetProp, e.target.value)} />
-                    <Plus size={16} className="text-white drop-shadow-md" />
-                </div>
             </div>
         );
     };
@@ -334,21 +324,40 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
         }
     };
 
-    const renderRemoveBg = () => (
-        <div className="flex flex-col gap-4 items-center py-4">
-            <div className="text-center mb-2">
-                <p className="text-sm text-slate-300 font-medium">AI Background Removal</p>
-                <p className="text-[11px] text-slate-500">Automatically removes background from image.</p>
+    const renderImageTools = () => (
+        <div className="flex flex-col gap-4 py-2">
+            
+            {/* 1. AUTO DPI FIX */}
+            <div className="bg-indigo-900/20 rounded-xl p-4 border border-indigo-500/30">
+                <div className="flex items-start justify-between mb-3">
+                    <div>
+                        <p className="text-sm text-indigo-200 font-bold flex items-center gap-2"><Maximize2 size={16}/> Print Quality</p>
+                        <p className="text-[10px] text-indigo-300/60 mt-1">Optimize scale for clear printing (300 DPI).</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={handleAutoDpi}
+                    className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                    <CheckCircle2 size={14} /> Auto-Fix Scale
+                </button>
             </div>
 
-            <button
-                onClick={handleRemoveBg}
-                disabled={isProcessing}
-                className={`w-full py-3.5 rounded-xl flex items-center justify-center gap-2 font-bold transition-all border border-white/5 ${isProcessing ? 'bg-slate-800 text-slate-400' : 'bg-slate-800 hover:bg-slate-700 text-white'}`}
-            >
-                {isProcessing ? <Loader2 className="animate-spin text-orange-500" size={20} /> : <Eraser size={20} className="text-orange-500" />}
-                {isProcessing ? "Processing..." : "Remove Background"}
-            </button>
+            {/* 2. REMOVE BG */}
+            <div className="bg-slate-800/30 rounded-xl p-4 border border-white/5">
+                <div className="mb-3">
+                    <p className="text-sm text-slate-300 font-medium">Background Removal</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">Use AI to isolate the subject.</p>
+                </div>
+                <button
+                    onClick={handleRemoveBg}
+                    disabled={isProcessing}
+                    className={`w-full py-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all border border-white/5 ${isProcessing ? 'bg-slate-800 text-slate-400' : 'bg-slate-800 hover:bg-slate-700 text-white'}`}
+                >
+                    {isProcessing ? <Loader2 className="animate-spin text-orange-500" size={18} /> : <Eraser size={18} className="text-orange-500" />}
+                    {isProcessing ? "Processing..." : "Remove Background"}
+                </button>
+            </div>
         </div>
     );
 
@@ -362,8 +371,7 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
                 onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
-                        const localUrl = URL.createObjectURL(file); // Use Blob for speed
-                        // Update object
+                        const localUrl = URL.createObjectURL(file);
                         updateObject(object.id, { src: localUrl });
                         const fabricObj = fabricCanvas.getObjects().find(o => o.customId === object.id);
                         if (fabricObj) {
@@ -387,13 +395,10 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
         const moveLayer = (direction) => {
             const fabricObj = fabricCanvas.getObjects().find(o => o.customId === object.id);
             if (!fabricObj) return;
-
-            // These methods belong to the canvas, not the object
             if (direction === 'up') fabricCanvas.bringObjectForward(fabricObj);
             if (direction === 'down') fabricCanvas.sendObjectBackwards(fabricObj);
             if (direction === 'front') fabricCanvas.bringObjectToFront(fabricObj);
             if (direction === 'back') fabricCanvas.sendObjectToBack(fabricObj);
-
             fabricCanvas.requestRenderAll();
         };
 
@@ -418,12 +423,30 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
     let content = null;
     let title = "";
 
+    // ✅ SMART TITLE & CONTENT
     switch (activeProperty) {
         case 'fill': title = "Color"; content = renderColorPicker('fill'); break;
-        case 'fontSize': title = "Size"; content = <LiveSlider label="Text Size" value={getValue('fontSize')} min={10} max={200} step={1} propKey="fontSize" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />; break;
+        
+        // 🔄 SMART SIZE / TRANSFORM PANEL
+        case 'fontSize': // Maps to "Size" icon in Dock
+        case 'transform':
+        case 'size':
+            if (object.type === 'text' || object.type === 'i-text') {
+                title = "Text Size";
+                content = <LiveSlider label="Size" value={getValue('fontSize')} min={10} max={200} step={1} propKey="fontSize" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />;
+            } else {
+                title = "Dimensions";
+                content = (
+                    <div className="flex flex-col gap-1">
+                        <LiveSlider label="Scale X" value={getValue('scaleX') || 1} min={0.1} max={5} step={0.01} propKey="scaleX" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />
+                        <LiveSlider label="Scale Y" value={getValue('scaleY') || 1} min={0.1} max={5} step={0.01} propKey="scaleY" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />
+                    </div>
+                );
+            }
+            break;
+
         case 'opacity': title = "Opacity"; content = <LiveSlider label="Opacity" value={(getValue('opacity') || 1) * 100} min={0} max={100} step={5} propKey="opacity" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} displayMultiplier={100} />; break;
 
-        // Shape Specific
         case 'radius':
             title = "Roundness";
             const isRect = object.type === 'rect';
@@ -444,7 +467,6 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
             );
             break;
 
-        // Text Specific
         case 'text': title = "Edit Text"; content = <textarea value={getValue('text') || ""} onChange={(e) => handleUpdate('text', e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 text-white focus:border-orange-500 outline-none text-sm" rows={3} />; break;
         case 'fontFamily': title = "Font"; content = (
             <div className="flex flex-col gap-1 max-h-[200px] overflow-y-auto pr-1">
@@ -486,7 +508,11 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
             </div>
         ); break;
 
-        case 'remove-bg': title = "Remove Background"; content = renderRemoveBg(); break;
+        case 'remove-bg': 
+            title = "Image Actions"; 
+            content = renderImageTools(); // ✅ Now includes Auto-Scale
+            break;
+            
         case 'replace': title = "Replace Image"; content = renderReplace(); break;
         case 'shadow': title = "Shadow"; content = renderShadow(); break;
         case 'layer': title = "Layer Order"; content = renderLayerTools(); break;

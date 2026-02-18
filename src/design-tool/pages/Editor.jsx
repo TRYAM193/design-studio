@@ -16,12 +16,12 @@ import { useCart } from '@/context/CartContext';
 import MainToolbar from '../components/MainToolbar';
 import ContextualSidebar from '../components/ContextualSidebar';
 import { db } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
 import { Loader2, Save, Undo2, Redo2, Eye } from "lucide-react";
 import { COLOR_MAP } from '../../lib/colorMaps'
-import { FiTrash2, FiLayers, FiCheckCircle, FiChevronDown, FiDroplet, FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
+import { FiTrash2, FiLayers, FiCheckCircle, FiChevronDown, FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
 import { useIsMobile } from "@/hooks/use-mobile";
 import MobileEditorLayout from '../mobile/MobileEditorLayout';
 import { calculateImageDPI } from '../utils/dpiCalculator';
@@ -178,7 +178,6 @@ export default function EditorPanel() {
         }
     };
 
-    console.log(fabricCanvas?.getActiveObject(), canvasObjects)
     useEffect(() => {
         if (!fabricCanvas) return;
 
@@ -208,6 +207,12 @@ export default function EditorPanel() {
             }
         };
 
+        const handleScaling = (e) => {
+            if (e.target?.type === 'image'){
+                updateDpiForObject(e.target)
+            }
+        }
+
         // D. Handle View Switch / Load (Refresh All)
         // We still need to scan once when loading a saved design or switching views
         const refreshAll = () => {
@@ -227,6 +232,7 @@ export default function EditorPanel() {
         fabricCanvas.on('object:added', handleAdd);
         fabricCanvas.on('object:modified', handleModify);
         fabricCanvas.on('object:removed', handleRemove);
+        fabricCanvas.on('object:scaling', handleScaling)
 
         // Initial Scan (for page loads)
         refreshAll();
@@ -235,6 +241,7 @@ export default function EditorPanel() {
             fabricCanvas.off('object:added', handleAdd);
             fabricCanvas.off('object:modified', handleModify);
             fabricCanvas.off('object:removed', handleRemove);
+            fabricCanvas.off('object:scaling', handleScaling)
         };
     }, [fabricCanvas, productData, currentView]);
 
@@ -368,24 +375,29 @@ export default function EditorPanel() {
 
             try {
                 // A. Fetch the Template from the Global Collection
-                const templateRef = doc(db, 'templates', urlTemplateId);
-                const templateSnap = await getDoc(templateRef);
+                const templatesRef = collection(db, "templates");
 
-                if (templateSnap.exists()) {
-                    const templateData = templateSnap.data();
+                const q = query(
+                    templatesRef,
+                    where("id", "==", urlTemplateId)
+                );
+
+                const querySnap = await getDocs(q);
+
+                if (!querySnap.empty) {
+                    const templateData = querySnap.docs[0].data();
 
                     // B. THE JOB IS DONE HERE 👇
                     if (templateData.canvasData) {
                         dispatch(setCanvasObjects(templateData.canvasData));
                     }
 
-                    // C. CRITICAL: Detach from the template
-                    // We set these to null so the system treats this as a "New Design"
+                    // C. Detach from the template (treat as new design)
                     setEditingDesignId(null);
                     setCurrentDesign(null);
 
-                    // Optional: Remove the ID from URL so it looks cleaner
-                    // setSearchParams({}); 
+                    // Optional: clean URL
+                    // setSearchParams({});
                 } else {
                     console.error("Template not found");
                 }
@@ -960,7 +972,7 @@ export default function EditorPanel() {
 
                     <aside className={`right-panel no-scrollbar ${(selectedId ? showProperties : showColorPanel) ? 'active' : ''}`}>
                         {selectedId ? (
-                            <RightSidebarTabs id={selectedId} type={activeTool} object={canvasObjects.find((obj) => obj.id === selectedId)} updateObject={updateObject} removeObject={removeObject} addText={addText} fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} />
+                            <RightSidebarTabs id={selectedId} type={activeTool} object={canvasObjects.find((obj) => obj.id === selectedId)} updateObject={updateObject} removeObject={removeObject} addText={addText} fabricCanvas={fabricCanvas} setSelectedId={setSelectedId} updateDpiForObject={updateDpiForObject} printDimensions={{ w: productData?.print_areas?.[currentView].width, h: productData?.print_areas?.[currentView].height }} />
                         ) : (productData ? (
                             <div className="p-6 flex flex-col h-full overflow-y-auto">
                                 <div className="mobile-panel-header">
@@ -1057,6 +1069,7 @@ export default function EditorPanel() {
                     activePanel={activePanel} // Pass this!
                     navigation={navigation}
                     canvasObjects={canvasObjects}
+                    updateDpiForObject={updateDpiForObject}
 
                     // --- 1. Pass Action Functions ---
                     onUndo={() => dispatch(undo())}
@@ -1106,6 +1119,7 @@ export default function EditorPanel() {
                         selectedSize: selectedSize || currentDesign?.productConfig?.variantSize, // Or local state
                         setSize: setSelectedSize, // Your existing size setter
                         quantity: quantity,
+                        printDimensions: { w: productData?.print_areas?.[currentView].width || 4500, h: productData?.print_areas?.[currentView].height || 5400 },
                         setQuantity: setQuantity,
                         onAddToCart: handleAddToCartSafe,
                         onBuyNow: handleBuyNowSafe,

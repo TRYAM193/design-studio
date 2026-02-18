@@ -62,6 +62,8 @@ export default function RightSidebarTabs(props) {
             removeObject={props.removeObject}
             addText={props.addText}
             fabricCanvas={props.fabricCanvas}
+            updateDpiForObject={props.updateDpiForObject}
+            printDimensions={props.printDimensions}
           />
         )}
 

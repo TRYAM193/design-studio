@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   FiBold, FiItalic, FiUnderline, FiSearch, FiExternalLink,
   FiLoader, FiSlash, FiCircle, FiSmile, FiFrown, FiLayers, FiFlag,
-  FiAlignLeft, FiAlignCenter, FiAlignRight, FiType, FiDroplet, FiZap, FiChevronDown, FiCheck, FiSun
+  FiAlignLeft, FiAlignCenter, FiAlignRight, FiType, FiDroplet, FiZap,
+  FiChevronDown, FiCheck, FiSun, FiMaximize2, FiCheckCircle
 } from 'react-icons/fi';
 import CircleText from '../objectAdders/CircleText';
 import { Path } from 'fabric';
@@ -12,6 +13,7 @@ import {
   getArrowPoints, getDiamondPoints, getTrapezoidPoints, getLightningPoints
 } from '../utils/shapeUtils';
 import { processBackgroundRemoval } from '../utils/imageUtils';
+import { calculateImageDPI } from '../utils/dpiCalculator'; // ✅ Import DPI Logic
 import { AVAILABLE_FONTS } from '@/data/font';
 import { FONTS } from '../../data/font.js'
 
@@ -32,9 +34,14 @@ const ScrubbableInput = ({ label, value, min, max, step = 1, onChange, onCommit,
 
   const handleMouseMove = (e) => {
     const delta = (e.clientX - startX.current) * step;
-    let newVal = Math.round(startVal.current + delta);
+    let newVal = startVal.current + delta; // Float support
     if (min !== undefined) newVal = Math.max(min, newVal);
     if (max !== undefined) newVal = Math.min(max, newVal);
+
+    // Round to step precision to avoid floating point errors (e.g. 1.000000002)
+    const decimals = step < 1 ? 2 : 0;
+    newVal = parseFloat(newVal.toFixed(decimals));
+
     onChange(newVal);
   };
 
@@ -42,12 +49,20 @@ const ScrubbableInput = ({ label, value, min, max, step = 1, onChange, onCommit,
     document.body.style.cursor = 'default';
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
+
     const delta = (e.clientX - startX.current) * step;
-    let newVal = Math.round(startVal.current + delta);
+    let newVal = startVal.current + delta;
     if (min !== undefined) newVal = Math.max(min, newVal);
     if (max !== undefined) newVal = Math.min(max, newVal);
+
+    const decimals = step < 1 ? 2 : 0;
+    newVal = parseFloat(newVal.toFixed(decimals));
+
     onCommit(newVal);
   };
+
+  // Determine display format
+  const displayValue = step < 1 ? Number(value).toFixed(2) : Math.round(value);
 
   return (
     <div className="flex items-center gap-2 group mb-2">
@@ -59,17 +74,24 @@ const ScrubbableInput = ({ label, value, min, max, step = 1, onChange, onCommit,
         <span className="text-[10px] font-bold uppercase">{label}</span>
       </div>
       <div className="flex-1 relative bg-slate-800/50 hover:bg-slate-800 rounded-md border border-white/5 overflow-hidden">
+        {/* Progress Bar Visual (Only for bounded inputs) */}
+
         <div
           className="absolute top-0 left-0 h-full bg-indigo-500/20 pointer-events-none"
           style={{ width: `${Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100))}%` }}
         />
+
         <input
           type="number"
+          step={step}
+          min={min}
+          max={max}
           className="w-full bg-transparent text-xs font-medium text-white px-2 py-1.5 focus:outline-none text-right relative z-10"
-          value={parseInt(value) || 0}
-          onChange={(e) => onChange(Number(e.target.value))}
-          onBlur={(e) => onCommit(Number(e.target.value))}
-          onKeyDown={(e) => e.key === 'Enter' && onCommit(Number(e.currentTarget.value))}
+          value={parseInt(value)}
+          onChange={(e) => onChange(parseFloat(e.target.value))}
+          onBlur={(e) => onCommit(parseFloat(e.target.value))}
+          onKeyDown={(e) => e.key === 'Enter' && onCommit(parseFloat(e.currentTarget.value))}
+          onMouseUp={(e) => onCommit(parseFloat(e.target.value))}
         />
       </div>
     </div>
@@ -159,6 +181,7 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
   }
 
   existing.set(finalUpdates);
+  // Special check for Text scale updates to keep it responsive
   if (existing.type === 'text' && (finalUpdates.text !== undefined || finalUpdates.fontFamily !== undefined || finalUpdates.fontSize !== undefined)) {
     existing.initDimensions();
   }
@@ -183,9 +206,14 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
   fabricCanvas.requestRenderAll();
 }
 
-export default function Toolbar({ id, type, object, updateObject, removeObject, addText, fabricCanvas }) {
+export default function Toolbar({ id, type, object, updateObject, updateDpiForObject, printDimensions = { w: 4500, h: 5400 }, fabricCanvas }) {
   const props = object?.props || {};
   const [liveProps, setLiveProps] = useState(props);
+
+  // ✅ SCALING STATE
+  const [scaleX, setScaleX] = useState(props.scaleX || 1);
+  const [scaleY, setScaleY] = useState(props.scaleY || 1);
+
   const [borderRadius, setBorderRadius] = useState(props.rx || props.radius || 0);
   const [circleRadius, setCircleRadius] = useState(props.radius || 150);
   const [arcAngle, setArcAngle] = useState(props.arcAngle || 120);
@@ -226,6 +254,35 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
     finally { setIsRemovingBg(false); }
   }
 
+  // ✅ AUTO DPI FIX
+  const handleAutoDpi = async() => {
+    if (!object || !fabricCanvas || type !== 'image') return;
+
+    // Use current canvas dimensions as proxy for Print Area (High Res Workflow)
+    const dpiInfo = calculateImageDPI(
+      { ...object, width: object.props.width, height: object.props.height, scaleX: scaleX, scaleY: scaleY, getScaledWidth: () => object.props.width * scaleX, getScaledHeight: () => object.props.height * scaleY },
+      fabricCanvas.width,
+      fabricCanvas.height,
+      printDimensions.w || 4500,
+      printDimensions.h || 5400
+    );
+
+    if (dpiInfo && dpiInfo.dpi < 300) {
+      // Calculate target scale to reach 300 DPI
+      // NewScale = CurrentScale * (CurrentDPI / 300)
+      const correctionFactor = dpiInfo.dpi / 300;
+      const newScaleX = scaleX * correctionFactor;
+      const newScaleY = scaleY * correctionFactor;
+      // Update State & Canvas
+      setScaleX(newScaleX);
+      setScaleY(newScaleY);
+      await handleUpdateAndHistory('scaleX', newScaleX);
+      await handleUpdateAndHistory('scaleY', newScaleY);
+
+      updateDpiForObject(fabricCanvas.getObjects().find(o => o.customId === object.id))
+    }
+  };
+
   useEffect(() => {
     if (object && object.props) {
       setLiveProps(object.props);
@@ -233,10 +290,14 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
       setCircleRadius(object.props.radius || 150);
       setArcAngle(object.props.arcAngle || 120);
       setFlagVelocity(object.props.flagVelocity || 50);
+
+      // Sync Scale state
+      setScaleX(object.props.scaleX || 1);
+      setScaleY(object.props.scaleY || 1);
     }
   }, [object]);
 
-  const handleUpdateAndHistory = (key, value) => {
+  const handleUpdateAndHistory = async(key, value) => {
     const updates = { [key]: value };
     const shadowKeys = ['shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY'];
     if (shadowKeys.includes(key)) {
@@ -285,12 +346,8 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
     return (
       <div className="h-full flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-300">
         <div className="w-20 h-20 rounded-2xl bg-slate-800/30 border border-white/5 flex items-center justify-center mb-4 relative overflow-hidden group">
-          {/* Subtle Shine Effect */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
           <FiLayers size={32} className="text-slate-600 group-hover:text-indigo-400 transition-colors duration-300" />
         </div>
-
         <h3 className="text-sm font-bold text-slate-300 mb-1 tracking-wide">No Selection</h3>
         <p className="text-[11px] text-slate-500 max-w-[200px] leading-relaxed">
           Click on any element in the canvas to customize its properties, style, and effects.
@@ -465,9 +522,26 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
         </div>
       )}
 
-      {/* ================= GENERAL PROPERTIES ================= */}
+      {/* ================= GENERAL PROPERTIES (TRANSFORM) ================= */}
       <div className="space-y-3 pt-4 border-t border-white/5">
-        <h3 className="text-[10px] font-bold uppercase text-slate-500">General</h3>
+        <h3 className="text-[10px] font-bold uppercase text-slate-500">Transform & General</h3>
+
+        {/* ✅ SCALE CONTROLS */}
+        <div className="grid grid-cols-2 gap-3">
+          <ScrubbableInput
+            label="Scale X" icon={FiMaximize2}
+            value={scaleX || 1} min={0.1} max={5} step={0.01}
+            onChange={(v) => { setScaleX(v); handleLiveUpdate('scaleX', v); }}
+            onCommit={(v) => handleUpdateAndHistory('scaleX', v)}
+          />
+          <ScrubbableInput
+            label="Scale Y" icon={FiMaximize2}
+            value={scaleY || 1} min={0.1} max={5} step={0.01}
+            onChange={(v) => { setScaleY(v); handleLiveUpdate('scaleY', v); }}
+            onCommit={(v) => handleUpdateAndHistory('scaleY', v)}
+          />
+        </div>
+
         <ScrubbableInput
           label="Opacity" icon={FiDroplet}
           value={Math.round((liveProps.opacity || object?.props.opacity || 0) * 100)} min={0} max={100}
@@ -487,27 +561,36 @@ export default function Toolbar({ id, type, object, updateObject, removeObject, 
 
         <div className="grid grid-cols-2 gap-3">
           <ScrubbableInput
-            label="Blur" value={liveProps.shadowBlur} min={0} max={50}
+            label="Blur" value={liveProps.shadowBlur || 0} min={0} max={50}
             onChange={(v) => handleLiveUpdate('shadowBlur', v, object)}
             onCommit={(v) => handleUpdateAndHistory('shadowBlur', v)}
           />
           <div />
           <ScrubbableInput
-            label="Offset X" value={liveProps.shadowOffsetX} min={-20} max={20}
+            label="Offset X" value={liveProps.shadowOffsetX || 0} min={-20} max={20}
             onChange={(v) => handleLiveUpdate('shadowOffsetX', v, object)}
             onCommit={(v) => handleUpdateAndHistory('shadowOffsetX', v)}
           />
           <ScrubbableInput
-            label="Offset Y" value={liveProps.shadowOffsetY} min={-20} max={20}
+            label="Offset Y" value={liveProps.shadowOffsetY || 0} min={-20} max={20}
             onChange={(v) => handleLiveUpdate('shadowOffsetY', v, object)}
             onCommit={(v) => handleUpdateAndHistory('shadowOffsetY', v)}
           />
         </div>
       </div>
 
-      {/* ================= REMOVE BG (IMAGE ONLY) ================= */}
+      {/* ================= REMOVE BG & AUTO FIX (IMAGE ONLY) ================= */}
       {type === 'image' && (
-        <div className="pt-4 border-t border-white/5">
+        <div className="pt-4 border-t border-white/5 space-y-3">
+          {/* ✅ AUTO DPI FIX BUTTON */}
+          <button
+            onClick={handleAutoDpi}
+            className="w-full flex items-center justify-center gap-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-200 py-2.5 rounded-lg border border-indigo-500/30 transition-all text-xs font-bold"
+          >
+            <FiCheckCircle /> Auto-Scale for Print (300 DPI)
+          </button>
+
+          {/* Remove BG */}
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-30 group-hover:opacity-75 transition duration-200"></div>
             <button

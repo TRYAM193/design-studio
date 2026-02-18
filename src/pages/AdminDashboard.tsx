@@ -492,12 +492,35 @@ function OrderDetailsModal({ order, isOpen, onClose }: any) {
 function OrderTable({ data, loading, type, onRetry, onEdit, onApprove, onDelete, onView }: any) {
     if (loading) return <div className="p-8 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-orange-500" /></div>;
     if (data.length === 0) return <div className="p-8 text-center text-slate-500">No orders found.</div>;
-    const handleCopy = async (phone: any) => {
+    const handleCopy = async (phone: string) => {
+        // Modern Clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            try {
+                await navigator.clipboard.writeText(phone);
+                toast.success("Phone Number copied to clipboard!");
+                return;
+            } catch (err) {
+                console.error("Clipboard API failed, falling back...", err);
+            }
+        }
+
+        // Fallback for older browsers / mobile
+        const textarea = document.createElement("textarea");
+        textarea.value = phone;
+        textarea.style.position = "fixed"; // prevents scrolling
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+
         try {
-            await navigator.clipboard.writeText(phone);
-            toast("Phone Number copied to clipboard!");
+            document.execCommand("copy");
+            toast.success("Phone Number copied to clipboard!");
         } catch (err) {
-            console.error("Copy failed", err);
+            console.error("Fallback copy failed", err);
+            toast.error("Failed to copy!");
+        } finally {
+            document.body.removeChild(textarea);
         }
     };
 
