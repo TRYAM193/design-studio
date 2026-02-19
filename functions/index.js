@@ -1826,3 +1826,40 @@ exports.pollQikinkOrders = functions.runWith({ timeoutSeconds: 540, memory: '1GB
 
     if (updateCount > 0) await batch.commit();
   });
+
+// ------------------------------------------------------------------
+// 📧 CONTACT FORM EMAILS (Direct Call from Frontend)
+// ------------------------------------------------------------------
+exports.sendContactEmail = functions.https.onCall(async (data, context) => {
+  const { name, email, subject, message } = data;
+
+  // 1. Basic Validation
+  if (!name || !email || !message) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing required fields');
+  }
+
+  const htmlBody = `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+        <h2 style="color: #ea580c;">New Contact Request</h2>
+        <p><strong>From:</strong> ${name} (${email})</p>
+        <p><strong>Subject:</strong> ${subject || 'No Subject'}</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="white-space: pre-wrap;">${message}</p>
+      </div>
+    `;
+
+  try {
+    await resend.emails.send({
+      from: 'TRYAM Contact Form <onboarding@resend.dev>', // Change to support@tryam193.com once domain is verified
+      to: 'support@tryam193.com', // 👈 This is YOUR inbox where you receive the messages
+      reply_to: email,            // 👈 Allows you to hit "Reply" directly to the user
+      subject: `Contact Form: ${subject || 'General Inquiry'}`,
+      html: htmlBody
+    });
+
+    return { success: true, message: "Email sent successfully" };
+  } catch (error) {
+    console.error("❌ Contact Email Failed:", error);
+    throw new functions.https.HttpsError('internal', 'Failed to send email');
+  }
+});

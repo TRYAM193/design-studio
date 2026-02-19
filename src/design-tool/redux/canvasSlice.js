@@ -5,6 +5,7 @@ const initialState = {
   past: [],
   present: [],
   future: [],
+  clipboard: [], // ✅ NEW: Temporary storage for Cut/Copy/Paste
 };
 
 const canvasSlice = createSlice({
@@ -31,15 +32,19 @@ const canvasSlice = createSlice({
       state.past.push([...state.present.map(obj => JSON.parse(JSON.stringify(obj)))]);
       state.present = next;
     },
-    // ✅ NEW: Replace the entire history stack (for view switching)
     setHistory: (state, action) => {
       const { past, present, future } = action.payload;
       state.past = past;
       state.present = present;
       state.future = future;
+    },
+    // ✅ NEW: Reducer to save copied objects to memory
+    setClipboard: (state, action) => {
+      state.clipboard = action.payload.map(obj => JSON.parse(JSON.stringify(obj)));
     }
   },
 });
 
-export const { setCanvasObjects, undo, redo, setHistory } = canvasSlice.actions;
+// ✅ Export the new setClipboard action
+export const { setCanvasObjects, undo, redo, setHistory, setClipboard } = canvasSlice.actions;
 export default canvasSlice.reducer;

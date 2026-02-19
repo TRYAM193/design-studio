@@ -125,7 +125,7 @@ export const translations: Record<Language, Record<string, string>> = {
     "landing.feature.editor.title": "Pro Editor",
     "landing.feature.editor.desc": "Fine-tune every detail with our advanced layer-based editor and professional typography tools.",
     "landing.cta.title": "Ready to start creating?",
-    "landing.cta.desc": "Join thousands of creators designing their own fashion with TRYAM. No minimum orders, worldwide shipping.",
+    "landing.cta.desc": "Join thousands of creators designing their own fashion with TRYAM. No minimum orders.",
     "landing.cta.button": "Create Your First Design",
     "footer.platform": "Platform",
     "footer.company": "Company",

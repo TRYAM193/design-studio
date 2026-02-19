@@ -1,172 +1,143 @@
-import { useState } from "react";
-import { Mail, MapPin, Phone, Send, Loader2, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
+import React, { useState } from 'react';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/firebase';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Loader2, Send, Mail, MessageSquare, User } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function DashboardContact() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
-
-  // Pre-fill form if user is logged in
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: user?.displayName || "",
-    email: user?.email || "",
-    subject: "",
-    message: ""
+    name: user?.displayName || '',
+    email: user?.email || '',
+    subject: '',
+    message: ''
   });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setLoading(false);
-    toast.success("Message sent!", {
-      description: "Our support team will respond shortly."
-    });
-    setFormData(prev => ({ ...prev, subject: "", message: "" }));
+    
+    if (!formData.name || !formData.email || !formData.message) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Call the Firebase Function we just created
+      const sendContactEmail = httpsCallable(functions, 'sendContactEmail');
+      await sendContactEmail(formData);
+
+      toast.success("Message Sent!", {
+        description: "We've received your message and will reply shortly."
+      });
+
+      // Clear the form (but keep name/email)
+      setFormData(prev => ({ ...prev, subject: '', message: '' }));
+      
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <div className="space-y-8 pb-20 p-6 md:p-10 min-h-screen relative">
-       {/* Background */}
-       <div className="fixed inset-0 -z-10 w-full h-full bg-[#0f172a]"> 
-         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[120px]" />
-         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-orange-600/10 blur-[100px]" />
-         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+    <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 animate-in fade-in zoom-in-95 duration-300">
+      
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Contact Support</h1>
+        <p className="text-slate-400">Have a question about your order, design, or account? Send us a message and we'll get back to you within 24 hours.</p>
       </div>
 
-      {/* Header */}
-      <div className="flex flex-col gap-4 max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-          <MessageSquare className="h-8 w-8 text-blue-500" />
-          Contact Support
-        </h1>
-        <p className="text-slate-400">
-          Got a technical issue or feedback? We're here to help.
-        </p>
-      </div>
+      <div className="bg-slate-800/40 backdrop-blur-md border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Name */}
+            <div className="space-y-2">
+              <Label className="text-slate-300 flex items-center gap-2">
+                <User size={14} className="text-orange-500" /> Name
+              </Label>
+              <Input 
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="John Doe"
+                className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500"
+                required
+              />
+            </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-        
-        {/* Contact Info Sidebar */}
-        <div className="space-y-6">
-          <Card className="bg-slate-800/40 border-white/10 h-full">
-            <CardHeader>
-              <CardTitle className="text-white">Get in touch</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              <div className="flex gap-4">
-                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                  <Mail className="h-5 w-5 text-blue-400" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-200">Email</h4>
-                  <p className="text-sm text-slate-400 mb-1">For general inquiries</p>
-                  <a href="mailto:support@tryam.com" className="text-sm text-blue-400 hover:text-blue-300">support@tryam.com</a>
-                </div>
-              </div>
+            {/* Email */}
+            <div className="space-y-2">
+              <Label className="text-slate-300 flex items-center gap-2">
+                <Mail size={14} className="text-orange-500" /> Email Address
+              </Label>
+              <Input 
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="john@example.com"
+                className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500"
+                required
+              />
+            </div>
+          </div>
 
-              <div className="flex gap-4">
-                <div className="h-10 w-10 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
-                  <Phone className="h-5 w-5 text-orange-400" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-200">Phone</h4>
-                  <p className="text-sm text-slate-400 mb-1">Mon-Fri from 8am to 5pm</p>
-                  <a href="tel:+919876543210" className="text-sm text-orange-400 hover:text-orange-300">+91 98765 43210</a>
-                </div>
-              </div>
+          {/* Subject */}
+          <div className="space-y-2">
+            <Label className="text-slate-300 flex items-center gap-2">
+              <MessageSquare size={14} className="text-orange-500" /> Subject
+            </Label>
+            <Input 
+              name="subject"
+              value={formData.subject}
+              onChange={handleChange}
+              placeholder="e.g. Question about Order #ORD123"
+              className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500"
+            />
+          </div>
 
-              <div className="flex gap-4">
-                <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
-                  <MapPin className="h-5 w-5 text-purple-400" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-200">Office</h4>
-                  <p className="text-sm text-slate-400">
-                    123 Innovation Hub,<br />
-                    Bengaluru, Karnataka 560001
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Message */}
+          <div className="space-y-2">
+            <Label className="text-slate-300">Your Message</Label>
+            <Textarea 
+              name="message"
+              value={formData.message}
+              onChange={handleChange}
+              placeholder="How can we help you today?"
+              className="bg-slate-900/50 border-white/10 text-white focus:border-orange-500 min-h-[150px] resize-y"
+              required
+            />
+          </div>
 
-        {/* Contact Form */}
-        <div className="md:col-span-2">
-          <Card className="bg-slate-900 border-white/10">
-            <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-slate-300">Name</Label>
-                    <Input 
-                        id="name" 
-                        value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className="bg-slate-950 border-white/10 text-white" 
-                        required 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-slate-300">Email</Label>
-                    <Input 
-                        id="email" 
-                        type="email" 
-                        value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
-                        className="bg-slate-950 border-white/10 text-white" 
-                        required 
-                    />
-                  </div>
-                </div>
+          {/* Submit Button */}
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full sm:w-auto px-8 py-6 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-bold rounded-xl shadow-lg shadow-orange-900/20 transition-all hover:scale-[1.02]"
+          >
+            {isSubmitting ? (
+              <><Loader2 className="animate-spin mr-2 h-5 w-5" /> Sending...</>
+            ) : (
+              <><Send className="mr-2 h-5 w-5" /> Send Message</>
+            )}
+          </Button>
 
-                <div className="space-y-2">
-                  <Label htmlFor="subject" className="text-slate-300">Subject</Label>
-                  <Input 
-                    id="subject" 
-                    placeholder="How can we help?" 
-                    value={formData.subject}
-                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                    className="bg-slate-950 border-white/10 text-white" 
-                    required 
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="message" className="text-slate-300">Message</Label>
-                  <Textarea 
-                    id="message" 
-                    placeholder="Tell us more about your issue..." 
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    className="min-h-[150px] bg-slate-950 border-white/10 text-white resize-none" 
-                    required 
-                  />
-                </div>
-
-                <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium h-12" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" /> Send Message
-                    </>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+        </form>
       </div>
     </div>
   );

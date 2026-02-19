@@ -19,7 +19,7 @@ import { db } from '@/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { ThreeDPreviewModal } from '../components/ThreeDPreviewModal';
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, Undo2, Redo2, Eye } from "lucide-react";
+import { Loader2, Save, Undo2, Redo2, Eye, ClipboardPaste } from "lucide-react";
 import { COLOR_MAP } from '../../lib/colorMaps'
 import { FiTrash2, FiLayers, FiCheckCircle, FiChevronDown, FiShoppingBag, FiShoppingCart, FiPlus, FiMinus } from 'react-icons/fi';
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -28,13 +28,7 @@ import { calculateImageDPI } from '../utils/dpiCalculator';
 import { toast } from 'sonner';
 import ExportButton from '../components/ExportButton';
 import SaveTemplateButton from '../components/SaveTemplateButton';
-
-const uuidv4 = () => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = (Math.random() * 16) | 0, v = c === 'x' ? r : (r & 0x3) | 0x8;
-        return v.toString(16);
-    });
-};
+import { v4 as uuidv4 } from 'uuid';
 
 function removeUndefined(obj) {
     if (Array.isArray(obj)) {
@@ -82,6 +76,7 @@ export default function EditorPanel() {
     const canvasObjects = useSelector((state) => state.canvas.present);
     const past = useSelector((state) => state.canvas.past);
     const future = useSelector((state) => state.canvas.future);
+    const clipboard = useSelector((state) => state.canvas.clipboard);
 
     const urlProductId = searchParams.get('product');
     const urlColor = searchParams.get('color');
@@ -208,7 +203,7 @@ export default function EditorPanel() {
         };
 
         const handleScaling = (e) => {
-            if (e.target?.type === 'image'){
+            if (e.target?.type === 'image') {
                 updateDpiForObject(e.target)
             }
         }
@@ -258,6 +253,23 @@ export default function EditorPanel() {
             return false;
         }
         return true;
+    };
+
+    const handlePaste = () => {
+        if (!clipboard || clipboard.length === 0) return;
+
+        // Create new objects with fresh IDs and slight offset
+        const newObjects = clipboard.map(obj => ({
+            ...obj,
+            id: uuidv4(),
+            props: {
+                ...obj.props,
+                left: (obj.props.left || 0) + 20,
+                top: (obj.props.top || 0) + 20
+            }
+        }));
+
+        dispatch(setCanvasObjects([...canvasObjects, ...newObjects]));
     };
 
     const handleAddToCartSafe = async () => {
@@ -919,6 +931,7 @@ export default function EditorPanel() {
                             <div className="control-group divider">
                                 <button title='Delete' className="top-bar-button danger" onClick={() => removeObject(selectedId, setSelectedId, setActiveTool)} style={{ opacity: !selectedId ? '0.5' : '1' }}><FiTrash2 size={18} /></button>
                             </div>
+
                             <div className="control-group">
                                 {fabricCanvas && (
                                     <>
@@ -937,9 +950,17 @@ export default function EditorPanel() {
                                             currentObjects={canvasObjects}
                                             onGetSnapshot={getCleanDataURL}
                                             currentDesignName={currentDesign?.name}
-                                            className="h-9 px-4 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-bold shadow-lg border border-orange-400/50 hover:bg-orange-500 transition-all"
+                                            className="h-9 px-4 rounded-full flex items-center justify-center hover:text-orange-400 text-slate-200 text-xs font-bold shadow-lg transition-all"
                                             variant="ghost"
                                         />
+                                        <button
+                                            onClick={handlePaste}
+                                            disabled={!clipboard || clipboard.length === 0}
+                                            className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${!clipboard || clipboard.length === 0 ? 'opacity-40 cursor-not-allowed text-slate-500' : ' text-white-400 hover:text-indigo-300'}`}
+                                            title="Paste"
+                                        >
+                                            <ClipboardPaste size={18} />
+                                        </button>
                                         <ExportButton
                                             canvas={fabricCanvas}
                                             currentDesignName={currentDesign?.name || "Untitled Design"}

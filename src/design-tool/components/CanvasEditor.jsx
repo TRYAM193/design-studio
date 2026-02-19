@@ -6,22 +6,14 @@ import StraightText from '../objectAdders/straightText';
 import CircleText from '../objectAdders/CircleText';
 import updateObject from '../functions/update';
 import { store } from '../redux/store';
-import { setCanvasObjects } from '../redux/canvasSlice';
+import { setCanvasObjects, undo, redo, setClipboard } from '../redux/canvasSlice';
 import { FabricImage } from 'fabric';
 import updateExisting from '../utils/updateExisting';
 import FloatingMenu from './FloatingMenu';
 import { handleCanvasAction } from '../utils/canvasActions';
 import ShapeAdder from '../objectAdders/Shapes';
-
-// --- HELPERS ---
-
-const uuidv4 = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    const r = (Math.random() * 16) | 0,
-      v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-};
+import ContextMenu from './ContextMenu';
+import { v4 as uuidv4 } from 'uuid';
 
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
@@ -61,7 +53,7 @@ export default function CanvasEditor({
   const canvasRef = useRef(null);
   const fabricCanvasRef = useRef(null);
   const isSyncingRef = useRef(false);
-  
+
   // 🔒 NEW: Track pending image loads to prevent duplicates
   const pendingImagesRef = useRef(new Set());
 
@@ -76,6 +68,8 @@ export default function CanvasEditor({
   const [selectedObjectUUIDs, setSelectedObjectUUIDs] = useState([]);
   const shapes = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'];
 
+  const clipboard = useSelector((state) => state.canvas.clipboard);
+  const [contextMenu, setContextMenu] = useState({ isOpen: false, x: 0, y: 0 });
   // ✅ REF for Gesture State (Avoiding Re-renders)
   const gestureState = useRef({
     isGesture: false,
@@ -83,6 +77,57 @@ export default function CanvasEditor({
     startScale: 1, // For Object
     startZoom: 1   // For Canvas
   });
+
+  // --- CUT, COPY, PASTE, UNDO, REDO LOGIC ---
+  const handleCopy = () => {
+    if (selectedObjectUUIDs.length === 0) return;
+    const copiedObjects = canvasObjects.filter(obj => selectedObjectUUIDs.includes(obj.id));
+    dispatch(setClipboard(copiedObjects));
+  };
+
+  const handleCut = () => {
+    if (selectedObjectUUIDs.length === 0) return;
+    const copiedObjects = canvasObjects.filter(obj => selectedObjectUUIDs.includes(obj.id));
+    dispatch(setClipboard(copiedObjects));
+
+    // Remove from canvas
+    const newObjects = canvasObjects.filter(obj => !selectedObjectUUIDs.includes(obj.id));
+    dispatch(setCanvasObjects(newObjects));
+    fabricCanvasRef.current?.discardActiveObject();
+  };
+
+  const handlePaste = () => {
+    if (!clipboard || clipboard.length === 0) return;
+
+    const newObjects = clipboard.map(obj => {
+      const newId = uuidv4();
+      return {
+        ...obj,
+        id: newId,
+        props: {
+          ...obj.props,
+          left: (obj.props.left || 0) + 20, // Offset so it doesn't paste invisibly on top
+          top: (obj.props.top || 0) + 20
+        }
+      };
+    });
+
+    dispatch(setCanvasObjects([...canvasObjects, ...newObjects]));
+  };
+
+  const handleDuplicate = () => {
+    if (selectedObjectUUIDs.length === 0) return;
+    const copiedObjects = canvasObjects.filter(obj => selectedObjectUUIDs.includes(obj.id));
+    const newObjects = copiedObjects.map(obj => ({
+      ...obj,
+      id: uuidv4(),
+      props: { ...obj.props, left: (obj.props.left || 0) + 20, top: (obj.props.top || 0) + 20 }
+    }));
+    dispatch(setCanvasObjects([...canvasObjects, ...newObjects]));
+  };
+
+  const handleUndo = () => dispatch(undo());
+  const handleRedo = () => dispatch(redo());
 
   // ✅ 1. LOGICAL SIZE
   const getLogicalSize = () => {
@@ -128,7 +173,7 @@ export default function CanvasEditor({
 
     canvas.setZoom(scale);
 
-    const controlSize = isMobile ? 24 : 12; 
+    const controlSize = isMobile ? 24 : 12;
     fabric.Object.prototype.set({
       cornerSize: controlSize / scale,
       touchCornerSize: 40 / scale,
@@ -138,6 +183,30 @@ export default function CanvasEditor({
 
     canvas.requestRenderAll();
   };
+
+  // --- KEYBOARD SHORTCUTS ---
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger shortcuts if user is typing in an input/textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case 'c': e.preventDefault(); handleCopy(); break;
+          case 'x': e.preventDefault(); handleCut(); break;
+          case 'v': e.preventDefault(); handlePaste(); break;
+          case 'z':
+            e.preventDefault();
+            if (e.shiftKey) handleRedo(); else handleUndo();
+            break;
+          case 'y': e.preventDefault(); handleRedo(); break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [canvasObjects, clipboard, selectedObjectUUIDs]); // Dependencies ensure fresh state
 
   const updateMenuPosition = () => {
     const canvas = fabricCanvasRef.current;
@@ -206,17 +275,48 @@ export default function CanvasEditor({
         controlsAboveOverlay: true,
         preserveObjectStacking: true,
         allowTouchScrolling: false,
+        fireRightClick: true,  // ✅ ADD THIS
+        stopContextMenu: true,
       });
       fabricCanvasRef.current = canvas;
       setFabricCanvas(canvas);
       setInitialized(true);
 
+      // ✅ NEW STRATEGY: Native DOM Context Menu Listener
+      const upperCanvas = canvas.upperCanvasEl;
+      
+      upperCanvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault(); // 100% blocks the browser menu
+
+        // Check if they right-clicked specifically on an object
+        const target = canvas.findTarget(e, false);
+        
+        if (target && canvas.getActiveObject() !== target) {
+          // If they right-clicked an unselected object, select it automatically
+          // canvas.setActiveObject(target);
+          canvas.requestRenderAll();
+        }
+
+        // Open our custom React menu
+        setContextMenu({ 
+          isOpen: true, 
+          x: e.clientX, 
+          y: e.clientY 
+        });
+      });
+
+      // Close the menu if they left-click anywhere on the canvas
+      upperCanvas.addEventListener('click', (e) => {
+        setContextMenu(prev => {
+          if (prev.isOpen) return { ...prev, isOpen: false };
+          return prev;
+        });
+      });
+
       if (canvas.wrapperEl) {
         canvas.wrapperEl.style.boxShadow = "0 4px 15px rgba(0,0,0,0.15)";
         canvas.wrapperEl.style.border = "1px solid #e2e8f0";
       }
-
-      const upperCanvas = canvas.upperCanvasEl;
 
       const onTouchStart = (e) => {
         if (e.touches && e.touches.length === 2) {
@@ -463,17 +563,17 @@ export default function CanvasEditor({
             pendingImagesRef.current.add(objData.id);
             try {
               const newObj = await FabricImage.fromURL(objData.props.src, { ...objData.props });
-              newObj.set({ 
+              newObj.set({
                 customId: objData.id,
                 ...objData.props
               });
-              
+
               // Final check before adding (Double Safety)
               if (!fabricCanvas.getObjects().some(o => o.customId === objData.id)) {
-                  fabricCanvas.add(newObj);
+                fabricCanvas.add(newObj);
               }
-            } catch (err) { 
-              console.error("Image load failed", err); 
+            } catch (err) {
+              console.error("Image load failed", err);
             } finally {
               // 🔓 Unlock: Finished loading
               pendingImagesRef.current.delete(objData.id);
@@ -542,7 +642,7 @@ export default function CanvasEditor({
       ref={wrapperRef}
       id="canvas-wrapper"
       className="relative w-full h-full flex items-center justify-center overflow-hidden"
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: 'none' }} // ✅ ADDED THIS LINE
     >
       <canvas ref={canvasRef} id="canvas" />
 
@@ -553,6 +653,25 @@ export default function CanvasEditor({
           isLocked={selectedObjectLocked}
         />
       )}
+
+      {/* ✅ ADDED CONTEXT MENU */}
+      <ContextMenu
+        x={contextMenu.x}
+        y={contextMenu.y}
+        isOpen={contextMenu.isOpen}
+        onClose={() => setContextMenu({ ...contextMenu, isOpen: false })}
+        hasSelection={selectedObjectUUIDs.length > 0}
+        hasClipboard={clipboard && clipboard.length > 0}
+        actions={{
+          onCopy: handleCopy,
+          onCut: handleCut,
+          onPaste: handlePaste,
+          onDuplicate: handleDuplicate,
+          onDelete: () => onMenuAction('delete'),
+          onLayerUp: () => onMenuAction('bring-forward'),
+          onLayerDown: () => onMenuAction('send-backward')
+        }}
+      />
     </div>
   );
 }

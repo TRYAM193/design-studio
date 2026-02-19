@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Facebook, Instagram, Twitter, Mail, MapPin, Phone } from "lucide-react";
+import { Facebook, Instagram, Youtube, Mail, MapPin, Phone } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -16,8 +16,8 @@ export default function Footer() {
             Premium quality, AI-powered tools, shipped worldwide.
           </p>
           <div className="flex gap-4 pt-2">
-            <SocialIcon icon={Instagram} />
-            <SocialIcon icon={Twitter} />
+            <SocialIcon icon={Instagram} link={'https://www.instagram.com/tryam193/'} />
+            <SocialIcon icon={Youtube} />
             <SocialIcon icon={Facebook} />
           </div>
         </div>
@@ -49,15 +49,19 @@ export default function Footer() {
           <ul className="space-y-3 text-sm">
             <li className="flex items-center gap-3">
               <Mail className="h-4 w-4 text-orange-500" />
-              <a href="mailto:support@tryam.com" className="hover:text-white">support@tryam.com</a>
+              <a href="mailto:support@tryam.com" className="hover:text-white">support@tryam193.com</a>
             </li>
             <li className="flex items-start gap-3">
               <MapPin className="h-4 w-4 text-orange-500 mt-1" />
-              <span>123 Innovation Hub,<br/>Bengaluru, Karnataka 560001</span>
+              <span>150/4 14th Main Srinagar,<br/>Bengaluru, Karnataka 560050</span>
             </li>
              <li className="flex items-center gap-3">
               <Phone className="h-4 w-4 text-orange-500" />
-              <span>+91 98765 43210</span>
+              <span>+91 8217037173</span>
+            </li>
+             <li className="flex items-center gap-3">
+              <Phone className="h-4 w-4 text-orange-500" />
+              <span>+91 6363703334</span>
             </li>
           </ul>
         </div>
@@ -70,9 +74,9 @@ export default function Footer() {
   );
 }
 
-function SocialIcon({ icon: Icon }: any) {
+function SocialIcon({ icon: Icon, link }: any) {
   return (
-    <a href="#" className="h-8 w-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-orange-600 hover:border-orange-600 hover:text-white transition">
+    <a href={link} target="_blank" className="h-8 w-8 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center hover:bg-orange-600 hover:border-orange-600 hover:text-white transition">
       <Icon className="h-4 w-4" />
     </a>
   );

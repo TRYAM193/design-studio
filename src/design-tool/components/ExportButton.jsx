@@ -14,12 +14,12 @@ export default function ExportButton({ canvas, className, currentDesignName }) {
     <button
       onClick={handleExport}
       className={cn(
-        "flex items-center gap-2 rounded-xl px-3 py-2 bg-slate-800/50 hover:bg-slate-700 text-slate-200 border border-white/10 transition-all text-xs font-medium active:scale-95",
+        "flex items-center gap-2 rounded-xl px-3 py-2 text-slate-200 hover:text-white transition-all text-xs font-medium active:scale-95",
         className
       )}
       title="Export Design"
     >
-      <Download size={16} className="text-indigo-400" />
+      <Download size={16} className="text-white hover:text-green-400" />
     </button>
   );
 }
