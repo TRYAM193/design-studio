@@ -213,6 +213,9 @@ export default function Toolbar({ id, type, object, updateObject, updateDpiForOb
   // ✅ SCALING STATE
   const [scaleX, setScaleX] = useState(props.scaleX || 1);
   const [scaleY, setScaleY] = useState(props.scaleY || 1);
+  const textareaRef = useRef(null);
+  const isTypingRef = useRef(false);
+  const [localText, setLocalText] = useState(liveProps.text || '');
 
   const [borderRadius, setBorderRadius] = useState(props.rx || props.radius || 0);
   const [circleRadius, setCircleRadius] = useState(props.radius || 150);
@@ -255,7 +258,7 @@ export default function Toolbar({ id, type, object, updateObject, updateDpiForOb
   }
 
   // ✅ AUTO DPI FIX
-  const handleAutoDpi = async() => {
+  const handleAutoDpi = async () => {
     if (!object || !fabricCanvas || type !== 'image') return;
 
     // Use current canvas dimensions as proxy for Print Area (High Res Workflow)
@@ -297,7 +300,18 @@ export default function Toolbar({ id, type, object, updateObject, updateDpiForOb
     }
   }, [object]);
 
-  const handleUpdateAndHistory = async(key, value) => {
+  useEffect(() => {
+    if (!object || !object.props) return;
+
+    setLiveProps(object.props);
+
+    // 🔒 Do NOT overwrite while user is typing
+    if (!isTypingRef.current) {
+      setLocalText(object.props.text || '');
+    }
+  }, [object?.id]);
+
+  const handleUpdateAndHistory = async (key, value) => {
     const updates = { [key]: value };
     const shadowKeys = ['shadowColor', 'shadowBlur', 'shadowOffsetX', 'shadowOffsetY'];
     if (shadowKeys.includes(key)) {
@@ -376,11 +390,37 @@ export default function Toolbar({ id, type, object, updateObject, updateDpiForOb
 
           <div className="space-y-1.5">
             <textarea
-              className="w-full bg-slate-800/50 border border-white/10 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors resize-none"
-              rows="3"
-              value={liveProps.text || ''}
-              onChange={(e) => handleUpdateAndHistory('text', e.target.value)}
+              ref={textareaRef}
+              className="w-full bg-slate-800/50 border border-white/10 rounded-lg p-2 text-sm text-white focus:border-indigo-500 transition-colors resize-none"
+              rows={3}
+              value={localText}
               placeholder="Enter text..."
+              onChange={(e) => {
+                const cursor = e.target.selectionStart;
+                const value = e.target.value;
+
+                isTypingRef.current = true;
+                setLocalText(value);
+
+                // 🔥 LIVE FABRIC UPDATE (no React loop)
+                liveUpdateFabric(
+                  fabricCanvas,
+                  id,
+                  { text: value },
+                  liveProps,
+                  object
+                );
+
+                requestAnimationFrame(() => {
+                  if (!textareaRef.current) return;
+                  textareaRef.current.selectionStart = cursor;
+                  textareaRef.current.selectionEnd = cursor;
+                });
+              }}
+              onBlur={() => {
+                isTypingRef.current = false;
+                handleUpdateAndHistory('text', localText); // history + final commit
+              }}
             />
           </div>
 

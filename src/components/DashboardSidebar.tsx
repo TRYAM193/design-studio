@@ -94,8 +94,8 @@ export function DashboardSidebar() {
   const navItems = [
     ...(isAdmin ? [{icon: UserCircle, label: 'Admin', path: "/admin/dashboard", isSpecial: false}] : []),
     { icon: Home, label: t("nav.home"), path: "/dashboard", isSpecial: false },
-    { icon: LayoutTemplate, label: t("nav.designs"), path: "/dashboard/designs", isSpecial: false },
     { icon: FolderClosed, label: t("nav.projects"), path: "/dashboard/projects", isSpecial: false },
+    { icon: LayoutTemplate, label: t("nav.designs"), path: "/dashboard/designs", isSpecial: false },
     { icon: Package, label: t("nav.orders"), path: "/dashboard/orders", isSpecial: false },
   ];
 

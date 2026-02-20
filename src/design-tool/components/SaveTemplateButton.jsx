@@ -5,7 +5,7 @@ import { saveGlobalTemplate } from '../utils/saveDesign';
 import { Layout, Loader2 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
-export default function SaveTemplateButton({ canvas, className, objects }) {
+export default function SaveTemplateButton({ canvas, className, objects, isMobile=false }) {
   const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -77,7 +77,7 @@ export default function SaveTemplateButton({ canvas, className, objects }) {
       ) : (
         <Layout size={16} className="text-purple-300" />
       )}
-      <span>{isSaving ? 'Saving...' : 'Save Template'}</span>
+      {!isMobile && <span>{isSaving ? 'Saving...' : 'Save Template'}</span>}
     </button>
   );
 }

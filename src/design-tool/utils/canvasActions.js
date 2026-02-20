@@ -1,7 +1,7 @@
 // src/utils/canvasActions.js
 import { v4 as uuidv4 } from 'uuid';
 
-export const handleCanvasAction = (action, selectedIds, canvasObjects, dispatch, setCanvasObjects, setActiveTool, setSelectedId) => {
+export const handleCanvasAction = (action, selectedIds, canvasObjects, dispatch, setCanvasObjects, setActiveTool, setSelectedId, handleCopy, handlePaste) => {
   if (!selectedIds || selectedIds.length === 0 || !canvasObjects) return;
 
   // We operate on a copy of the array
@@ -115,6 +115,14 @@ export const handleCanvasAction = (action, selectedIds, canvasObjects, dispatch,
            }
        }
        break;
+
+    case 'copy':
+      handleCopy()
+      break
+
+    case 'paste':
+      handlePaste()
+      break
 
     default:
       return;

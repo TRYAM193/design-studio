@@ -6,13 +6,14 @@ import ProductDrawer from './ProductDrawer';
 import { processUpscale } from '../utils/imageUtils'; // 👈 Import Logic
 import {
     ArrowLeft, Undo2, Redo2, Eye, Bell,
-    AlertTriangle, CheckCircle, X, Sparkles, Loader2
+    AlertTriangle, CheckCircle, X, Sparkles, Loader2, ClipboardPaste
 } from 'lucide-react'; // 👈 Icons
 import ExportButton from '../components/ExportButton';
+import SaveTemplateButton from '../components/SaveTemplateButton';
 
 export default function MobileEditorLayout({
     children, fabricCanvas, selectedId, setSelectedId, updateDpiForObject, updateObject,
-    setActiveTool, setActivePanel, activePanel, navigation, canvasObjects,
+    setActiveTool, setActivePanel, activePanel, navigation, canvasObjects, handlePaste, clipboard,
     onUndo, onRedo, canUndo, canRedo, saveButton, onGeneratePreview,
     isGeneratingPreview, currentView, onSwitchView, availableViews = ['front', 'back'],
     productProps, dpiIssues = [], currentDesignName
@@ -94,9 +95,23 @@ export default function MobileEditorLayout({
                             {isGeneratingPreview ? <span className="animate-spin text-xs">⌛</span> : <Eye size={18} />}
                         </button>}
                     <div className="pointer-events-auto">{saveButton}</div>
+                    <button
+                        onClick={handlePaste}
+                        disabled={!clipboard || clipboard.length === 0}
+                        className={`p-2 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium ${!clipboard || clipboard.length === 0 ? 'opacity-40 cursor-not-allowed text-slate-500' : ' text-white-400 hover:text-indigo-300'}`}
+                        title="Paste"
+                    >
+                        <ClipboardPaste size={18} />
+                    </button>
                     <ExportButton
                         canvas={fabricCanvas}
                         currentDesignName={currentDesignName}
+                        isMobile={true}
+                    />
+                    <SaveTemplateButton
+                        canvas={fabricCanvas}
+                        objects={canvasObjects}
+                        isMobile={true}
                     />
                 </div>
             </div>
@@ -177,7 +192,7 @@ export default function MobileEditorLayout({
             )}
             {productProps.id && activePanel === 'product' && <ProductDrawer {...productProps} onClose={() => setActivePanel(null)} />}
             <PropertyControlBox activeProperty={activeProperty} object={selectedObject} onClose={() => setActiveProperty(null)} fabricCanvas={fabricCanvas} updateObject={updateObject} updateDpiForObject={updateDpiForObject} printDimensions={productProps.printDimensions} />
-            <SmartDock mode={selectedId ? 'edit' : 'create'} selectedObject={selectedObject} onSelectTool={handleToolSelect} onSelectProperty={(prop) => setActiveProperty(prop === activeProperty ? null : prop)} onDeselect={handleDeselect} setActiveTool={setActiveTool} setSelectedId={setSelectedId} fabricCanvas={fabricCanvas} activePanel={activePanel}  productId={productProps.id} />
+            <SmartDock mode={selectedId ? 'edit' : 'create'} selectedObject={selectedObject} onSelectTool={handleToolSelect} onSelectProperty={(prop) => setActiveProperty(prop === activeProperty ? null : prop)} onDeselect={handleDeselect} setActiveTool={setActiveTool} setSelectedId={setSelectedId} fabricCanvas={fabricCanvas} activePanel={activePanel} productId={productProps.id} />
         </div>
     );
 }

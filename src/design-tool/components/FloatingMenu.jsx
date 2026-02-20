@@ -1,12 +1,13 @@
 // src/components/FloatingMenu.jsx
 import React, { useState, useEffect } from 'react';
-import { 
-  FiCopy, FiTrash2, FiMoreHorizontal, FiUnlock, FiLock,
-  FiArrowUp, FiArrowDown, FiChevronsUp, FiChevronsDown
+import {
+  FiTrash2, FiMoreHorizontal, FiUnlock, FiLock,
+  FiArrowUp, FiArrowDown, FiChevronsUp, FiChevronsDown,
 } from 'react-icons/fi';
 import { LuFlipHorizontal, LuFlipVertical } from "react-icons/lu";
+import { PaintRoller, Scissors, ClipboardPaste, CopyPlus } from 'lucide-react';
 
-export default function FloatingMenu({ position, onAction, isLocked }) {
+export default function FloatingMenu({ position, onAction, isLocked, isPasteAvailable }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showMore, setShowMore] = useState(false);
 
@@ -50,25 +51,28 @@ export default function FloatingMenu({ position, onAction, isLocked }) {
 
   // --- ACTIONS ---
   const actions = [
-    { 
-      id: 'duplicate', 
-      icon: <FiCopy />, 
-      label: 'Duplicate', 
-      mobilePriority: 1 
+    {
+      id: 'duplicate',
+      icon: <CopyPlus />,
+      label: 'Duplicate',
+      mobilePriority: 1
     },
-    { 
-      id: 'delete', 
-      icon: <FiTrash2 color="red" />, 
-      label: 'Delete', 
-      mobilePriority: 2 
+    {
+      id: 'delete',
+      icon: <FiTrash2 color="red" />,
+      label: 'Delete',
+      mobilePriority: 2
     },
-    { 
-      id: 'toggleLock', 
+    {
+      id: 'toggleLock',
       // ⚡ FIX: Dynamically switch icon based on isLocked prop
-      icon: isLocked ? <FiLock color="orange" /> : <FiUnlock />, 
-      label: isLocked ? 'Unlock' : 'Lock', 
-      mobilePriority: 3 
+      icon: isLocked ? <FiLock color="orange" /> : <FiUnlock />,
+      label: isLocked ? 'Unlock' : 'Lock',
+      mobilePriority: 3
     },
+    { id: 'copy', icon: <PaintRoller size={18} />, label: 'Copy Design' },
+    { id: 'cut', icon: <Scissors size={18} />, label: 'Cut' },
+    { id: 'paste', icon: <ClipboardPaste size={18} />, label: 'Paste' },
     { id: 'bringForward', icon: <FiArrowUp />, label: 'Bring Forward' },
     { id: 'sendBackward', icon: <FiArrowDown />, label: 'Send Backward' },
     { id: 'bringToFront', icon: <FiChevronsUp />, label: 'To Front' },
@@ -94,13 +98,15 @@ export default function FloatingMenu({ position, onAction, isLocked }) {
           style={btnStyle}
           onClick={() => onAction(action.id)}
           title={action.label}
+          className={action.id === 'paste' ? isPasteAvailable ? 'opacity-100' : 'opacity-20' : ''}
+          disabled={action.id === 'paste' ? !isPasteAvailable : false}
         >
           {action.icon}
         </button>
       ))}
 
       {isMobile && (
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative' }} >
           <button style={btnStyle} onClick={() => setShowMore(!showMore)}>
             <FiMoreHorizontal />
           </button>
@@ -117,12 +123,14 @@ export default function FloatingMenu({ position, onAction, isLocked }) {
               flexDirection: 'column',
               gap: '4px',
               width: 'max-content',
-              marginTop: '8px'
+              marginTop: '8px',
+              maxHeight: '33vh',
+              overflowX: 'auto'
             }}>
               {hiddenActions.map((action) => (
                 <button
                   key={action.id}
-                  style={{ ...btnStyle, justifyContent: 'flex-start', fontSize: '14px', width: '100%' }}
+                  style={{ ...btnStyle, justifyContent: 'flex-start', fontSize: '14px', width: '100%', color:'black' }}
                   onClick={() => {
                     onAction(action.id);
                     setShowMore(false);

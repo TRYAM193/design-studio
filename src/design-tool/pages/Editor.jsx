@@ -914,7 +914,7 @@ export default function EditorPanel() {
 
                     <main className="preview-area relative bg-transparent flex items-center justify-center overflow-hidden gap-2" ref={containerRef}>
                         {productData.print_areas && Object.keys(productData.print_areas).length > 1 && (
-                            <div className="absolute top-160 left-110 -translate-x-1/2 z-20 flex gap-2 bg-slate-800/80 p-1.5 rounded-full border border-white/10 shadow-lg backdrop-blur-md">
+                            <div className="absolute top-152 left-[40%] -translate-x-1/2 z-20 flex gap-2 bg-slate-800/80 p-1.5 rounded-full border border-white/10 shadow-lg backdrop-blur-md">
                                 {Object.keys(productData.print_areas).map(view => (
                                     <button key={view} onClick={() => handleSwitchView(view)} className={`px-4 py-1 rounded-full text-xs font-bold capitalize transition-all ${currentView === view ? "bg-orange-600 text-white shadow-orange-900/50" : "text-slate-400 hover:text-white hover:bg-white/5"}`}>
                                         {view.replace('_', ' ')}
@@ -1091,6 +1091,8 @@ export default function EditorPanel() {
                     navigation={navigation}
                     canvasObjects={canvasObjects}
                     updateDpiForObject={updateDpiForObject}
+                    handlePaste={handlePaste}
+                    clipboard={clipboard}
 
                     // --- 1. Pass Action Functions ---
                     onUndo={() => dispatch(undo())}
@@ -1103,7 +1105,7 @@ export default function EditorPanel() {
                             userId={userId}
                             editingDesignId={editingDesignId}
                             // Use a specific class for mobile styling
-                            className="h-9 px-4 rounded-full bg-orange-600 flex items-center justify-center text-white text-xs font-bold shadow-lg border border-orange-400/50 hover:bg-orange-500 transition-all"
+                            className="h-9 px-4 rounded-full flex items-center justify-center text-orange-400 text-xs font-bold shadow-lg transition-all"
                             currentView={currentView}
                             viewStates={viewStates}
                             productData={{

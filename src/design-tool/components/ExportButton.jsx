@@ -4,7 +4,7 @@ import { Download } from 'lucide-react';
 import { exportReferenceImage } from '../utils/saveDesign';
 import { cn } from "@/lib/utils"; // Assuming you have this, otherwise just use standard template literals
 
-export default function ExportButton({ canvas, className, currentDesignName }) {
+export default function ExportButton({ canvas, className, currentDesignName, isMobile=false }) {
   
   const handleExport = () => {
     exportReferenceImage(canvas, currentDesignName || 'my-design');
@@ -19,7 +19,7 @@ export default function ExportButton({ canvas, className, currentDesignName }) {
       )}
       title="Export Design"
     >
-      <Download size={16} className="text-white hover:text-green-400" />
+      <Download size={16} className={!isMobile ? 'text-white hover:text-green-400' : 'text-green-400'} />
     </button>
   );
 }

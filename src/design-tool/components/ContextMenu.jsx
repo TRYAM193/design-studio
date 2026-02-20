@@ -2,12 +2,16 @@
 import React, { useEffect, useRef } from 'react';
 import { 
   Scissors, 
-  Copy, 
+  CopyPlus, 
   ClipboardPaste, 
   Trash2, 
-  CopyPlus,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  ChevronsUp,
+  ChevronsDown, 
+  FlipHorizontal,
+  FlipVertical,
+  PaintRoller
 } from 'lucide-react';
 
 export default function ContextMenu({ 
@@ -57,7 +61,7 @@ export default function ContextMenu({
       }}
       disabled={disabled}
       className={`w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors
-        ${disabled ? 'opacity-40 cursor-not-allowed text-slate-500' : 'hover:bg-slate-700 text-slate-200'}
+        ${disabled ? 'opacity-40 cursor-not-allowed text-black' : 'hover:bg-white-700 text-black'}
         ${danger && !disabled ? 'hover:text-red-400' : ''}
       `}
     >
@@ -65,7 +69,7 @@ export default function ContextMenu({
       <span>{label}</span>
       {/* Keyboard shortcut hints */}
       <span className="ml-auto text-[10px] tracking-widest text-slate-500 opacity-60 font-mono">
-        {label === 'Copy' && '⌘C'}
+        {label === 'Copy Design' && '⌘C'}
         {label === 'Cut' && '⌘X'}
         {label === 'Paste' && '⌘V'}
       </span>
@@ -76,7 +80,7 @@ export default function ContextMenu({
     <div 
       ref={menuRef}
       style={menuStyle}
-      className="fixed z-[9999] w-56 bg-slate-800 border border-white/10 rounded-xl shadow-2xl py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] w-56 bg-white border border-white/10 rounded-2xl max-h-[40%] overflow-y-auto shadow-2xl no-scrollbar py-1.5 overflow-x-hidden animate-in fade-in zoom-in-95 duration-100"
       onContextMenu={(e) => e.preventDefault()} // Prevent native right-click on this menu
     >
       <MenuItem 
@@ -86,8 +90,8 @@ export default function ContextMenu({
         disabled={!hasSelection} 
       />
       <MenuItem 
-        icon={Copy} 
-        label="Copy" 
+        icon={PaintRoller} 
+        label="Copy Design" 
         onClick={actions.onCopy} 
         disabled={!hasSelection} 
       />
@@ -116,6 +120,30 @@ export default function ContextMenu({
         icon={ArrowDown} 
         label="Send Backward" 
         onClick={actions.onLayerDown} 
+        disabled={!hasSelection} 
+      />
+      <MenuItem 
+        icon={ChevronsUp} 
+        label="To Front" 
+        onClick={actions.toFront} 
+        disabled={!hasSelection} 
+      />
+      <MenuItem 
+        icon={ChevronsDown} 
+        label="To Back" 
+        onClick={actions.toBack} 
+        disabled={!hasSelection} 
+      />
+      <MenuItem 
+        icon={FlipHorizontal} 
+        label="Flip Horizontal" 
+        onClick={actions.flipHorizontal} 
+        disabled={!hasSelection} 
+      />
+      <MenuItem 
+        icon={FlipVertical} 
+        label="Flip Vertical" 
+        onClick={actions.flipVertical} 
         disabled={!hasSelection} 
       />
 

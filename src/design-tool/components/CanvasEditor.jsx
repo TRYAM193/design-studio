@@ -14,6 +14,7 @@ import { handleCanvasAction } from '../utils/canvasActions';
 import ShapeAdder from '../objectAdders/Shapes';
 import ContextMenu from './ContextMenu';
 import { v4 as uuidv4 } from 'uuid';
+import { BringToFront, FlipHorizontal } from 'lucide-react';
 
 fabric.Object.prototype.toObject = (function (toObject) {
   return function (propertiesToInclude) {
@@ -284,13 +285,13 @@ export default function CanvasEditor({
 
       // ✅ NEW STRATEGY: Native DOM Context Menu Listener
       const upperCanvas = canvas.upperCanvasEl;
-      
+
       upperCanvas.addEventListener('contextmenu', (e) => {
         e.preventDefault(); // 100% blocks the browser menu
 
         // Check if they right-clicked specifically on an object
         const target = canvas.findTarget(e, false);
-        
+
         if (target && canvas.getActiveObject() !== target) {
           // If they right-clicked an unselected object, select it automatically
           // canvas.setActiveObject(target);
@@ -298,10 +299,10 @@ export default function CanvasEditor({
         }
 
         // Open our custom React menu
-        setContextMenu({ 
-          isOpen: true, 
-          x: e.clientX, 
-          y: e.clientY 
+        setContextMenu({
+          isOpen: true,
+          x: e.clientX,
+          y: e.clientY
         });
       });
 
@@ -473,6 +474,74 @@ export default function CanvasEditor({
 
       const type = obj.type ? obj.type.toLowerCase() : '';
 
+      if (type === 'activeselection') {
+        const children = [...obj.getObjects()];
+
+        // ⚡ FIX: Use setTimeout to prevent "Maximum call stack size exceeded"
+        setTimeout(() => {
+          // 1. Discard the group. This forces Fabric to apply the group's 
+          //    transformations to the children's properties automatically.
+          fabricCanvas.discardActiveObject();
+
+          const present = store.getState().canvas.present;
+          let updatedPresent = present.map((o) => JSON.parse(JSON.stringify(o)));
+          let hasChanges = false;
+
+          children.forEach((child) => {
+            const index = updatedPresent.findIndex((o) => o.id === child.customId);
+            if (index === -1) return;
+
+            // 2. Read the "Trust Fabric" values directly from the child
+            //    (No complex matrix math needed anymore)
+
+            if (child.type === 'text' || child.type === 'textbox' || child.customType === 'text') {
+              // For text, we normalize scale into fontSize
+              const newFontSize = child.fontSize * child.scaleX;
+              child.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
+              child.setCoords();
+
+              updatedPresent[index].props = {
+                ...updatedPresent[index].props,
+                fontSize: newFontSize,
+                left: child.left,
+                top: child.top,
+                angle: child.angle,
+                scaleX: 1,
+                scaleY: 1
+              };
+            } else {
+              // For Shapes & Images: Read exact values
+              // ⚡ FIX: Ensure scaleY is saved separately to prevent jumping/snapping
+              updatedPresent[index].props = {
+                ...updatedPresent[index].props,
+                left: child.left,
+                top: child.top,
+                angle: child.angle,
+                scaleX: child.scaleX,
+                scaleY: child.scaleY,
+                // Note: Do not force width/height updates here unless necessary
+              };
+            }
+            hasChanges = true;
+          });
+
+          if (hasChanges) {
+            store.dispatch(setCanvasObjects(updatedPresent));
+          }
+
+          // 3. Restore selection quietly
+          if (children.length > 0) {
+            const sel = new fabric.ActiveSelection(children, {
+              canvas: fabricCanvas,
+            });
+            fabricCanvas.setActiveObject(sel);
+            fabricCanvas.requestRenderAll();
+          }
+        }, 0);
+
+        return;
+      }
+
       if (type === 'text' || type === 'textbox') {
         const newFontSize = obj.fontSize * obj.scaleX;
         obj.set({ fontSize: newFontSize, scaleX: 1, scaleY: 1 });
@@ -626,6 +695,7 @@ export default function CanvasEditor({
   }, [canvasObjects, initialized]);
 
   const onMenuAction = (action) => {
+    if (action === 'cut') return handleCut();
     handleCanvasAction(
       action,
       selectedObjectUUIDs,
@@ -633,7 +703,9 @@ export default function CanvasEditor({
       dispatch,
       setCanvasObjects,
       setActiveTool,
-      setSelectedId
+      setSelectedId,
+      handleCopy,
+      handlePaste
     );
   };
 
@@ -651,6 +723,7 @@ export default function CanvasEditor({
           position={menuPosition}
           onAction={onMenuAction}
           isLocked={selectedObjectLocked}
+          isPasteAvailable={Boolean(clipboard?.length)}
         />
       )}
 
@@ -668,8 +741,12 @@ export default function CanvasEditor({
           onPaste: handlePaste,
           onDuplicate: handleDuplicate,
           onDelete: () => onMenuAction('delete'),
-          onLayerUp: () => onMenuAction('bring-forward'),
-          onLayerDown: () => onMenuAction('send-backward')
+          onLayerUp: () => onMenuAction('bringForward'),
+          onLayerDown: () => onMenuAction('sendBackward'),
+          toFont: () => onMenuAction('bringToFront'),
+          toBack: () => onMenuAction('sendToBack'),
+          flipVertical: () => onMenuAction('flipVertical'),
+          flipHorizontal: () => onMenuAction('flipHorizontal'),
         }}
       />
     </div>
