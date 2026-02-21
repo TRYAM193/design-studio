@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import { getDownloadURL, uploadBytes, ref } from "firebase/storage"
 
 // Upload the images to Storage
-const uploadToStorage = async (imgURL, fileLocation) => {
+export const uploadToStorage = async (imgURL, fileLocation) => {
   const storageRef = ref(storage, `${fileLocation}.png`);
 
   let blob;

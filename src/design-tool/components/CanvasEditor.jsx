@@ -238,14 +238,25 @@ export default function CanvasEditor({
       const scaledHeight = activeObj.getScaledHeight() * vpt[3];
 
       let finalLeft, finalTop;
+      const menuWidth = 220; // Estimated width of your Floating Menu
+      const screenPadding = 15; // Pixels to keep away from the screen edge
 
       if (isMobile) {
         finalLeft = screenX + (scaledWidth / 2) + 20;
         finalTop = screenY - (scaledHeight / 2);
       } else {
-        finalLeft = screenX + 100;
+        // Desktop: anchor to the right edge of the object
+        finalLeft = screenX + (scaledWidth / 2) + 40;
         finalTop = screenY - (scaledHeight / 2) - 40;
       }
+
+      // ✅ THE FIX: Smoothly nudge it left if it hits the right edge of the screen
+      if (finalLeft + menuWidth > window.innerWidth) {
+        finalLeft = window.innerWidth - menuWidth - screenPadding;
+      }
+
+      // Safety: Prevent it from going off the left edge of the screen too
+      finalLeft = Math.max(screenPadding, finalLeft);
 
       setMenuPosition({
         left: finalLeft,
@@ -510,8 +521,6 @@ export default function CanvasEditor({
                 scaleY: 1
               };
             } else {
-              // For Shapes & Images: Read exact values
-              // ⚡ FIX: Ensure scaleY is saved separately to prevent jumping/snapping
               updatedPresent[index].props = {
                 ...updatedPresent[index].props,
                 left: child.left,
@@ -519,6 +528,8 @@ export default function CanvasEditor({
                 angle: child.angle,
                 scaleX: child.scaleX,
                 scaleY: child.scaleY,
+                width: child.width,
+                height: child.height
                 // Note: Do not force width/height updates here unless necessary
               };
             }
@@ -713,9 +724,28 @@ export default function CanvasEditor({
     <div
       ref={wrapperRef}
       id="canvas-wrapper"
-      className="relative w-full h-full flex items-center justify-center overflow-hidden"
+      className="relative w-full h-full flex flex-col gap-2 items-center justify-center overflow-auto no-scrollbar"
       style={{ touchAction: 'none' }} // ✅ ADDED THIS LINE
     >
+      {/* ✅ CANVAS BACKGROUND COLOR PICKER */}
+      <div
+        className="relative w-8 h-8 rounded-full left-25 overflow-hidden shadow-md cursor-pointer border border-white/20 hover:scale-110 transition-transform"
+        style={{ background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }}
+        title="Change Canvas Background"
+      >
+        <input
+          type="color"
+          defaultValue="#ffffff"
+          className="absolute -top-2 -left-4 w-12 h-12 opacity-0 cursor-pointer"
+          onChange={(e) => {
+            // Check if fabricCanvas is available in this file
+            if (fabricCanvas) {
+              fabricCanvas.backgroundColor = e.target.value;
+              fabricCanvas.requestRenderAll();
+            }
+          }}
+        />
+      </div>
       <canvas ref={canvasRef} id="canvas" />
 
       {menuPosition && selectedObjectUUIDs.length > 0 && (

@@ -3,8 +3,9 @@ import {
   Type, Shapes, ImagePlus, Sparkles, Layers,
   Palette, BoxSelect, Trash2, X, Move,
   Type as FontIcon, BookMarkedIcon, Bold, PenTool, Ghost, Wand2, LayoutGrid, Tag,
-  Eraser, Scan // ✅ Added Scan icon for Radius
+  Eraser, Scan, Keyboard, SunMoon // ✅ Added Scan icon for Radius
 } from 'lucide-react';
+import { FaFont } from "react-icons/fa";
 import Image from '../objectAdders/Image';
 
 export default function SmartDock({
@@ -61,27 +62,27 @@ export default function SmartDock({
 
     let tools = [
       { id: 'fill', label: 'Color', icon: <Palette size={20} /> },
-      { id: 'layer', label: 'Layering', icon: <Layers size={20} /> },
       { id: 'opacity', label: 'Opacity', icon: <BoxSelect size={20} /> },
+      { id: 'layer', label: 'Layering', icon: <Layers size={20} /> },
     ];
 
     if (isText) {
       tools = [
-        { id: 'text', label: 'Edit', icon: <Type size={20} /> },
+        { id: 'text', label: 'Edit', icon: <Keyboard size={20} /> },
         { id: 'fontFamily', label: 'Font', icon: <FontIcon size={20} /> },
-        { id: 'fontSize', label: 'Size', icon: <Move size={20} /> },
+        { id: 'fontSize', label: 'Font Size', icon: <FaFont size={20} /> },
+        ...tools,
         { id: 'format', label: 'Style', icon: <Bold size={20} /> },
-        { id: 'effect', label: 'Effects', icon: <Wand2 size={20} /> },
+        { id: 'shadow', label: 'Shadow', icon: <SunMoon size={20} /> },
         { id: 'outline', label: 'Outline', icon: <PenTool size={20} /> },
-        { id: 'shadow', label: 'Shadow', icon: <Ghost size={20} /> },
-        ...tools
+        { id: 'effect', label: 'Effects', icon: <Wand2 size={20} /> },
       ];
     }
 
     if (isImage) {
       tools = [
         { id: 'replace', label: 'New Image', icon: <ImagePlus size={20} /> },
-        { id: 'shadow', label: 'Shadow', icon: <Ghost size={20} /> },
+        { id: 'shadow', label: 'Shadow', icon: <SunMoon size={20} /> },
         ...tools.filter(t => t.id !== 'fill'),
         { id: 'remove-bg', label: 'Remove-BG', icon: <Eraser size={20} /> },
       ];
@@ -102,7 +103,7 @@ export default function SmartDock({
       tools = [
         ...shapeTools,
         { id: 'opacity', label: 'Opacity', icon: <BoxSelect size={20} /> },
-        { id: 'shadow', label: 'Shadow', icon: <Ghost size={20} /> },
+        { id: 'shadow', label: 'Shadow', icon: <SunMoon size={20} /> },
         { id: 'layer', label: 'Layering', icon: <Layers size={20} /> },
       ];
     }

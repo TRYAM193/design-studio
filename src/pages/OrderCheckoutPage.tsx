@@ -279,7 +279,7 @@ export default function OrderCheckoutPage() {
       }
     };
 
-    fetchLocation();
+    // fetchLocation();
   }, []);
 
   // --- LOCATION LIBRARIES ---
@@ -565,7 +565,7 @@ export default function OrderCheckoutPage() {
                     <Select
                       value={shippingInfo.countryCode}
                       onValueChange={handleCountryChange}
-                      disabled={isLocationLocked}
+                      // disabled={isLocationLocked}
                     >
                       <SelectTrigger className={`bg-slate-900/50 border-white/10 text-white ${isLocationLocked ? "opacity-50 cursor-not-allowed" : ""} `}>
                         <SelectValue placeholder="Select Country" />

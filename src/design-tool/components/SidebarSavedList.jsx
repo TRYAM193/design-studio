@@ -19,7 +19,7 @@ export default function SidebarSavedList({
   const { designs, loading } = useUserDesigns(userId);
   
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, origin: 'origin-top-left' });
   const menuRef = useRef(null);
 
   // Close menu on outside click or scroll
@@ -77,9 +77,23 @@ export default function SidebarSavedList({
       return;
     }
     const rect = e.currentTarget.getBoundingClientRect();
+    const menuWidth = 192; // 'w-48' in Tailwind is exactly 192px
+    const padding = 10;
+    
+    let leftPos = rect.right + padding;
+    let transformOrigin = 'origin-top-left';
+
+    // Safety check: If opening to the right goes off-screen (like on mobile)
+    if (leftPos + menuWidth > window.innerWidth) {
+      // Flip it to open on the left side of the button instead
+      leftPos = Math.max(10, rect.left - menuWidth - padding); 
+      transformOrigin = 'origin-top-right';
+    }
+
     setMenuPosition({
       top: rect.top, 
-      left: rect.right + 10 
+      left: leftPos,
+      origin: transformOrigin
     });
     setOpenMenuId(designId);
   };
@@ -158,7 +172,7 @@ export default function SidebarSavedList({
                     top: menuPosition.top, 
                     left: menuPosition.left 
                   }}
-                  className="fixed w-48 bg-slate-900 border border-white/10 rounded-xl shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-left ring-1 ring-white/5"
+                  className={`fixed w-48 bg-slate-900 border border-white/10 rounded-xl shadow-2xl z-[9999] overflow-hidden animate-in fade-in zoom-in-95 duration-100 ring-1 ring-white/5 ${menuPosition.origin}`}
                 >
                   {/* HEADER: JUST NAME CENTERED */}
                   <div className="p-3 border-b border-white/5 bg-slate-800/50 text-center">

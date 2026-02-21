@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import ExportButton from '../components/ExportButton';
 import SaveTemplateButton from '../components/SaveTemplateButton';
 import { v4 as uuidv4 } from 'uuid';
+import { uploadToStorage } from '../utils/saveDesign'
 
 function removeUndefined(obj) {
     if (Array.isArray(obj)) {
@@ -781,7 +782,7 @@ export default function EditorPanel() {
     };
 
     // ✅ 🚀 INSTANT PAYLOAD GENERATOR
-    const generateOrderPayload = () => {
+    const generateOrderPayload = async () => {
         // 1. Snapshot CURRENT Redux state (For Editor)
         const currentReduxState = store.getState().canvas.present;
         const tempViewStates = {
@@ -800,6 +801,33 @@ export default function EditorPanel() {
             ...canvasViewStates,
             [currentView]: currentObjects
         };
+
+        async function updateImgSrc(objects = []) {
+            return Promise.all(
+                objects.map(async (obj) => {
+                    if (obj.type.toLowerCase() !== 'image') return obj;
+
+                    if (!obj.src) return obj;
+
+                    const imgSrc = await uploadToStorage(obj.src, `images/${Date.now()}`);
+
+                    return {
+                        ...obj,
+                        src: imgSrc
+                    };
+                })
+            );
+        }
+        async function updateAllSides(design) {
+            const result = {};
+
+            for (const side in design) {
+                result[side] = await updateImgSrc(design[side]);
+            }
+
+            return result;
+        }
+        const updatedObjects = await updateAllSides(tempCanvasViewStates);
 
         // 3. Construct Payload
         const baseImage = productData.image || productData.mockups?.front || "/assets/placeholder.png";
@@ -820,7 +848,7 @@ export default function EditorPanel() {
             // ✅ THE IMPORTANT PART: We keep BOTH states now!
             designData: {
                 viewStates: tempViewStates,       // For Editor (Redux)
-                canvasViewStates: tempCanvasViewStates, // For Renderer (Fabric JSON)
+                canvasViewStates: updatedObjects, // For Renderer (Fabric JSON)
                 currentView: currentView
             },
             createdAt: new Date().toISOString()
@@ -831,7 +859,7 @@ export default function EditorPanel() {
         if (!userId) { navigation('/auth'); return; }
         setIsAddingToCart(true);
         try {
-            const payload = generateOrderPayload();
+            const payload = await generateOrderPayload();
             if (isEditMode && editCartId) {
                 await updateItemContent(editCartId, payload);
                 alert("Cart Updated!");
@@ -851,7 +879,7 @@ export default function EditorPanel() {
         if (!userId) { navigation('/auth'); return; }
         setIsSaving(true);
         try {
-            const payload = generateOrderPayload(); // Sync function now
+            const payload = await generateOrderPayload(); // Sync function now
             // Store payload in LocalStorage for checkout page
             localStorage.setItem('directBuyItem', JSON.stringify(payload));
             navigation('/checkout?mode=direct');
@@ -928,6 +956,7 @@ export default function EditorPanel() {
                                 <button title='Undo' className="top-bar-button" onClick={() => dispatch(undo())} disabled={!past.length} style={{ opacity: past.length ? '1' : '0.5' }}><Undo2 size={18} /></button>
                                 <button title='Redo' className="top-bar-button" onClick={() => dispatch(redo())} disabled={!future.length} style={{ opacity: future.length ? '1' : '0.5' }}><Redo2 size={18} /></button>
                             </div>
+                            <button onClick={() => generateOrderPayload()}>Hi</button>
                             <div className="control-group divider">
                                 <button title='Delete' className="top-bar-button danger" onClick={() => removeObject(selectedId, setSelectedId, setActiveTool)} style={{ opacity: !selectedId ? '0.5' : '1' }}><FiTrash2 size={18} /></button>
                             </div>

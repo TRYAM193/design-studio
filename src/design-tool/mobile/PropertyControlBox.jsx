@@ -6,7 +6,7 @@ import {
     Loader2, Eraser, ArrowUp, ArrowDown,
     ArrowUpFromLine, ArrowDownToLine, ImagePlus,
     Type, Droplets, Move, Sun, Maximize2, CheckCircle2
-} from 'lucide-react'; 
+} from 'lucide-react';
 import { AVAILABLE_FONTS } from '@/data/font';
 import { COLOR_MAP } from '@/lib/colorMaps';
 import { Path } from 'fabric';
@@ -138,7 +138,7 @@ const LiveSlider = ({ label, value, min, max, step, object, propKey, updateObjec
     const commitValue = (finalVal) => {
         if (min !== undefined) finalVal = Math.max(min, finalVal);
         if (max !== undefined) finalVal = Math.min(max, finalVal);
-        
+
         // ✅ Float Precision Fix
         const decimals = step < 1 ? 2 : 0;
         finalVal = parseFloat(finalVal.toFixed(decimals));
@@ -230,7 +230,7 @@ const LiveSlider = ({ label, value, min, max, step, object, propKey, updateObjec
 };
 
 // --- 3. MAIN COMPONENT ---
-export default function PropertyControlBox({ activeProperty, object, updateObject, onClose, fabricCanvas, updateDpiForObject, printDimensions={w: 4500, h: 5400} }) {
+export default function PropertyControlBox({ activeProperty, object, updateObject, onClose, fabricCanvas, updateDpiForObject, printDimensions = { w: 4500, h: 5400 } }) {
     if (!activeProperty || !object) return null;
 
     const fileInputRef = useRef(null);
@@ -251,7 +251,7 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
             { ...object, width: object.props.width, height: object.props.height, scaleX: currentScaleX, scaleY: currentScaleY, getScaledWidth: () => object.props.width * currentScaleX, getScaledHeight: () => object.props.height * currentScaleY },
             fabricCanvas.width,
             fabricCanvas.height,
-            printDimensions.w, 
+            printDimensions.w,
             printDimensions.h
         );
 
@@ -262,7 +262,7 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
 
             // Update Fabric Live
             liveUpdateFabric(fabricCanvas, object.id, { scaleX: newScaleX, scaleY: newScaleY }, object.props, object);
-            
+
             // Commit to Redux
             updateObject(object.id, { scaleX: newScaleX, scaleY: newScaleY });
             updateDpiForObject(fabricCanvas.getObjects().find(o => o.customId === object.id))
@@ -274,12 +274,12 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
     const renderColorPicker = (targetProp) => {
         const currentFill = getValue(targetProp);
         return (
-            <div className="flex gap-3 pb-2 overflow-x-auto no-scrollbar mask-linear-fade">
+            <div className="flex gap-3 pb-2 overflow-y-auto no-scrollbar mask-linear-fade">
                 {Object.entries(COLOR_MAP).map(([name, hex]) => (
                     <button
                         key={name}
                         onClick={() => handleUpdate(targetProp, hex)}
-                        className={`w-10 h-10 rounded-full shrink-0 border-2 transition-transform ${currentFill === hex ? 'border-orange-500 scale-110 shadow-lg shadow-orange-500/20' : 'border-white/10'}`}
+                        className={`w-10 h-10 rounded-full shrink-0 border-2 transition-transform ${currentFill === hex ? 'border-orange-500 scale-100 shadow-lg shadow-orange-500/20' : 'border-white/10'}`}
                         style={{ backgroundColor: hex }}
                     />
                 ))}
@@ -294,8 +294,10 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
                 {renderColorPicker('shadowColor')}
             </div>
             <LiveSlider label="Blur" value={getValue('shadowBlur') ?? 0} min={0} max={50} step={1} propKey="shadowBlur" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />
-            <LiveSlider label="Offset X" value={getValue('shadowOffsetX') ?? 0} min={-20} max={20} step={1} propKey="shadowOffsetX" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />
-            <LiveSlider label="Offset Y" value={getValue('shadowOffsetY') ?? 0} min={-20} max={20} step={1} propKey="shadowOffsetY" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />
+            <div className='flex flex-row gap-4'>
+                <LiveSlider label="Offset X" value={getValue('shadowOffsetX') ?? 0} min={-20} max={20} step={1} propKey="shadowOffsetX" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />
+                <LiveSlider label="Offset Y" value={getValue('shadowOffsetY') ?? 0} min={-20} max={20} step={1} propKey="shadowOffsetY" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />
+            </div>
         </div>
     );
 
@@ -326,16 +328,16 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
 
     const renderImageTools = () => (
         <div className="flex flex-col gap-4 py-2">
-            
+
             {/* 1. AUTO DPI FIX */}
             <div className="bg-indigo-900/20 rounded-xl p-4 border border-indigo-500/30">
                 <div className="flex items-start justify-between mb-3">
                     <div>
-                        <p className="text-sm text-indigo-200 font-bold flex items-center gap-2"><Maximize2 size={16}/> Print Quality</p>
+                        <p className="text-sm text-indigo-200 font-bold flex items-center gap-2"><Maximize2 size={16} /> Print Quality</p>
                         <p className="text-[10px] text-indigo-300/60 mt-1">Optimize scale for clear printing (300 DPI).</p>
                     </div>
                 </div>
-                <button 
+                <button
                     onClick={handleAutoDpi}
                     className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
@@ -426,7 +428,7 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
     // ✅ SMART TITLE & CONTENT
     switch (activeProperty) {
         case 'fill': title = "Color"; content = renderColorPicker('fill'); break;
-        
+
         // 🔄 SMART SIZE / TRANSFORM PANEL
         case 'fontSize': // Maps to "Size" icon in Dock
         case 'transform':
@@ -495,9 +497,11 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
                         <button key={e.id} onClick={() => handleUpdate('textEffect', e.id)} className={`flex flex-col items-center justify-center gap-1 min-w-[64px] h-[64px] rounded-xl border transition-all ${getValue('textEffect') === e.id ? 'bg-orange-500/10 border-orange-500 text-orange-500' : 'bg-slate-800/50 border-white/5 text-slate-400'}`}>{e.icon}<span className="text-[9px] font-bold uppercase">{e.label}</span></button>
                     ))}
                 </div>
-                {['circle', 'arc-up', 'arc-down'].includes(getValue('textEffect')) && <LiveSlider label="Curve" value={getValue('radius') ?? 150} min={10} max={600} step={10} propKey="radius" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />}
-                {['arc-up', 'arc-down'].includes(getValue('textEffect')) && <LiveSlider label="Angle" value={getValue('arcAngle') ?? 120} min={10} max={360} step={5} propKey="arcAngle" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />}
-                {getValue('textEffect') === 'flag' && <LiveSlider label="Wave" value={getValue('flagVelocity') ?? 50} min={0} max={100} step={1} propKey="flagVelocity" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />}
+                <div className='flex flex-row gap-4'>
+                    {['circle', 'arc-up', 'arc-down'].includes(getValue('textEffect')) && <LiveSlider label="Curve" value={getValue('radius') ?? 150} min={10} max={600} step={10} propKey="radius" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />}
+                    {['arc-up', 'arc-down'].includes(getValue('textEffect')) && <LiveSlider label="Angle" value={getValue('arcAngle') ?? 120} min={10} max={360} step={5} propKey="arcAngle" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />}
+                    {getValue('textEffect') === 'flag' && <LiveSlider label="Wave" value={getValue('flagVelocity') ?? 50} min={0} max={100} step={1} propKey="flagVelocity" object={object} updateObject={updateObject} fabricCanvas={fabricCanvas} />}
+                </div>
             </div>
         ); break;
 
@@ -508,11 +512,11 @@ export default function PropertyControlBox({ activeProperty, object, updateObjec
             </div>
         ); break;
 
-        case 'remove-bg': 
-            title = "Image Actions"; 
+        case 'remove-bg':
+            title = "Image Actions";
             content = renderImageTools(); // ✅ Now includes Auto-Scale
             break;
-            
+
         case 'replace': title = "Replace Image"; content = renderReplace(); break;
         case 'shadow': title = "Shadow"; content = renderShadow(); break;
         case 'layer': title = "Layer Order"; content = renderLayerTools(); break;

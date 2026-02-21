@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function PhoneVerificationModal({ isOpen, onClose, onVerified, phoneNumber }: Props) {
-  const displayPhone = `${phoneNumber.slice(0,3)} ${phoneNumber.slice(3, 8)} ${phoneNumber.slice(8)}`;
+  const displayPhone = `${phoneNumber?.slice(0,3)} ${phoneNumber?.slice(3, 8)} ${phoneNumber?.slice(8)}`;
   const [step, setStep] = useState<'input' | 'otp'>('input');
   const [phone, setPhone] = useState(displayPhone || phoneNumber ||"");
   const [otp, setOtp] = useState("");
