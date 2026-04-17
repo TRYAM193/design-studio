@@ -12,6 +12,7 @@ import { store } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useLocation, useSearchParams, useBlocker } from 'react-router';
 import UnsavedChangesModal from '../components/UnsavedChangesModal';
+import LoginRequiredModal from '../components/LoginRequiredModal';
 import { useAuth } from '@/hooks/use-auth';
 import { useCart } from '@/context/CartContext';
 import MainToolbar from '../components/MainToolbar';
@@ -115,6 +116,7 @@ export default function EditorPanel() {
     const [editingDesignId, setEditingDesignId] = useState(null);
     const [isDirty, setIsDirty] = useState(false);
     const [showProperties, setShowProperties] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
     const isMobile = useIsMobile();
 
     // Redux State
@@ -153,6 +155,7 @@ export default function EditorPanel() {
 
     const currentViewRef = useRef(currentView);
     const viewStatesRef = useRef(viewStates);
+    const bypassBlockerRef = useRef(false);
 
     useEffect(() => { currentViewRef.current = currentView; }, [currentView]);
     useEffect(() => { viewStatesRef.current = viewStates; }, [viewStates]);
@@ -260,7 +263,63 @@ export default function EditorPanel() {
             console.warn('Failed to restore magic preview:', e);
         }
         sessionStorage.removeItem('magic_preview_design');
-    }, [dispatch]);
+    }, [user, dispatch]);
+
+    // ─── Restore Pending Design after Login ───────────────────────
+    useEffect(() => {
+        // Only run once user is authenticated
+        if (!user) return;
+
+        const raw = localStorage.getItem('tryam_pending_design');
+        if (!raw) return;
+
+        try {
+            const pending = JSON.parse(raw);
+
+            // Expire after 30 minutes
+            if (Date.now() - pending.timestamp > 30 * 60 * 1000) {
+                localStorage.removeItem('tryam_pending_design');
+                return;
+            }
+
+            // Restore canvas objects
+            if (pending.canvasObjects && Array.isArray(pending.canvasObjects)) {
+                dispatch(setCanvasObjects(pending.canvasObjects));
+            }
+
+            // Restore view states
+            if (pending.viewStates) {
+                setViewStates(pending.viewStates);
+            }
+
+            // Restore current view
+            if (pending.currentView) {
+                setCurrentView(pending.currentView);
+            }
+
+            // Restore editing context
+            if (pending.editingDesignId) {
+                setEditingDesignId(pending.editingDesignId);
+            }
+            if (pending.currentDesignName) {
+                setCurrentDesign(prev => ({
+                    ...(prev || {}),
+                    name: pending.currentDesignName,
+                }));
+            }
+
+            toast.success('✨ Design restored!', {
+                description: 'You can now save your design.',
+                duration: 4000,
+            });
+
+        } catch (e) {
+            console.warn('Failed to restore pending design:', e);
+        }
+
+        // Always clean up
+        localStorage.removeItem('tryam_pending_design');
+    }, [user, dispatch]);
 
     // ─── Unsaved Changes Detection ───
     useEffect(() => {
@@ -286,7 +345,7 @@ export default function EditorPanel() {
     // React Router navigation guard
     const blocker = useBlocker(
         ({ currentLocation, nextLocation }) =>
-            isDirty && currentLocation.pathname !== nextLocation.pathname
+            !bypassBlockerRef.current && isDirty && currentLocation.pathname !== nextLocation.pathname
     );
 
     const handleDiscardAndExit = () => {
@@ -563,6 +622,46 @@ export default function EditorPanel() {
                 return prev;
             });
         }
+    };
+
+    // ─── Login Required Handler ───────────────────────────────────
+    const handleLoginRequired = () => {
+        // 1. Serialize current design state into localStorage
+        try {
+            const pendingDesign = {
+                canvasObjects: JSON.parse(JSON.stringify(store.getState().canvas.present)),
+                viewStates: JSON.parse(JSON.stringify(viewStates)),
+                currentView,
+                editingDesignId,
+                currentDesignName: currentDesign?.name || null,
+                searchParams: location.search,
+                pathname: location.pathname,
+                timestamp: Date.now(),
+            };
+            localStorage.setItem('tryam_pending_design', JSON.stringify(pendingDesign));
+        } catch (e) {
+            console.warn('Failed to persist design before login:', e);
+        }
+
+        // 2. Close the login modal
+        setShowLoginModal(false);
+
+        // 3. Bypass unsaved changes guard (design is safe in localStorage)
+        bypassBlockerRef.current = true;
+        setIsDirty(false);
+
+        // 4. Navigate to auth with return path
+        navigation('/auth', {
+            state: {
+                from: {
+                    pathname: location.pathname,
+                    search: location.search,
+                },
+            },
+        });
+
+        // 5. Reset bypass after navigation
+        bypassBlockerRef.current = false;
     };
 
     // 👇 2. EDIT LOGIC (Strictly for "Edit/Replace Design")
@@ -934,26 +1033,66 @@ export default function EditorPanel() {
         }
     };
 
+
     // 3. HANDLE AI GENERATED OBJECTS
-    const handleAiObjectsGenerated = (jsonArray) => {
+    const handleAiObjectsGenerated = async (jsonArray) => {
         if (!jsonArray || jsonArray.length === 0) return;
 
-        const newObjects = jsonArray.map((obj) => {
+        // Baseline Fabric.js properties that the delta engine & sidebar expect to exist.
+        // Without these, undo/redo breaks (comparisons against undefined) and objects glitch.
+        const BASE_TEXT_PROPS = {
+            angle: 0, opacity: 1, scaleX: 1, scaleY: 1,
+            stroke: '', strokeWidth: 0,
+            shadowColor: '#000000', shadowBlur: 0, shadowOffsetX: 0, shadowOffsetY: 0,
+            fontStyle: 'normal', underline: false,
+            textEffect: 'none',
+            radius: 150, arcAngle: 120, flagVelocity: 50,
+        };
+        const BASE_SHAPE_PROPS = {
+            angle: 0, opacity: 1, scaleX: 1, scaleY: 1,
+            stroke: '', strokeWidth: 0,
+        };
+
+        // Preload any custom fonts the AI specified before rendering
+        await preloadFontsFromObjects(jsonArray);
+
+        const newObjects = [];
+
+        for (const obj of jsonArray) {
+            // Destructure to separate metadata from actual Fabric.js properties
+            const { type: rawType, id: _aiId, role: _role, ...fabricProps } = obj;
+            const resolvedType = rawType || 'textbox';
+
+            // Skip background rects — apply their color as canvas background instead
+            if (resolvedType === 'rect' && (obj.selectable === false || _role === 'background')) {
+                if (fabricCanvas && obj.fill) {
+                    fabricCanvas.backgroundColor = obj.fill;
+                    fabricCanvas.requestRenderAll();
+                }
+                continue;
+            }
+
+            const isText = ['text', 'textbox', 'i-text'].includes(resolvedType);
             const newId = uuidv4();
-            return {
+
+            newObjects.push({
                 id: newId,
                 customId: newId,
-                type: obj.type || 'image',
+                type: resolvedType,
                 props: {
-                    ...obj,
+                    ...(isText ? BASE_TEXT_PROPS : BASE_SHAPE_PROPS),
+                    ...fabricProps,
                 }
-            };
-        });
+            });
+        }
+
+        if (newObjects.length === 0) return;
 
         const currentObjects = store.getState().canvas.present;
         dispatch(setCanvasObjects([...currentObjects, ...newObjects]));
         setActivePanel(null);
     };
+    console.log(fabricCanvas?.getActiveObject())
 
     // --- Canvas Utils (Reduced for speed) ---
 
@@ -1324,6 +1463,8 @@ export default function EditorPanel() {
                                             variant="ghost"
                                             fabricCanvas={fabricCanvas}
                                             onSaveSuccess={handleSaveSuccess}
+                                            user={user}
+                                            onLoginRequired={() => setShowLoginModal(true)}
                                         />
                                         <button
                                             onClick={handlePaste}
@@ -1546,6 +1687,8 @@ export default function EditorPanel() {
                             currentDesignName={currentDesign?.name}
                             variant="ghost"
                             onSaveSuccess={handleSaveSuccess}
+                            user={user}
+                            onLoginRequired={() => setShowLoginModal(true)}
                         />
                     }
                     // --- 2. Pass Preview Function ---
@@ -1666,6 +1809,13 @@ export default function EditorPanel() {
                 onDiscard={handleDiscardAndExit}
                 onSave={handleSaveAndExit}
                 isSaving={isSaving}
+            />
+
+            {/* ── Login Required Modal (for unauthenticated save) ── */}
+            <LoginRequiredModal
+                isOpen={showLoginModal}
+                onClose={() => setShowLoginModal(false)}
+                onSignIn={handleLoginRequired}
             />
         </div>
     );

@@ -20,7 +20,9 @@ export default function SaveDesignButton({
   className,
   id,
   variant = "outline", // Default to desktop style
-  size = "sm"         // Default to desktop size
+  size = "sm",         // Default to desktop size
+  user,                // 👈 Firebase user object for auth gating
+  onLoginRequired,     // 👈 Callback when unauthenticated user tries to save
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -29,6 +31,11 @@ export default function SaveDesignButton({
   let slimObjectsToSave = JSON.parse(JSON.stringify(canvas.present)); // Start with the current Redux state of canvas objects
 
   const handleSaveClick = () => {
+    // 🔒 Auth Gate: If user is not logged in or is anonymous, prompt login
+    if (!user || user.isAnonymous) {
+      if (onLoginRequired) onLoginRequired();
+      return;
+    }
     setIsModalOpen(true);
   };
 

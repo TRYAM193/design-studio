@@ -60,10 +60,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
-      const redirect = redirectAfterAuth || "/dashboard";
-      navigate(redirect);
+      // Prefer the "from" state (e.g., design editor redirect) over the static prop
+      const redirect = destination !== "/dashboard" ? destination : (redirectAfterAuth || "/dashboard");
+      navigate(redirect, { replace: true });
     }
-  }, [authLoading, isAuthenticated, navigate, redirectAfterAuth]);
+  }, [authLoading, isAuthenticated, navigate, redirectAfterAuth, destination]);
 
   // Google Login
   const handleGoogleLogin = async () => {
