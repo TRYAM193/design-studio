@@ -1,15 +1,29 @@
 // src/design-tool/utils/aiService.js
 import { getFunctions, httpsCallable } from "firebase/functions";
 
-export const generateDesignJsonFromPrompt = async (prompt, style, canvasWidth, canvasHeight, productInfo, referenceImages = []) => {
+export const warmUpAIBackend = async () => {
+  const functions = getFunctions();
+  const warmUpAI = httpsCallable(functions, 'warmUpAI');
+  try {
+    await warmUpAI();
+    console.log("AI Backend Warmed Up");
+  } catch (err) {
+    console.warn("AI Warm-up failed (skipping):", err);
+  }
+};
+
+export const generateDesignJsonFromPrompt = async (prompt, style, canvasWidth, canvasHeight, productInfo) => {
   const functions = getFunctions();
   const generateFabricJson = httpsCallable(functions, 'generateFabricJson');
 
   try {
-    const result = await generateFabricJson({ prompt, style, canvasWidth, canvasHeight, productInfo, referenceImages });
+    const result = await generateFabricJson({ prompt, style, canvasWidth, canvasHeight, productInfo });
     
     if (result.data.success) {
-      return result.data.objects; // Returns the JSON array for Fabric.js
+      return {
+        objects: result.data.objects,
+        suggestedBg: result.data.backgroundColor
+      };
     } else {
       throw new Error("Generation failed");
     }
@@ -17,4 +31,4 @@ export const generateDesignJsonFromPrompt = async (prompt, style, canvasWidth, c
     console.error("AI Generation Error:", error);
     throw error;
   }
-};
+};

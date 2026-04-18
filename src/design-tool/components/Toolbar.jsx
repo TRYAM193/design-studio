@@ -375,7 +375,7 @@ function liveUpdateFabric(fabricCanvas, id, updates, currentLiveProps, object) {
 
   existing.set(finalUpdates);
   // Special check for Text scale updates to keep it responsive
-  if (existing.type === 'text' && (finalUpdates.text !== undefined || finalUpdates.fontFamily !== undefined || finalUpdates.fontSize !== undefined)) {
+  if (['text', 'textbox', 'i-text'].includes(existing.type) && (finalUpdates.text !== undefined || finalUpdates.fontFamily !== undefined || finalUpdates.fontSize !== undefined)) {
     existing.initDimensions();
   }
 
@@ -418,7 +418,7 @@ export default function Toolbar({ id, type, object, updateObject, updateDpiForOb
   const currentEffect = object?.textEffect || props.textEffect || 'none';
   const effectiveType = object?.type || type;
   const isSvg = object?.type === 'svg';
-  const isTextObject = effectiveType === 'text' || effectiveType === 'circle-text';
+  const isTextObject = effectiveType === 'text' || effectiveType === 'textbox' || effectiveType === 'circle-text';
   const isShapeObject = ['rect', 'circle', 'triangle', 'star', 'pentagon', 'hexagon', 'line', 'arrow', 'diamond', 'trapezoid', 'heart', 'lightning', 'bubble'].includes(effectiveType);
   const supportsBorderRadius = ['rect', 'triangle', 'star', 'pentagon', 'hexagon', 'arrow', 'diamond', 'trapezoid', 'lightning'].includes(effectiveType);
   const colorCommitTimer = useRef(null);

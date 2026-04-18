@@ -446,6 +446,7 @@ function OrderDetailsModal({ order, isOpen, onClose, onApproveBulk }: any) {
                             <div className="pt-2 border-t border-slate-800 mt-2">
                                 <p className="text-slate-300">{order.shippingAddress?.line1}</p>
                                 <p className="text-slate-300">{order.shippingAddress?.city}, {order.shippingAddress?.zip}</p>
+                                <p className="text-slate-300">{order.shippingAddress?.state}</p>
                                 <p className="text-slate-300">{order.shippingAddress?.countryCode}</p>
                             </div>
                         </div>
@@ -523,10 +524,10 @@ function OrderDetailsModal({ order, isOpen, onClose, onApproveBulk }: any) {
                             <span className="text-xs text-slate-500 flex items-center ml-2">Invoice generates after delivery</span>
                         )}
                     </div>
-                    
+
                     {/* 🟢 NEW: The Bulk Approval Button */}
                     {order.providerStatus === 'pending_admin_approval' && (
-                        <Button 
+                        <Button
                             onClick={() => onApproveBulk(order.id)}
                             className="bg-orange-600 hover:bg-orange-700 text-white mr-2"
                         >
@@ -670,10 +671,10 @@ function StatusBadge({ status, error, globalStatus }: { status: string, error?: 
     if (status === 'synced') return <Badge className="bg-green-500/10 text-green-400 border-green-500/20">Synced</Badge>;
     if (status === 'manual') return <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20">Manual</Badge>;
     if (status === 'error') return <Badge variant="destructive" className="bg-red-500/10 text-red-400 border-red-500/20">Bot Error</Badge>;
-    
+
     // 🟢 NEW: The pulsating Needs Review badge
     if (status === 'pending_admin_approval') return <Badge className="bg-orange-500/10 text-orange-400 border-orange-500/20 animate-pulse">Needs Review</Badge>;
-    
+
     if (status === 'processing') return <Badge variant="outline" className="text-yellow-400 border-yellow-500/20 animate-pulse">Processing...</Badge>;
     return <Badge variant="secondary" className="bg-slate-800 text-slate-400">Pending</Badge>;
 }

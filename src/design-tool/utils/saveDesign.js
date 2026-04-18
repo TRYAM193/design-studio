@@ -482,12 +482,14 @@ export const saveGlobalTemplate = async (canvas, name, category = "General", obj
             ...obj.props,
             src: proxyURL,
             print_src: highResURL,
+            // Preserve the true original dimensions
             originalWidth: originalWidth,
-            originalHeight: originalWidth,
+            originalHeight: originalHeight,
             width: proxyData.width,
             height: proxyData.height,
-            scaleX: obj.props.scaleX * widthRatio,
-            scaleY: obj.props.scaleY * heightRatio,
+            // Adjust scale to account for proxy resizing. Guard against undefined.
+            scaleX: (obj.props.scaleX ?? 1) * (originalWidth && proxyData.width ? (originalWidth / proxyData.width) : 1),
+            scaleY: (obj.props.scaleY ?? 1) * (originalHeight && proxyData.height ? (originalHeight / proxyData.height) : 1),
           }
         };
       })

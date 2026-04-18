@@ -13,6 +13,10 @@ const puppeteer = require("puppeteer-core");
 const { Resend } = require('resend');
 const config = defineJsonSecret("FUNCTIONS_CONFIG_EXPORT");
 const geminiSecret = defineSecret("GEMINI_API_KEY");
+const groqSecret = defineSecret("GROQ_API_KEY");
+const Groq = require('groq-sdk');
+const { runDesignPipeline } = require('./ai_engine');
+
 // Initialize Admin
 if (admin.apps.length === 0) {
   admin.initializeApp();
@@ -1676,34 +1680,35 @@ exports.createRazorpayOrder = functions
     } catch (error) { throw new functions.https.HttpsError('internal', error.message); }
   });
 
+// 🚀 0. AI ENGINE: WARM UP SIGNAL
+exports.warmUpAI = functions
+  .runWith({ timeoutSeconds: 60, memory: '256MB', secrets: [groqSecret] })
+  .https.onCall(async (data, context) => {
+    console.log("🔥 Warm-up signal received. Backend is ready.");
+    return { status: "ready" };
+  });
+
+// 🚀 1. AI ENGINE: GENERATE FABRIC JSON
 exports.generateFabricJson = functions
   .runWith({
-    timeoutSeconds: 300,
+    timeoutSeconds: 120,
     memory: '1GB',
-    secrets: ["FUNCTIONS_CONFIG_EXPORT", geminiSecret]
+    secrets: ["FUNCTIONS_CONFIG_EXPORT", groqSecret]
   })
   .https.onCall(async (data, context) => {
-    const { prompt, style, canvasWidth, canvasHeight, productInfo, referenceImages } = data;
-    // Require genai locally to avoid global issues if not installed yet
-    const { GoogleGenAI, Type } = require('@google/genai');
-
+    const { prompt, style, canvasWidth, canvasHeight } = data;
+    
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required');
     const userId = context.auth.uid;
     const today = new Date().toISOString().split('T')[0];
     const userRef = db.collection('users').doc(userId);
     const docRef = userRef.collection('daily_stats').doc(today);
 
-    // We expect the key to be set in Firebase Secrets
-    const apiKey = geminiSecret.value() || process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new functions.https.HttpsError('internal', 'Gemini API key is not configured.');
-
-    const ai = new GoogleGenAI({ apiKey });
-
     await db.runTransaction(async (t) => {
       // Check if user is a Founding Creator
       const userDoc = await t.get(userRef);
       const isFounder = userDoc.exists ? userDoc.data().isFoundingCreator : false;
-      const MAX_GEN = isFounder ? 10 : 5; // 💎 Elevated Limit for Founders
+      const MAX_GEN = isFounder ? 10 : 5; 
 
       const doc = await t.get(docRef);
       const current = doc.exists ? (doc.data().gen_count || 0) : 0;
@@ -1719,75 +1724,24 @@ exports.generateFabricJson = functions
     });
 
     try {
-      const finalPrompt = style ? `${prompt}. Design strictly in a ${style} style.` : prompt;
-      const cWidth = canvasWidth || 800;
-      const cHeight = canvasHeight || 800;
-      const pInfo = productInfo || "a blank canvas";
+      const groq = new Groq({ apiKey: groqSecret.value() });
+      const finalPrompt = style ? `${prompt}. Style: ${style}` : prompt;
+      
+      const design = await runDesignPipeline(
+        groq, 
+        finalPrompt, 
+        canvasWidth || 800, 
+        canvasHeight || 800
+      );
 
-      const systemInstruction = `You are an expert T-shirt UI designer. 
-If reference images or SVGs are provided, meticulously analyze their visual layout. Accurately extract all visible text and copy their positioning relative to the canvas. Identify shapes (rectangles, circles, triangles, vector paths) and use them to construct an identical or strongly inspired valid Fabric.js layout matching the reference!
-You must output a JSON array of objects representing a design layout compatible with Fabric.js.
-The design is for ${pInfo}.
-The canvas dimensions are exactly ${cWidth}x${cHeight}. Use appropriate positioning (left, top) within these bounds, and dimensions (width, height, radius, path).
-Only use these object types: "text", "rect", "circle", "triangle", "path".
-For "path" objects, provide the SVG path data commands in the "path" property to draw custom vector shapes. Combine multiple "path" objects with different "fill" colors to draw complex multicolor vector graphics!
-Use beautiful, modern color palettes (hex codes for 'fill').
-For 'text' objects, use visually appealing emojis or standard web fonts in 'fontFamily' (e.g. "Arial", "Impact", "Courier New", "Georgia", "Verdana").
-Ensure the design looks good on a t-shirt.`;
-
-      const responseSchema = {
-        type: Type.ARRAY,
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            type: { type: Type.STRING, enum: ["text", "rect", "circle", "triangle", "path"] },
-            left: { type: Type.NUMBER },
-            top: { type: Type.NUMBER },
-            fill: { type: Type.STRING },
-            text: { type: Type.STRING },
-            fontSize: { type: Type.NUMBER },
-            fontFamily: { type: Type.STRING },
-            fontWeight: { type: Type.STRING, enum: ["normal", "bold"] },
-            width: { type: Type.NUMBER },
-            height: { type: Type.NUMBER },
-            radius: { type: Type.NUMBER },
-            path: { type: Type.STRING }
-          },
-          required: ["type", "left", "top", "fill"]
-        }
-      };
-
-      let finalContents = finalPrompt;
-      if (referenceImages && referenceImages.length > 0) {
-        finalContents = [finalPrompt];
-        for (const img of referenceImages) {
-          finalContents.push({
-            inlineData: {
-              data: img.base64,
-              mimeType: img.mimeType
-            }
-          });
-        }
-      }
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
-        contents: finalContents,
-        config: {
-          systemInstruction: systemInstruction,
-          responseMimeType: 'application/json',
-          responseSchema: responseSchema,
-        }
-      });
-
-      const jsonOutput = JSON.parse(response.text);
-      return { success: true, objects: jsonOutput };
+      return { success: true, ...design };
 
     } catch (error) {
-      console.error("Gemini Error:", error);
+      console.error("AI Engine Error:", error);
       throw new functions.https.HttpsError('internal', 'Design generation failed');
     }
   });
+
 
 // ------------------------------------------------------------------
 // 💰 1. RAZORPAY WEBHOOK (Group Orders, Fraud Check, Invoice)

@@ -724,22 +724,22 @@ export default function CanvasEditor({
               const resolvedStroke = resolveFillForFabric(objData.props.stroke);
               svgGroup.set({ ...objData.props, customId: objData.id, customType: 'svg', stroke: resolvedStroke });
 
-              if (svgGroup._objects) {
-                svgGroup._objects.forEach(path => {
-                  path.originalFill = path.fill; // Store to allow dynamic mapping
-                  path.originalStroke = path.stroke;
+              const paths = svgGroup._objects ? svgGroup._objects : [svgGroup];
+              paths.forEach(path => {
+                path.originalFill = path.fill; // Store to allow dynamic mapping
+                path.originalStroke = path.stroke;
 
-                  if (colorMap && path.originalFill && colorMap[path.originalFill]) {
-                    path.set('fill', resolveFillForFabric(colorMap[path.originalFill]));
-                  } else if (objData.props.fill && !colorMap) {
-                    path.set('fill', resolveFillForFabric(objData.props.fill));
-                  }
+                if (colorMap && path.originalFill && colorMap[path.originalFill]) {
+                  path.set('fill', resolveFillForFabric(colorMap[path.originalFill]));
+                } else if (objData.props.fill && !colorMap) {
+                  path.set('fill', resolveFillForFabric(objData.props.fill));
+                }
 
-                  if (colorMap && path.originalStroke && colorMap[path.originalStroke]) {
-                    path.set('stroke', resolveFillForFabric(colorMap[path.originalStroke]));
-                  }
-                });
-              }
+                if (colorMap && path.originalStroke && colorMap[path.originalStroke]) {
+                  path.set('stroke', resolveFillForFabric(colorMap[path.originalStroke]));
+                }
+              });
+
               fabricCanvas.add(svgGroup);
               fabricCanvas.requestRenderAll();
             } catch (err) { console.error("Failed to load SVG:", err); }
@@ -749,8 +749,10 @@ export default function CanvasEditor({
             existing.set(resolvedProps);
 
             const colorMap = objData.props.colorMap;
-            if (colorMap && existing._objects) {
-              existing._objects.forEach(path => {
+            const paths = existing._objects ? existing._objects : [existing];
+
+            if (colorMap) {
+              paths.forEach(path => {
                 if (path.originalFill && colorMap[path.originalFill]) {
                   path.set('fill', resolveFillForFabric(colorMap[path.originalFill]));
                 }
@@ -758,8 +760,8 @@ export default function CanvasEditor({
                   path.set('stroke', resolveFillForFabric(colorMap[path.originalStroke]));
                 }
               });
-            } else if (resolvedProps.fill && existing._objects) {
-              existing._objects.forEach(path => path.set('fill', resolveFillForFabric(resolvedProps.fill)));
+            } else if (resolvedProps.fill) {
+              paths.forEach(path => path.set('fill', resolveFillForFabric(resolvedProps.fill)));
             }
             existing.setCoords();
           }

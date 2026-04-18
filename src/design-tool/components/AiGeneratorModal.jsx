@@ -1,9 +1,9 @@
-// src/design-tool/components/AiGeneratorModal.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FiLoader, FiCpu, FiZap } from 'react-icons/fi';
-import { generateDesignJsonFromPrompt } from '../utils/aiService';
+import { generateDesignJsonFromPrompt, warmUpAIBackend } from '../utils/aiService';
+
 import { useDailyLimits } from '../../hooks/useDailyLimits';
 import { Loader2, Sparkles, Lock, ImagePlus, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -25,6 +25,13 @@ export function AiGeneratorModal({ isOpen, onClose, onDesignGenerated, fabricCan
   const [error, setError] = useState('');
   const [referenceImages, setReferenceImages] = useState([]);
   const { genRemaining, genLimit, incrementGen } = useDailyLimits();
+
+  useEffect(() => {
+    if (isOpen) {
+      warmUpAIBackend();
+    }
+  }, [isOpen]);
+
 
   const compressImage = (file) => {
     return new Promise((resolve, reject) => {
@@ -117,14 +124,19 @@ export function AiGeneratorModal({ isOpen, onClose, onDesignGenerated, fabricCan
     }, 1500);
 
     try {
-      const cWidth = fabricCanvas ? fabricCanvas.width : 800;
-      const cHeight = fabricCanvas ? fabricCanvas.height : 800;
+      const cWidth = fabricCanvas ? Math.round(fabricCanvas.width / (fabricCanvas.getZoom() || 1)) : 800;
+      const cHeight = fabricCanvas ? Math.round(fabricCanvas.height / (fabricCanvas.getZoom() || 1)) : 800;
       const pInfo = productId ? `product ID: ${productId}` : "a blank canvas";
-      
-      const designJson = await generateDesignJsonFromPrompt(prompt, selectedStyle, cWidth, cHeight, pInfo, referenceImages);
 
-      onDesignGenerated(designJson);
-      incrementGen(); // Optimistically update the UI limit
+      const data = await generateDesignJsonFromPrompt(prompt, selectedStyle, cWidth, cHeight, pInfo);
+
+      console.log("Received AI Design:", data.objects);
+      
+      if (typeof onDesignGenerated === 'function') {
+        onDesignGenerated(data.objects, data.suggestedBg);
+      }
+      
+      incrementGen(); 
 
       setPrompt('');
       setReferenceImages([]);
@@ -137,11 +149,12 @@ export function AiGeneratorModal({ isOpen, onClose, onDesignGenerated, fabricCan
 
     } catch (err) {
       console.error(err);
-      toast.error('Cosmic AI failed to generate design. Please try again.');
+      toast.error(err.message || 'Cosmic AI failed to generate design. Please try again.');
       clearInterval(progressInterval);
       setIsGenerating(false);
-      if (onGenerateEnd) onGenerateEnd(); // Clean up loaders
+      if (onGenerateEnd) onGenerateEnd(); 
     }
+
   };
 
   return (

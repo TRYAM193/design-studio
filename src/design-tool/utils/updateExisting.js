@@ -31,8 +31,12 @@ export default function updateExisting(existing, objData, isDifferent) {
             delete updatesNeeded.scaleY;
         }
 
-        if (existing.getSrc() !== objData.props.src) {
-            existing.setSrc(objData.props.src);
+        try {
+            if (typeof existing.getSrc === 'function' && existing.getSrc() !== objData.props.src) {
+                if (typeof existing.setSrc === 'function') existing.setSrc(objData.props.src);
+            }
+        } catch (e) {
+            // If object doesn't support getSrc/setSrc, ignore image update
         }
 
         const resolvedUpdates = { ...updatesNeeded };

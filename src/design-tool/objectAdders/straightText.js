@@ -1,4 +1,4 @@
-import { FabricText } from 'fabric';
+import { FabricText, Textbox } from 'fabric';
 import { resolveFillForFabric } from '../utils/gradientUtils';
 
 export default function StraightText(obj) {
@@ -11,11 +11,18 @@ export default function StraightText(obj) {
     ? String(props.text) 
     : " "; 
 
-  return new FabricText(safeText, {
+  const commonProps = {
     ...props,
     fill: resolveFillForFabric(props.fill),
     stroke: resolveFillForFabric(props.stroke),
     customType: 'text',
     customId: obj.id
-  });
+  };
+
+  // Create the correct Fabric class based on the Redux type to prevent type-mismatch loops
+  if (obj.type === 'textbox') {
+    return new Textbox(safeText, commonProps);
+  }
+
+  return new FabricText(safeText, commonProps);
 }

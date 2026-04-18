@@ -1035,8 +1035,16 @@ export default function EditorPanel() {
 
 
     // 3. HANDLE AI GENERATED OBJECTS
-    const handleAiObjectsGenerated = async (jsonArray) => {
+    const handleAiObjectsGenerated = async (jsonArray, suggestedBg) => {
         if (!jsonArray || jsonArray.length === 0) return;
+
+        // ✅ PRO: Apply AI-suggested background color to canvas
+        if (suggestedBg && fabricCanvas) {
+            fabricCanvas.backgroundColor = suggestedBg;
+            fabricCanvas.requestRenderAll();
+            setCanvasBg(suggestedBg);
+            console.log('🎨 Applied AI suggested background:', suggestedBg);
+        }
 
         // Baseline Fabric.js properties that the delta engine & sidebar expect to exist.
         // Without these, undo/redo breaks (comparisons against undefined) and objects glitch.
@@ -1074,6 +1082,28 @@ export default function EditorPanel() {
 
             const isText = ['text', 'textbox', 'i-text'].includes(resolvedType);
             const newId = uuidv4();
+
+            // ✅ PRO: Handle SVG vector objects from AI
+            if (resolvedType === 'svg' && obj.svgString) {
+                const { svgString, colorMap, ...svgProps } = fabricProps;
+                
+                const propsPayload = {
+                  ...BASE_SHAPE_PROPS,
+                  ...svgProps,
+                };
+                if (colorMap && Object.keys(colorMap).length > 0) {
+                    propsPayload.colorMap = colorMap;
+                }
+
+                newObjects.push({
+                    id: newId,
+                    customId: newId,
+                    type: 'svg',
+                    svgString: svgString,
+                    props: propsPayload
+                });
+                continue;
+            }
 
             newObjects.push({
                 id: newId,

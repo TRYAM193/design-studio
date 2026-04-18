@@ -20,9 +20,9 @@ export default function ContextualSidebar({
 
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
-  const handleAiDesignGenerated = (jsonArray) => {
+  const handleAiDesignGenerated = (jsonArray, suggestedBg) => {
     if (onAiObjectsGenerated && jsonArray) {
-      onAiObjectsGenerated(jsonArray);
+      onAiObjectsGenerated(jsonArray, suggestedBg);
     }
   };
 

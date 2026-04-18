@@ -86,9 +86,16 @@ export default function HeadlessRender() {
 
                     await document.fonts.ready;
 
+                    // Apply viewport scaling for high-res render
                     canvas.setZoom(scaleFactor);
                     canvas.setDimensions({ width: TARGET_WIDTH, height: TARGET_HEIGHT });
-                    
+
+                    // Make sure Fabric recalculates bounds after JSON -> zoom changes
+                    canvas.getObjects().forEach((o: any) => {
+                        if (typeof o.setCoords === 'function') o.setCoords();
+                    });
+                    canvas.calcOffset();
+
                     canvas.renderAll();
 
                     // Signal ready

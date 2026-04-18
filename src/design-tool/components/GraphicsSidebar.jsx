@@ -25,7 +25,7 @@ export default function GraphicsSidebar({ setActivePanel }) {
     const newObject = {
       id: id,
       type: 'svg',
-      svgString: graphic.svgString,
+      svgString: graphic.svgString.replace(/currentColor/g, "#1A1A1A"),
       props: {
         left: 400,
         top: 400,
