@@ -12,12 +12,12 @@ export const warmUpAIBackend = async () => {
   }
 };
 
-export const generateDesignJsonFromPrompt = async (prompt, style, canvasWidth, canvasHeight, productInfo) => {
+export const generateDesignJsonFromPrompt = async (prompt, style, canvasWidth, canvasHeight, productInfo, imageBase64 = null) => {
   const functions = getFunctions();
   const generateFabricJson = httpsCallable(functions, 'generateFabricJson');
 
   try {
-    const result = await generateFabricJson({ prompt, style, canvasWidth, canvasHeight, productInfo });
+    const result = await generateFabricJson({ prompt, style, canvasWidth, canvasHeight, productInfo, imageBase64 });
     
     if (result.data.success) {
       return {

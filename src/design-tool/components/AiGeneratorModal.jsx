@@ -23,8 +23,8 @@ export function AiGeneratorModal({ isOpen, onClose, onDesignGenerated, fabricCan
   const [selectedStyle, setSelectedStyle] = useState('none');
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState('');
-  const [referenceImages, setReferenceImages] = useState([]);
-  const { genRemaining, genLimit, incrementGen } = useDailyLimits();
+  const [image, setImage] = useState(null); // Single image object: { base64, previewUrl }
+  const { genRemaining, genLimit } = useDailyLimits();
 
   useEffect(() => {
     if (isOpen) {
@@ -75,20 +75,15 @@ export function AiGeneratorModal({ isOpen, onClose, onDesignGenerated, fabricCan
 
   const handleFileUpload = async (e) => {
     if (!e.target.files?.length) return;
-    const newFiles = Array.from(e.target.files);
-
-    if (referenceImages.length + newFiles.length > 5) {
-      setError('You can only upload up to 5 reference images.');
-      return;
-    }
+    const file = e.target.files[0]; // Restrict to single file
 
     try {
       setIsGenerating(true);
       setError('');
-      const processed = await Promise.all(newFiles.map(compressImage));
-      setReferenceImages(prev => [...prev, ...processed.map(p => ({ ...p, id: Math.random().toString(36).substr(2, 9) }))]);
+      const processed = await compressImage(file);
+      setImage(processed);
     } catch (err) {
-      setError('Failed to process one or more images.');
+      setError('Failed to process image.');
     } finally {
       setIsGenerating(false);
       e.target.value = '';
@@ -128,7 +123,7 @@ export function AiGeneratorModal({ isOpen, onClose, onDesignGenerated, fabricCan
       const cHeight = fabricCanvas ? Math.round(fabricCanvas.height / (fabricCanvas.getZoom() || 1)) : 800;
       const pInfo = productId ? `product ID: ${productId}` : "a blank canvas";
 
-      const data = await generateDesignJsonFromPrompt(prompt, selectedStyle, cWidth, cHeight, pInfo);
+      const data = await generateDesignJsonFromPrompt(prompt, selectedStyle, cWidth, cHeight, pInfo, image?.base64);
 
       console.log("Received AI Design:", data.objects);
       
@@ -136,10 +131,10 @@ export function AiGeneratorModal({ isOpen, onClose, onDesignGenerated, fabricCan
         onDesignGenerated(data.objects, data.suggestedBg);
       }
       
-      incrementGen(); 
+      // incrementGen(); // 🛑 REMOVED: Backend now handles this, and onSnapshot listener updates the UI.
 
       setPrompt('');
-      setReferenceImages([]);
+      setImage(null);
 
       clearInterval(progressInterval);
       setIsGenerating(false);
@@ -173,42 +168,48 @@ export function AiGeneratorModal({ isOpen, onClose, onDesignGenerated, fabricCan
 
         <div className="p-5 overflow-y-auto custom-scrollbar flex-1 space-y-6">
 
-          {/* Prompt Area */}
-          <div className="space-y-3">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Describe Your Vision
-            </label>
-            <textarea
-              className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 min-h-[100px] resize-none placeholder:text-slate-600 transition-all shadow-inner"
-              placeholder="E.g. A retro poster layout with bold text saying 'FUTURE' and geometric shapes..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-            />
-          </div>
-
-          {/* Reference Images */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-pink-500"></span> References ({referenceImages.length}/5)
-              </label>
-              <label className={`cursor-pointer flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-colors ${referenceImages.length >= 5 ? 'bg-slate-800 text-slate-500 opacity-50 cursor-not-allowed' : 'text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20'}`}>
-                <ImagePlus size={14} /> Add Media
-                <input type="file" multiple accept="image/png, image/jpeg, image/webp, image/svg+xml" className="hidden" onChange={handleFileUpload} disabled={referenceImages.length >= 5} />
-              </label>
-            </div>
-            {referenceImages.length > 0 && (
-              <div className="flex flex-wrap gap-3 mt-2">
-                {referenceImages.map(img => (
-                  <div key={img.id} className="relative w-16 h-16 rounded-xl border border-white/10 bg-black/40 group overflow-hidden shadow-inner">
-                    <img src={img.previewUrl} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt="Reference" />
-                    <button onClick={() => setReferenceImages(prev => prev.filter(i => i.id !== img.id))} className="absolute top-1 right-1 p-0.5 bg-red-500/90 text-white rounded-full opacity-0 scale-50 group-hover:opacity-100 group-hover:scale-100 transition-all shadow-lg hover:bg-red-500">
-                      <X size={12} strokeWidth={3} />
+          {/* Modern Chat-style Input Area */}
+          <div className="relative group">
+            <div className={`transition-all duration-300 bg-black/40 border ${error ? 'border-red-500/50' : 'border-white/10 group-focus-within:border-blue-500/50'} rounded-2xl overflow-hidden shadow-2xl`}>
+              
+              {/* Image Preview Area (Compact) */}
+              {image && (
+                <div className="px-4 pt-4">
+                  <div className="relative w-20 h-20 rounded-xl border border-white/20 overflow-hidden group/img shadow-lg">
+                    <img src={image.previewUrl} className="w-full h-full object-cover" alt="Reference" />
+                    <button 
+                      onClick={() => setImage(null)}
+                      className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-500 text-white rounded-full transition-colors"
+                    >
+                      <X size={12} />
                     </button>
                   </div>
-                ))}
+                </div>
+              )}
+
+              <textarea
+                className="w-full bg-transparent border-none p-4 pb-12 text-sm text-white focus:outline-none placeholder:text-slate-500 min-h-[120px] resize-none"
+                placeholder="What design should I generate? (e.g. A retro poster with a futuristic skull)"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+              />
+
+              {/* Action Bar inside textarea */}
+              <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
+                <label className={`cursor-pointer group/upload p-2 rounded-lg transition-all ${image ? 'text-blue-400 bg-blue-500/10' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>
+                  <ImagePlus size={18} />
+                  <input type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleFileUpload} />
+                </label>
+                
+                <div className="flex items-center gap-2">
+                   {prompt.length > 0 && (
+                     <span className="text-[10px] font-bold text-slate-500 bg-white/5 px-2 py-1 rounded">
+                       {prompt.length} chars
+                     </span>
+                   )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Style Selector */}
@@ -264,7 +265,7 @@ export function AiGeneratorModal({ isOpen, onClose, onDesignGenerated, fabricCan
         <div className="p-5 border-t border-white/10 bg-black/20 flex-shrink-0">
           <Button
             onClick={handleGenerate}
-            disabled={isGenerating || (!prompt.trim() && referenceImages.length === 0) || genRemaining === 0}
+            disabled={isGenerating || (!prompt.trim() && !image) || genRemaining === 0}
             className="w-full h-12 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 text-white font-bold tracking-wider shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-all hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] active:scale-[0.98] border-0 rounded-xl"
           >
             {isGenerating ? (

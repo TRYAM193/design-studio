@@ -1725,13 +1725,12 @@ exports.generateFabricJson = functions
 
     try {
       const groq = new Groq({ apiKey: groqSecret.value() });
-      const finalPrompt = style ? `${prompt}. Style: ${style}` : prompt;
-      
       const design = await runDesignPipeline(
         groq, 
-        finalPrompt, 
+        prompt, // Use the raw prompt as VLM will handle the style/context
         canvasWidth || 800, 
-        canvasHeight || 800
+        canvasHeight || 800,
+        data.imageBase64
       );
 
       return { success: true, ...design };
