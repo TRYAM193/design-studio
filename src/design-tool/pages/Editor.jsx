@@ -236,11 +236,12 @@ export default function EditorPanel() {
     }, []);
 
     // ─── Magic Prompt Handoff: pick up preview from landing page ───
+    // Uses the same object processing as handleAiObjectsGenerated
     useEffect(() => {
         const raw = sessionStorage.getItem('magic_preview_design');
         if (!raw) return;
         try {
-            const { objects, ts } = JSON.parse(raw);
+            const { objects, suggestedBg, ts } = JSON.parse(raw);
             // Only consume if fresher than 10 minutes
             if (Date.now() - ts > 10 * 60 * 1000) {
                 sessionStorage.removeItem('magic_preview_design');
@@ -254,6 +255,14 @@ export default function EditorPanel() {
                     return { id, type: obj.type || 'textbox', props: rawProps };
                 });
                 dispatch(setCanvasObjects(mapped));
+
+                // Apply AI-suggested background (same as handleAiObjectsGenerated)
+                if (suggestedBg && fabricCanvas) {
+                    fabricCanvas.backgroundColor = suggestedBg;
+                    fabricCanvas.requestRenderAll();
+                    setCanvasBg(suggestedBg);
+                }
+
                 toast.success('✨ Magic Prompt design loaded!', {
                     description: 'Your AI-generated design is ready to customize.',
                     duration: 4000,
@@ -263,7 +272,7 @@ export default function EditorPanel() {
             console.warn('Failed to restore magic preview:', e);
         }
         sessionStorage.removeItem('magic_preview_design');
-    }, [user, dispatch]);
+    }, [user, dispatch, fabricCanvas]);
 
     // ─── Restore Pending Design after Login ───────────────────────
     useEffect(() => {

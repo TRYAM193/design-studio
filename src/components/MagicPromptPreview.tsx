@@ -1,13 +1,14 @@
 // src/components/MagicPromptPreview.tsx
 // Landing-page "Magic Prompt" — no auth required, up to 3 previews/day as guest.
 // Guest uses count toward the signed-in daily quota (5 total, so 2 remain after login).
+// Uses the same AI calling pattern as design-tool/components/AiGeneratorModal.jsx
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import * as fabric from "fabric";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Wand2, ArrowRight, RefreshCw, Lock, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { generateDesignJsonFromPrompt } from "@/design-tool/utils/aiService";
+import { generateDesignJsonFromPrompt, warmUpAIBackend } from "@/design-tool/utils/aiService";
 import { useNavigate } from "react-router";
 import { auth } from "@/firebase";
 import { signInAnonymously } from "firebase/auth";
@@ -93,67 +94,112 @@ async function renderDesignToPng(
     });
 
     const addAll = async () => {
-      for (const obj of objects) {
+      for (const rawObj of objects) {
         try {
-          if (["text", "textbox", "i-text"].includes(obj.type)) {
-            const t = new fabric.Textbox(obj.props?.text || obj.text || "", {
-              ...(obj.props || obj),
-              left: obj.props?.left ?? obj.left ?? 50,
-              top: obj.props?.top ?? obj.top ?? 50,
-              fontSize: obj.props?.fontSize ?? obj.fontSize ?? 36,
-              fill: obj.props?.fill ?? obj.fill ?? "#ffffff",
-              fontFamily: obj.props?.fontFamily ?? obj.fontFamily ?? "Arial",
-              fontWeight: obj.props?.fontWeight ?? obj.fontWeight ?? "bold",
-              textAlign: obj.props?.textAlign ?? obj.textAlign ?? "center",
+          // Strip non-Fabric metadata before spreading into constructors.
+          // In Fabric.js v6+, `type` is a read-only getter — passing it
+          // to a constructor throws "Cannot set property type".
+          // This matches the pattern in Editor.jsx's handleAiObjectsGenerated.
+          const { type: objType, id: _id, role: _role, svgString: _svg, ...fabricProps } = rawObj.props
+            ? { type: rawObj.type, ...rawObj.props }
+            : rawObj;
+
+          if (["text", "textbox", "i-text"].includes(objType)) {
+            const t = new fabric.Textbox(fabricProps.text || "", {
+              ...fabricProps,
+              left: fabricProps.left ?? 50,
+              top: fabricProps.top ?? 50,
+              fontSize: fabricProps.fontSize ?? 36,
+              fill: fabricProps.fill ?? "#ffffff",
+              fontFamily: fabricProps.fontFamily ?? "Arial",
+              fontWeight: fabricProps.fontWeight ?? "bold",
+              textAlign: fabricProps.textAlign ?? "center",
             });
             fc.add(t);
-          } else if (obj.type === "rect") {
+          } else if (objType === "rect") {
+            // Skip background rects (same as Editor's handleAiObjectsGenerated)
+            if (fabricProps.selectable === false || _role === "background") continue;
             const r = new fabric.Rect({
-              ...(obj.props || obj),
-              left: obj.props?.left ?? obj.left ?? 100,
-              top: obj.props?.top ?? obj.top ?? 100,
-              width: obj.props?.width ?? obj.width ?? 100,
-              height: obj.props?.height ?? obj.height ?? 100,
-              fill: obj.props?.fill ?? obj.fill ?? "#ff6600",
+              ...fabricProps,
+              left: fabricProps.left ?? 100,
+              top: fabricProps.top ?? 100,
+              width: fabricProps.width ?? 100,
+              height: fabricProps.height ?? 100,
+              fill: fabricProps.fill ?? "#ff6600",
             });
             fc.add(r);
-          } else if (obj.type === "circle") {
+          } else if (objType === "circle") {
             const c = new fabric.Circle({
-              ...(obj.props || obj),
-              left: obj.props?.left ?? obj.left ?? 150,
-              top: obj.props?.top ?? obj.top ?? 150,
-              radius: obj.props?.radius ?? obj.radius ?? 50,
-              fill: obj.props?.fill ?? obj.fill ?? "#ff6600",
+              ...fabricProps,
+              left: fabricProps.left ?? 150,
+              top: fabricProps.top ?? 150,
+              radius: fabricProps.radius ?? 50,
+              fill: fabricProps.fill ?? "#ff6600",
             });
             fc.add(c);
-          } else if (obj.type === "triangle") {
+          } else if (objType === "triangle") {
             const tri = new fabric.Triangle({
-              ...(obj.props || obj),
-              left: obj.props?.left ?? obj.left ?? 150,
-              top: obj.props?.top ?? obj.top ?? 150,
-              width: obj.props?.width ?? obj.width ?? 100,
-              height: obj.props?.height ?? obj.height ?? 100,
-              fill: obj.props?.fill ?? obj.fill ?? "#ff6600",
+              ...fabricProps,
+              left: fabricProps.left ?? 150,
+              top: fabricProps.top ?? 150,
+              width: fabricProps.width ?? 100,
+              height: fabricProps.height ?? 100,
+              fill: fabricProps.fill ?? "#ff6600",
             });
             fc.add(tri);
-          } else if (obj.type === "image") {
+          } else if (objType === "image") {
             try {
-              const src = obj.props?.src ?? obj.src;
+              const src = fabricProps.src;
               if (src) {
                 const img = await fabric.FabricImage.fromURL(src, {
                   crossOrigin: "anonymous",
                 });
-                img.set({ ...(obj.props || obj) });
+                img.set({ ...fabricProps });
                 fc.add(img);
               }
             } catch {
               /* skip broken images */
             }
           }
+          // Note: 'svg' type objects are skipped in preview (complex paths)
         } catch (e) {
           console.warn("Skipped object during headless render:", e);
         }
       }
+
+      // ── Clamp objects to canvas bounds ──────────────────────────────
+      // AI-generated objects may exceed the 500×500 preview canvas.
+      // Scale down and reposition any object whose bounding box overflows.
+      const PAD = 10; // px padding from canvas edge
+      const maxW = CANVAS_SIZE - PAD * 2;
+      const maxH = CANVAS_SIZE - PAD * 2;
+
+      for (const obj of fc.getObjects()) {
+        // Force layout calculation so getBoundingRect is accurate
+        obj.setCoords();
+        const br = obj.getBoundingRect();
+
+        // 1. Scale down if the object is bigger than the canvas
+        if (br.width > maxW || br.height > maxH) {
+          const scaleFactor = Math.min(maxW / br.width, maxH / br.height);
+          obj.scaleX = (obj.scaleX || 1) * scaleFactor;
+          obj.scaleY = (obj.scaleY || 1) * scaleFactor;
+          obj.setCoords();
+        }
+
+        // 2. Nudge back inside if positioned out of bounds
+        const br2 = obj.getBoundingRect();
+        if (br2.left < PAD) obj.left = (obj.left || 0) + (PAD - br2.left);
+        if (br2.top < PAD) obj.top = (obj.top || 0) + (PAD - br2.top);
+        if (br2.left + br2.width > CANVAS_SIZE - PAD) {
+          obj.left = (obj.left || 0) - (br2.left + br2.width - (CANVAS_SIZE - PAD));
+        }
+        if (br2.top + br2.height > CANVAS_SIZE - PAD) {
+          obj.top = (obj.top || 0) - (br2.top + br2.height - (CANVAS_SIZE - PAD));
+        }
+        obj.setCoords();
+      }
+
       fc.renderAll();
       const dataUrl = fc.toDataURL({ format: "png", multiplier: 1 });
       fc.dispose();
@@ -221,18 +267,34 @@ async function compositeOntoShirt(
   });
 }
 
+// ─── Progress Steps (same as design-tool AiGeneratorModal) ──────────────
+const PROGRESS_STEPS = [
+  "Consulting the Stars...",
+  "Analyzing your prompt...",
+  "Harmonizing colors & typography...",
+  "Constructing vector paths...",
+  "Aligning geometry...",
+  "Finalizing layout design...",
+];
+
 // ─── Component ─────────────────────────────────────────────────────────────
 export default function MagicPromptPreview() {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState("");
   const [selectedStyle, setSelectedStyle] = useState("none");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [progressMsg, setProgressMsg] = useState(PROGRESS_STEPS[0]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [generatedObjects, setGeneratedObjects] = useState<any[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [guestUsage, setGuestUsage] = useState(() => getGuestUsage());
   const [showLoginNudge, setShowLoginNudge] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Warm up AI backend on mount — same as AiGeneratorModal does on open
+  useEffect(() => {
+    warmUpAIBackend();
+  }, []);
 
   const guestRemaining = Math.max(0, GUEST_LIMIT - guestUsage);
   const isLimitReached = guestRemaining === 0;
@@ -251,40 +313,61 @@ export default function MagicPromptPreview() {
     setIsGenerating(true);
     setError(null);
     setPreviewUrl(null);
+    setProgressMsg(PROGRESS_STEPS[0]);
+
+    // Progress steps animation — same pattern as design-tool AiGeneratorModal
+    let stepIndex = 0;
+    const progressInterval = setInterval(() => {
+      stepIndex++;
+      if (stepIndex < PROGRESS_STEPS.length) {
+        setProgressMsg(PROGRESS_STEPS[stepIndex]);
+      }
+    }, 1500);
 
     try {
       // Ensure the Cloud Function has an authenticated context.
       // signInAnonymously is a no-op if already signed in.
       await ensureAnonymousAuth();
 
-      const objects = await generateDesignJsonFromPrompt(
+      // ✅ Same calling pattern as design-tool/utils/aiService:
+      // generateDesignJsonFromPrompt returns { objects, suggestedBg }
+      const data = await generateDesignJsonFromPrompt(
         trimmed,
         selectedStyle,
         CANVAS_SIZE,
         CANVAS_SIZE,
         "a t-shirt (preview mode)",
-        []
+        null // imageBase64 — null when no image (not [] like before)
       );
+
+      console.log("Received AI Design (Landing):", data.objects);
 
       incrementGuestUsage();
       const newUsage = getGuestUsage();
       setGuestUsage(newUsage);
 
-      // Store for editor handoff
-      setGeneratedObjects(objects);
+      // Store for editor handoff — include suggestedBg for the editor to pick up
+      setGeneratedObjects(data.objects);
       sessionStorage.setItem(
         "magic_preview_design",
-        JSON.stringify({ objects, prompt: trimmed, style: selectedStyle, ts: Date.now() })
+        JSON.stringify({
+          objects: data.objects,
+          suggestedBg: data.suggestedBg,
+          prompt: trimmed,
+          style: selectedStyle,
+          ts: Date.now(),
+        })
       );
 
-      // Render headless
-      const designPng = await renderDesignToPng(objects);
+      // Render headless — pass the objects array, not the whole data object
+      const designPng = await renderDesignToPng(data.objects);
       const composite = await compositeOntoShirt(SHIRT_URL, designPng);
       setPreviewUrl(composite);
     } catch (e: any) {
       console.error("Magic Prompt error:", e);
-      setError("Generation failed. Please try again in a moment.");
+      setError(e.message || "Generation failed. Please try again in a moment.");
     } finally {
+      clearInterval(progressInterval);
       setIsGenerating(false);
     }
   }, [prompt, selectedStyle, isLimitReached]);
@@ -498,7 +581,7 @@ export default function MagicPromptPreview() {
                       </div>
                       <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-purple-500 animate-spin" />
                     </div>
-                    <p className="text-white font-semibold text-sm">AI is crafting your design...</p>
+                    <p className="text-white font-semibold text-sm">{progressMsg}</p>
                     <p className="text-slate-400 text-xs">Usually takes 5–10 seconds</p>
                   </div>
                 </motion.div>
