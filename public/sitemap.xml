@@ -1,67 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
-<url>
-<loc>https://tryam193.in/</loc>
-<lastmod>2026-03-27</lastmod>
-<changefreq>weekly</changefreq>
-<priority>1.0</priority>
-</url>
-
-<url>
-<loc>https://tryam193.in/about/</loc>
-<lastmod>2026-03-27</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.8</priority>
-</url>
-
-<url>
-<loc>https://tryam193.in/store/</loc>
-<lastmod>2026-03-27</lastmod>
-<changefreq>daily</changefreq>
-<priority>0.9</priority>
-</url>
-
-<url>
-<loc>https://tryam193.in/design/</loc>
-<lastmod>2026-03-27</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.5</priority>
-</url>
-
-<url>
-<loc>https://tryam193.in/templates/</loc>
-<lastmod>2026-03-27</lastmod>
-<changefreq>weekly</changefreq>
-<priority>0.8</priority>
-</url>
-
-<url>
-<loc>https://tryam193.in/help/</loc>
-<lastmod>2026-03-27</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.6</priority>
-</url>
-
-<url>
-<loc>https://tryam193.in/contact/</loc>
-<lastmod>2026-03-27</lastmod>
-<changefreq>monthly</changefreq>
-<priority>0.5</priority>
-</url>
-
-<url>
-<loc>https://tryam193.in/legal/</loc>
-<lastmod>2026-03-27</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.3</priority>
-</url>
-
-<url>
-<loc>https://tryam193.in/terms/</loc>
-<lastmod>2026-03-27</lastmod>
-<changefreq>yearly</changefreq>
-<priority>0.3</priority>
-</url>
-
+  <url>
+    <loc>https://tryam193.in/</loc>
+    <lastmod>2024-11-20T10:00:00+00:00</lastmod>
+    <priority>1.00</priority>
+  </url>
+  <url>
+    <loc>https://tryam193.in/store</loc>
+    <lastmod>2024-11-20T10:00:00+00:00</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://tryam193.in/design</loc>
+    <lastmod>2024-11-20T10:00:00+00:00</lastmod>
+    <priority>0.90</priority>
+  </url>
+  <url>
+    <loc>https://tryam193.in/templates</loc>
+    <lastmod>2024-11-20T10:00:00+00:00</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
+    <loc>https://tryam193.in/about</loc>
+    <lastmod>2024-11-20T10:00:00+00:00</lastmod>
+    <priority>0.60</priority>
+  </url>
+  <url>
+    <loc>https://tryam193.in/auth</loc>
+    <lastmod>2024-11-20T10:00:00+00:00</lastmod>
+    <priority>0.50</priority>
+  </url>
 </urlset>

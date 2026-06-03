@@ -1519,7 +1519,9 @@ exports.processNewOrder = functions
     const newData = change.after.data();
     const orderId = context.params.orderId;
 
-    if (beforeData.status === 'placed' && newData.status === 'placed') {
+    const isRetry = newData.providerStatus === 'retry';
+
+    if (beforeData.status === 'placed' && newData.status === 'placed' && !isRetry) {
       console.log(`[Bot Lock] Order ${orderId} was already placed. Ignoring duplicate trigger.`);
       return null;
     }
@@ -1527,7 +1529,7 @@ exports.processNewOrder = functions
     const isJustPlaced = newData.status === 'placed' && newData.providerStatus === 'pending';
     const isAdminApproved = newData.providerStatus === 'admin_approved';
 
-    if (!isJustPlaced && !isAdminApproved) return null;
+    if (!isJustPlaced && !isAdminApproved && !isRetry) return null;
     if (newData.providerStatus === 'processing') return null;
 
     console.log(`🤖 Processing Order ${orderId}... (Admin Approved: ${isAdminApproved})`);

@@ -3,7 +3,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import AuthPage from "@/pages/Auth.tsx";
 import { StrictMode, useEffect } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, hydrateRoot } from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
 import { createBrowserRouter, RouterProvider, createRoutesFromElements, Route, Routes, useLocation, Outlet } from "react-router";
 import "./index.css";
 import Landing from "./pages/Landing.tsx";
@@ -131,14 +132,23 @@ function RouteSyncer() {
   return null;
 }
 
-createRoot(document.getElementById("root")!).render(
+const container = document.getElementById("root")!;
+const rootNode = (
   <StrictMode>
-    <VlyToolbar />
-    <AuthProvider>
-      <CartProvider>
-        <RouterProvider router={router} />
-        <Toaster />
-      </CartProvider>
-    </AuthProvider>
-  </StrictMode>,
+    <HelmetProvider>
+      <VlyToolbar />
+      <AuthProvider>
+        <CartProvider>
+          <RouterProvider router={router} />
+          <Toaster />
+        </CartProvider>
+      </AuthProvider>
+    </HelmetProvider>
+  </StrictMode>
 );
+
+if (container.hasChildNodes()) {
+  hydrateRoot(container, rootNode);
+} else {
+  createRoot(container).render(rootNode);
+}

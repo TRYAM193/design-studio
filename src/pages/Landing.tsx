@@ -67,7 +67,7 @@ export default function Landing() {
               <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-orange-500 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
               <img
                 src="https://harmless-tapir-303.convex.cloud/api/storage/1a8853ff-ebac-480a-b68b-ffe2343bbf07"
-                alt="TRYAM Logo"
+                alt="TRYAM - AI Powered Custom Apparel Logo"
                 className="relative h-10 w-10 object-cover rounded-full shadow-lg ring-1 ring-white/20"
               />
             </div>
