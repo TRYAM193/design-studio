@@ -408,6 +408,8 @@ export default function AdminDashboard() {
                             )}
                         </Card>
                     </div>
+                </TabsContent>
+
                 {/* VISITOR DROP-OFFS & ANALYTICS TAB */}
                 <TabsContent value="analytics" className="mt-4 space-y-6">
                     {/* Live Tools Quick Links */}

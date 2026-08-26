@@ -6,6 +6,8 @@ declare global {
      */
     navigateToAuth: (redirectUrl: string) => void;
     gtag: (command: string, ...args: any[]) => void;
+    clarity?: (...args: any[]) => void;
+    dataLayer: any[];
   }
 }
 

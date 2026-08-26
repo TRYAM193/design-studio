@@ -2,15 +2,6 @@
 import { db } from "@/firebase";
 import { doc, setDoc, serverTimestamp, collection, addDoc, arrayUnion } from "firebase/firestore";
 
-// Extend Window interface for TypeScript
-declare global {
-  interface Window {
-    dataLayer: any[];
-    gtag?: (...args: any[]) => void;
-    clarity?: (...args: any[]) => void;
-  }
-}
-
 // ─── Session Management ──────────────────────────────────────────────────
 const SESSION_KEY = "tryam_analytics_session_id";
 const SESSION_START_KEY = "tryam_analytics_session_start";

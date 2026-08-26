@@ -215,7 +215,7 @@ export default function OrderCheckoutPage() {
     setIsProcessing(true);
     try {
       console.log(`Payment authorized (Txn: ${txnId}). Awaiting backend webhook verification.`);
-      trackCheckoutStep('payment_success', { txnId, total: finalGrandTotal });
+      trackCheckoutStep('payment_success', { txnId, total: summary.finalGrandTotal });
       setShowStripeModal(false);
       clearCart();
       setShowSuccess(true);
