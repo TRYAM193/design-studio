@@ -52,6 +52,7 @@ function RootLayout() {
       <PageTitleManager />
       <RouteSyncer />
       <Outlet />
+      <ExitIntentModal />
     </>
   );
 }
@@ -138,7 +139,6 @@ const rootNode = (
       <AuthProvider>
         <CartProvider>
           <RouterProvider router={router} />
-          <ExitIntentModal />
           <Toaster />
         </CartProvider>
       </AuthProvider>
