@@ -12,6 +12,7 @@ import { generateDesignJsonFromPrompt, warmUpAIBackend } from "@/design-tool/uti
 import { useNavigate } from "react-router";
 import { auth } from "@/firebase";
 import { signInAnonymously } from "firebase/auth";
+import { trackMagicPrompt } from "@/lib/analytics";
 
 // ─── Constants ─────────────────────────────────────────────────────────────
 const GUEST_LIMIT = 3;
@@ -315,6 +316,8 @@ export default function MagicPromptPreview() {
     setPreviewUrl(null);
     setProgressMsg(PROGRESS_STEPS[0]);
 
+    trackMagicPrompt("prompt_typed", { prompt: trimmed, style: selectedStyle });
+
     // Progress steps animation — same pattern as design-tool AiGeneratorModal
     let stepIndex = 0;
     const progressInterval = setInterval(() => {
@@ -341,6 +344,7 @@ export default function MagicPromptPreview() {
       );
 
       console.log("Received AI Design (Landing):", data.objects);
+      trackMagicPrompt("generated", { prompt: trimmed, style: selectedStyle, objectCount: data.objects?.length || 0 });
 
       incrementGuestUsage();
       const newUsage = getGuestUsage();
@@ -365,6 +369,7 @@ export default function MagicPromptPreview() {
       setPreviewUrl(composite);
     } catch (e: any) {
       console.error("Magic Prompt error:", e);
+      trackMagicPrompt("error", { prompt: trimmed, error: e.message || "failed" });
       setError(e.message || "Generation failed. Please try again in a moment.");
     } finally {
       clearInterval(progressInterval);
@@ -373,6 +378,7 @@ export default function MagicPromptPreview() {
   }, [prompt, selectedStyle, isLimitReached]);
 
   const handleOpenEditor = () => {
+    trackMagicPrompt("editor_clicked", { prompt, style: selectedStyle });
     navigate("/design");
   };
 

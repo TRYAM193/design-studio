@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { db } from "@/firebase";
 import {
     collection, query, orderBy, onSnapshot, doc, updateDoc,
-    deleteField, deleteDoc, arrayUnion, serverTimestamp
+    deleteField, deleteDoc, arrayUnion, serverTimestamp, limit
 } from "firebase/firestore";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -21,7 +21,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
     Loader2, RefreshCw, Truck, AlertCircle, CheckCircle,
     Search, Copy, Terminal, IndianRupee, Trash2, MessageSquare,
-    Eye, FileText, ExternalLink, Send, XCircle, Download
+    Eye, FileText, ExternalLink, Send, XCircle, Download,
+    Activity, MousePointerClick, Compass, Sparkles, ShoppingBag,
+    CreditCard, Smartphone, Laptop, TrendingDown, ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/formatOrderDate";
@@ -35,6 +37,8 @@ export default function AdminDashboard() {
     // --- STATE ---
     const [orders, setOrders] = useState<any[]>([]);
     const [tickets, setTickets] = useState<any[]>([]);
+    const [sessions, setSessions] = useState<any[]>([]);
+    const [exitFeedback, setExitFeedback] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -49,7 +53,7 @@ export default function AdminDashboard() {
     const [replyInput, setReplyInput] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
 
-    // 1. FETCH ORDERS & TICKETS
+    // 1. FETCH ORDERS, TICKETS & VISITOR ANALYTICS
     useEffect(() => {
         if (!user) return;
 
@@ -66,7 +70,19 @@ export default function AdminDashboard() {
             setLoading(false);
         });
 
-        return () => { unsubOrders(); unsubTickets(); };
+        const qSessions = query(collection(db, "analytics_sessions"), orderBy("lastActiveAt", "desc"), limit(60));
+        const unsubSessions = onSnapshot(qSessions, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setSessions(data);
+        }, (err) => console.debug("Analytics sessions listener:", err));
+
+        const qExit = query(collection(db, "exit_feedback"), orderBy("createdAt", "desc"), limit(40));
+        const unsubExit = onSnapshot(qExit, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setExitFeedback(data);
+        }, (err) => console.debug("Exit feedback listener:", err));
+
+        return () => { unsubOrders(); unsubTickets(); unsubSessions(); unsubExit(); };
     }, [user]);
 
     // --- ACTIONS ---
@@ -275,6 +291,10 @@ export default function AdminDashboard() {
                         Helpdesk
                         {openTickets.length > 0 && <span className="ml-2 flex h-4 w-4 items-center justify-center rounded-full bg-purple-500 text-[10px] text-white">{openTickets.length}</span>}
                     </TabsTrigger>
+                    <TabsTrigger value="analytics" className="flex-1 text-white relative bg-orange-500/10 border-orange-500/30">
+                        <Activity className="w-3.5 h-3.5 mr-1.5 text-orange-400" />
+                        Visitor Drop-offs & Analytics
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="live" className="mt-4">
@@ -386,6 +406,218 @@ export default function AdminDashboard() {
                                     </div>
                                 </>
                             )}
+                        </Card>
+                    </div>
+                {/* VISITOR DROP-OFFS & ANALYTICS TAB */}
+                <TabsContent value="analytics" className="mt-4 space-y-6">
+                    {/* Live Tools Quick Links */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card className="bg-gradient-to-br from-blue-950/40 via-slate-900 to-slate-900 border-blue-500/30">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-white text-base flex items-center gap-2">
+                                        <Eye className="w-5 h-5 text-blue-400" />
+                                        Microsoft Clarity — Live Video Replays
+                                    </CardTitle>
+                                    <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">100% Free</Badge>
+                                </div>
+                                <CardDescription className="text-slate-400 text-xs">
+                                    Watch real recordings of what visitors see, where their cursor moved, rage clicks, and where they bounced.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <a
+                                    href="https://clarity.microsoft.com"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-lg shadow-blue-900/30 hover:scale-[1.02]"
+                                >
+                                    Open Clarity Live Dashboard <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="bg-gradient-to-br from-orange-950/40 via-slate-900 to-slate-900 border-orange-500/30">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-white text-base flex items-center gap-2">
+                                        <Activity className="w-5 h-5 text-orange-400" />
+                                        Google Analytics 4 — Drop-off Funnels
+                                    </CardTitle>
+                                    <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30">Connected</Badge>
+                                </div>
+                                <CardDescription className="text-slate-400 text-xs">
+                                    Track traffic sources, UTM campaigns, device breakdown, and step-by-step conversion funnels.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <a
+                                    href="https://analytics.google.com"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-bold transition-all shadow-lg shadow-orange-900/30 hover:scale-[1.02]"
+                                >
+                                    Open Google Analytics <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Funnel Drop-off Overview */}
+                    <Card className="bg-slate-900 border-slate-800">
+                        <CardHeader>
+                            <CardTitle className="text-white flex items-center justify-between text-lg">
+                                <span className="flex items-center gap-2">
+                                    <TrendingDown className="w-5 h-5 text-orange-400" />
+                                    Visitor Conversion & Drop-off Funnel
+                                </span>
+                                <span className="text-xs font-normal text-slate-400">
+                                    Sampled from last {sessions.length} tracked sessions
+                                </span>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                                {[
+                                    { label: "1. Landed", count: sessions.length, icon: Compass, color: "text-blue-400" },
+                                    { label: "2. Magic AI", count: sessions.filter(s => s.usedMagicPrompt).length, icon: Sparkles, color: "text-purple-400" },
+                                    { label: "3. Editor", count: sessions.filter(s => s.openedEditor).length, icon: MousePointerClick, color: "text-emerald-400" },
+                                    { label: "4. In Cart", count: sessions.filter(s => s.addedToCart).length, icon: ShoppingBag, color: "text-amber-400" },
+                                    { label: "5. Checkout", count: sessions.filter(s => s.reachedCheckout).length, icon: CreditCard, color: "text-orange-400" },
+                                    { label: "6. Ordered", count: sessions.filter(s => s.completedOrder).length, icon: CheckCircle, color: "text-green-400" },
+                                ].map((step, idx) => {
+                                    const pct = sessions.length > 0 ? Math.round((step.count / sessions.length) * 100) : 0;
+                                    return (
+                                        <div key={step.label} className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-1">
+                                            <div className="flex items-center justify-between">
+                                                <step.icon className={`w-4 h-4 ${step.color}`} />
+                                                <span className="text-xs font-bold text-slate-400">{pct}%</span>
+                                            </div>
+                                            <p className="text-xs text-slate-400 font-medium">{step.label}</p>
+                                            <p className="text-lg font-black text-white">{step.count}</p>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Recent Visitor Session Trails */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <Card className="lg:col-span-8 bg-slate-900 border-slate-800">
+                            <CardHeader className="flex flex-row items-center justify-between pb-3">
+                                <div>
+                                    <CardTitle className="text-white text-base">Live Visitor Journeys & Drop-off Points</CardTitle>
+                                    <CardDescription className="text-slate-400 text-xs">
+                                        Shows where visitors navigated and where they stopped before leaving.
+                                    </CardDescription>
+                                </div>
+                                <Badge variant="outline" className="text-slate-300 border-slate-700">
+                                    {sessions.length} sessions
+                                </Badge>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <ScrollArea className="h-[420px]">
+                                    <div className="divide-y divide-slate-800">
+                                        {sessions.length === 0 ? (
+                                            <div className="p-8 text-center text-slate-500 text-sm">
+                                                No visitor trails recorded yet. Browse the site to see live telemetry appear here!
+                                            </div>
+                                        ) : (
+                                            sessions.map((s) => (
+                                                <div key={s.id} className="p-4 hover:bg-slate-800/30 transition-colors space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            {s.isMobile ? (
+                                                                <Smartphone className="w-4 h-4 text-blue-400" />
+                                                            ) : (
+                                                                <Laptop className="w-4 h-4 text-purple-400" />
+                                                            )}
+                                                            <span className="text-xs font-bold text-slate-200">
+                                                                {s.sessionId?.slice(0, 14) || "Visitor"}
+                                                            </span>
+                                                            <span className="text-[10px] text-slate-500">
+                                                                {s.durationSeconds ? `${s.durationSeconds}s active` : "Active now"}
+                                                            </span>
+                                                        </div>
+                                                        <Badge
+                                                            className={`text-[10px] font-bold ${
+                                                                s.completedOrder
+                                                                    ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                                                    : s.reachedCheckout
+                                                                    ? "bg-orange-500/20 text-orange-300 border-orange-500/30"
+                                                                    : s.addedToCart
+                                                                    ? "bg-amber-500/20 text-amber-300 border-amber-500/30"
+                                                                    : s.openedEditor
+                                                                    ? "bg-blue-500/20 text-blue-300 border-blue-500/30"
+                                                                    : "bg-slate-800 text-slate-400"
+                                                            }`}
+                                                        >
+                                                            {s.completedOrder
+                                                                ? "🎉 Ordered"
+                                                                : s.reachedCheckout
+                                                                ? "Dropped at Checkout"
+                                                                : s.addedToCart
+                                                                ? "Dropped at Cart"
+                                                                : s.openedEditor
+                                                                ? "Dropped in Editor"
+                                                                : s.usedMagicPrompt
+                                                                ? "Tried AI on Landing"
+                                                                : "Left Landing"}
+                                                        </Badge>
+                                                    </div>
+
+                                                    {/* Path trail */}
+                                                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                                        {(s.pathHistory || [{ path: s.currentPath || "/" }]).slice(0, 6).map((p: any, pIdx: number) => (
+                                                            <div key={pIdx} className="flex items-center gap-1 text-[11px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                                                                <span>{p.path}</span>
+                                                                {pIdx < (s.pathHistory?.length || 1) - 1 && <ArrowRight className="w-2.5 h-2.5 text-slate-600" />}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </ScrollArea>
+                            </CardContent>
+                        </Card>
+
+                        {/* Exit Intent Feedback */}
+                        <Card className="lg:col-span-4 bg-slate-900 border-slate-800 flex flex-col">
+                            <CardHeader className="pb-3 border-b border-slate-800">
+                                <CardTitle className="text-white text-base flex items-center justify-between">
+                                    <span>Exit Feedback Log</span>
+                                    <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 text-[10px]">
+                                        {exitFeedback.length} responses
+                                    </Badge>
+                                </CardTitle>
+                                <CardDescription className="text-slate-400 text-xs">
+                                    What visitors selected when asked why they were leaving.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-0 flex-1">
+                                <ScrollArea className="h-[420px]">
+                                    <div className="p-3 space-y-2">
+                                        {exitFeedback.length === 0 ? (
+                                            <p className="text-slate-500 text-xs text-center py-8">
+                                                No exit feedback submitted yet.
+                                            </p>
+                                        ) : (
+                                            exitFeedback.map((f) => (
+                                                <div key={f.id} className="p-3 rounded-lg bg-slate-950 border border-slate-800 space-y-1">
+                                                    <p className="text-xs font-semibold text-orange-300">{f.reason}</p>
+                                                    <div className="flex items-center justify-between text-[10px] text-slate-500">
+                                                        <span>{f.path || "Website"}</span>
+                                                        <span>{f.durationSeconds ? `${f.durationSeconds}s spent` : ""}</span>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </ScrollArea>
+                            </CardContent>
                         </Card>
                     </div>
                 </TabsContent>

@@ -38,6 +38,8 @@ import DashboardContact from "./pages/DashboardContact";
 import DashboardHelp from "./pages/DashboardHelp";
 import AdminRoute from "./components/AdminRoute";
 import BannedPage from "./pages/BannedPage.tsx";
+import { trackPageView } from "./lib/analytics";
+import { ExitIntentModal } from "./components/ExitIntentModal";
 import ProtectedRoute from "./components/ProtectedRoute.tsx";
 import TemplatesPage from "./pages/TemplatesPage.tsx";
 import AboutPage from "./pages/AboutPage.tsx";
@@ -105,12 +107,8 @@ const router = createBrowserRouter(
 function RouteSyncer() {
   const location = useLocation();
   useEffect(() => {
-    // 📊 Google Analytics Page View Tracking
-    if (window.gtag) {
-      window.gtag('config', 'G-VR1FW6LD6Y', {
-        page_path: location.pathname + location.search,
-      });
-    }
+    // 📊 Unified Analytics & GA4 Page View Tracking
+    trackPageView(location.pathname + location.search);
 
     window.parent.postMessage(
       { type: "iframe-route-change", path: location.pathname },
@@ -140,6 +138,7 @@ const rootNode = (
       <AuthProvider>
         <CartProvider>
           <RouterProvider router={router} />
+          <ExitIntentModal />
           <Toaster />
         </CartProvider>
       </AuthProvider>

@@ -25,8 +25,8 @@ import { OrderSuccessOverlay } from "@/components/OrderSuccessOverlay"; // Adjus
 import { AnimatePresence, motion } from "framer-motion"; // Ensure this is imported
 import { toast } from 'sonner';
 import { Switch } from "@/components/ui/switch";
-// 🟢 NEW MATH IMPORTS
 import { calculateCartTotalsAndAllocations, getVolumeDiscount } from "@/lib/discountUtils";
+import { trackCheckoutStep } from "@/lib/analytics";
 
 // Icons
 import {
@@ -194,6 +194,7 @@ export default function OrderCheckoutPage() {
         } catch (err) { console.error(err); }
       }
       setLoadingItems(false);
+      trackCheckoutStep('started', { mode });
     };
     initData();
   }, [mode, user, legacyOrderData]);
@@ -214,11 +215,13 @@ export default function OrderCheckoutPage() {
     setIsProcessing(true);
     try {
       console.log(`Payment authorized (Txn: ${txnId}). Awaiting backend webhook verification.`);
+      trackCheckoutStep('payment_success', { txnId, total: finalGrandTotal });
       setShowStripeModal(false);
       clearCart();
       setShowSuccess(true);
     } catch (error) {
       console.error("Success handling failed:", error);
+      trackCheckoutStep('payment_failed', { error: String(error) });
       navigate('/dashboard/orders');
     } finally {
       setIsProcessing(false);

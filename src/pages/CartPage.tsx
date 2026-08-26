@@ -25,6 +25,7 @@ import { db } from "@/firebase";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { calculateCartTotalsAndAllocations, getVolumeDiscount } from "@/lib/discountUtils";
+import { trackCartAction } from "@/lib/analytics";
 
 
 // ------------------------------------------------------------------
@@ -105,6 +106,15 @@ export default function CartPage() {
     }
     fetchRewardStatus();
   }, [user]);
+
+  useEffect(() => {
+    if (!isLoading && items.length > 0) {
+      trackCartAction('view', {
+        itemCount: items.length,
+        totalItems: summary?.totalItems || items.length,
+      });
+    }
+  }, [isLoading, items.length]);
 
   const navigate = useNavigate();
   const cartAnalysis = items.reduce((acc, item) => {
@@ -467,7 +477,14 @@ export default function CartPage() {
 
 
                         <Button
-                          onClick={() => navigate(`/checkout?mode=cart&reward=${applyReward}`)}
+                          onClick={() => {
+                            trackCartAction('proceed_checkout', {
+                              itemCount: items.length,
+                              finalTotal: summary.finalGrandTotal,
+                              applyReward,
+                            });
+                            navigate(`/checkout?mode=cart&reward=${applyReward}`);
+                          }}
                           disabled={items.length === 0}
                           className="w-full h-12 text-lg font-bold bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 shadow-lg shadow-orange-900/20 transition-all hover:scale-[1.02]"
                         >

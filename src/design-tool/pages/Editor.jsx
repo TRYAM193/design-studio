@@ -34,6 +34,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { uploadToStorage } from '../utils/saveDesign'
 import { PriceDisplay } from '@/components/PriceDisplay';
 import { getVolumeDiscount } from "@/lib/discountUtils";
+import { trackEditorAction } from "@/lib/analytics";
 
 function removeUndefined(obj) {
     if (Array.isArray(obj)) {
@@ -233,6 +234,11 @@ export default function EditorPanel() {
             // It's a brand new design, generate ID right now!
             setEditingDesignId(uuidv4());
         }
+        trackEditorAction('opened', {
+            productId: urlProductId || 'blank',
+            templateId: urlTemplateId || null,
+            designId: urlDesignId || null,
+        });
     }, []);
 
     // ─── Magic Prompt Handoff: pick up preview from landing page ───
@@ -1333,6 +1339,11 @@ export default function EditorPanel() {
         setIsAddingToCart(true);
         try {
             const payload = await generateOrderPayload();
+            trackEditorAction('add_to_cart', {
+                productId: urlProductId || productData?.id,
+                quantity: quantity,
+                total: totalPrice
+            });
             if (isEditMode && editCartId) {
                 await updateItemContent(editCartId, payload);
                 alert("Cart Updated!");
@@ -1353,6 +1364,11 @@ export default function EditorPanel() {
         setIsSaving(true);
         try {
             const payload = await generateOrderPayload(); // Sync function now
+            trackEditorAction('buy_now', {
+                productId: urlProductId || productData?.id,
+                quantity: quantity,
+                total: totalPrice
+            });
             // Store payload in LocalStorage for checkout page
             localStorage.setItem('directBuyItem', JSON.stringify(payload));
             navigation('/checkout?mode=direct');
